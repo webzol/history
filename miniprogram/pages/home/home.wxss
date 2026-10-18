@@ -246,23 +246,6 @@
   display: block;
 }
 
-.mini-seal {
-  position: absolute;
-  right: 28rpx;
-  top: 28rpx;
-  z-index: 3;
-  width: 42rpx;
-  height: 50rpx;
-  border: 2rpx solid rgba(163, 74, 62, 0.55);
-  color: #A34A3E;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 13rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(2deg);
-}
-
 .modern-card {
   position: relative;
   height: 200rpx;
