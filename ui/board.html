@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>史页 · 微信小程序 UI 概念</title>
+<style>
+  :root{
+    --paper:#F4EEE3;
+    --paper-2:#FBF7EE;
+    --paper-3:#EDE3D2;
+    --ink:#1B1A17;
+    --ink-2:#4F4A41;
+    --ink-3:#857D6E;
+    --cinnabar:#A63B2D;
+    --cinnabar-2:#C05A47;
+    --dai:#34534E;
+    --gold:#B08A3E;
+    --line:rgba(27,26,23,.12);
+    --line-strong:rgba(27,26,23,.22);
+    --serif:"Songti SC","STSong","SimSun","Noto Serif SC",serif;
+    --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    --kai:"KaiTi","STKaiti","SimKai","FangSong",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#141310;}
+  body{width:1800px;height:1100px;overflow:hidden;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .board{
+    position:relative;width:1800px;height:1100px;padding:44px 60px 26px;overflow:hidden;
+    background:
+      radial-gradient(circle at 16% -4%, rgba(166,59,45,.17), transparent 33%),
+      radial-gradient(circle at 86% 104%, rgba(52,83,78,.20), transparent 38%),
+      #141310;
+  }
+  .board:before{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  }
+  .masthead{position:relative;z-index:2;height:70px;display:flex;align-items:center;justify-content:space-between;}
+  .brand-block{display:flex;align-items:center;gap:16px;}
+  .seal-large{
+    width:46px;height:46px;border-radius:4px;background:var(--cinnabar);color:#F7F1E6;
+    display:grid;place-items:center;font-family:var(--serif);font-size:25px;line-height:1;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.16), 0 10px 24px rgba(0,0,0,.28);
+  }
+  .wordmark{font-family:var(--serif);font-weight:400;font-size:31px;line-height:1;letter-spacing:.22em;color:#F2ECDF;}
+  .brand-sub{margin-top:8px;font-size:8px;line-height:1;letter-spacing:.34em;color:#9D9486;}
+  .mast-right{text-align:right;color:#9D9486;font-size:8.5px;line-height:1.5;letter-spacing:.22em;}
+  .mast-right strong{display:block;color:#E8DFCE;font-size:10px;font-weight:500;letter-spacing:.28em;margin-bottom:7px;}
+  .swatches{display:flex;justify-content:flex-end;gap:7px;margin-top:9px;}
+  .swatch{width:8px;height:8px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .board-rule{position:relative;z-index:2;height:1px;margin:14px 0 16px;background:linear-gradient(90deg,rgba(246,241,231,.22),rgba(246,241,231,.05));}
+  .screen-row{position:relative;z-index:2;display:flex;justify-content:center;gap:26px;}
+  .phone-wrap{width:390px;}
+  .phone-label{height:22px;margin-bottom:12px;display:flex;align-items:baseline;gap:9px;color:#9D9486;font-size:8px;letter-spacing:.18em;text-transform:uppercase;}
+  .phone-label b{font-family:var(--serif);font-size:12px;font-weight:400;color:var(--cinnabar-2);letter-spacing:.08em;}
+  .phone-label span{font-family:var(--serif);font-size:15px;color:#E9E0D0;letter-spacing:.12em;}
+  .phone-label em{font-style:normal;font-size:8px;letter-spacing:.26em;color:#6F675B;margin-left:2px;}
+  .phone{
+    position:relative;width:390px;height:844px;padding:8px;border-radius:48px;background:#070706;
+    box-shadow:0 46px 90px rgba(0,0,0,.56), 0 0 0 1px rgba(255,255,255,.08), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .phone:before{content:"";position:absolute;inset:1px;border-radius:47px;border:1px solid rgba(255,255,255,.07);pointer-events:none;}
+  .screen{
+    position:relative;width:374px;height:828px;border-radius:40px;overflow:hidden;background:var(--paper);
+    background-image:radial-gradient(circle at 28% -8%,rgba(255,255,255,.42),transparent 42%);
+  }
+  .dynamic-island{position:absolute;z-index:90;top:18px;left:50%;transform:translateX(-50%);width:92px;height:25px;border-radius:20px;background:#040404;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);}
+  .wechat-capsule{
+    position:absolute;z-index:90;top:51px;right:13px;width:87px;height:30px;border-radius:17px;
+    background:rgba(255,255,255,.54);border:1px solid rgba(27,26,23,.08);
+    display:flex;align-items:center;justify-content:space-around;color:#26241F;
+  }
+  .wechat-capsule .dots{font-size:14px;line-height:1;letter-spacing:1px;margin-top:-4px;}
+  .wechat-capsule .divider{width:1px;height:16px;background:rgba(27,26,23,.12);}
+  .wechat-capsule .circle{position:relative;width:13px;height:13px;border:1.5px solid currentColor;border-radius:50%;}
+  .wechat-capsule .circle:after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;transform:translate(-50%,-50%);border-radius:50%;background:currentColor;}
+  .statusbar{position:absolute;z-index:70;top:0;left:0;right:0;height:46px;padding:0 22px 0 24px;display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:600;letter-spacing:.02em;color:var(--ink);}
+  .status-right{display:flex;align-items:center;gap:5px;}
+  .signal{display:flex;align-items:flex-end;gap:2px;height:9px;}
+  .signal i{display:block;width:2px;background:currentColor;border-radius:1px;}
+  .signal i:nth-child(1){height:3px}.signal i:nth-child(2){height:5px}.signal i:nth-child(3){height:7px}.signal i:nth-child(4){height:9px}
+  .wifi{width:11px;height:8px;position:relative;overflow:hidden;}
+  .wifi:before,.wifi:after{content:"";position:absolute;left:50%;transform:translateX(-50%);border:1.3px solid currentColor;border-bottom:0;border-left-color:transparent;border-right-color:transparent;border-radius:50% 50% 0 0;}
+  .wifi:before{width:11px;height:7px;top:0;}
+  .wifi:after{width:6px;height:4px;top:3px;}
+  .battery{position:relative;width:18px;height:9px;border:1px solid currentColor;border-radius:2.5px;}
+  .battery:before{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:11px;border-radius:1px;background:currentColor;}
+  .battery:after{content:"";position:absolute;right:-3px;top:2.5px;width:2px;height:4px;border-radius:0 2px 2px 0;background:currentColor;}
+  .icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;display:block;}
+  .app-head{position:absolute;z-index:20;top:46px;left:0;right:0;height:54px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;}
+  .app-brand{display:flex;align-items:center;gap:9px;}
+  .app-seal{width:29px;height:29px;border-radius:3px;background:var(--cinnabar);color:#F7F1E6;display:grid;place-items:center;font-family:var(--serif);font-size:16px;line-height:1;}
+  .app-name{font-family:var(--serif);font-size:20px;line-height:1;letter-spacing:.18em;}
+  .app-tag{margin-top:4px;font-size:7.5px;line-height:1;letter-spacing:.24em;color:var(--ink-3);}
+  .head-actions{display:flex;align-items:center;gap:10px;margin-right:100px;}
+  .icon-btn{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.22);color:var(--ink-2);}
+  .icon-btn .icon{width:15px;height:15px;}
+  .home-scroll{position:absolute;top:100px;left:0;right:0;bottom:64px;padding:0 20px;overflow:hidden;}
+  .dateline{display:flex;align-items:center;gap:7px;font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);}
+  .red-dot{width:5px;height:5px;border-radius:50%;background:var(--cinnabar);}
+  .dateline .lunar{margin-left:auto;font-size:8.5px;color:#A69C8D;letter-spacing:.05em;}
+  .home-title{font-family:var(--serif);font-size:28px;line-height:1.24;font-weight:400;letter-spacing:.04em;margin:8px 0 14px;}
+  .home-title span{color:var(--cinnabar);}
+  .hero{position:relative;height:186px;border-radius:16px;padding:15px 16px;overflow:hidden;background:#1D1B17;color:#F7F1E6;box-shadow:0 14px 30px rgba(27,26,23,.18);}
+  .hero:before{content:"";position:absolute;left:16px;top:0;width:44px;height:2px;background:var(--gold);}
+  .hero-ink{position:absolute;right:-22px;bottom:-16px;width:210px;height:150px;opacity:.75;}
+  .hero-kicker{position:relative;z-index:2;font-size:7.5px;letter-spacing:.28em;color:var(--gold);}
+  .hero-seal{position:absolute;z-index:2;top:13px;right:14px;width:33px;height:33px;border:1px solid rgba(192,90,71,.8);border-radius:2px;color:#E5ADA0;font-family:var(--serif);font-size:7.5px;line-height:1.3;display:grid;place-items:center;text-align:center;transform:rotate(3deg);}
+  .hero-year{position:absolute;right:7px;bottom:-6px;font-family:var(--serif);font-size:84px;line-height:1;letter-spacing:-.02em;color:rgba(247,241,230,.07);}
+  .hero h2{position:relative;z-index:2;font-family:var(--serif);font-size:27px;font-weight:400;letter-spacing:.06em;margin:25px 0 7px;}
+  .hero p{position:relative;z-index:2;width:224px;margin:0;font-size:10.5px;line-height:1.75;color:rgba(247,241,230,.64);}
+  .hero-foot{position:absolute;z-index:2;left:16px;right:16px;bottom:13px;display:flex;align-items:center;justify-content:space-between;font-size:8px;letter-spacing:.08em;color:rgba(247,241,230,.48);}
+  .hero-link{display:flex;align-items:center;gap:4px;color:#E7C98B;}
+  .hero-link .icon{width:12px;height:12px;stroke-width:1.5;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 7px;}
+  .section-head h3{font-family:var(--serif);font-size:16px;font-weight:400;letter-spacing:.1em;margin:0;}
+  .section-head span{font-size:8.5px;letter-spacing:.08em;color:var(--ink-3);}
+  .era-strip{position:relative;display:flex;gap:7px;overflow:hidden;}
+  .era-strip:after{content:"";position:absolute;right:0;top:0;bottom:0;width:25px;background:linear-gradient(90deg,transparent,var(--paper));}
+  .era-chip{flex:0 0 78px;height:58px;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.24);}
+  .era-chip b{display:block;font-family:var(--serif);font-size:14px;font-weight:400;letter-spacing:.06em;}
+  .era-chip span{display:block;margin-top:6px;font-size:7.5px;color:var(--ink-3);letter-spacing:.02em;}
+  .era-chip.active{background:var(--ink);border-color:var(--ink);color:#F7F1E6;}
+  .era-chip.active span{color:rgba(247,241,230,.52);}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .mini-card{position:relative;min-height:146px;padding:12px;border-radius:12px;overflow:hidden;}
+  .person-mini{background:#F0E6D6;}
+  .event-mini{background:#E5ECE7;}
+  .mini-top{display:flex;align-items:center;justify-content:space-between;font-size:7.5px;letter-spacing:.14em;color:var(--ink-3);}
+  .mini-index{font-family:var(--serif);font-size:10px;color:var(--ink-3);}
+  .mini-body{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .person-seal{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:1px solid rgba(166,59,45,.42);background:rgba(255,255,255,.28);display:grid;place-items:center;font-family:var(--kai);font-size:24px;color:var(--cinnabar);}
+  .mini-card h4{font-family:var(--serif);font-size:19px;font-weight:400;letter-spacing:.08em;margin:0;}
+  .mini-date{margin-top:4px;font-size:8.5px;color:var(--ink-3);letter-spacing:.04em;}
+  .mini-quote{font-family:var(--kai);font-size:11.5px;letter-spacing:.04em;color:var(--ink-2);margin:13px 0 0;}
+  .event-year{font-family:var(--serif);font-size:35px;line-height:1;color:var(--dai);letter-spacing:.02em;margin-top:13px;}
+  .event-mini h4{font-size:17px;margin-top:5px;}
+  .event-mini p{font-size:9px;line-height:1.65;color:var(--ink-2);margin:6px 0 0;}
+  .topic-card{position:relative;height:90px;margin-top:10px;padding:12px 14px;border-radius:12px;background:#EADCC8;display:flex;align-items:center;justify-content:space-between;overflow:hidden;}
+  .topic-kicker{font-size:7.5px;letter-spacing:.2em;color:var(--cinnabar);}
+  .topic-card h4{font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.04em;margin:4px 0 0;}
+  .topic-card p{font-size:8.5px;color:var(--ink-3);letter-spacing:.04em;margin:5px 0 0;}
+  .topic-art{width:98px;height:70px;flex:0 0 98px;opacity:.72;}
+  .tabbar{position:absolute;z-index:60;left:0;right:0;bottom:0;height:64px;padding:7px 8px 0;display:flex;background:rgba(249,244,235,.94);border-top:1px solid var(--line);}
+  .tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8.5px;letter-spacing:.08em;color:#9B9284;}
+  .tab .icon{width:21px;height:21px;stroke-width:1.55;}
+  .tab.active{color:var(--cinnabar);}
+  .tab.active:before{content:"";position:absolute;top:-7px;left:50%;width:16px;height:2px;transform:translateX(-50%);background:var(--cinnabar);}
+  .home-indicator{position:absolute;z-index:65;left:50%;bottom:7px;width:118px;height:4px;transform:translateX(-50%);border-radius:4px;background:rgba(27,26,23,.34);}
+  .detail-head .head-left{display:flex;align-items:center;gap:10px;}
+  .detail-title{font-family:var(--serif);font-size:15px;letter-spacing:.16em;color:var(--ink-2);}
+  .detail-scroll{position:absolute;top:100px;left:0;right:0;bottom:64px;padding:0 20px;overflow:hidden;}
+  .timeline-scroll{position:absolute;top:100px;left:0;right:0;bottom:64px;padding:0 18px;overflow:hidden;}
+  .tl-intro h1{font-family:var(--serif);font-size:26px;line-height:1;font-weight:400;letter-spacing:.08em;margin:0;}
+  .tl-intro p{font-size:8.5px;line-height:1.6;letter-spacing:.04em;color:var(--ink-3);margin:6px 0 0;}
+  .segmented{display:flex;height:32px;margin-top:12px;padding:3px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.2);}
+  .segmented span{flex:1;display:grid;place-items:center;border-radius:6px;font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;}
+  .segmented .active{background:var(--ink);color:#F7F1E6;box-shadow:0 2px 6px rgba(0,0,0,.12);}
+  .filter-row{display:flex;gap:13px;margin-top:10px;font-size:8.5px;color:var(--ink-3);letter-spacing:.04em;}
+  .filter-row .active{position:relative;color:var(--cinnabar);}
+  .filter-row .active:after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:var(--cinnabar);}
+  .layer-row{display:flex;align-items:center;gap:8px;margin-top:9px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.25);}
+  .layer-label{font-size:8.5px;letter-spacing:.08em;color:var(--ink-3);}
+  .layer-avatars{display:flex;margin-left:auto;}
+  .layer-avatars span{width:18px;height:18px;margin-left:-5px;border-radius:50%;background:#E8DCC9;border:1px solid var(--paper);display:grid;place-items:center;font-family:var(--serif);font-size:8.5px;color:var(--ink-2);}
+  .layer-avatars span:first-child{margin-left:0;}
+  .layer-avatars .more{background:var(--ink);color:#F7F1E6;font-family:var(--sans);font-size:6px;}
+  .switch{position:relative;width:28px;height:16px;margin-left:6px;border-radius:10px;background:var(--dai);}
+  .switch:after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#F7F1E6;}
+  .era-band{position:relative;display:flex;align-items:center;gap:9px;margin:12px 0 8px;padding:10px 11px;border-radius:9px;background:#EADCC8;overflow:hidden;}
+  .era-band:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cinnabar);}
+  .era-band .era-dot{width:6px;height:6px;border-radius:50%;background:var(--cinnabar);}
+  .era-band h2{font-family:var(--serif);font-size:17px;font-weight:400;letter-spacing:.1em;margin:0;}
+  .era-band p{font-size:8.5px;color:var(--ink-3);letter-spacing:.05em;margin:3px 0 0;}
+  .era-index{margin-left:auto;font-family:var(--serif);font-size:20px;color:rgba(27,26,23,.16);}
+  .timeline-list{position:relative;padding-right:0;}
+  .tl-item{position:relative;display:grid;grid-template-columns:34px 12px 1fr;gap:6px;min-height:72px;}
+  .tl-year{padding-top:10px;font-family:var(--serif);font-size:13px;color:var(--ink-3);letter-spacing:.04em;}
+  .tl-rail{position:relative;}
+  .tl-rail:before{content:"";position:absolute;left:5px;top:0;bottom:0;width:1px;background:var(--line);}
+  .tl-rail span{position:absolute;left:2px;top:14px;width:7px;height:7px;border-radius:50%;background:var(--paper);border:1.5px solid var(--ink-3);z-index:1;}
+  .tl-item:last-child .tl-rail:before{bottom:36px;}
+  .tl-item.active .tl-rail span{background:var(--cinnabar);border-color:var(--cinnabar);box-shadow:0 0 0 4px rgba(166,59,45,.10);}
+  .tl-card{margin-bottom:4px;padding:9px 11px 10px;border-radius:8px;}
+  .tl-item.active .tl-card{background:#FBF7EE;border-left:2px solid var(--cinnabar);box-shadow:0 8px 18px rgba(27,26,23,.08);}
+  .tl-card h3{font-family:var(--serif);font-size:14px;font-weight:400;letter-spacing:.05em;margin:0;}
+  .tl-card p{font-size:9.5px;line-height:1.55;color:var(--ink-3);margin:4px 0 0;}
+  .tl-tags{display:flex;gap:6px;margin-top:6px;}
+  .tl-tags span{padding:2px 5px;border:1px solid var(--line);border-radius:3px;font-size:7px;color:var(--ink-3);}
+  .person-hero{position:relative;display:flex;gap:16px;margin-top:12px;padding:14px;border-radius:14px;background:#EFE4D3;overflow:hidden;}
+  .person-hero:before{content:"";position:absolute;right:-30px;bottom:-38px;width:150px;height:150px;border-radius:50%;border:1px solid rgba(166,59,45,.14);}
+  .person-portrait{position:relative;width:104px;height:132px;flex:0 0 104px;border-radius:52px 52px 10px 10px;background:linear-gradient(160deg,#DCCAAA,#C9B28D);border:1px solid rgba(166,59,45,.14);overflow:hidden;}
+  .person-portrait:after{content:"";position:absolute;left:-20px;bottom:-30px;width:150px;height:80px;border-radius:50%;background:rgba(27,26,23,.08);}
+  .portrait-char{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--kai);font-size:53px;color:#2C2923;z-index:1;}
+  .portrait-seal{position:absolute;right:6px;bottom:6px;z-index:2;width:20px;height:20px;border:1px solid rgba(166,59,45,.6);border-radius:2px;display:grid;place-items:center;font-family:var(--serif);font-size:6px;color:var(--cinnabar);transform:rotate(-3deg);}
+  .person-info{padding-top:3px;}
+  .person-kicker{font-size:7.5px;letter-spacing:.24em;color:var(--cinnabar);}
+  .person-name{font-family:var(--serif);font-size:34px;line-height:1.1;font-weight:400;letter-spacing:.1em;margin:7px 0 0;}
+  .person-dates{font-size:8.5px;color:var(--ink-3);letter-spacing:.08em;margin-top:4px;}
+  .person-roles{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;}
+  .person-roles span{padding:2px 6px;border:1px solid var(--line-strong);border-radius:3px;font-size:7.5px;color:var(--ink-2);}
+  .person-one{font-family:var(--kai);font-size:10.5px;line-height:1.6;color:var(--ink-2);margin:9px 0 0;}
+  .person-quote{margin:14px 0 0;padding:11px 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;}
+  .person-quote p{font-family:var(--kai);font-size:15px;line-height:1.75;letter-spacing:.04em;margin:0;color:var(--ink);}
+  .person-quote span{display:block;margin-top:5px;font-size:7.5px;letter-spacing:.14em;color:var(--ink-3);}
+  .detail-tabs{display:flex;gap:20px;margin-top:11px;padding:0 2px;border-bottom:1px solid var(--line);}
+  .detail-tabs span{position:relative;padding:7px 0;font-size:9.5px;color:var(--ink-3);}
+  .detail-tabs .active{color:var(--ink);font-weight:500;}
+  .detail-tabs .active:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--cinnabar);}
+  .life-list{margin-top:9px;}
+  .life-item{display:grid;grid-template-columns:42px 12px 1fr;gap:8px;min-height:55px;}
+  .life-year{padding-top:1px;font-family:var(--serif);font-size:11.5px;color:var(--cinnabar);}
+  .life-rail{position:relative;}
+  .life-rail:before{content:"";position:absolute;left:5px;top:4px;bottom:0;width:1px;background:var(--line);}
+  .life-rail span{position:absolute;left:2px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--paper);border:1.5px solid var(--cinnabar);}
+  .life-body h4{font-family:var(--serif);font-size:12.5px;font-weight:400;letter-spacing:.04em;margin:0;}
+  .life-body p{font-size:8.5px;line-height:1.55;color:var(--ink-3);margin:3px 0 0;}
+  .relation-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;}
+  .relation-row .label{font-size:7.5px;letter-spacing:.1em;color:var(--ink-3);margin-right:2px;}
+  .rel-chip{display:flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.36);font-size:7.5px;color:var(--ink-2);}
+  .rel-chip b{font-family:var(--serif);font-size:9px;font-weight:400;color:var(--ink);}
+  .next-read{margin-top:10px;padding:10px 12px;border-radius:9px;background:#EADCC8;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .next-kicker{font-size:7px;letter-spacing:.12em;color:var(--cinnabar);}
+  .next-main b{display:block;font-family:var(--serif);font-size:12px;font-weight:400;margin-top:3px;}
+  .next-main span{display:block;font-size:8px;color:var(--ink-3);margin-top:2px;}
+  .next-read .icon{width:14px;height:14px;color:var(--ink-3);}
+  .detail-actions{position:absolute;z-index:55;left:0;right:0;bottom:0;height:64px;padding:8px 20px 12px;display:flex;align-items:center;gap:9px;background:rgba(249,244,235,.96);border-top:1px solid var(--line);}
+  .btn{height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;letter-spacing:.05em;}
+  .btn .icon{width:14px;height:14px;}
+  .btn.ghost{flex:0 0 108px;border:1px solid var(--line-strong);background:transparent;color:var(--ink-2);}
+  .btn.dark{flex:1;background:var(--ink);color:#F7F1E6;}
+  .event-hero{padding:3px 2px 0;}
+  .event-kicker{font-size:7.5px;letter-spacing:.24em;color:var(--cinnabar);}
+  .event-year{font-family:var(--serif);font-size:52px;line-height:1;letter-spacing:.02em;color:var(--cinnabar);margin-top:5px;}
+  .event-title{font-family:var(--serif);font-size:30px;line-height:1.15;font-weight:400;letter-spacing:.08em;margin:0;}
+  .event-sub{font-size:9.5px;line-height:1.7;color:var(--ink-3);margin:7px 0 0;}
+  .event-people{margin-top:6px;font-size:7.5px;letter-spacing:.05em;color:var(--ink-2);}
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:11px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--line);}
+  .fact{background:rgba(251,247,238,.76);padding:9px 10px;}
+  .fact dt{font-size:7.5px;letter-spacing:.14em;color:var(--ink-3);}
+  .fact dd{font-size:9.5px;margin:3px 0 0;color:var(--ink);}
+  .event-section{margin-top:11px;}
+  .sec-head{display:flex;align-items:baseline;gap:7px;margin-bottom:5px;}
+  .sec-num{font-family:var(--serif);font-size:8.5px;color:var(--cinnabar);}
+  .sec-title{font-family:var(--serif);font-size:15px;letter-spacing:.08em;}
+  .event-section p{font-size:9.5px;line-height:1.85;color:var(--ink-2);margin:0;text-align:justify;}
+  .process{display:flex;gap:0;margin-top:6px;}
+  .step{position:relative;flex:1;padding-top:8px;border-top:1px solid var(--line-strong);}
+  .step:before{content:"";position:absolute;top:-3px;left:0;width:5px;height:5px;border-radius:50%;background:var(--cinnabar);}
+  .step b{font-family:var(--serif);font-size:9.5px;font-weight:400;color:var(--ink);}
+  .step span{display:block;font-size:7.5px;color:var(--ink-3);margin-top:3px;}
+  .participants{display:flex;gap:10px;margin-top:7px;}
+  .participant{display:flex;align-items:center;gap:5px;}
+  .p-avatar{width:24px;height:24px;border-radius:50%;background:#EADCC8;display:grid;place-items:center;font-family:var(--serif);font-size:11px;color:var(--ink);}
+  .participant b{display:block;font-size:8.5px;font-weight:500;}
+  .participant span{display:block;font-size:7px;color:var(--ink-3);margin-top:2px;}
+  .impact{margin-top:7px;padding:9px 11px;border-radius:8px;border-left:2px solid var(--cinnabar);background:#EADCC8;}
+  .impact p{font-family:var(--kai);font-size:11.5px;line-height:1.7;color:var(--ink);}
+  .cause-chain{display:flex;align-items:stretch;margin-top:6px;border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line);}
+  .cause-node{position:relative;flex:1;padding:8px 6px 9px;}
+  .cause-node:before{content:"";position:absolute;top:-3px;left:0;width:5px;height:5px;border-radius:50%;background:var(--ink-3);}
+  .cause-node.active:before{background:var(--cinnabar);box-shadow:0 0 0 3px rgba(166,59,45,.1);}
+  .cause-node span{display:block;font-size:7px;color:var(--ink-3);letter-spacing:.06em;}
+  .cause-node b{display:block;font-family:var(--serif);font-size:9.5px;font-weight:400;margin-top:3px;}
+  .cause-arrow{display:flex;align-items:center;padding:0 2px;font-size:10px;color:var(--ink-3);}
+  .related-line{margin-top:9px;padding-top:7px;border-top:1px solid var(--line);font-size:8px;letter-spacing:.03em;color:var(--ink-2);}
+  .related-line span{margin-right:7px;font-size:7px;letter-spacing:.1em;color:var(--cinnabar);}
+  .related-events{display:flex;gap:8px;}
+  .related-event{flex:1;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.25);}
+  .related-event span{font-family:var(--serif);font-size:8px;color:var(--cinnabar);}
+  .related-event b{display:block;font-family:var(--serif);font-size:9.5px;font-weight:400;margin-top:2px;}
+  .related-event em{display:block;font-style:normal;font-size:6.5px;color:var(--ink-3);margin-top:2px;}
+  .source{margin-top:9px;padding-top:7px;border-top:1px solid var(--line);font-size:8px;line-height:1.6;color:var(--ink-3);}
+  .source b{color:var(--ink-2);font-weight:500;}
+  .board-footer{position:absolute;z-index:2;left:60px;right:60px;bottom:24px;display:flex;align-items:center;justify-content:space-between;padding-top:11px;border-top:1px solid rgba(246,241,231,.10);font-size:7.5px;letter-spacing:.16em;color:#7D7467;}
+  .board-footer b{color:#B7AD9D;font-weight:400;letter-spacing:.18em;}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8L20.4 20.4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5L8 12l7 7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 11l8-4M8 13l8 4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4h11v16l-5.5-3.7L6.5 20z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.4L12 4l8 6.4V20H4z"/><path d="M9.5 20v-5.6h5V20"/></symbol>
+  <symbol id="i-timeline" viewBox="0 0 24 24"><path d="M6 4v16"/><circle cx="6" cy="8" r="1.8"/><circle cx="6" cy="16" r="1.8"/><path d="M9.5 8H20M9.5 16h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M15 9l-1.7 4.3L9 15l1.7-4.3z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c.8-3.5 3.2-5.2 7-5.2s6.2 1.7 7 5.2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="board">
+  <header class="masthead">
+    <div class="brand-block">
+      <div class="seal-large">史</div>
+      <div>
+        <div class="wordmark">史页</div>
+        <div class="brand-sub">SHIYE · CHINESE HISTORY</div>
+      </div>
+    </div>
+    <div class="mast-right">
+      <strong>纸墨东方 · 现代排版</strong>
+      UI CONCEPT / 01 · WECHAT MINI PROGRAM
+      <div class="swatches">
+        <span class="swatch" style="background:#F4EEE3"></span>
+        <span class="swatch" style="background:#1B1A17"></span>
+        <span class="swatch" style="background:#A63B2D"></span>
+        <span class="swatch" style="background:#34534E"></span>
+        <span class="swatch" style="background:#B08A3E"></span>
+      </div>
+    </div>
+  </header>
+  <div class="board-rule"></div>
+
+  <div class="screen-row">
+    <!-- 01 HOME -->
+    <section class="phone-wrap">
+      <div class="phone-label"><b>01</b><span>首页</span><em>HOME</em></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+          </div>
+          <header class="app-head">
+            <div class="app-brand">
+              <div class="app-seal">史</div>
+              <div><div class="app-name">史页</div><div class="app-tag">一页一页读历史</div></div>
+            </div>
+            <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-search"/></svg></div></div>
+          </header>
+          <main class="home-scroll">
+            <div class="dateline"><span class="red-dot"></span>十月十八日 · 星期六<span class="lunar">农历九月十八</span></div>
+            <h1 class="home-title">今天，读一页<span>历史</span>。</h1>
+
+            <section class="hero">
+              <svg class="hero-ink" viewBox="0 0 220 160" fill="none" aria-hidden="true">
+                <circle cx="169" cy="44" r="17" stroke="rgba(231,201,139,.22)" stroke-width="1"/>
+                <path d="M0 139C36 122 61 91 89 110c27 18 47-36 76-22 20 10 37-6 55-20v92H0z" fill="rgba(176,138,62,.14)"/>
+                <path d="M0 156c36-20 65-28 96-21 31 8 54-24 83-15 17 6 28-1 41-8v48H0z" fill="rgba(176,138,62,.07)"/>
+                <path d="M18 124c27-16 49-20 70-7 22 13 42-8 63-2 18 5 33-8 51-19" stroke="rgba(231,201,139,.24)" stroke-width="1"/>
+              </svg>
+              <div class="hero-kicker">TODAY IN HISTORY</div>
+              <div class="hero-seal">九一<br>八</div>
+              <h2>九一八事变</h2>
+              <p>沈阳夜色下，一段改变中国命运的<br>历史由此开始。</p>
+              <div class="hero-year">1931</div>
+              <div class="hero-foot"><span>抗日战争 · 沈阳</span><span class="hero-link">展开这一天<svg class="icon"><use href="#i-arrow"/></svg></span></div>
+            </section>
+
+            <div class="section-head"><h3>沿着时间走</h3><span>全部朝代 →</span></div>
+            <div class="era-strip">
+              <div class="era-chip"><b>史前</b><span>170 万年前</span></div>
+              <div class="era-chip"><b>夏商周</b><span>前 2070–前 256</span></div>
+              <div class="era-chip active"><b>秦汉</b><span>前 221–220</span></div>
+              <div class="era-chip"><b>三国</b><span>220–589</span></div>
+              <div class="era-chip"><b>隋唐</b><span>581–960</span></div>
+              <div class="era-chip"><b>宋元</b><span>960–1368</span></div>
+            </div>
+
+            <div class="section-head"><h3>一页人物</h3><span>人物库 →</span></div>
+            <div class="duo">
+              <article class="mini-card person-mini">
+                <div class="mini-top"><span>北宋 · 文学家</span><span class="mini-index">01</span></div>
+                <div class="mini-body"><div class="person-seal">苏</div><div><h4>苏轼</h4><div class="mini-date">1037–1101</div></div></div>
+                <p class="mini-quote">一蓑烟雨任平生</p>
+              </article>
+              <article class="mini-card event-mini">
+                <div class="mini-top"><span>外交 · 北宋</span><span class="mini-index">02</span></div>
+                <div class="event-year">1005</div>
+                <h4>澶渊之盟</h4>
+                <p>宋辽缔结和议，换来百年和平。</p>
+              </article>
+            </div>
+
+            <article class="topic-card">
+              <div>
+                <div class="topic-kicker">专题 · FEATURE</div>
+                <h4>宋：一部市民生活史</h4>
+                <p>12 章 · 38 分钟 · 从瓦舍到茶坊</p>
+              </div>
+              <svg class="topic-art" viewBox="0 0 100 72" fill="none" aria-hidden="true">
+                <path d="M5 57h90M12 57c2-19 16-33 38-33s36 14 38 33" stroke="rgba(52,83,78,.55)" stroke-width="1.2"/>
+                <path d="M22 57V39c0-12 8-21 20-24M78 57V39c0-12-8-21-20-24" stroke="rgba(52,83,78,.32)" stroke-width="1"/>
+                <path d="M8 31h84M18 22h64M26 14h48" stroke="rgba(52,83,78,.22)" stroke-width="1"/>
+              </svg>
+            </article>
+          </main>
+          <nav class="tabbar">
+            <div class="tab active"><svg class="icon"><use href="#i-home"/></svg><span>首页</span></div>
+            <div class="tab"><svg class="icon"><use href="#i-timeline"/></svg><span>时间轴</span></div>
+            <div class="tab"><svg class="icon"><use href="#i-compass"/></svg><span>发现</span></div>
+            <div class="tab"><svg class="icon"><use href="#i-user"/></svg><span>我的</span></div>
+          </nav>
+          <div class="home-indicator"></div>
+        </div>
+        <div class="dynamic-island"></div>
+        <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+      </div>
+    </section>
+
+    <!-- 02 TIMELINE -->
+    <section class="phone-wrap">
+      <div class="phone-label"><b>02</b><span>时间轴</span><em>TIMELINE</em></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+          </div>
+          <header class="app-head">
+            <div class="app-brand">
+              <div><div class="app-name" style="font-size:24px;letter-spacing:.1em;">时间轴</div><div class="app-tag">从史前到今天</div></div>
+            </div>
+            <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-filter"/></svg></div></div>
+          </header>
+          <main class="timeline-scroll">
+            <div class="tl-intro">
+              <div><h1>一条可以走下去的河</h1><p>放大看细节，缩小看脉络。当前：朝代视图</p></div>
+            </div>
+            <div class="segmented"><span class="active">朝代</span><span>世纪</span><span>年</span></div>
+            <div class="filter-row"><span class="active">全部</span><span>政治</span><span>军事</span><span>文化</span><span>科技</span></div>
+            <div class="layer-row">
+              <span class="layer-label">人物图层</span>
+              <div class="layer-avatars"><span>苏</span><span>王</span><span>司</span><span class="more">+8</span></div>
+              <span class="switch"></span>
+            </div>
+            <div class="era-band">
+              <span class="era-dot"></span>
+              <div><h2>北宋</h2><p>960–1127 · 九帝 · 开封</p></div>
+              <span class="era-index">06</span>
+            </div>
+            <div class="timeline-list">
+              <article class="tl-item">
+                <div class="tl-year">960</div><div class="tl-rail"><span></span></div>
+                <div class="tl-card"><h3>陈桥兵变</h3><p>赵匡胤黄袍加身，北宋建立。</p><div class="tl-tags"><span>建国</span><span>政治</span></div></div>
+              </article>
+              <article class="tl-item active">
+                <div class="tl-year">1005</div><div class="tl-rail"><span></span></div>
+                <div class="tl-card"><h3>澶渊之盟</h3><p>宋辽订盟，以岁币换取长期和平。</p><div class="tl-tags"><span>外交</span><span>宋辽</span></div></div>
+              </article>
+              <article class="tl-item">
+                <div class="tl-year">1069</div><div class="tl-rail"><span></span></div>
+                <div class="tl-card"><h3>王安石变法</h3><p>熙宁新政，从青苗法到保甲法。</p><div class="tl-tags"><span>改革</span><span>经济</span></div></div>
+              </article>
+              <article class="tl-item">
+                <div class="tl-year">1101</div><div class="tl-rail"><span></span></div>
+                <div class="tl-card"><h3>苏轼逝世</h3><p>常州病逝，留下最后一行诗句。</p><div class="tl-tags"><span>人物</span><span>文学</span></div></div>
+              </article>
+              <article class="tl-item">
+                <div class="tl-year">1127</div><div class="tl-rail"><span></span></div>
+                <div class="tl-card"><h3>靖康之变</h3><p>汴京陷落，北宋灭亡。</p><div class="tl-tags"><span>战争</span><span>转折</span></div></div>
+              </article>
+            </div>
+          </main>
+          <nav class="tabbar">
+            <div class="tab"><svg class="icon"><use href="#i-home"/></svg><span>首页</span></div>
+            <div class="tab active"><svg class="icon"><use href="#i-timeline"/></svg><span>时间轴</span></div>
+            <div class="tab"><svg class="icon"><use href="#i-compass"/></svg><span>发现</span></div>
+            <div class="tab"><svg class="icon"><use href="#i-user"/></svg><span>我的</span></div>
+          </nav>
+          <div class="home-indicator"></div>
+        </div>
+        <div class="dynamic-island"></div>
+        <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+      </div>
+    </section>
+
+    <!-- 03 PERSON -->
+    <section class="phone-wrap">
+      <div class="phone-label"><b>03</b><span>人物</span><em>FIGURE</em></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+          </div>
+          <header class="app-head detail-head">
+            <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">人物</span></div>
+            <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+          </header>
+          <main class="detail-scroll">
+            <section class="person-hero">
+              <div class="person-portrait">
+                <div class="portrait-char">苏</div>
+                <div class="portrait-seal">东坡</div>
+              </div>
+              <div class="person-info">
+                <div class="person-kicker">NORTHERN SONG · 1037–1101</div>
+                <h1 class="person-name">苏轼</h1>
+                <div class="person-dates">字子瞻，号东坡居士 · 眉州眉山人</div>
+                <div class="person-roles"><span>文学家</span><span>政治家</span><span>美食家</span></div>
+                <p class="person-one">把一生的风雨，写成旷达。</p>
+              </div>
+            </section>
+
+            <div class="person-quote">
+              <p>“回首向来萧瑟处，归去，<br>也无风雨也无晴。”</p>
+              <span>《定风波 · 莫听穿林打叶声》</span>
+            </div>
+
+            <div class="detail-tabs"><span class="active">生平</span><span>关系</span><span>事件</span><span>著作</span></div>
+
+            <div class="life-list">
+              <div class="life-item">
+                <div class="life-year">1037</div><div class="life-rail"><span></span></div>
+                <div class="life-body"><h4>生于眉山</h4><p>与父亲苏洵、弟弟苏辙，并称“三苏”。</p></div>
+              </div>
+              <div class="life-item">
+                <div class="life-year">1057</div><div class="life-rail"><span></span></div>
+                <div class="life-body"><h4>进士及第</h4><p>欧阳修读其文，感叹“老夫当避路”。</p></div>
+              </div>
+              <div class="life-item">
+                <div class="life-year">1079</div><div class="life-rail"><span></span></div>
+                <div class="life-body"><h4>乌台诗案</h4><p>因诗文被劾，贬为黄州团练副使。</p></div>
+              </div>
+              <div class="life-item">
+                <div class="life-year">1082</div><div class="life-rail"><span></span></div>
+                <div class="life-body"><h4>黄州岁月</h4><p>写《赤壁赋》，在东坡耕作，自号东坡居士。</p></div>
+              </div>
+              <div class="life-item">
+                <div class="life-year">1101</div><div class="life-rail"><span></span></div>
+                <div class="life-body"><h4>常州逝世</h4><p>北归途中病逝，享年六十四岁。</p></div>
+              </div>
+            </div>
+
+            <div class="relation-row">
+              <span class="label">关系</span>
+              <span class="rel-chip"><b>苏辙</b> 弟</span>
+              <span class="rel-chip"><b>王安石</b> 政敌</span>
+              <span class="rel-chip"><b>欧阳修</b> 师友</span>
+            </div>
+          </main>
+          <div class="detail-actions">
+            <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏此页</div>
+            <div class="btn dark"><svg class="icon"><use href="#i-share"/></svg>生成分享卡</div>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+        <div class="dynamic-island"></div>
+        <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+      </div>
+    </section>
+
+    <!-- 04 EVENT -->
+    <section class="phone-wrap">
+      <div class="phone-label"><b>04</b><span>事件</span><em>EVENT</em></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+          </div>
+          <header class="app-head detail-head">
+            <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">事件</span></div>
+            <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+          </header>
+          <main class="detail-scroll">
+            <section class="event-hero">
+              <div class="event-kicker">NORTHERN SONG · 1005</div>
+              <div class="event-year">1005</div>
+              <h1 class="event-title">澶渊之盟</h1>
+              <p class="event-sub">北宋与辽在澶州订盟。以岁币换和平，也换来了一个更长的时间窗口。</p>
+              <div class="event-people">主要人物 · 宋真宗 / 寇准 / 萧太后</div>
+            </section>
+
+            <dl class="facts">
+              <div class="fact"><dt>时间</dt><dd>1005 年 1 月</dd></div>
+              <div class="fact"><dt>地点</dt><dd>澶州 · 今河南濮阳</dd></div>
+              <div class="fact"><dt>双方</dt><dd>北宋 / 辽</dd></div>
+              <div class="fact"><dt>结果</dt><dd>宋辽和议，约为兄弟之国</dd></div>
+            </dl>
+
+            <section class="event-section">
+              <div class="sec-head"><span class="sec-num">01</span><span class="sec-title">背景</span></div>
+              <p>宋太宗两次北伐失利后，北宋对辽由攻转守。辽军南下，直逼黄河，汴京震动。真宗在寇准力劝下亲征，双方在澶州形成对峙。</p>
+            </section>
+
+            <section class="event-section">
+              <div class="sec-head"><span class="sec-num">02</span><span class="sec-title">经过</span></div>
+              <div class="process">
+                <div class="step"><b>辽军南下</b><span>1004 年秋</span></div>
+                <div class="step"><b>真宗亲征</b><span>澶州对峙</span></div>
+                <div class="step"><b>议和订盟</b><span>1005 年 1 月</span></div>
+              </div>
+            </section>
+
+            <section class="event-section">
+              <div class="sec-head"><span class="sec-num">03</span><span class="sec-title">影响</span></div>
+              <div class="impact"><p>此后宋辽百余年未发生大规模战争。岁币带来了财政负担，也塑造了北宋以和议换和平的外交路径。</p></div>
+            </section>
+
+            <section class="event-section">
+              <div class="sec-head"><span class="sec-num">04</span><span class="sec-title">前因后果</span></div>
+              <div class="cause-chain">
+                <div class="cause-node"><span>986</span><b>雍熙北伐</b></div>
+                <div class="cause-arrow">→</div>
+                <div class="cause-node active"><span>1005</span><b>澶渊之盟</b></div>
+                <div class="cause-arrow">→</div>
+                <div class="cause-node"><span>此后</span><b>宋辽和平</b></div>
+              </div>
+            </section>
+
+            <div class="related-line"><span>相关事件</span>986 雍熙北伐 · 1042 庆历增币</div>
+
+            <div class="source"><b>参考史料</b> · 《续资治通鉴长编》卷五八；《宋史·真宗本纪》</div>
+          </main>
+          <div class="detail-actions">
+            <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏此页</div>
+            <div class="btn dark"><svg class="icon"><use href="#i-share"/></svg>分享这个事件</div>
+          </div>
+          <div class="home-indicator"></div>
+        </div>
+        <div class="dynamic-island"></div>
+        <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="board-footer">
+    <div><b>史页</b> · UI CONCEPT v0.1</div>
+    <div>微信小程序 / 750rpx 设计基准 / 纸墨东方 · 现代排版</div>
+    <div>2026 · HISH</div>
+  </footer>
+</div>
+</body>
+</html>

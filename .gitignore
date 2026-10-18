@@ -1,0 +1,10 @@
+# WeChat DevTools local settings
+miniprogram/project.private.config.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Dependencies
+node_modules/

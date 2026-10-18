@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>史页 · 近现代中国 UI</title>
+<link rel="stylesheet" href="neo.css">
+<style>
+  .board2-layout{position:relative;z-index:2;display:flex;justify-content:center;align-items:flex-start;gap:46px;}
+  .notes{width:330px;flex:0 0 330px;padding-top:2px;color:var(--ink);}
+  .notes-kicker{font-size:7.5px;letter-spacing:.28em;color:var(--dai);}
+  .notes-title{font-family:var(--serif);font-size:33px;line-height:1.4;font-weight:400;letter-spacing:.08em;color:var(--ink);margin:13px 0 0;}
+  .notes-title span{color:var(--cinnabar);}
+  .notes-lede{max-width:310px;margin:13px 0 0;font-size:9px;line-height:1.95;letter-spacing:.03em;color:var(--ink-2);}
+  .notes-rule{height:1px;margin:20px 0 17px;background:linear-gradient(90deg,rgba(90,75,55,.20),rgba(90,75,55,.04));}
+  .notes-block{margin-bottom:17px;}
+  .notes-label{margin-bottom:9px;font-size:7px;letter-spacing:.2em;color:var(--ink-3);}
+  .principle{display:flex;gap:10px;margin-bottom:8px;font-size:8.5px;line-height:1.65;color:var(--ink-2);}
+  .principle b{font-family:var(--serif);font-size:9px;font-weight:400;color:var(--dai);}
+  .color-list{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;}
+  .color-item{display:flex;align-items:center;gap:7px;}
+  .color-dot{width:11px;height:11px;flex:0 0 11px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(90,75,55,.12);}
+  .color-item span{font-size:7.5px;color:var(--ink-2);}
+  .color-item em{margin-left:auto;font-style:normal;font-size:6px;letter-spacing:.02em;color:var(--ink-3);}
+  .type-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .type-char{width:30px;flex:0 0 30px;font-family:var(--serif);font-size:23px;line-height:1;color:var(--ink);}
+  .type-char.kai{font-family:var(--kai);}
+  .type-char.sans{font-family:var(--sans);font-size:19px;}
+  .type-info b{display:block;font-size:7.5px;font-weight:400;color:var(--ink-2);}
+  .type-info em{display:block;margin-top:2px;font-style:normal;font-size:6px;letter-spacing:.03em;color:var(--ink-3);}
+  .note-chip{padding:5px 10px;border:1px solid var(--line);border-radius:15px;background:rgba(255,253,250,.52);font-size:7.5px;color:var(--ink-2);}
+  .note-chip.active{background:var(--dai);border-color:var(--dai);color:#FFFDF8;}
+  .phone-row{display:flex;gap:26px;}
+  .era-switch-demo{display:flex;gap:6px;margin-top:4px;}
+  .era-switch-demo span{flex:1;height:34px;border-radius:14px;border:1px solid var(--line);background:rgba(255,253,250,.52);display:grid;place-items:center;font-size:8px;color:var(--ink-2);}
+  .era-switch-demo .active{background:var(--card);color:var(--dai);box-shadow:var(--shadow-soft);font-weight:500;}
+
+  .period-row{display:flex;gap:5px;height:58px;padding:6px;border-radius:18px;background:var(--card);border:1px solid rgba(120,100,70,.05);box-shadow:var(--shadow-soft);overflow:hidden;}
+  .period{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:0 7px;border-radius:12px;}
+  .period b{font-family:var(--serif);font-size:10px;font-weight:400;letter-spacing:.01em;color:var(--ink);}
+  .period span{margin-top:3px;font-size:6.5px;color:var(--ink-3);letter-spacing:.01em;}
+  .period.active{background:var(--dai-2);}
+  .period.active b{color:var(--dai);}
+  .period.active span{color:rgba(95,115,110,.66);}
+  .modern-era{position:relative;display:flex;align-items:center;gap:10px;margin:12px 0 9px;padding:11px 14px;border-radius:18px;background:var(--card);border:1px solid rgba(120,100,70,.05);box-shadow:var(--shadow-soft);overflow:hidden;}
+  .modern-era .slip-mark{right:0;top:0;bottom:0;width:90px;opacity:.28;}
+  .modern-era .era-dot{width:5px;height:5px;border-radius:50%;background:var(--dai);}
+  .modern-era h2{font-family:var(--serif);font-size:19px;font-weight:400;letter-spacing:.08em;margin:0;color:var(--ink);}
+  .modern-era p{font-size:8px;color:var(--ink-3);letter-spacing:.03em;margin:3px 0 0;}
+  .modern-era .era-seal{margin-left:auto;width:26px;height:26px;border-radius:3px;background:var(--cinnabar);color:#FFF8EF;display:grid;place-items:center;font-family:var(--serif);font-size:11px;transform:rotate(2deg);}
+  .modern-timeline .tl-rail:before{background:rgba(95,115,110,.28);}
+  .modern-timeline .tl-item.active .tl-card{border-left-color:var(--dai);}
+  .modern-timeline .tl-item.active .tl-rail span{background:var(--cinnabar);border-color:var(--cinnabar);box-shadow:0 0 0 4px rgba(176,74,58,.08);}
+  .modern-timeline .tl-year{color:rgba(95,115,110,.72);}
+
+  .modern-event .event-year{color:var(--dai);}
+  .modern-event .event-seal{background:var(--cinnabar);}
+  .modern-event .impact{background:#E8EEEA;}
+  .modern-person .person-portrait{border-color:rgba(95,115,110,.24);background:linear-gradient(160deg,#EDF1EE,#DDE7E2);}
+  .modern-person .person-kicker{color:var(--dai);}
+  .modern-quote{background:#E8EEEA;}
+  .modern-quote .quote-mark{color:rgba(95,115,110,.24);}
+  .modern-person .portrait-seal{background:var(--cinnabar);}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6L20.4 20.4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5L8 12l7 7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8"/><circle cx="18" cy="6" r="1.8"/><circle cx="18" cy="18" r="1.8"/><path d="M8 11l8-4M8 13l8 4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4.5h11v15.5l-5.5-3.8-5.5 3.8z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7.5 12h9M10.5 17h3"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.6L12 4.2l8 6.4V20H4z"/><path d="M9.6 20v-5.5h4.8V20"/></symbol>
+  <symbol id="i-timeline" viewBox="0 0 24 24"><path d="M6 4v16"/><circle cx="6" cy="8" r="1.6"/><circle cx="6" cy="16" r="1.6"/><path d="M9.5 8H20M9.5 16h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6"/><path d="M14.8 9.2l-1.6 4.2-4.2 1.6 1.6-4.2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.2 20c.8-3.4 3.1-5.1 6.8-5.1s6 1.7 6.8 5.1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="board">
+  <header class="masthead">
+    <div class="brand-block">
+      <div class="seal-large">史</div>
+      <div>
+        <div class="wordmark">史页</div>
+        <div class="brand-sub">纸上春秋 · 现代新中式</div>
+      </div>
+    </div>
+    <div class="mast-right">
+      <div><strong>纸上春秋 · 现代新中式</strong>UI CONCEPT / 05 · MODERN CHINA</div>
+      <div class="seal-board">页</div>
+    </div>
+  </header>
+  <div class="board-rule"></div>
+
+  <div class="board2-layout">
+    <aside class="notes">
+      <div class="notes-kicker">05 / MODERN CHINA</div>
+      <h2 class="notes-title">近现代，<br><span>不是附录</span>。</h2>
+      <p class="notes-lede">古代史与近现代史并列，不是二级入口。赭石对应古代，青黛对应近现代，形成一条双时间轴。</p>
+      <div class="notes-rule"></div>
+
+      <div class="notes-block">
+        <div class="notes-label">设计原则 / PRINCIPLES</div>
+        <div class="principle"><b>01</b><span>双轴并列：古代 / 近现代，一级切换。</span></div>
+        <div class="principle"><b>02</b><span>青黛标记：近现代用青黛，古代用赭石。</span></div>
+        <div class="principle"><b>03</b><span>时间范围：1840–2024，不追新闻。</span></div>
+        <div class="principle"><b>04</b><span>权威口径：近现代内容由历史审校把关。</span></div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">色彩 / COLOR</div>
+        <div class="color-list">
+          <div class="color-item"><i class="color-dot" style="background:#F5EFE4"></i><span>宣纸</span><em>#F5EFE4</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#FFFDFA"></i><span>素白</span><em>#FFFDFA</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#A9825E"></i><span>赭石 · 古代</span><em>#A9825E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#5F736E"></i><span>青黛 · 近现代</span><em>#5F736E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#B04A3A"></i><span>朱砂 · 印章</span><em>#B04A3A</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#2D2923"></i><span>墨</span><em>#2D2923</em></div>
+        </div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">时间轴切换 / SWITCH</div>
+        <div class="era-switch-demo"><span>古代</span><span class="active">近现代</span></div>
+      </div>
+
+      <div class="notes-block" style="margin-bottom:0">
+        <div class="notes-label">内容边界 / SCOPE</div>
+        <div class="principle" style="margin-bottom:0"><b>·</b><span>1840–1911 晚清 / 1912–1949 民国 / 1949–1978 新中国 / 1978–2012 改革开放 / 2012– 新时代。</span></div>
+      </div>
+    </aside>
+
+    <div class="phone-row">
+      <!-- 08 MODERN TIMELINE -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>08</b><span>近现代</span><em>MODERN</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head">
+              <div class="app-brand"><div><div class="app-name" style="font-size:26px;letter-spacing:.1em;">时间轴</div><div class="app-tag">1840–2024 · 百年中国</div></div></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-filter"/></svg></div><div class="header-seal">史</div></div>
+            </header>
+            <main class="timeline-scroll">
+              <div class="tl-intro"><h1>从鸦片战争到今天</h1><p>古代与近现代，两条并行的河。</p></div>
+              <div class="segmented"><span>古代</span><span class="active">近现代</span></div>
+              <div class="filter-row"><span class="active">全部</span><span>政治</span><span>战争</span><span>思想</span><span>经济</span></div>
+              <div class="period-row">
+                <div class="period"><b>晚清</b><span>1840–1911</span></div>
+                <div class="period active"><b>民国</b><span>1912–1949</span></div>
+                <div class="period"><b>新中国</b><span>1949–1978</span></div>
+                <div class="period"><b>改革开放</b><span>1978–2012</span></div>
+                <div class="period"><b>新时代</b><span>2012–</span></div>
+              </div>
+              <div class="modern-era">
+                <div class="slip-mark"></div>
+                <span class="era-dot"></span>
+                <div><h2>中华民国</h2><p>1912–1949 · 38 年 · 南京 / 重庆</p></div>
+                <span class="era-seal">民</span>
+              </div>
+              <div class="timeline-list modern-timeline">
+                <article class="tl-item">
+                  <div class="tl-year">1840</div><div class="tl-rail"><span></span></div>
+                  <div class="tl-card"><h3>鸦片战争</h3><p>国门被打开，中国近代史由此开始。</p><div class="tl-meta"><span>战争</span><span>晚清</span></div></div>
+                </article>
+                <article class="tl-item">
+                  <div class="tl-year">1911</div><div class="tl-rail"><span></span></div>
+                  <div class="tl-card"><h3>辛亥革命</h3><p>推翻帝制，建立共和。</p><div class="tl-meta"><span>革命</span><span>民国</span></div></div>
+                </article>
+                <article class="tl-item">
+                  <div class="tl-year">1931</div><div class="tl-rail"><span></span></div>
+                  <div class="tl-card"><h3>九一八事变</h3><p>东北沦陷，民族危机加深。</p><div class="tl-meta"><span>抗战</span><span>民国</span></div></div>
+                </article>
+                <article class="tl-item active">
+                  <div class="tl-year">1949</div><div class="tl-rail"><span></span></div>
+                  <div class="tl-card"><h3>中华人民共和国成立</h3><p>中国人民站起来了，历史翻开新的一页。</p><div class="tl-meta"><span>建国</span><span>现代</span></div></div>
+                </article>
+              </div>
+              <div class="tl-next"><span>继续向前</span><b>新中国 · 1949–1978</b><svg class="icon"><use href="#i-arrow"/></svg></div>
+            </main>
+            <nav class="tabbar">
+              <div class="tab"><svg class="icon"><use href="#i-home"/></svg><span>首页</span></div>
+              <div class="tab active"><svg class="icon"><use href="#i-timeline"/></svg><span>时间轴</span></div>
+              <div class="tab"><svg class="icon"><use href="#i-compass"/></svg><span>发现</span></div>
+              <div class="tab"><svg class="icon"><use href="#i-user"/></svg><span>我的</span></div>
+            </nav>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 09 MODERN EVENT -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>09</b><span>近现代事件</span><em>EVENT</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">事件</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll modern-event">
+              <section class="event-hero modern-event">
+                <div class="slip-mark"></div>
+                <div class="event-kicker">MODERN CHINA · 1911</div>
+                <div class="event-seal">辛亥</div>
+                <div class="event-year">1911</div>
+                <h1 class="event-title">辛亥革命</h1>
+                <p class="event-sub">武昌起义爆发，各省响应。清帝退位，两千多年的君主专制制度结束。</p>
+              </section>
+
+              <dl class="facts">
+                <div class="fact"><dt>时间</dt><dd>1911 年 10 月 10 日</dd></div>
+                <div class="fact"><dt>地点</dt><dd>武昌 · 湖北</dd></div>
+                <div class="fact"><dt>结果</dt><dd>清帝退位，中华民国建立</dd></div>
+                <div class="fact"><dt>性质</dt><dd>民主革命</dd></div>
+              </dl>
+
+              <section class="event-section">
+                <div class="sec-head"><span class="sec-num">01</span><span class="sec-title">背景</span></div>
+                <p>清末新政未能挽回危机，保路运动激化矛盾。1911 年 10 月 10 日，武昌新军起义，革命迅速蔓延。</p>
+              </section>
+
+              <section class="event-section">
+                <div class="sec-head"><span class="sec-num">02</span><span class="sec-title">经过</span></div>
+                <div class="process">
+                  <div class="step"><b>武昌起义</b><span>1911.10.10</span></div>
+                  <div class="step"><b>各省响应</b><span>1911 年冬</span></div>
+                  <div class="step"><b>清帝退位</b><span>1912.02</span></div>
+                </div>
+              </section>
+
+              <section class="event-section">
+                <div class="sec-head"><span class="sec-num">03</span><span class="sec-title">影响</span></div>
+                <div class="impact"><p>辛亥革命结束了君主专制制度，使共和观念深入人心，也为此后的社会变革打开了空间。</p></div>
+              </section>
+
+              <div class="cause-card">
+                <div class="cause-head"><span>04</span><b>前因后果</b></div>
+                <div class="cause-chain">
+                  <div class="cause-node"><span>1894</span><b>甲午战争</b></div>
+                  <div class="cause-arrow">→</div>
+                  <div class="cause-node active"><span>1911</span><b>辛亥革命</b></div>
+                  <div class="cause-arrow">→</div>
+                  <div class="cause-node"><span>1912</span><b>民国建立</b></div>
+                </div>
+              </div>
+
+              <div class="source"><b>参考史料</b> · 《清史稿·宣统皇帝本纪》；《辛亥革命史》</div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏</div>
+              <div class="btn primary"><svg class="icon"><use href="#i-share"/></svg>分享这个事件</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 10 MODERN PERSON -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>10</b><span>近现代人物</span><em>FIGURE</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">人物</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll">
+              <section class="person-hero modern-person">
+                <div class="slip-mark"></div>
+                <div class="person-portrait"><div class="portrait-char">鲁</div><div class="portrait-seal">豫才</div></div>
+                <div class="person-info">
+                  <div class="person-kicker">MODERN CHINA · 1881–1936</div>
+                  <h1 class="person-name">鲁迅</h1>
+                  <div class="person-dates">原名周树人，字豫才 · 浙江绍兴人</div>
+                  <div class="person-roles">文学家<i>·</i>思想家<i>·</i>新文化运动</div>
+                  <p class="person-one">以笔为剑，唤醒沉睡的人。</p>
+                </div>
+              </section>
+
+              <div class="person-quote modern-quote">
+                <div class="quote-mark">“</div>
+                <p>其实地上本没有路，<br>走的人多了，也便成了路。</p>
+                <span>《故乡》</span>
+              </div>
+
+              <div class="detail-tabs"><span class="active">生平</span><span>关系</span><span>事件</span><span>著作</span></div>
+
+              <div class="life-list">
+                <div class="life-item">
+                  <div class="life-year">1881</div><div class="life-rail"><span></span></div>
+                  <div class="life-body"><h4>生于绍兴</h4><p>原名周树人，出身于破落的士大夫家庭。</p></div>
+                </div>
+                <div class="life-item">
+                  <div class="life-year">1902</div><div class="life-rail"><span></span></div>
+                  <div class="life-body"><h4>赴日留学</h4><p>先学医，后弃医从文，决定用文字改变国民精神。</p></div>
+                </div>
+                <div class="life-item">
+                  <div class="life-year">1918</div><div class="life-rail"><span></span></div>
+                  <div class="life-body"><h4>《狂人日记》</h4><p>以“鲁迅”为笔名发表，成为中国现代文学的重要起点。</p></div>
+                </div>
+                <div class="life-item">
+                  <div class="life-year">1936</div><div class="life-rail"><span></span></div>
+                  <div class="life-body"><h4>在上海逝世</h4><p>留下杂文、小说、散文与翻译，影响深远。</p></div>
+                </div>
+              </div>
+
+              <div class="relation-line"><span>关系</span><b>周作人</b> 弟<i>·</i><b>许广平</b> 伴侣<i>·</i><b>瞿秋白</b> 友</div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏</div>
+              <div class="btn primary"><svg class="icon"><use href="#i-share"/></svg>生成分享卡</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="board-footer">
+    <div><b>史页</b> · UI CONCEPT 05</div>
+    <div>微信小程序 / 750rpx / 现代新中式 · 古代史 + 近现代史</div>
+    <div>2026 · HISH</div>
+  </footer>
+</div>
+</body>
+</html>

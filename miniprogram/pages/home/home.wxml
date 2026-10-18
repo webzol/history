@@ -1,0 +1,87 @@
+<view class="page">
+  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <text class="brand">史页</text>
+    </view>
+
+    <view class="date">{{dateText}}</view>
+
+    <view class="hero" bindtap="onHeroTap">
+      <view class="hero-inner">
+        <text class="hero-title">{{hero.title}}</text>
+        <text class="hero-desc">{{hero.desc}}</text>
+      </view>
+      <image class="hero-art" src="/assets/palace.png" mode="widthFix"></image>
+    </view>
+
+    <view class="quick">
+      <view class="quick-item t1" data-page="timeline" bindtap="goPage">
+        <image class="quick-icon" src="/assets/icons/timeline-tile.png" mode="aspectFit"></image>
+        <text class="quick-label">时间轴</text>
+      </view>
+      <view class="quick-item t2" data-page="dynasty" bindtap="goPage">
+        <text class="quick-char">朝</text>
+        <text class="quick-label">朝代</text>
+      </view>
+      <view class="quick-item t3" data-page="person" bindtap="goPage">
+        <image class="quick-icon" src="/assets/icons/person.png" mode="aspectFit"></image>
+        <text class="quick-label">人物</text>
+      </view>
+      <view class="quick-item t4" data-page="event" bindtap="goPage">
+        <image class="quick-icon" src="/assets/icons/event.png" mode="aspectFit"></image>
+        <text class="quick-label">事件</text>
+      </view>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">沿着时间走</text>
+      <text class="section-link">全部朝代 →</text>
+    </view>
+
+    <view class="era-row">
+      <view class="era-card" bindtap="onEraTap">
+        <view class="mini-seal">唐</view>
+        <text class="era-title">{{era.title}}</text>
+        <text class="era-desc">{{era.desc}}</text>
+        <image class="era-art" src="/assets/pavilion.png" mode="widthFix"></image>
+      </view>
+      <view class="scroll-accent">
+        <image class="scroll-accent-img" src="/assets/scroll-accent.png" mode="aspectFill"></image>
+      </view>
+    </view>
+
+    <view class="modern-card" bindtap="onModernTap">
+      <view class="modern-copy">
+        <text class="modern-kicker">{{modern.kicker}}</text>
+        <text class="modern-title">{{modern.shortTitle}}</text>
+        <text class="modern-desc">{{modern.desc}}</text>
+      </view>
+      <view class="modern-years">
+        <text>1840</text>
+        <view class="modern-dash"></view>
+        <text>1949</text>
+      </view>
+      <view class="modern-seal">近</view>
+    </view>
+  </view>
+
+  <view class="tabbar">
+    <view class="tab active" data-page="home" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/home-active.png" mode="aspectFit"></image>
+      <text>首页</text>
+    </view>
+    <view class="tab" data-page="timeline" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/timeline.png" mode="aspectFit"></image>
+      <text>时间轴</text>
+    </view>
+    <view class="tab" data-page="discover" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/discover.png" mode="aspectFit"></image>
+      <text>发现</text>
+    </view>
+    <view class="tab" data-page="profile" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/profile.png" mode="aspectFit"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view>

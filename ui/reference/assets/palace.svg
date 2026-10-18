@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" fill="none">
+  <g opacity="0.82" stroke="#B6A28B" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+    <!-- distant mountains -->
+    <path d="M0 215C55 178 105 150 150 178c44 27 72 45 121 33 38-9 60-8 85 2 31 13 57 12 89-1 50-20 88-19 135 2 39 17 73 16 140-2v88H0z" fill="#EFE3D3" stroke="none" opacity=".55"/>
+    <path d="M0 235c56-20 94-21 132-7 38 13 61 10 94 0 40-12 72-11 106 3 43 18 76 17 121 1 48-17 91-17 147 4 43 16 78 17 120 3v61H0z" fill="#F7EFE4" stroke="none" opacity=".82"/>
+    <path d="M14 212c41-33 76-48 104-33 25 14 44 32 74 26M460 205c40-33 76-44 103-29 20 11 35 25 52 28" stroke="#CBBA9F" stroke-width=".8" opacity=".55"/>
+    <path d="M520 132c31-23 58-25 75-9 14 13 22 29 39 32M110 150c22-18 43-20 57-8 11 10 17 20 30 24" stroke="#D2C2AC" stroke-width=".7" opacity=".45"/>
+
+    <!-- ground -->
+    <path d="M0 273h720" stroke="#CDBBA4" stroke-width=".8" opacity=".65"/>
+
+    <!-- terrace and stairs -->
+    <path d="M214 245h292v18H214z" fill="#FBF5EA"/>
+    <path d="M244 263h232l16 15H228z" fill="#FBF5EA"/>
+    <path d="M228 278h264M240 270h240M250 263h220" stroke="#CDBBA4" stroke-width=".8"/>
+    <path d="M306 263h108l10 15H296z" fill="#F8F1E6"/>
+    <path d="M306 270h108M300 275h120" stroke="#D4C3AC" stroke-width=".6"/>
+    <!-- balustrade -->
+    <path d="M226 235h268M226 240h268" stroke="#CDBBA4" stroke-width=".8"/>
+    <path d="M232 235v9M244 235v9M256 235v9M268 235v9M280 235v9M292 235v9M304 235v9M316 235v9M328 235v9M340 235v9M352 235v9M364 235v9M376 235v9M388 235v9M400 235v9M412 235v9M424 235v9M436 235v9M448 235v9M460 235v9M472 235v9M484 235v9" stroke="#D4C3AC" stroke-width=".55"/>
+
+    <!-- side halls -->
+    <path d="M104 198h118v40H104z" fill="#FCF7ED"/>
+    <path d="M96 198c18-16 42-24 67-24 25 0 48 8 66 24" fill="#F1E5D4" opacity=".55"/>
+    <path d="M94 198c-12 2-20 6-27 12M228 198c12 2 20 6 27 12" stroke="#B6A28B" stroke-width=".9"/>
+    <path d="M114 203h98M114 210h98" stroke="#D4C3AC" stroke-width=".6"/>
+    <path d="M122 203v35M134 203v35M146 203v35M158 203v35M170 203v35M182 203v35M194 203v35M206 203v35" stroke="#D4C3AC" stroke-width=".55"/>
+    <path d="M124 214h11v18h-11zM145 214h11v18h-11zM166 214h11v18h-11zM187 214h11v18h-11z" fill="#F3E8D8" stroke="#D4C3AC" stroke-width=".55"/>
+
+    <path d="M498 198h118v40H498z" fill="#FCF7ED"/>
+    <path d="M490 198c18-16 42-24 67-24 25 0 48 8 66 24" fill="#F1E5D4" opacity=".55"/>
+    <path d="M488 198c-12 2-20 6-27 12M622 198c12 2 20 6 27 12" stroke="#B6A28B" stroke-width=".9"/>
+    <path d="M508 203h98M508 210h98" stroke="#D4C3AC" stroke-width=".6"/>
+    <path d="M516 203v35M528 203v35M540 203v35M552 203v35M564 203v35M576 203v35M588 203v35M600 203v35" stroke="#D4C3AC" stroke-width=".55"/>
+    <path d="M518 214h11v18h-11zM539 214h11v18h-11zM560 214h11v18h-11zM581 214h11v18h-11z" fill="#F3E8D8" stroke="#D4C3AC" stroke-width=".55"/>
+
+    <!-- main hall body -->
+    <path d="M252 160h216v85H252z" fill="#FCF7ED"/>
+    <path d="M260 170h200M260 178h200" stroke="#D4C3AC" stroke-width=".65"/>
+    <path d="M264 178v62M280 178v62M296 178v62M312 178v62M328 178v62M344 178v62M376 178v62M392 178v62M408 178v62M424 178v62M440 178v62M456 178v62" stroke="#D4C3AC" stroke-width=".55"/>
+    <path d="M268 186h20v42h-20zM292 186h20v42h-20zM316 186h20v42h-20zM340 186h20v42h-20zM380 186h20v42h-20zM404 186h20v42h-20zM428 186h20v42h-20zM452 186h20v42h-20z" fill="#F3E8D8" stroke="#D4C3AC" stroke-width=".55"/>
+    <path d="M360 186v42M348 186h24M348 196h24M348 206h24M348 216h24" stroke="#D4C3AC" stroke-width=".55"/>
+    <path d="M352 228h16v12h-16z" fill="#F8EFE1" stroke="#D4C3AC" stroke-width=".55"/>
+
+    <!-- lower roof -->
+    <path d="M205 160c30-14 68-21 115-21s85 7 115 21l26 10c-12 7-28 10-46 9-48-3-100-3-151 0-23 1-43-2-59-9l26-10z" fill="#F0E3D1"/>
+    <path d="M205 160c-15 1-25 5-34 12M435 160c15 1 25 5 34 12" stroke="#B6A28B" stroke-width="1"/>
+    <path d="M198 168c7 3 14 4 23 4M432 168c9 0 17-1 24-4" stroke="#B6A28B" stroke-width=".8"/>
+    <path d="M240 157c20-7 44-11 70-12M340 145c34 0 62 4 86 11" stroke="#D4C3AC" stroke-width=".6"/>
+
+    <!-- upper roof -->
+    <path d="M275 118c20-16 47-25 75-25s55 9 75 25l14 20c-18 8-38 12-60 11-20-1-39-1-59 0-22 1-43-3-59-11l14-20z" fill="#F0E3D1"/>
+    <path d="M286 132c22-8 46-12 74-12s52 4 74 12" stroke="#D4C3AC" stroke-width=".6"/>
+    <path d="M283 120c-14 2-24 8-31 16M451 120c14 2 24 8 31 16" stroke="#B6A28B" stroke-width=".9"/>
+    <path d="M300 110c18-13 37-20 60-20s42 7 60 20" fill="#F4E9DA" opacity=".5"/>
+    <path d="M292 138c-13 0-23 4-31 10M452 138c13 0 23 4 31 10" stroke="#B6A28B" stroke-width=".8"/>
+
+    <!-- roof tiles -->
+    <path d="M222 160l30-28M236 161l28-31M252 161l27-35M268 161l24-38M284 161l21-41M300 161l17-44M316 161l13-46M332 161l9-47M348 161l5-48M364 161l1-48M380 161l-3-47M396 161l-7-46M412 161l-11-44M428 161l-15-41M444 161l-19-38M460 161l-23-35M476 161l-27-31M492 161l-31-28" stroke="#D4C3AC" stroke-width=".45" opacity=".8"/>
+    <path d="M286 138l16-25M302 138l13-27M318 138l9-28M334 138l5-29M350 138l1-29M366 138l-3-29M382 138l-7-28M398 138l-11-27M414 138l-15-25" stroke="#D4C3AC" stroke-width=".45" opacity=".8"/>
+
+    <!-- ridge ornaments -->
+    <path d="M300 94c-8-5-15-6-22-3 4 5 9 7 16 8M420 94c8-5 15-6 22-3-4 5-9 7-16 8M360 72v-9M351 72h18" stroke="#B6A28B" stroke-width=".9"/>
+
+    <!-- trees -->
+    <path d="M78 270v-44M78 246l-14-12M78 236l14-11M70 270h16" stroke="#B6A28B" stroke-width=".9"/>
+    <path d="M60 228c7-16 19-24 31-22 5 12-2 23-13 28-9 4-16 2-18-6zM79 214c11-9 22-9 27-2 2 7-5 14-14 16-7 1-12-4-13-14zM48 243c5-11 14-16 22-14 3 8-2 16-9 19-6 2-11 0-13-5z" fill="#EFE3D4" stroke="#CBBA9F" stroke-width=".6"/>
+    <path d="M642 270v-44M642 246l-14-12M642 236l14-11M634 270h16" stroke="#B6A28B" stroke-width=".9"/>
+    <path d="M624 228c7-16 19-24 31-22 5 12-2 23-13 28-9 4-16 2-18-6zM643 214c11-9 22-9 27-2 2 7-5 14-14 16-7 1-12-4-13-14zM612 243c5-11 14-16 22-14 3 8-2 16-9 19-6 2-11 0-13-5z" fill="#EFE3D4" stroke="#CBBA9F" stroke-width=".6"/>
+
+    <!-- clouds -->
+    <path d="M148 92c12-7 22-6 29 1 8-4 16-2 19 5 3 8-4 12-11 12h-43c-8 0-11-8-6-12 4-3 8-5 12-6z" stroke="#D2C2AC" stroke-width=".65" opacity=".7"/>
+    <path d="M540 66c12-7 22-6 29 1 8-4 16-2 19 5 3 8-4 12-11 12h-43c-8 0-11-8-6-12 4-3 8-5 12-6z" stroke="#D2C2AC" stroke-width=".65" opacity=".6"/>
+    <path d="M490 110c8-5 15-4 20 1 6-3 11-1 13 4 2 5-3 8-8 8h-29c-6 0-8-5-4-8 3-2 5-4 8-5z" stroke="#D2C2AC" stroke-width=".55" opacity=".5"/>
+  </g>
+</svg>

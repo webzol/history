@@ -1,0 +1,32 @@
+<view class="page">
+  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <text class="brand">发现</text>
+    </view>
+    <view class="placeholder">
+      <text class="placeholder-title">还有更多，慢慢展开</text>
+      <text class="placeholder-desc">朝代、世纪、专题与历史地图正在整理中。</text>
+      <text class="placeholder-note">当前版本先完成首页与时间轴。</text>
+    </view>
+  </view>
+
+  <view class="tabbar">
+    <view class="tab" data-page="home" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/home.png" mode="aspectFit"></image>
+      <text>首页</text>
+    </view>
+    <view class="tab" data-page="timeline" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/timeline.png" mode="aspectFit"></image>
+      <text>时间轴</text>
+    </view>
+    <view class="tab active" data-page="discover" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/discover.png" mode="aspectFit"></image>
+      <text>发现</text>
+    </view>
+    <view class="tab" data-page="profile" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/profile.png" mode="aspectFit"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view>

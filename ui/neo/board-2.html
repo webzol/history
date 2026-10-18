@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>史页 · 现代新中式 UI 02</title>
+<link rel="stylesheet" href="neo.css">
+<style>
+  .board2-layout{position:relative;z-index:2;display:flex;justify-content:center;align-items:flex-start;gap:46px;}
+  .notes{width:330px;flex:0 0 330px;padding-top:2px;color:var(--ink);}
+  .notes-kicker{font-size:7.5px;letter-spacing:.28em;color:var(--ochre);}
+  .notes-title{font-family:var(--serif);font-size:33px;line-height:1.4;font-weight:400;letter-spacing:.08em;color:var(--ink);margin:13px 0 0;}
+  .notes-title span{color:var(--cinnabar);}
+  .notes-lede{max-width:310px;margin:13px 0 0;font-size:9px;line-height:1.95;letter-spacing:.03em;color:var(--ink-2);}
+  .notes-rule{height:1px;margin:20px 0 17px;background:linear-gradient(90deg,rgba(90,75,55,.20),rgba(90,75,55,.04));}
+  .notes-block{margin-bottom:17px;}
+  .phone-row{display:flex;gap:26px;}
+  .notes-label{margin-bottom:9px;font-size:7px;letter-spacing:.2em;color:var(--ink-3);}
+  .principle{display:flex;gap:10px;margin-bottom:8px;font-size:8.5px;line-height:1.65;color:var(--ink-2);}
+  .principle b{font-family:var(--serif);font-size:9px;font-weight:400;color:var(--ochre);}
+  .color-list{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;}
+  .color-item{display:flex;align-items:center;gap:7px;}
+  .color-dot{width:11px;height:11px;flex:0 0 11px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(90,75,55,.12);}
+  .color-item span{font-size:7.5px;color:var(--ink-2);}
+  .color-item em{margin-left:auto;font-style:normal;font-size:6px;letter-spacing:.02em;color:var(--ink-3);}
+  .type-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .type-char{width:30px;flex:0 0 30px;font-family:var(--serif);font-size:23px;line-height:1;color:var(--ink);}
+  .type-char.kai{font-family:var(--kai);}
+  .type-char.sans{font-family:var(--sans);font-size:19px;}
+  .type-info b{display:block;font-size:7.5px;font-weight:400;color:var(--ink-2);}
+  .type-info em{display:block;margin-top:2px;font-style:normal;font-size:6px;letter-spacing:.03em;color:var(--ink-3);}
+  .note-chip{padding:5px 10px;border:1px solid var(--line);border-radius:15px;background:rgba(255,253,250,.52);font-size:7.5px;color:var(--ink-2);}
+  .note-chip.active{background:var(--ochre);border-color:var(--ochre);color:#FFFDF8;}
+  .slip-sample{position:relative;height:50px;margin-top:10px;border-radius:10px;overflow:hidden;background:var(--card);border:1px solid rgba(120,100,70,.06);}
+  .slip-sample:before{content:"";position:absolute;inset:8px 14px;background:repeating-linear-gradient(90deg,rgba(130,100,65,.16) 0 7px,transparent 7px 17px);}
+  .slip-sample:after{content:"";position:absolute;left:14px;right:14px;top:50%;height:1px;background:rgba(130,100,65,.14);}
+
+  .century-hero{position:relative;}
+  .century-seal{position:absolute;z-index:2;top:8px;right:2px;width:28px;height:28px;border-radius:3px;background:var(--cinnabar);color:#FFF8EF;display:grid;place-items:center;font-family:var(--serif);font-size:10px;transform:rotate(2deg);box-shadow:0 5px 12px rgba(176,74,58,.14);}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6L20.4 20.4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5L8 12l7 7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8"/><circle cx="18" cy="6" r="1.8"/><circle cx="18" cy="18" r="1.8"/><path d="M8 11l8-4M8 13l8 4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4.5h11v15.5l-5.5-3.8-5.5 3.8z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7.5 12h9M10.5 17h3"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.6L12 4.2l8 6.4V20H4z"/><path d="M9.6 20v-5.5h4.8V20"/></symbol>
+  <symbol id="i-timeline" viewBox="0 0 24 24"><path d="M6 4v16"/><circle cx="6" cy="8" r="1.6"/><circle cx="6" cy="16" r="1.6"/><path d="M9.5 8H20M9.5 16h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6"/><path d="M14.8 9.2l-1.6 4.2-4.2 1.6 1.6-4.2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.2 20c.8-3.4 3.1-5.1 6.8-5.1s6 1.7 6.8 5.1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="board">
+  <header class="masthead">
+    <div class="brand-block">
+      <div class="seal-large">史</div>
+      <div>
+        <div class="wordmark">史页</div>
+        <div class="brand-sub">纸上春秋 · 现代新中式</div>
+      </div>
+    </div>
+    <div class="mast-right">
+      <div><strong>纸上春秋 · 现代新中式</strong>UI CONCEPT / 04 · INDEX &amp; SEARCH</div>
+      <div class="seal-board">页</div>
+    </div>
+  </header>
+  <div class="board-rule"></div>
+
+  <div class="board2-layout">
+    <aside class="notes">
+      <div class="notes-kicker">04 / INDEX &amp; SEARCH</div>
+      <h2 class="notes-title">一纸，<span>千年</span>。</h2>
+      <p class="notes-lede">以纸为底，以墨为骨，以朱砂为记。朝代是坐标，世纪是横轴，搜索是入口。</p>
+      <div class="notes-rule"></div>
+
+      <div class="notes-block">
+        <div class="notes-label">设计原则 / PRINCIPLES</div>
+        <div class="principle"><b>01</b><span>大量留白：让时间与文字都有呼吸。</span></div>
+        <div class="principle"><b>02</b><span>低饱和：赭石与青黛，替代高对比色块。</span></div>
+        <div class="principle"><b>03</b><span>纸感：浅米底、简牍暗纹、轻阴影。</span></div>
+        <div class="principle"><b>04</b><span>印章：朱砂只做小面积记忆点。</span></div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">色彩 / COLOR</div>
+        <div class="color-list">
+          <div class="color-item"><i class="color-dot" style="background:#F5EFE4"></i><span>宣纸</span><em>#F5EFE4</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#FFFDFA"></i><span>素白</span><em>#FFFDFA</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#2D2923"></i><span>墨</span><em>#2D2923</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#A9825E"></i><span>赭石</span><em>#A9825E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#5F736E"></i><span>青黛</span><em>#5F736E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#B04A3A"></i><span>朱砂</span><em>#B04A3A</em></div>
+        </div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">字体 / TYPE</div>
+        <div class="type-row"><span class="type-char">宋</span><div class="type-info"><b>宋体 · 标题与年份</b><em>Songti / SimSun</em></div></div>
+        <div class="type-row"><span class="type-char sans">史</span><div class="type-info"><b>黑体 · 正文与界面</b><em>Noto Sans SC</em></div></div>
+        <div class="type-row"><span class="type-char kai">诗</span><div class="type-info"><b>楷体 · 引文与题眼</b><em>KaiTi / STKaiti</em></div></div>
+      </div>
+
+      <div class="notes-block" style="margin-bottom:0">
+        <div class="notes-label">组件 / COMPONENTS</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="note-chip">人物</span>
+          <span class="note-chip">事件</span>
+          <span class="note-chip active">朝代</span>
+          <span class="note-chip">专题</span>
+        </div>
+        <div class="slip-sample"></div>
+      </div>
+    </aside>
+
+    <div class="phone-row">
+      <!-- 05 DYNASTY -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>05</b><span>朝代</span><em>DYNASTY</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">朝代</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll">
+              <section class="dynasty-hero">
+                <div class="slip-mark"></div>
+                <div class="dynasty-watermark">宋</div>
+                <div class="dynasty-kicker">NORTHERN SONG · 960–1127</div>
+                <div class="dynasty-seal">宋</div>
+                <h1 class="dynasty-name">北宋</h1>
+                <p class="dynasty-tagline">与士大夫共治天下</p>
+                <div class="dynasty-meta">
+                  <div><b>九帝</b><span>皇帝</span></div>
+                  <div><b>167 年</b><span>国祚</span></div>
+                  <div><b>开封</b><span>都城</span></div>
+                </div>
+              </section>
+
+              <p class="dynasty-summary">结束五代十国的分裂，建立以文官为中心的王朝。城市、商业、科举与印刷术，共同塑造了一个更世俗的宋代。</p>
+
+              <div class="detail-tabs"><span class="active">概览</span><span>帝王</span><span>大事</span><span>人物</span><span>文化</span></div>
+
+              <div class="sec-row"><b>帝王世系</b><span>9 位皇帝 · 横滑查看</span></div>
+              <div class="emperor-card">
+                <div class="emperor"><span>太祖</span><b>赵匡胤</b><em>960–976</em></div>
+                <div class="emperor"><span>太宗</span><b>赵光义</b><em>976–997</em></div>
+                <div class="emperor"><span>真宗</span><b>赵恒</b><em>997–1022</em></div>
+                <div class="emperor"><span>仁宗</span><b>赵祯</b><em>1022–1063</em></div>
+                <div class="emperor"><span>神宗</span><b>赵顼</b><em>1067–1085</em></div>
+              </div>
+
+              <div class="sec-row"><b>大事记</b><span>全部 42 件 →</span></div>
+              <div class="era-news">
+                <div class="era-news-item"><span>960</span><b>陈桥兵变</b><em>北宋建立</em></div>
+                <div class="era-news-item"><span>1005</span><b>澶渊之盟</b><em>宋辽和议</em></div>
+                <div class="era-news-item"><span>1069</span><b>王安石变法</b><em>熙宁新政</em></div>
+              </div>
+
+              <div class="sec-row"><b>关键人物</b><span>人物库 →</span></div>
+              <div class="era-text-row"><span><i>文</i><b>苏轼</b></span><span><i>政</i><b>王安石</b></span><span><i>史</i><b>司马光</b></span><span><i>士</i><b>范仲淹</b></span></div>
+
+              <div class="sec-row"><b>制度与文化</b><span>4 个关键词</span></div>
+              <div class="era-text-row"><span><i>·</i>科举取士</span><span><i>·</i>交子</span><span><i>·</i>活字印刷</span><span><i>·</i>市民文化</span></div>
+
+              <div class="world-card">
+                <div><div class="world-kicker">世界同期 · WORLD</div><b>诺曼征服 · 1066</b></div>
+                <div class="world-year">1066</div>
+              </div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏朝代</div>
+              <div class="btn primary"><svg class="icon"><use href="#i-timeline"/></svg>在时间轴中查看</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 06 CENTURY -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>06</b><span>世纪</span><em>CENTURY</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">世纪</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll">
+              <section class="century-hero">
+                <div class="century-seal">世</div>
+                <div class="century-kicker">1001–1100 · 中国 / 世界</div>
+                <h1 class="century-title"><span>11</span>世纪</h1>
+                <p class="century-sub">从澶渊之盟到第一次十字军东征。</p>
+                <div class="century-axis"><span>1001</span><i></i><span>1050</span><i></i><span>1100</span></div>
+              </section>
+
+              <p class="century-overview">中国：北宋与辽、西夏并立，科举社会与市民文化成熟。世界：东西教会分裂、诺曼征服、十字军东征，欧亚大陆进入新的流动期。</p>
+
+              <div class="sec-row"><b>同一世纪，两种时间</b><span>横向对照</span></div>
+              <div class="century-compare">
+                <div class="century-col">
+                  <div class="century-col-head">中国</div>
+                  <div class="century-item"><span>1005</span><b>澶渊之盟</b></div>
+                  <div class="century-item"><span>1044</span><b>庆历和议</b></div>
+                  <div class="century-item"><span>1069</span><b>王安石变法</b></div>
+                  <div class="century-item"><span>1082</span><b>赤壁赋</b></div>
+                </div>
+                <div class="century-col">
+                  <div class="century-col-head">世界</div>
+                  <div class="century-item"><span>1054</span><b>东西教会分裂</b></div>
+                  <div class="century-item"><span>1066</span><b>诺曼征服</b></div>
+                  <div class="century-item"><span>1096</span><b>第一次十字军</b></div>
+                  <div class="century-item"><span>1088</span><b>博洛尼亚大学</b></div>
+                </div>
+              </div>
+
+              <div class="sec-row"><b>同世纪人物</b><span>中西对照</span></div>
+              <div class="century-people">
+                <span><b>苏轼</b><i>文学家</i></span>
+                <span><b>王安石</b><i>改革家</i></span>
+                <span><b>沈括</b><i>科学家</i></span>
+                <span><b>威廉一世</b><i>诺曼底公爵</i></span>
+              </div>
+
+              <div class="century-question" style="margin-top:13px">
+                <span>世纪之问 · QUESTION</span>
+                <p>为什么“与士大夫共治天下”会出现在宋代？</p>
+                <div style="margin-top:5px;font-size:7px;line-height:1.6;color:var(--ink-3)">重文抑武、科举扩张、文官政治成熟，共同塑造了宋代的政治气质。</div>
+              </div>
+
+              <div class="century-next">
+                <div><span>下一世纪</span><b>12 世纪 · 1127–1279</b></div>
+                <em>南宋与金的对峙 →</em>
+              </div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏世纪</div>
+              <div class="btn primary"><svg class="icon"><use href="#i-timeline"/></svg>在时间轴中查看</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 07 SEARCH -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>07</b><span>搜索</span><em>SEARCH</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="search-head">
+              <div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div>
+              <div class="search-box">
+                <svg class="icon"><use href="#i-search"/></svg>
+                <span class="search-query">苏轼</span>
+                <span class="search-cursor"></span>
+                <span class="search-clear">×</span>
+              </div>
+            </header>
+            <main class="search-scroll">
+              <div class="search-section">
+                <div class="search-label">相关搜索 / RELATED</div>
+                <div class="search-chips">
+                  <span class="search-chip active">苏轼</span>
+                  <span class="search-chip">乌台诗案</span>
+                  <span class="search-chip">苏东坡</span>
+                  <span class="search-chip">三苏</span>
+                  <span class="search-chip">赤壁赋</span>
+                </div>
+              </div>
+
+              <div class="search-result-head"><b>搜索结果</b><span>12 条相关内容</span></div>
+              <div class="result-tabs"><span class="active">全部</span><span>人物</span><span>事件</span><span>朝代</span><span>专题</span></div>
+
+              <div class="result-list">
+                <div class="result-item">
+                  <div class="result-icon">人</div>
+                  <div class="result-body"><b>苏轼</b><em>1037–1101 · 北宋</em><p>文学家、政治家，“唐宋八大家”之一。因<span class="keyword">乌台诗案</span>贬谪黄州。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">人</div>
+                  <div class="result-body"><b>苏辙</b><em>1039–1112 · 北宋</em><p>苏轼之弟，与父苏洵、兄苏轼并称“三苏”。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">事</div>
+                  <div class="result-body"><b>乌台诗案</b><em>1079 · 北宋</em><p>苏轼因诗文被劾，贬为黄州团练副使。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">朝</div>
+                  <div class="result-body"><b>北宋</b><em>960–1127</em><p>结束五代十国分裂，与士大夫共治天下。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">专</div>
+                  <div class="result-body"><b>宋：一部市民生活史</b><em>专题 · 12 章</em><p>从瓦舍、茶坊到夜市，看见一个世俗的宋代。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+              </div>
+
+              <div class="search-more">查看全部 12 条结果<svg class="icon"><use href="#i-arrow"/></svg></div>
+
+              <div class="search-time"><span>按时间找</span><b>1037</b><span>1079</span><span>1082</span><span>1101</span></div>
+
+              <div class="search-trend">
+                <div class="search-label" style="margin-top:9px">热门搜索 / TRENDING</div>
+                <div class="search-chips">
+                  <span class="search-chip">九一八</span>
+                  <span class="search-chip">贞观之治</span>
+                  <span class="search-chip">郑和</span>
+                  <span class="search-chip">科举</span>
+                </div>
+              </div>
+            </main>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="board-footer">
+    <div><b>史页</b> · UI CONCEPT 04</div>
+    <div>微信小程序 / 750rpx / 现代新中式 · 纸上春秋</div>
+    <div>2026 · HISH</div>
+  </footer>
+</div>
+</body>
+</html>

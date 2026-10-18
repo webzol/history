@@ -1,0 +1,58 @@
+<view class="page">
+  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <text class="brand">时间轴</text>
+      <view class="top-actions">
+        <image class="icon" src="/assets/icons/search.png" mode="aspectFit" bindtap="onSearch"></image>
+        <image class="icon" src="/assets/icons/menu.png" mode="aspectFit" bindtap="onMenu"></image>
+      </view>
+    </view>
+
+    <view class="intro">从史前到今天，一条可以走下去的河。</view>
+
+    <view class="seg">
+      <text class="seg-item {{mode === 'ancient' ? 'active' : ''}}" data-mode="ancient" bindtap="switchMode">古代</text>
+      <text class="seg-item {{mode === 'modern' ? 'active' : ''}}" data-mode="modern" bindtap="switchMode">近现代</text>
+    </view>
+
+    <view class="era-band">
+      <view class="era-info">
+        <text class="era-name">{{eraName}}</text>
+        <text class="era-meta">{{eraMeta}}</text>
+      </view>
+      <text class="era-seal">{{eraSeal}}</text>
+    </view>
+
+    <view class="event-list">
+      <view wx:for="{{events}}" wx:key="id" class="event-card" data-id="{{item.id}}" bindtap="onEvent">
+        <text class="event-year">{{item.yearText}}</text>
+        <view class="event-body">
+          <text class="event-title">{{item.title}}</text>
+          <text class="event-desc">{{item.desc}}</text>
+          <text class="event-tags">{{item.tags}}</text>
+          <text class="event-source">{{item.source}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tabbar">
+    <view class="tab" data-page="home" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/home.png" mode="aspectFit"></image>
+      <text>首页</text>
+    </view>
+    <view class="tab active" data-page="timeline" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/timeline.png" mode="aspectFit"></image>
+      <text>时间轴</text>
+    </view>
+    <view class="tab" data-page="discover" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/discover.png" mode="aspectFit"></image>
+      <text>发现</text>
+    </view>
+    <view class="tab" data-page="profile" bindtap="goTab">
+      <image class="tab-icon" src="/assets/icons/profile.png" mode="aspectFit"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view>

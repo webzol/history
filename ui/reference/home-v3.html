@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>史页 · 首页</title>
+<style>
+  :root{
+    --paper:#F6F1EA;
+    --card:#FCFBF8;
+    --ink:#1F1D19;
+    --ink-2:#5F5A52;
+    --ink-3:#8C857A;
+    --red:#A34A3E;
+    --tile-gray:#EEF0F0;
+    --tile-beige:#F1E8DD;
+    --tile-white:#FBF9F6;
+    --tile-line:#F0F0F1;
+    --blue:#A9BCC4;
+    --blue-deep:#7E9A9A;
+    --line:rgba(70,58,45,.10);
+    --shadow:0 14px 30px rgba(90,70,50,.08), 0 2px 6px rgba(90,70,50,.03);
+    --serif:"Songti SC","STSong","SimSun","Noto Serif SC",serif;
+    --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  a{text-decoration:none;color:inherit;}
+  html,body{margin:0;padding:0;width:390px;height:844px;overflow:hidden;background:var(--paper);}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .stage{width:390px;height:844px;margin:0;background:var(--paper);position:relative;overflow:hidden;}
+  .paper-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.96;}
+  .vignette{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(255,255,255,.16),transparent 22%,transparent 78%,rgba(255,255,255,.20));pointer-events:none;}
+  .screen{position:relative;z-index:2;width:100%;height:100%;padding:0 24px 66px;overflow:hidden;}
+  .topbar{height:64px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:var(--serif);font-size:30px;font-weight:400;letter-spacing:.10em;line-height:1;color:var(--ink);}
+  .icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;display:block;}
+  .date{font-family:var(--serif);font-size:15px;letter-spacing:.04em;color:var(--ink);margin-top:18px;}
+  .hero{position:relative;margin-top:12px;height:214px;border-radius:22px;background:#FCFAFB;box-shadow:var(--shadow);border:1px solid rgba(80,65,48,.05);overflow:hidden;}
+  .hero-inner{position:relative;z-index:2;padding:16px 16px 0;}
+  .hero h1{font-family:var(--serif);font-size:24px;font-weight:400;letter-spacing:.08em;line-height:1.1;margin:0;color:var(--ink);}
+  .hero p{font-family:var(--serif);font-size:12.5px;line-height:1.65;letter-spacing:.01em;color:var(--ink-2);margin:8px 0 0;max-width:310px;}
+  .hero-art{position:absolute;left:0;right:0;bottom:0;height:auto;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+  .hero-art img{width:100%;height:auto;object-fit:contain;display:block;}
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+  .quick-item{height:88px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 18px rgba(90,70,50,.045);}
+  .quick-item.t1{background:var(--tile-gray);}
+  .quick-item.t2{background:var(--tile-beige);}
+  .quick-item.t3{background:var(--tile-line);}
+  .quick-item.t4{background:var(--tile-white);}
+  .quick-item .icon{width:24px;height:24px;stroke-width:1.25;color:#2A2722;}
+  .quick-char{font-family:var(--serif);font-size:30px;line-height:1;color:#2A2722;height:28px;display:flex;align-items:center;}
+  .quick-label{font-size:11px;letter-spacing:.04em;color:#3B3731;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-top:20px;}
+  .section-head h2{font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.07em;margin:0;color:var(--ink);}
+  .section-head span{font-size:10px;letter-spacing:.04em;color:var(--ink-3);}
+  .era-row{display:flex;align-items:stretch;gap:9px;margin-top:10px;}
+  .era-card{position:relative;flex:1;height:112px;border-radius:20px;background:#F3EFE6;overflow:hidden;padding:14px 16px;box-shadow:0 10px 24px rgba(90,70,50,.06);}
+  .era-card h3{position:relative;z-index:2;font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.08em;margin:0;color:var(--ink);}
+  .era-card p{position:relative;z-index:2;font-family:var(--serif);font-size:10px;line-height:1.55;letter-spacing:.02em;color:var(--ink-2);margin:7px 0 0;max-width:190px;}
+  .era-card .era-art{position:absolute;right:-6px;bottom:-8px;width:120px;height:auto;}
+  .era-card .era-art img{width:100%;height:auto;object-fit:contain;display:block;}
+  .scroll-accent{flex:0 0 30px;height:112px;border-radius:15px;overflow:hidden;box-shadow:0 8px 18px rgba(90,70,50,.05);}
+  .scroll-accent img{width:100%;height:100%;object-fit:cover;display:block;}
+  .mini-seal{position:absolute;right:14px;top:14px;z-index:3;width:22px;height:26px;border:1px solid rgba(163,74,62,.55);color:var(--red);font-family:var(--serif);font-size:7px;display:flex;align-items:center;justify-content:center;transform:rotate(2deg);}
+  .modern-card{position:relative;height:100px;margin-top:8px;padding:14px 16px;border-radius:20px;background:#FCFBF8;box-shadow:0 10px 24px rgba(90,70,50,.05);display:flex;align-items:center;justify-content:space-between;overflow:hidden;}
+  .modern-copy{position:relative;z-index:2;min-width:0;padding-right:76px;}
+  .modern-kicker{display:block;font-size:7px;letter-spacing:.12em;color:var(--blue-deep);}
+  .modern-title{display:block;font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.05em;margin-top:4px;color:var(--ink);}
+  .modern-desc{display:block;max-width:210px;margin-top:5px;font-size:9.5px;line-height:1.55;color:var(--ink-2);}
+  .modern-years{position:absolute;right:15px;bottom:14px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;font-family:var(--serif);font-size:14px;line-height:1.1;letter-spacing:.03em;color:var(--blue);}
+  .modern-dash{width:22px;height:1px;margin:4px 0;background:rgba(126,154,154,.55);}
+  .modern-seal{position:absolute;right:15px;top:12px;z-index:3;width:21px;height:24px;border:1px solid rgba(163,74,62,.55);color:var(--red);font-family:var(--serif);font-size:6.5px;display:flex;align-items:center;justify-content:center;transform:rotate(2deg);}
+  .tabbar{position:absolute;z-index:10;left:0;right:0;bottom:0;height:66px;background:rgba(250,248,243,.96);border-top:1px solid var(--line);display:flex;padding:8px 10px 0;}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#7B746A;font-size:10.5px;letter-spacing:.03em;}
+  .tab .icon{width:22px;height:22px;stroke-width:1.3;}
+  .tab.active{color:#211E1A;}
+  .tab.active .icon{fill:currentColor;stroke:currentColor;}
+  .home-indicator{position:absolute;z-index:11;left:50%;bottom:7px;width:118px;height:4px;transform:translateX(-50%);border-radius:4px;background:rgba(31,29,25,.30);}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="paper-bg" src="assets/paper-bg.png" alt="">
+  <div class="vignette"></div>
+  <div class="screen">
+    <header class="topbar">
+      <div class="brand">史页</div>
+    </header>
+
+    <div class="date">10月18日 · 今天</div>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <h1>今日史事</h1>
+        <p>公元前141年，汉武帝即位，开启西汉鼎盛时代</p>
+      </div>
+      <div class="hero-art"><img src="assets/hero-reference.png" alt="汉代宫殿与山川"></div>
+    </section>
+
+    <section class="quick">
+      <div class="quick-item t1">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 4v16M13 4v16M5 9h14"/><circle cx="18.2" cy="18.1" r="1.7"/></svg>
+        <span class="quick-label">时间轴</span>
+      </div>
+      <div class="quick-item t2">
+        <span class="quick-char">朝</span>
+        <span class="quick-label">朝代</span>
+      </div>
+      <div class="quick-item t3">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.1"/><path d="M5.2 20c.8-3.4 3.1-5.1 6.8-5.1s6 1.7 6.8 5.1"/></svg>
+        <span class="quick-label">人物</span>
+      </div>
+      <div class="quick-item t4">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M7 3.8h7l4 4v12.4H7z"/><path d="M14 3.8v4h4M10 11h5M10 14h5M10 17h3.5"/></svg>
+        <span class="quick-label">事件</span>
+      </div>
+    </section>
+
+    <div class="section-head"><h2>沿着时间走</h2><span>全部朝代 →</span></div>
+
+    <div class="era-row">
+      <article class="era-card">
+        <div class="mini-seal">唐</div>
+        <h3>盛唐气象</h3>
+        <p>从贞观之治到开元盛世，万国来朝。</p>
+        <div class="era-art"><img src="assets/pavilion-reference.png" alt="唐宫楼阁"></div>
+      </article>
+      <div class="scroll-accent"><img src="assets/scroll-reference.png" alt=""></div>
+    </div>
+
+    <a class="modern-card" href="#">
+      <div class="modern-copy">
+        <span class="modern-kicker">近现代 · 1840–1949</span>
+        <span class="modern-title">百年中国</span>
+        <span class="modern-desc">从鸦片战争到开国大典，寻找现代中国的来路。</span>
+      </div>
+      <div class="modern-years"><span>1840</span><span class="modern-dash"></span><span>1949</span></div>
+      <span class="modern-seal">近</span>
+    </a>
+  </div>
+
+  <nav class="tabbar">
+    <div class="tab active">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 10.7L12 4l8 6.7V20H4z"/><path d="M9.7 20v-5.4h4.6V20" fill="none" stroke="#F6F1EA"/></svg>
+      <span>首页</span>
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M7 5H5v14h2M17 5h2v14h-2M12 6v12"/></svg>
+      <span>时间轴</span>
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M14.7 9.3l-1.5 4-4 1.5 1.5-4z"/></svg>
+      <span>发现</span>
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.2 20c.8-3.4 3.1-5.1 6.8-5.1s6 1.7 6.8 5.1"/></svg>
+      <span>我的</span>
+    </div>
+  </nav>
+  <div class="home-indicator"></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>史页 · 微信小程序 UI 概念 02</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  .board2-layout{position:relative;z-index:2;display:flex;justify-content:center;align-items:flex-start;gap:46px;}
+  .notes{width:350px;flex:0 0 350px;padding-top:2px;}
+  .notes-kicker{font-size:8px;letter-spacing:.30em;color:var(--cinnabar-2);}
+  .notes-title{font-family:var(--serif);font-size:33px;line-height:1.4;font-weight:400;letter-spacing:.08em;color:#F0E8DA;margin:13px 0 0;}
+  .notes-title span{color:var(--cinnabar-2);}
+  .notes-lede{max-width:320px;margin:13px 0 0;font-size:9.5px;line-height:1.95;letter-spacing:.03em;color:#B8AE9F;}
+  .notes-rule{height:1px;margin:20px 0 17px;background:linear-gradient(90deg,rgba(246,241,231,.18),rgba(246,241,231,.03));}
+  .notes-block{margin-bottom:17px;}
+  .notes-label{margin-bottom:9px;font-size:7.5px;letter-spacing:.22em;color:#9E9587;}
+  .principle{display:flex;gap:10px;margin-bottom:8px;font-size:9px;line-height:1.65;color:#C9BFB0;}
+  .principle b{font-family:var(--serif);font-size:9.5px;font-weight:400;color:var(--cinnabar-2);}
+  .color-list{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;}
+  .color-item{display:flex;align-items:center;gap:7px;}
+  .color-dot{width:10px;height:10px;flex:0 0 10px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.30);}
+  .color-item span{font-size:8px;color:#C9BFB0;}
+  .color-item em{margin-left:auto;font-style:normal;font-size:6.5px;letter-spacing:.03em;color:#8C8274;}
+  .type-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .type-char{width:28px;flex:0 0 28px;font-family:var(--serif);font-size:22px;line-height:1;color:#E9DFCE;}
+  .type-char.kai{font-family:var(--kai);}
+  .type-char.sans{font-family:var(--sans);font-size:18px;}
+  .type-info b{display:block;font-size:8px;font-weight:400;color:#C9BFB0;}
+  .type-info em{display:block;margin-top:2px;font-style:normal;font-size:6.5px;letter-spacing:.03em;color:#8C8274;}
+  .note-chip{padding:4px 8px;border:1px solid rgba(246,241,231,.16);border-radius:16px;font-size:7.5px;color:#B8AE9F;}
+  .note-chip.active{background:var(--cinnabar);border-color:var(--cinnabar);color:#F7F1E6;}
+  .phone-row{display:flex;gap:26px;}
+
+  .era-hero{position:relative;margin-top:10px;padding:14px 14px 13px;border-radius:14px;background:#EFE4D3;overflow:hidden;}
+  .dynasty-watermark{position:absolute;right:-8px;bottom:-24px;font-family:var(--serif);font-size:126px;line-height:1;color:rgba(27,26,23,.055);}
+  .era-kicker{position:relative;z-index:2;font-size:6.5px;letter-spacing:.18em;color:var(--cinnabar);}
+  .dynasty-seal{position:absolute;z-index:2;top:12px;right:12px;width:30px;height:30px;border:1px solid rgba(166,59,45,.55);border-radius:2px;display:grid;place-items:center;font-family:var(--serif);font-size:8px;letter-spacing:.04em;color:var(--cinnabar);transform:rotate(3deg);}
+  .dynasty-name{position:relative;z-index:2;font-family:var(--serif);font-size:39px;line-height:1.1;font-weight:400;letter-spacing:.12em;margin:8px 0 0;}
+  .dynasty-tagline{position:relative;z-index:2;font-family:var(--kai);font-size:11.5px;color:var(--ink-2);margin:6px 0 0;letter-spacing:.04em;}
+  .dynasty-meta{position:relative;z-index:2;display:flex;gap:22px;margin-top:12px;}
+  .dynasty-meta b{display:block;font-family:var(--serif);font-size:13px;font-weight:400;letter-spacing:.04em;}
+  .dynasty-meta span{display:block;margin-top:2px;font-size:6.5px;color:var(--ink-3);letter-spacing:.08em;}
+  .era-summary{margin:10px 2px 0;font-size:8.5px;line-height:1.9;color:var(--ink-2);text-align:justify;}
+  .sec-row{display:flex;align-items:baseline;justify-content:space-between;margin:11px 0 6px;}
+  .sec-row b{font-family:var(--serif);font-size:12px;font-weight:400;letter-spacing:.08em;}
+  .sec-row span{font-size:6.5px;color:var(--ink-3);letter-spacing:.04em;}
+  .emperor-strip{display:flex;gap:5px;overflow:hidden;}
+  .emperor{flex:0 0 50px;padding:6px 5px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.26);}
+  .emperor span{display:block;font-size:6px;color:var(--cinnabar);letter-spacing:.06em;}
+  .emperor b{display:block;font-family:var(--serif);font-size:9.5px;font-weight:400;margin-top:3px;letter-spacing:.02em;}
+  .emperor em{display:block;font-style:normal;font-size:5.5px;color:var(--ink-3);margin-top:2px;}
+  .era-events{margin-top:1px;}
+  .era-event{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+  .era-event:last-child{border-bottom:0;}
+  .era-event span{width:34px;font-family:var(--serif);font-size:10px;color:var(--cinnabar);}
+  .era-event b{font-family:var(--serif);font-size:10.5px;font-weight:400;letter-spacing:.03em;}
+  .era-event em{margin-left:auto;font-style:normal;font-size:6px;color:var(--ink-3);}
+  .era-figures{display:flex;gap:6px;flex-wrap:wrap;}
+  .era-figure{display:flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.30);font-size:7px;color:var(--ink-3);}
+  .era-figure b{font-family:var(--serif);font-size:8.5px;font-weight:400;color:var(--ink);}
+  .era-tags{display:flex;gap:5px;flex-wrap:wrap;}
+  .era-tags span{padding:3px 7px;border:1px solid var(--line);border-radius:3px;font-size:6.5px;color:var(--ink-2);background:rgba(255,255,255,.22);}
+  .world-card{display:flex;align-items:center;gap:10px;margin-top:7px;padding:8px 10px;border-radius:8px;background:#E5ECE7;}
+  .world-kicker{font-size:6px;letter-spacing:.14em;color:var(--dai);}
+  .world-card b{display:block;font-family:var(--serif);font-size:9px;font-weight:400;margin-top:2px;}
+  .world-card .world-year{font-family:var(--serif);font-size:20px;color:rgba(52,83,78,.42);margin-left:auto;}
+  .era-quote{margin-top:9px;padding:9px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .era-quote p{font-family:var(--kai);font-size:10px;line-height:1.8;text-align:center;margin:0;color:var(--ink);}
+  .era-quote span{display:block;margin-top:4px;text-align:center;font-size:6px;letter-spacing:.12em;color:var(--ink-3);}
+  .era-feature{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;padding:8px 10px;border-radius:8px;background:#EADCC8;}
+  .era-feature-kicker{font-size:6px;letter-spacing:.14em;color:var(--cinnabar);}
+  .era-feature b{display:block;font-family:var(--serif);font-size:10px;font-weight:400;margin-top:2px;}
+  .era-feature span{display:block;font-size:6.5px;color:var(--ink-3);margin-top:2px;}
+  .era-feature .icon{width:13px;height:13px;color:var(--ink-3);}
+
+  .century-hero{padding:6px 2px 0;}
+  .century-kicker{font-size:6.5px;letter-spacing:.20em;color:var(--cinnabar);}
+  .century-title{font-family:var(--serif);font-size:43px;line-height:1.1;font-weight:400;letter-spacing:.03em;margin:7px 0 0;}
+  .century-title span{color:var(--cinnabar);}
+  .century-sub{font-family:var(--kai);font-size:11px;line-height:1.7;color:var(--ink-2);margin:6px 0 0;letter-spacing:.03em;}
+  .century-axis{display:flex;align-items:center;gap:6px;margin-top:17px;font-family:var(--serif);font-size:7.5px;color:var(--ink-3);}
+  .century-axis i{position:relative;flex:1;height:1px;background:var(--line-strong);}
+  .century-axis i:before,.century-axis i:after{content:"";position:absolute;top:-2px;width:5px;height:5px;border-radius:50%;background:var(--cinnabar);}
+  .century-axis i:before{left:0}.century-axis i:after{right:0}
+  .century-overview{margin:12px 2px 0;font-size:8.5px;line-height:1.9;color:var(--ink-2);text-align:justify;}
+  .century-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px;}
+  .century-col{padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.22);}
+  .century-col-head{font-family:var(--serif);font-size:11px;color:var(--cinnabar);letter-spacing:.08em;margin-bottom:4px;}
+  .century-item{display:flex;gap:5px;padding:3px 0;border-bottom:1px solid var(--line);}
+  .century-item:last-child{border-bottom:0;}
+  .century-item span{width:25px;font-family:var(--serif);font-size:7px;color:var(--ink-3);}
+  .century-item b{font-size:7.5px;font-weight:500;line-height:1.4;}
+  .century-people{display:flex;gap:5px;flex-wrap:wrap;}
+  .century-person{display:flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.28);font-size:6.5px;color:var(--ink-3);}
+  .century-person b{font-family:var(--serif);font-size:8px;font-weight:400;color:var(--ink);}
+  .century-keywords{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+  .century-keywords span{padding:3px 7px;border:1px solid var(--line);border-radius:3px;font-size:6.5px;color:var(--ink-2);background:rgba(255,255,255,.22);}
+  .century-works{display:flex;gap:6px;}
+  .century-work{flex:1;padding:6px 7px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.25);}
+  .century-work span{display:block;font-family:var(--serif);font-size:7px;color:var(--cinnabar);}
+  .century-work b{display:block;font-family:var(--serif);font-size:8.5px;font-weight:400;margin-top:2px;}
+  .century-work em{display:block;font-style:normal;font-size:6px;color:var(--ink-3);margin-top:1px;}
+  .century-question{margin-top:9px;padding:9px 11px;border-left:2px solid var(--cinnabar);border-radius:0 8px 8px 0;background:#EADCC8;}
+  .century-question span{font-size:6px;letter-spacing:.14em;color:var(--cinnabar);}
+  .century-question p{font-family:var(--kai);font-size:10.5px;line-height:1.7;margin:4px 0 0;color:var(--ink);}
+  .century-question em{display:block;margin-top:4px;font-style:normal;font-size:6.5px;line-height:1.6;color:var(--ink-3);}
+  .century-next{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:8px;}
+  .century-next span{display:block;font-size:6px;letter-spacing:.12em;color:var(--cinnabar);}
+  .century-next b{display:block;font-family:var(--serif);font-size:9px;font-weight:400;margin-top:2px;}
+  .century-next em{font-style:normal;font-size:7px;color:var(--ink-3);}
+
+  .search-head{position:absolute;z-index:20;top:46px;left:16px;right:104px;height:54px;display:flex;align-items:center;gap:8px;}
+  .search-head .icon-btn{flex:0 0 28px;background:rgba(255,255,255,.26);}
+  .search-box{flex:1;height:34px;padding:0 10px;display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.48);}
+  .search-box .icon{width:15px;height:15px;color:var(--ink-3);}
+  .search-query{font-size:10px;color:var(--ink);letter-spacing:.02em;}
+  .search-cursor{width:1px;height:15px;background:var(--cinnabar);}
+  .search-clear{margin-left:auto;font-size:14px;line-height:1;color:var(--ink-3);}
+  .search-scroll{position:absolute;top:100px;left:0;right:0;bottom:0;padding:0 20px;overflow:hidden;}
+  .search-section{margin-top:5px;}
+  .search-label{margin-bottom:7px;font-size:6.5px;letter-spacing:.18em;color:var(--ink-3);}
+  .search-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .search-chip{padding:4px 8px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.28);font-size:7px;color:var(--ink-2);}
+  .search-chip.active{background:var(--ink);border-color:var(--ink);color:#F7F1E6;}
+  .search-result-head{display:flex;align-items:baseline;justify-content:space-between;margin:14px 0 5px;}
+  .search-result-head b{font-family:var(--serif);font-size:11px;font-weight:400;letter-spacing:.06em;}
+  .search-result-head span{font-size:6.5px;color:var(--ink-3);}
+  .result-tabs{display:flex;gap:15px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .result-tabs span{position:relative;font-size:8px;color:var(--ink-3);}
+  .result-tabs .active{color:var(--ink);font-weight:500;}
+  .result-tabs .active:after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:2px;background:var(--cinnabar);}
+  .result-list{margin-top:1px;}
+  .result-item{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .result-icon{width:29px;height:29px;flex:0 0 29px;border-radius:50%;background:#EADCC8;display:grid;place-items:center;font-family:var(--serif);font-size:11px;color:var(--cinnabar);}
+  .result-body{min-width:0;}
+  .result-body b{font-family:var(--serif);font-size:12px;font-weight:400;letter-spacing:.03em;}
+  .result-body em{margin-left:5px;font-style:normal;font-size:6px;color:var(--ink-3);}
+  .result-body p{margin:3px 0 0;font-size:7px;line-height:1.55;color:var(--ink-3);}
+  .result-body .keyword{color:var(--cinnabar);}
+  .result-arrow{margin-left:auto;color:var(--ink-3);}
+  .result-arrow .icon{width:13px;height:13px;}
+  .search-more{display:flex;align-items:center;justify-content:center;gap:6px;height:32px;margin-top:9px;border:1px solid var(--line-strong);border-radius:8px;font-size:7.5px;color:var(--ink-2);letter-spacing:.03em;}
+  .search-more .icon{width:12px;height:12px;}
+  .search-time{display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:8px;border-top:1px solid var(--line);font-size:6.5px;color:var(--ink-3);}
+  .search-time b{font-family:var(--serif);font-size:8.5px;font-weight:400;color:var(--ink-2);}
+  .search-time span{padding:3px 6px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.25);}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8L20.4 20.4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5L8 12l7 7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 11l8-4M8 13l8 4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4h11v16l-5.5-3.7L6.5 20z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.4L12 4l8 6.4V20H4z"/><path d="M9.5 20v-5.6h5V20"/></symbol>
+  <symbol id="i-timeline" viewBox="0 0 24 24"><path d="M6 4v16"/><circle cx="6" cy="8" r="1.8"/><circle cx="6" cy="16" r="1.8"/><path d="M9.5 8H20M9.5 16h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M15 9l-1.7 4.3L9 15l1.7-4.3z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c.8-3.5 3.2-5.2 7-5.2s6.2 1.7 7 5.2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="board">
+  <header class="masthead">
+    <div class="brand-block">
+      <div class="seal-large">史</div>
+      <div>
+        <div class="wordmark">史页</div>
+        <div class="brand-sub">SHIYE · CHINESE HISTORY</div>
+      </div>
+    </div>
+    <div class="mast-right">
+      <strong>纸墨东方 · 现代排版</strong>
+      UI CONCEPT / 02 · INDEX &amp; SEARCH
+      <div class="swatches">
+        <span class="swatch" style="background:#F4EEE3"></span>
+        <span class="swatch" style="background:#1B1A17"></span>
+        <span class="swatch" style="background:#A63B2D"></span>
+        <span class="swatch" style="background:#34534E"></span>
+        <span class="swatch" style="background:#B08A3E"></span>
+      </div>
+    </div>
+  </header>
+  <div class="board-rule"></div>
+
+  <div class="board2-layout">
+    <aside class="notes">
+      <div class="notes-kicker">02 / INDEX &amp; SEARCH</div>
+      <h2 class="notes-title">让历史，<br>可以被<span>索引</span>。</h2>
+      <p class="notes-lede">朝代是坐标，世纪是横轴，搜索是入口。三张页面共同回答两个问题：从哪里开始，以及如何找到。</p>
+      <div class="notes-rule"></div>
+
+      <div class="notes-block">
+        <div class="notes-label">设计原则 / PRINCIPLES</div>
+        <div class="principle"><b>01</b><span>时间先于信息：先给坐标，再给细节。</span></div>
+        <div class="principle"><b>02</b><span>层级克制：用字号、留白和细线，而不是色块。</span></div>
+        <div class="principle"><b>03</b><span>来源可见：每个结论都能回到史料。</span></div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">色彩 / COLOR</div>
+        <div class="color-list">
+          <div class="color-item"><i class="color-dot" style="background:#F4EEE3"></i><span>纸白</span><em>#F4EEE3</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#1B1A17"></i><span>墨黑</span><em>#1B1A17</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#A63B2D"></i><span>朱砂</span><em>#A63B2D</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#34534E"></i><span>黛青</span><em>#34534E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#B08A3E"></i><span>金</span><em>#B08A3E</em></div>
+          <div class="color-item"><i class="color-dot" style="background:#EADCC8"></i><span>旧纸</span><em>#EADCC8</em></div>
+        </div>
+      </div>
+
+      <div class="notes-block">
+        <div class="notes-label">字体 / TYPE</div>
+        <div class="type-row"><span class="type-char">宋</span><div class="type-info"><b>宋体 · 标题与数字</b><em>Songti / SimSun</em></div></div>
+        <div class="type-row"><span class="type-char sans">史</span><div class="type-info"><b>黑体 · 正文与界面</b><em>Noto Sans SC</em></div></div>
+        <div class="type-row"><span class="type-char kai">诗</span><div class="type-info"><b>楷体 · 引文与题眼</b><em>KaiTi / STKaiti</em></div></div>
+      </div>
+
+      <div class="notes-block" style="margin-bottom:0">
+        <div class="notes-label">组件 / COMPONENTS</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="note-chip">人物</span>
+          <span class="note-chip">事件</span>
+          <span class="note-chip active">朝代</span>
+          <span class="note-chip">专题</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="phone-row">
+      <!-- 05 ERA -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>05</b><span>朝代</span><em>DYNASTY</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">朝代</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll">
+              <section class="era-hero">
+                <div class="dynasty-watermark">宋</div>
+                <div class="era-kicker">NORTHERN SONG · 960–1127</div>
+                <div class="dynasty-seal">北宋</div>
+                <h1 class="dynasty-name">北宋</h1>
+                <p class="dynasty-tagline">与士大夫共治天下</p>
+                <div class="dynasty-meta">
+                  <div><b>九帝</b><span>皇帝</span></div>
+                  <div><b>167 年</b><span>国祚</span></div>
+                  <div><b>开封</b><span>都城</span></div>
+                </div>
+              </section>
+
+              <p class="era-summary">结束五代十国的分裂，建立以文官为中心的王朝。城市、商业、科举与印刷术，共同塑造了一个更世俗的宋代。</p>
+
+              <div class="detail-tabs"><span class="active">概览</span><span>帝王</span><span>大事</span><span>人物</span><span>文化</span></div>
+
+              <div class="sec-row"><b>帝王世系</b><span>9 位皇帝 · 横滑查看</span></div>
+              <div class="emperor-strip">
+                <div class="emperor"><span>太祖</span><b>赵匡胤</b><em>960–976</em></div>
+                <div class="emperor"><span>太宗</span><b>赵光义</b><em>976–997</em></div>
+                <div class="emperor"><span>真宗</span><b>赵恒</b><em>997–1022</em></div>
+                <div class="emperor"><span>仁宗</span><b>赵祯</b><em>1022–1063</em></div>
+                <div class="emperor"><span>神宗</span><b>赵顼</b><em>1067–1085</em></div>
+                <div class="emperor"><span>徽宗</span><b>赵佶</b><em>1100–1125</em></div>
+              </div>
+
+              <div class="sec-row"><b>大事记</b><span>全部 42 件 →</span></div>
+              <div class="era-events">
+                <div class="era-event"><span>960</span><b>陈桥兵变</b><em>北宋建立</em></div>
+                <div class="era-event"><span>1005</span><b>澶渊之盟</b><em>宋辽和议</em></div>
+                <div class="era-event"><span>1069</span><b>王安石变法</b><em>熙宁新政</em></div>
+              </div>
+
+              <div class="sec-row"><b>关键人物</b><span>人物库 →</span></div>
+              <div class="era-figures">
+                <div class="era-figure"><b>苏轼</b>文学家</div>
+                <div class="era-figure"><b>王安石</b>改革家</div>
+                <div class="era-figure"><b>司马光</b>史学家</div>
+                <div class="era-figure"><b>范仲淹</b>政治家</div>
+              </div>
+
+              <div class="sec-row"><b>制度与文化</b><span>4 个关键词</span></div>
+              <div class="era-tags"><span>科举取士</span><span>交子</span><span>活字印刷</span><span>市民文化</span></div>
+
+              <div class="world-card">
+                <div><div class="world-kicker">世界同期 · WORLD</div><b>诺曼征服 · 1066</b></div>
+                <div class="world-year">1066</div>
+              </div>
+
+              <div class="era-quote">
+                <p>“为天地立心，为生民立命，<br>为往圣继绝学，为万世开太平。”</p>
+                <span>张载 · 横渠四句</span>
+              </div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏朝代</div>
+              <div class="btn dark"><svg class="icon"><use href="#i-timeline"/></svg>在时间轴中查看</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 06 CENTURY -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>06</b><span>世纪</span><em>CENTURY</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="app-head detail-head">
+              <div class="head-left"><div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div><span class="detail-title">世纪</span></div>
+              <div class="head-actions"><div class="icon-btn"><svg class="icon"><use href="#i-share"/></svg></div><div class="icon-btn"><svg class="icon"><use href="#i-bookmark"/></svg></div></div>
+            </header>
+            <main class="detail-scroll">
+              <section class="century-hero">
+                <div class="century-kicker">1001–1100 · 中国 / 世界</div>
+                <h1 class="century-title"><span>11</span>世纪</h1>
+                <p class="century-sub">从澶渊之盟到第一次十字军东征。</p>
+                <div class="century-axis"><span>1001</span><i></i><span>1050</span><i></i><span>1100</span></div>
+              </section>
+
+              <p class="century-overview">中国：北宋与辽、西夏并立，科举社会与市民文化成熟。世界：东西教会分裂、诺曼征服、十字军东征，欧亚大陆进入新的流动期。</p>
+              <div class="century-keywords"><span>士大夫政治</span><span>城市商业</span><span>欧亚流动</span></div>
+
+              <div class="sec-row"><b>同一世纪，两种时间</b><span>横向对照</span></div>
+              <div class="century-columns">
+                <div class="century-col">
+                  <div class="century-col-head">中国</div>
+                  <div class="century-item"><span>1005</span><b>澶渊之盟</b></div>
+                  <div class="century-item"><span>1044</span><b>庆历和议</b></div>
+                  <div class="century-item"><span>1069</span><b>王安石变法</b></div>
+                  <div class="century-item"><span>1082</span><b>赤壁赋</b></div>
+                </div>
+                <div class="century-col">
+                  <div class="century-col-head">世界</div>
+                  <div class="century-item"><span>1054</span><b>东西教会分裂</b></div>
+                  <div class="century-item"><span>1066</span><b>诺曼征服</b></div>
+                  <div class="century-item"><span>1096</span><b>第一次十字军</b></div>
+                  <div class="century-item"><span>1088</span><b>博洛尼亚大学</b></div>
+                </div>
+              </div>
+
+              <div class="sec-row"><b>同世纪人物</b><span>中西对照</span></div>
+              <div class="century-people">
+                <div class="century-person"><b>苏轼</b>文学家</div>
+                <div class="century-person"><b>王安石</b>改革家</div>
+                <div class="century-person"><b>沈括</b>科学家</div>
+                <div class="century-person"><b>威廉一世</b>诺曼底公爵</div>
+              </div>
+
+              <div class="sec-row"><b>这一百年的作品</b><span>3 部</span></div>
+              <div class="century-works">
+                <div class="century-work"><span>1084</span><b>资治通鉴</b><em>司马光</em></div>
+                <div class="century-work"><span>1088</span><b>梦溪笔谈</b><em>沈括</em></div>
+                <div class="century-work"><span>1082</span><b>赤壁赋</b><em>苏轼</em></div>
+              </div>
+
+              <div class="century-question">
+                <span>世纪之问 · QUESTION</span>
+                <p>为什么“与士大夫共治天下”会出现在宋代？</p>
+                <em>重文抑武、科举扩张、文官政治成熟，共同塑造了宋代的政治气质。</em>
+              </div>
+
+              <div class="century-next">
+                <div><span>下一世纪</span><b>12 世纪 · 1127–1279</b></div>
+                <em>南宋与金的对峙 →</em>
+              </div>
+            </main>
+            <div class="detail-actions">
+              <div class="btn ghost"><svg class="icon"><use href="#i-bookmark"/></svg>收藏世纪</div>
+              <div class="btn dark"><svg class="icon"><use href="#i-timeline"/></svg>在时间轴中查看</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+
+      <!-- 07 SEARCH -->
+      <section class="phone-wrap">
+        <div class="phone-label"><b>07</b><span>搜索</span><em>SEARCH</em></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <div class="status-right"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+            </div>
+            <header class="search-head">
+              <div class="icon-btn"><svg class="icon"><use href="#i-back"/></svg></div>
+              <div class="search-box">
+                <svg class="icon"><use href="#i-search"/></svg>
+                <span class="search-query">苏轼</span>
+                <span class="search-cursor"></span>
+                <span class="search-clear">×</span>
+              </div>
+            </header>
+            <main class="search-scroll">
+              <div class="search-section">
+                <div class="search-label">相关搜索 / RELATED</div>
+                <div class="search-chips">
+                  <span class="search-chip active">苏轼</span>
+                  <span class="search-chip">乌台诗案</span>
+                  <span class="search-chip">苏东坡</span>
+                  <span class="search-chip">三苏</span>
+                  <span class="search-chip">赤壁赋</span>
+                </div>
+              </div>
+
+              <div class="search-result-head"><b>搜索结果</b><span>12 条相关内容</span></div>
+              <div class="result-tabs"><span class="active">全部</span><span>人物</span><span>事件</span><span>朝代</span><span>专题</span></div>
+
+              <div class="result-list">
+                <div class="result-item">
+                  <div class="result-icon">人</div>
+                  <div class="result-body"><b>苏轼</b><em>1037–1101 · 北宋</em><p>文学家、政治家，“唐宋八大家”之一。因<span class="keyword">乌台诗案</span>贬谪黄州。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">人</div>
+                  <div class="result-body"><b>苏辙</b><em>1039–1112 · 北宋</em><p>苏轼之弟，与父苏洵、兄苏轼并称“三苏”。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">事</div>
+                  <div class="result-body"><b>乌台诗案</b><em>1079 · 北宋</em><p>苏轼因诗文被劾，贬为黄州团练副使。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">朝</div>
+                  <div class="result-body"><b>北宋</b><em>960–1127</em><p>结束五代十国分裂，与士大夫共治天下。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">人</div>
+                  <div class="result-body"><b>苏洵</b><em>1009–1066 · 北宋</em><p>苏轼之父，“三苏”之一，以《六国论》闻名。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">事</div>
+                  <div class="result-body"><b>元祐更化</b><em>1085–1093 · 北宋</em><p>司马光主政，废除王安石新法，苏轼被召回朝。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+                <div class="result-item">
+                  <div class="result-icon">专</div>
+                  <div class="result-body"><b>宋：一部市民生活史</b><em>专题 · 12 章</em><p>从瓦舍、茶坊到夜市，看见一个世俗的宋代。</p></div>
+                  <div class="result-arrow"><svg class="icon"><use href="#i-arrow"/></svg></div>
+                </div>
+              </div>
+
+              <div class="search-more">查看全部 12 条结果<svg class="icon"><use href="#i-arrow"/></svg></div>
+
+              <div class="search-time"><span>按时间找</span><b>1037</b><span>1079</span><span>1082</span><span>1101</span></div>
+
+              <div class="search-section" style="margin-top:12px">
+                <div class="search-label">热门搜索 / TRENDING</div>
+                <div class="search-chips">
+                  <span class="search-chip">九一八</span>
+                  <span class="search-chip">贞观之治</span>
+                  <span class="search-chip">郑和</span>
+                  <span class="search-chip">科举</span>
+                </div>
+              </div>
+            </main>
+            <div class="home-indicator"></div>
+          </div>
+          <div class="dynamic-island"></div>
+          <div class="wechat-capsule"><span class="dots">···</span><span class="divider"></span><span class="circle"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="board-footer">
+    <div><b>史页</b> · UI CONCEPT v0.1</div>
+    <div>微信小程序 / 750rpx 设计基准 / 纸墨东方 · 现代排版</div>
+    <div>2026 · HISH</div>
+  </footer>
+</div>
+</body>
+</html>
