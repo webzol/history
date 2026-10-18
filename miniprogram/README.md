@@ -27,7 +27,7 @@
 - `史页` 字标 + 搜索/菜单
 - 今日史事大卡（参考图裁切的宫殿插画 + “史载”印章）
 - 时间轴 / 朝代 / 人物 / 事件 四磁贴
-- 盛唐气象横卡：参考图裁切楼阁 + 右侧蓝灰卷轴装饰
+- 盛唐气象横卡：整卡使用 `tang-bg.jpg`（按卡片比例裁切），右侧蓝灰卷轴装饰
 - 百年中国近现代入口：与盛唐卡同规格白卡，蓝灰 1840/1949 + 朱砂“近”印
 - 自绘底部四栏
 
@@ -49,7 +49,8 @@ pages/discover/discover.{js,json,wxml,wxss}
 pages/profile/profile.{js,json,wxml,wxss}
 assets/paper-bg.png
 assets/palace.png
-assets/pavilion.png
+assets/tang-bg.jpg
+assets/scroll-accent.png
 assets/icons/*.png
 ```
 
@@ -60,7 +61,7 @@ assets/icons/*.png
 - 发现/我的为占位。
 - 事件/人物详情目前是 Modal，不是独立页面。
 - 首页“今日史事”目前是编辑精选（汉武帝），精确日期匹配待审校。
-- hero/pavilion 插画从用户参考图裁切，仅用于原型；上线前需确认授权或替换。
+- hero 插画与盛唐背景从用户参考图/新图裁切，仅用于原型；上线前需确认授权或替换。
 - `paper-bg.png` 约 871KB，后续可压缩。
 - `project.config.json` 使用 `touristappid`，正式开发需替换。
 

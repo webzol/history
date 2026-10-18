@@ -41,10 +41,11 @@
 
     <view class="era-row">
       <view class="era-card" bindtap="onEraTap">
+        <image class="era-bg" src="/assets/tang-bg.jpg" mode="aspectFill"></image>
+        <view class="era-shade"></view>
         <view class="mini-seal">唐</view>
         <text class="era-title">{{era.title}}</text>
         <text class="era-desc">{{era.desc}}</text>
-        <image class="era-art" src="/assets/pavilion.png" mode="widthFix"></image>
       </view>
       <view class="scroll-accent">
         <image class="scroll-accent-img" src="/assets/scroll-accent.png" mode="aspectFill"></image>

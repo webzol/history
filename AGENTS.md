@@ -153,7 +153,7 @@ python tools/validate_miniprogram.py
 - 自定义导航栏：`navigationStyle: "custom"`；首页顶部只有“史页”字标，不放搜索/菜单。时间轴/发现/我的仍保留搜索/菜单，并给微信胶囊留出右侧空间（`top-actions` 的 `margin-right: 180rpx`）。
 - 当前没有配置原生 `tabBar`，底部四栏是自绘的，用 `wx.redirectTo` 在 4 个页面间跳转。**这是临时方案**，后续可以改为 `custom-tab-bar` 组件。
 - 图片全部本地 PNG；小程序 `<image>` 使用绝对路径 `/assets/...`。
-- 当前 hero/pavilion PNG 是按用户要求从参考图裁切的；`paper-bg.png` 由 `tools/make_paper_bg.py` 生成；图标是透明 PNG。
+- 当前 hero 插画、盛唐背景 PNG/JPG 是按用户要求从参考图/新图裁切的；`paper-bg.png` 由 `tools/make_paper_bg.py` 生成；图标是透明 PNG。
 - 参考图裁切素材仅用于本项目原型；正式上线前必须确认授权，或替换为有授权的素材。不要自行手绘/找图替代，除非用户明确要求。
 - 真实数据在 `miniprogram/data/history.js`；新增内容必须带 `source` 字段，正式发布前需历史审校。
 
@@ -162,7 +162,7 @@ python tools/validate_miniprogram.py
 ## 7. 已知问题 / 风险
 
 1. **未在微信开发者工具中编译验证**。WXML/JS/JSON 结构已通过静态检查，但真机样式、胶囊避让、安全区需要实际看。
-2. **hero/pavilion 插画从用户参考图裁切**，属于原型素材；正式上线前必须确认授权或替换。
+2. **hero 插画、盛唐背景从用户参考图/新图裁切**，属于原型素材；正式上线前必须确认授权或替换。
 3. **事件/人物详情还不是独立页面**：当前在首页/时间轴用 `wx.showModal` 展示真实数据，后续要拆成独立详情页。
 4. **发现 / 我的为占位页**。
 5. **没有后端、搜索、独立详情页**；数据是本地 `data/history.js` 种子，尚未接 CMS。

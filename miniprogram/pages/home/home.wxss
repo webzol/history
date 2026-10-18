@@ -211,14 +211,25 @@
   color: #5F5A52;
 }
 
-.era-art {
+.era-bg {
   position: absolute;
-  right: -12rpx;
-  bottom: -16rpx;
-  z-index: 1;
-  width: 230rpx;
-  height: auto;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
   display: block;
+}
+
+.era-shade {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 52%;
+  background: linear-gradient(90deg, rgba(250, 247, 241, 0.42), rgba(250, 247, 241, 0));
+  pointer-events: none;
 }
 
 .scroll-accent {

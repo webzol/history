@@ -55,10 +55,10 @@
   .section-head span{font-size:10px;letter-spacing:.04em;color:var(--ink-3);}
   .era-row{display:flex;align-items:stretch;gap:9px;margin-top:10px;}
   .era-card{position:relative;flex:1;height:112px;border-radius:20px;background:#F3EFE6;overflow:hidden;padding:14px 16px;box-shadow:0 10px 24px rgba(90,70,50,.06);}
+  .era-bg{position:absolute;left:0;top:0;z-index:0;width:100%;height:100%;object-fit:cover;display:block;}
+  .era-card:after{content:"";position:absolute;left:0;top:0;bottom:0;z-index:1;width:48%;background:linear-gradient(90deg,rgba(250,247,241,.42),rgba(250,247,241,0));pointer-events:none;}
   .era-card h3{position:relative;z-index:2;font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.08em;margin:0;color:var(--ink);}
   .era-card p{position:relative;z-index:2;font-family:var(--serif);font-size:10px;line-height:1.55;letter-spacing:.02em;color:var(--ink-2);margin:7px 0 0;max-width:190px;}
-  .era-card .era-art{position:absolute;right:-6px;bottom:-8px;width:120px;height:auto;}
-  .era-card .era-art img{width:100%;height:auto;object-fit:contain;display:block;}
   .scroll-accent{flex:0 0 30px;height:112px;border-radius:15px;overflow:hidden;box-shadow:0 8px 18px rgba(90,70,50,.05);}
   .scroll-accent img{width:100%;height:100%;object-fit:cover;display:block;}
   .mini-seal{position:absolute;right:14px;top:14px;z-index:3;width:22px;height:26px;border:1px solid rgba(163,74,62,.55);color:var(--red);font-family:var(--serif);font-size:7px;display:flex;align-items:center;justify-content:center;transform:rotate(2deg);}
@@ -120,10 +120,10 @@
 
     <div class="era-row">
       <article class="era-card">
+        <img class="era-bg" src="assets/tang-bg.jpg" alt="盛唐楼阁">
         <div class="mini-seal">唐</div>
         <h3>盛唐气象</h3>
         <p>从贞观之治到开元盛世，万国来朝。</p>
-        <div class="era-art"><img src="assets/pavilion-reference.png" alt="唐宫楼阁"></div>
       </article>
       <div class="scroll-accent"><img src="assets/scroll-reference.png" alt=""></div>
     </div>
