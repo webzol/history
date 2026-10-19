@@ -303,6 +303,7 @@ miniprogram/data/history.js
 - 时间轴近现代 10 条；era 带「晚清—新中国 · 晚清 / 民国 / 新中国」结构保持完整。
 - 搜索：陈独秀同轮命中新文化运动；「德先生」命中事件正文；年份 1915 可搜。
 - 校验：`node tools/selftest.js` **PASS 390 / FAIL 0**；validate OK 8 pages；content_audit 无缺 details；bundle 重建、18 张截图核对。
+- **网页参考同步**：`ui/reference/home-v3.html` 首页 hero 更新为当前数据驱动的文案（10月20日 · 今天 / 编辑精选汉武帝），并重截 `home-final.png`，网页参考与小程序首页视觉一致。
 
 ---
 
