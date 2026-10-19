@@ -9,11 +9,7 @@
       <view class="person-fade-y"></view>
       <view class="topbar">
         <text class="brand">时间轴</text>
-        <view class="brand-seal">
-          <text class="ss">人</text>
-          <text class="ss">有</text>
-          <text class="ss">志</text>
-        </view>
+        <image class="brand-seal" src="/assets/seal.png" mode="aspectFit"></image>
       </view>
       <view class="intro">从史前到今天，一条可以走下去的河。</view>
     </view>
@@ -26,14 +22,9 @@
     <view class="era-band">
       <view class="era-title-row">
         <text class="era-name">{{eraName}}</text>
-        <view class="era-mini-seal">
-          <text class="ss">大</text>
-          <text class="ss">事</text>
-          <text class="ss">记</text>
-        </view>
+        <image class="era-mini-seal" src="/assets/seal.png" mode="aspectFit"></image>
       </view>
       <text class="era-meta">{{eraMeta}}</text>
-      <text class="era-seal">{{eraSeal}}</text>
     </view>
 
     <view class="event-list">

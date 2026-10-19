@@ -5,7 +5,6 @@ Page({
     mode: 'ancient',
     eraName: '北宋',
     eraMeta: '960–1127 · 九帝 · 开封',
-    eraSeal: '宋',
     events: []
   },
 
@@ -37,8 +36,7 @@ Page({
       mode,
       events,
       eraName: isAncient ? '北宋' : '近现代',
-      eraMeta: isAncient ? '960–1127 · 九帝 · 开封' : '1840–1949 · 晚清 / 民国',
-      eraSeal: isAncient ? '宋' : '近'
+      eraMeta: isAncient ? '960–1127 · 九帝 · 开封' : '1840–1949 · 晚清 / 民国'
     });
   },
 

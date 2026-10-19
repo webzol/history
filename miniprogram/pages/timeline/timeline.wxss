@@ -90,25 +90,12 @@
   color: #1F1D19;
 }
 
-/* 标题旁的小朱砂印（逐字竖排"人有志"） */
+/* 标题旁的小朱砂印：首页同款"史载"印章图（assets/seal.png，自 palace 裁切） */
 .brand-seal {
   margin-top: 6rpx;
-  padding: 10rpx 0;
-  width: 36rpx;
-  background: #A34A3E;
-  border-radius: 8rpx;
+  width: 48rpx;
+  height: 82rpx;
   transform: rotate(2deg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.ss {
-  display: block;
-  font-size: 15rpx;
-  line-height: 1.45;
-  letter-spacing: 0;
-  color: #FFF8EF;
 }
 
 .intro {
@@ -177,17 +164,12 @@
   color: #1F1D19;
 }
 
-/* 北宋旁的小立印（逐字竖排"大事记"） */
+/* 北宋旁的小立印：同款印章图，宽约 70rpx */
 .era-mini-seal {
   margin-top: 4rpx;
-  padding: 8rpx 0;
-  width: 28rpx;
-  background: #A34A3E;
-  border-radius: 7rpx;
+  width: 44rpx;
+  height: 74rpx;
   transform: rotate(2deg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .era-meta {
@@ -197,24 +179,6 @@
   font-size: 22rpx;
   letter-spacing: 0.04em;
   color: #8C857A;
-}
-
-.era-seal {
-  position: absolute;
-  right: 30rpx;
-  top: 26rpx;
-  width: 92rpx;
-  height: 92rpx;
-  background: #A34A3E;
-  border-radius: 16rpx;
-  color: #FFF8EF;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-2deg);
-  box-shadow: 0 10rpx 24rpx rgba(163, 74, 62, 0.25);
 }
 
 /* 沿竖线挂卡的事件列表 */
