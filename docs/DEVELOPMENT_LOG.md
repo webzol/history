@@ -296,6 +296,13 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 · 时间轴印章调小（用户要求）
+
+- `.brand-seal` 48×82 → **38×64rpx**（margin-top 10rpx）；`.era-mini-seal` 44×74 → **34×58rpx**（margin-top 8rpx）；均保持 rotate 2° 与 aspectFit 无变形。
+- wcc exit 0；validate OK 6 pages。
+
+---
+
 ## 2026-10-19 · 移除时间轴右上角水墨画像（用户：图片展示不好看，取消）
 
 - timeline.wxml 删除 `.person-ink` 图片与 `.person-fade-x/-y` 遮罩；timeline.wxss 删除对应三类样式、`.header` 恢复为纯"品牌行"结构（position: relative; margin-top: 76rpx）。

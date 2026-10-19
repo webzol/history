@@ -47,9 +47,9 @@
 
 /* 标题旁的小朱砂印：首页同款"史载"印章图（assets/seal.png，自 palace 裁切） */
 .brand-seal {
-  margin-top: 6rpx;
-  width: 48rpx;
-  height: 82rpx;
+  margin-top: 10rpx;
+  width: 38rpx;
+  height: 64rpx;
   transform: rotate(2deg);
 }
 
@@ -120,11 +120,11 @@
   color: #1F1D19;
 }
 
-/* 北宋旁的小立印：同款印章图，宽约 70rpx */
+/* 北宋旁的小立印：同款印章图 */
 .era-mini-seal {
-  margin-top: 4rpx;
-  width: 44rpx;
-  height: 74rpx;
+  margin-top: 8rpx;
+  width: 34rpx;
+  height: 58rpx;
   transform: rotate(2deg);
 }
 
