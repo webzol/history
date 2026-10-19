@@ -42,7 +42,7 @@
       >
         <text class="p-char">{{item.name}}</text>
         <view class="p-info">
-          <text class="p-dates {{item.mode === 'modern' ? '' : ''}} {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>
+          <text class="p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>
           <text class="p-roles">{{item.roles}}</text>
         </view>
         <text class="rel-arrow">›</text>

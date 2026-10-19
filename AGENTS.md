@@ -1,6 +1,6 @@
 # 史页 · 开发交接说明（先读我）
 
-**最后更新：2026-10-19 上午（Asia/Shanghai）**
+**最后更新：2026-10-19 傍晚（Asia/Shanghai）**
 
 ## 0. 一句话
 
@@ -9,9 +9,9 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序骨架：`miniprogram/`
-- 首页已实现，并接入本地真实历史数据种子；时间轴支持古代/近现代切换与真实事件；发现/我的为占位页。
-- 尚无后端、搜索、独立的人物/事件详情页。
+- 原生小程序（7 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（12 史事 / 3 人物 / 4 朝代 / 2 专题）。
+- 质量链路：`node tools/selftest.js`（201 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（15 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 尚无后端；朝代/专题详情仍是 Modal；收藏/浏览足迹为占位。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
 
@@ -67,9 +67,18 @@ E:\hish\
 │  ├─ project.config.json
 │  ├─ sitemap.json
 │  ├─ data\history.js               # 本地真实历史数据种子
-│  ├─ assets\                        # 参考图裁切插画、宣纸背景、图标 PNG
-│  └─ pages\home|timeline|discover|profile
+│  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
+│  └─ pages\home|timeline|discover|profile|person|event|search
+├─ tools\
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 201 / FAIL 0）
+│  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
+│  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
+│  ├─ preview_shots.js              # 批量截图 15 张 → ui/preview/shots/
+│  ├─ validate_miniprogram.py       # JS/JSON/WXML/资源静态校验
+│  ├─ content_audit.py              # 数据完整性审计（缺 details/source 等）
+│  ├─ compress_assets.py / make_paper_bg.py / crop_seal.py 等   # 素材复现链路
 └─ ui\
+   ├─ preview\                      # 浏览器预览 harness（index.html + harness.js + _bundle.js + shots/）
    ├─ reference\                     # 当前参考图风格
    │  ├─ home-v3.html                # 当前首页 HTML
    │  ├─ home-final.png              # 当前首页截图
@@ -106,6 +115,22 @@ E:\hish\ui\reference\home-v3.html
 2. 导入 `E:\hish\miniprogram`。
 3. AppID 可先使用测试号 / `touristappid`。
 4. 基础库建议 3.x，编译预览。
+
+### 自测工具（2026-10-19 起可用）
+
+```powershell
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 201 / FAIL 0）
+node tools/selftest.js
+
+# 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
+node tools/preview_server.js
+
+# 小程序源码改动后需重建 bundle，再批量截图核对 ui/preview/shots/（15 张）
+node tools/build_preview.js
+node tools/preview_shots.js
+```
+
+注意：harness 场景支持 `?s=click:选择器|input:选择器,值|mark:标签`（mark 结果打红条），调试交互态不用手点。
 
 静态校验：
 

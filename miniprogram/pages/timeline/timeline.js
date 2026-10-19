@@ -3,8 +3,8 @@ const history = require('../../data/history.js');
 Page({
   data: {
     mode: 'ancient',
-    eraName: '北宋',
-    eraMeta: '960–1127 · 九帝 · 开封',
+    eraName: '',
+    eraMeta: '',
     events: []
   },
 
@@ -20,7 +20,6 @@ Page({
   },
 
   loadMode(mode) {
-    const isAncient = mode === 'ancient';
     // 纪年升序；轴上圆点红/青相间
     const events = history.events
       .filter((item) => item.mode === mode)
@@ -32,11 +31,23 @@ Page({
         yearAncientText: item.year < 0
       }));
 
+    // 时代带全部由事件数据推导：涵盖的时期名 + 纪年区间
+    const eras = [];
+    events.forEach((event) => {
+      if (eras.indexOf(event.era) < 0) eras.push(event.era);
+    });
+    const years = events.map((event) => event.year);
+    const eraName = eras.length > 1 ? `${eras[0]}—${eras[eras.length - 1]}` : eras[0] || '';
+    const first = events[0];
+    const last = events[events.length - 1];
+    const fmt = (item) => (item.year < 0 ? `公元前${-item.year}` : item.year);
+    const eraMeta = `${first ? fmt(first) : ''}–${last ? fmt(last) : ''} · ${eras.join(' / ')}`;
+
     this.setData({
       mode,
       events,
-      eraName: isAncient ? '北宋' : '近现代',
-      eraMeta: isAncient ? '960–1127 · 九帝 · 开封' : '1840–1949 · 晚清 / 民国'
+      eraName,
+      eraMeta
     });
   },
 

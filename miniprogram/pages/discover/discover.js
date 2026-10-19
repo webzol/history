@@ -44,6 +44,11 @@ Page({
     wx.redirectTo({ url: `/pages/timeline/timeline?mode=${mode}` });
   },
 
+  goTimeband(e) {
+    const mode = e.currentTarget.dataset.mode || 'ancient';
+    wx.redirectTo({ url: `/pages/timeline/timeline?mode=${mode}` });
+  },
+
   onPeriod(e) {
     const id = e.currentTarget.dataset.id;
     const item = history.periods.find((period) => period.id === id);

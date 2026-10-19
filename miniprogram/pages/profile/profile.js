@@ -7,15 +7,11 @@ Page({
       { key: 'events', label: '史事', value: 0 },
       { key: 'persons', label: '人物', value: 0 },
       { key: 'topics', label: '专题', value: 0 }
-    ],
-    events: [],
-    persons: []
+    ]
   },
 
   onLoad() {
     this.setData({
-      events: history.events,
-      persons: history.persons,
       stats: [
         { key: 'periods', label: '朝代', value: history.periods.length },
         { key: 'events', label: '史事', value: history.events.length },
@@ -49,7 +45,7 @@ Page({
       content: [
         '当前内容为本地真实史料种子：',
         `朝代 ${this.data.stats[0].value} 条、史事 ${this.data.stats[1].value} 条、人物 ${this.data.stats[2].value} 条、专题 ${this.data.stats[3].value} 条。`,
-        '每条均附史料出处字数索引；正式发布前会逐条完成历史审校。'
+        '每条均附史料出处索引；正式发布前会逐条完成历史审校。'
       ].join('\n'),
       showCancel: false,
       confirmText: '知道了'

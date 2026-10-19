@@ -22,7 +22,7 @@ Page({
     this.setData({
       event,
       relatedPersons,
-      seal: event.era.charAt(0)
+      seal: event.title.charAt(0)
     });
   },
 

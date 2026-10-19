@@ -296,6 +296,43 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 傍晚 · 全站交互自测 + 浏览器 UI 预览 harness（201 断言 / 15 截图全过）
+
+**目标**：接入真实数据后做全站自测——mock 层跑真实页面代码验证数据与交互，浏览器渲染层核对每个页面 UI 与交互。
+
+### 1. `tools/selftest.js` — Node 交互自测（PASS 201 / FAIL 0）
+
+- 自建极简 `wx`/`Page`/`App` mock，**加载 `miniprogram/pages/*` 的真实 JS**（通过 `tools/build_preview.js` 生成的 `ui/preview/_bundle.js` 同源模块池思路，selftest 内部独立实现）。
+- 覆盖：
+  - 数据完整性：12 事件 / 3 人物 / 4 朝代 / 2 专题 id 唯一、`details` 全覆盖、`source` 字段、relatedEvents 双向引用、全部引用素材文件存在；
+  - 7 页生命周期（onLoad/onShow）与全部点击处理器（磁贴、时代带、朝代卡、菜单行、搜索按钮、热门词）；
+  - Modal / ActionSheet（4 时代）/ Toast 三类弹层语义；
+  - 未知 id 回退（person/event 对未知 id 取默认对象不崩溃）；
+  - 路由闭合：所有 `navigateTo/redirectTo` 目标都存在。
+- **发现并修复 1 个真实 bug**：timeline 时代带上一版硬编码数据，改为从 events 数据推导（eraName 如「西汉—北宋」/「晚清—新中国」，eraMeta 含纪年区间与时代列表），与 selftest 断言一致后通过。
+
+### 2. 浏览器 UI 预览 harness — `ui/preview/`（纯前端渲染 7 个页面）
+
+- 新增 `tools/build_preview.js`：把 app.js + data/history.js + 7 页四件套打包为 `ui/preview/_bundle.js`（tiny CommonJS；WXML/WXSS 转模块字符串）。
+- 新增 `ui/preview/index.html` + `ui/preview/harness.js`：WXML 渲染子集（view/text/image/input/block、wx:for、wx:if/wx:else 相邻兄弟、bindtap/bindinput、data-*、`{{}}` 插值），wx API mock（存储/toast/modal/actionsheet/导航，自绘 Modal/ActionSheet/Toast），`?s=` 场景执行器（`click:`、`input:`、`mark:` 走红条通道），`?shot=1` 截图模式（#phone 恒 390×844 + transform 缩放适配）。
+- 新增 `tools/preview_server.js`（node http 静态服务，端口 8137）与 `tools/preview_shots.js`（批量 15 张截图 → `ui/preview/shots/`）。
+- **核对结论（15/15 无 UI 问题）**：01 首页、02 朝代 ActionSheet（4 时代选项）、03/04 时间轴古代/近现代（时代带推导正确）、05 发现、06 唐 Modal、07 我的（统计 4/12/3/2）、08 清缓存 Modal、09 搜索、10 搜索汉武帝三组结果、**11 空态**、12/13 人物苏轼/鲁迅（双色调、顶栏小印取名首字）、14/14-15 事件澶渊之盟/辛亥革命（modern 蓝灰调）。
+- harness 侧修复 3 个环境坑（非小程序代码问题）：页内多参方法调用被只转发首参的包装吞掉（改 `apply`）；场景链 rAF 在 virtual-time/dump-dom 下饿死（改 `setTimeout` 链）；wx:for/wx:if 属性值需剥 `{{}}`。
+
+### 3. 本轮小修（主代码，均已过 selftest + 截图）
+
+- home「全部朝代 ›」跳发现页；发现页「专题长卷/精选史事」两个 section-link 接时间轴/时代带。
+- event.wxml 清理死表达式 `{{item.mode === 'modern' ? '' : ''}}`；person/event 顶栏小印改为取人名/事件名首字；profile 删未用字段、"字数索引"→"出处索引"。
+
+**校验**：`node tools/selftest.js` **PASS 201 / FAIL 0**；`python tools/validate_miniprogram.py` OK 7 pages；全部页面 JS 与 tools JS `node --check` 通过。
+
+**遗留**
+
+- 预览 harness 的截图仅覆盖 happy path；ActionSheet/Modal 的取消路径靠 selftest mock 断言覆盖。
+- 早期 PowerShell 版截图脚本 `tools/preview_shots.ps1` 已由 `preview_shots.js` 取代并删除。
+
+---
+
 ## 2026-10-19 下午 · 搜索页上线（roadmap #3 完成）+ 全部事件补正文
 
 **新增搜索页 `pages/search/search`（已注册 app.json，全站第 7 页）**

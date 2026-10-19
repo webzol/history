@@ -36,7 +36,7 @@
 
     <view class="section-head">
       <text class="section-title">沿着时间走</text>
-      <text class="section-link">全部朝代 →</text>
+      <text class="section-link" bindtap="goDiscover">全部朝代 ›</text>
     </view>
 
     <view class="era-row">

@@ -26,7 +26,7 @@ Page({
       person,
       related,
       accent: MODERN_ERAS.indexOf(person.era) >= 0 ? 'modern' : 'ancient',
-      seal: person.era.charAt(0)
+      seal: person.name.charAt(0)
     });
   },
 

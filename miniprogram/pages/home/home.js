@@ -33,6 +33,10 @@ Page({
     });
   },
 
+  goDiscover() {
+    wx.redirectTo({ url: '/pages/discover/discover' });
+  },
+
   goPage(e) {
     const page = e.currentTarget.dataset.page;
 
