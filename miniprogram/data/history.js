@@ -521,6 +521,7 @@ const daily = [
   { month: 5, day: 4, eventId: 'mayfourth-1919' },
   { month: 12, day: 18, eventId: 'reform-1978' },
   { month: 8, day: 29, eventId: 'opium-war-1840' },
+  { month: 9, day: 17, eventId: 'jiawu-1894' },
   { month: 4, day: 17, eventId: 'jiawu-1894' }
 ];
 

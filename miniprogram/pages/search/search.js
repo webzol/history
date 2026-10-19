@@ -30,7 +30,7 @@ Page({
     const modern = (era) => (era || '').indexOf('近现') >= 0 || (era || '').indexOf('民国') >= 0;
 
     const persons = history.persons
-      .filter((p) => hit([p.name, p.era, p.roles, p.summary, p.dates]))
+      .filter((p) => hit([p.name, p.era, p.roles, p.summary, p.dates].concat(p.details || [])))
       .map((p) => ({
         id: p.id,
         title: p.name,
@@ -39,7 +39,7 @@ Page({
       }));
 
     const events = history.events
-      .filter((e) => hit([e.title, e.era, e.tags, e.desc, e.yearText]))
+      .filter((e) => hit([e.title, e.era, e.tags, e.desc, e.yearText].concat(e.details || [])))
       .map((e) => ({
         id: e.id,
         title: e.title,

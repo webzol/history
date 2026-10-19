@@ -222,6 +222,17 @@
   padding: 26rpx 28rpx 12rpx;
 }
 
+.hint-card {
+  padding: 26rpx 28rpx;
+}
+
+.hint-text {
+  display: block;
+  font-size: 24rpx;
+  line-height: 38rpx;
+  color: #8C857A;
+}
+
 .list-head {
   display: flex;
   align-items: baseline;

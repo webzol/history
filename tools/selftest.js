@@ -452,8 +452,8 @@ console.log('== 我的 ==' );
   confirmModal(true);
   eq(storageCleared, clearedBefore + 1, '确认后清缓存');
   p.onShow();
-  eq(p.data.favs.length, 0, '清缓存后收藏清空');
-  eq(p.data.foots.length, 0, '清缓存后足迹清空');
+  eq(p.data.favs.length, 0, '清缓存后收藏清空（空态引导卡显示）');
+  eq(p.data.foots.length, 0, '清缓存后足迹清空（空态引导卡显示）');
 
   tap(p, 'goTab', { page: 'timeline' });
   eq(last('redirectTo').url, '/pages/timeline/timeline', '底部栏 我的→时间轴');
@@ -643,6 +643,7 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '李世民' });
   p.onSearch();
   ok(p.data.results.persons.some((x) => x.id === 'tang-taizong'), '李世民命中人物');
+  ok(p.data.results.events.some((e) => e.id === 'zhenguan-627'), '同轮命中贞观之治（details 全文）');
 
   p.setData({ keyword: '杜甫' });
   p.onSearch();
@@ -651,6 +652,11 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '李鸿章' });
   p.onSearch();
   ok(p.data.results.persons.some((x) => x.id === 'li-hongzhang'), '李鸿章命中人物');
+  ok(p.data.results.events.some((e) => e.id === 'jiawu-1894'), '同轮命中甲午战争（details 全文）');
+
+  p.setData({ keyword: '虎门' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'opium-war-1840'), '史实词「虎门」命中鸦片战争（details 全文）');
 
   p.setData({ keyword: '1894' });
   p.onSearch();

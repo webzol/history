@@ -30,6 +30,9 @@
       <text class="banner-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
     </view>
 
+    <view class="list-card hint-card" wx:if="{{!favs.length}}">
+      <text class="hint-text">还没有收藏。在人物、史事详情页点「收藏」，就会出现在这里。</text>
+    </view>
     <view class="list-card" wx:if="{{favs.length}}">
       <view class="list-head">
         <text class="list-title">我的收藏</text>
@@ -52,6 +55,9 @@
       </view>
     </view>
 
+    <view class="list-card hint-card" wx:if="{{!foots.length}}">
+      <text class="hint-text">还没有足迹。浏览人物、史事、朝代详情页后会留下足迹。</text>
+    </view>
     <view class="list-card" wx:if="{{foots.length}}">
       <view class="list-head">
         <text class="list-title">浏览足迹</text>
