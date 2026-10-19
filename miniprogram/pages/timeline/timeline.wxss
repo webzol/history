@@ -22,43 +22,10 @@
   padding: 0 56rpx 160rpx;
 }
 
-/* 顶部：品牌行 + 水墨人物 */
+/* 顶部：品牌行 */
 .header {
   position: relative;
   margin-top: 76rpx;
-}
-
-.person-ink {
-  position: absolute;
-  right: -26rpx;
-  top: 40rpx;
-  width: 330rpx;
-  height: 350rpx;
-  display: block;
-  z-index: 0;
-}
-
-/* 让人物图向左、向下融入宣纸（底色已在 tools/match_ink_tone.py 归一到 #F6F1EA） */
-.person-fade-x {
-  position: absolute;
-  right: -26rpx;
-  top: 40rpx;
-  width: 330rpx;
-  height: 350rpx;
-  z-index: 1;
-  background: linear-gradient(90deg, rgba(246, 241, 234, 0.8) 0%, rgba(246, 241, 234, 0.35) 26%, rgba(246, 241, 234, 0) 55%);
-  pointer-events: none;
-}
-
-.person-fade-y {
-  position: absolute;
-  right: -26rpx;
-  top: 40rpx;
-  width: 330rpx;
-  height: 350rpx;
-  z-index: 1;
-  background: linear-gradient(180deg, rgba(246, 241, 234, 0.25), rgba(246, 241, 234, 0) 30%, rgba(246, 241, 234, 0.42) 60%, rgba(246, 241, 234, 0.97) 96%);
-  pointer-events: none;
 }
 
 .topbar {

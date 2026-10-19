@@ -3,9 +3,6 @@
   <view class="screen">
 
     <view class="header">
-      <image class="person-ink" src="/assets/paintings/person-ink.jpg" mode="aspectFill"></image>
-      <view class="person-fade-x"></view>
-      <view class="person-fade-y"></view>
       <view class="topbar">
         <text class="brand">时间轴</text>
         <image class="brand-seal" src="/assets/seal.png" mode="aspectFit"></image>

@@ -296,6 +296,15 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 · 移除时间轴右上角水墨画像（用户：图片展示不好看，取消）
+
+- timeline.wxml 删除 `.person-ink` 图片与 `.person-fade-x/-y` 遮罩；timeline.wxss 删除对应三类样式、`.header` 恢复为纯"品牌行"结构（position: relative; margin-top: 76rpx）。
+- 资产 `paintings/person-ink.jpg` 已删除（不再引用）；SOURCES.md 标记"已移除"；`tools/match_ink_tone.py` 保留作为色调归一方法备用。
+- 时间轴顶部现在是：字标"时间轴" + 首页同款印章图，其下直接 intro 与分段条；头部高度变矮，页面更清爽。
+- 自测：grep 无 person-ink/person-fade 残留；wcc exit 0；validate OK 6 pages；包体 557KB。
+
+---
+
 ## 2026-10-19 · 移除时间轴页四边细线内框（用户要求）
 
 - `.frame`（fixed 四边 1rpx 朱砂细线框）从 timeline.wxml / timeline.wxss 中整体删除；宣纸底直接铺满屏幕。
