@@ -56,7 +56,10 @@ Page({
       this.showList(
         '选择一位人物',
         history.persons.map((item) => `${item.name} · ${item.roles}`),
-        (index) => this.showPerson(history.persons[index])
+        (index) => {
+          const person = history.persons[index];
+          wx.navigateTo({ url: `/pages/person/person?id=${person.id}` });
+        }
       );
       return;
     }
@@ -66,7 +69,10 @@ Page({
       this.showList(
         '选择一件史事',
         items.map((item) => `${item.yearText} · ${item.title}`),
-        (index) => this.showDetail(items[index])
+        (index) => {
+          const event = items[index];
+          wx.navigateTo({ url: `/pages/event/event?id=${event.id}` });
+        }
       );
     }
   },
@@ -96,24 +102,13 @@ Page({
     });
   },
 
-  showPerson(person) {
-    const content = [
-      `${person.dates} · ${person.era}`,
-      person.summary,
-      person.quote ? `“${person.quote}” ${person.quoteSource}` : '',
-      person.source ? `史料：${person.source}` : ''
-    ].filter(Boolean).join('\n\n');
-
-    wx.showModal({
-      title: person.name,
-      content,
-      showCancel: false,
-      confirmText: '知道了'
-    });
-  },
-
   onHeroTap() {
-    this.showDetail(this.data.hero);
+    const hero = this.data.hero;
+    if (hero.eventId) {
+      wx.navigateTo({ url: `/pages/event/event?id=${hero.eventId}` });
+      return;
+    }
+    this.showDetail(hero);
   },
 
   onEraTap() {

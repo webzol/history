@@ -9,8 +9,9 @@ Page({
     events: []
   },
 
-  onLoad() {
-    this.loadMode('ancient');
+  onLoad(options) {
+    const mode = options && options.mode === 'modern' ? 'modern' : 'ancient';
+    this.loadMode(mode);
   },
 
   switchMode(e) {
@@ -43,12 +44,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     const item = history.events.find((event) => event.id === id);
     if (!item) return;
-    wx.showModal({
-      title: item.title,
-      content: `${item.yearText} · ${item.era}\n\n${item.desc}\n\n史料：${item.source}`,
-      showCancel: false,
-      confirmText: '知道了'
-    });
+    wx.navigateTo({ url: `/pages/event/event?id=${item.id}` });
   },
 
   onSearch() {

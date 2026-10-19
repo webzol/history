@@ -1,0 +1,57 @@
+<view class="page">
+  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <view class="screen" wx:if="{{person}}">
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <text class="top-title">史页 · 人物</text>
+      <text class="top-seal {{accent === 'modern' ? 'seal-modern' : ''}}">{{seal}}</text>
+    </view>
+
+    <view class="head-card">
+      <text class="p-name">{{person.name}}</text>
+      <view class="p-meta">
+        <text class="p-dates {{accent === 'modern' ? 'accent-modern' : ''}}">{{person.dates}}</text>
+        <text class="p-dot">·</text>
+        <text class="p-roles">{{person.roles}}</text>
+      </view>
+      <view class="era-chip {{accent === 'modern' ? 'chip-modern' : ''}}">
+        <text>{{person.era}}</text>
+      </view>
+      <view class="quote-block">
+        <text class="quote-mark">“</text>
+        <text class="quote">{{person.quote}}</text>
+        <text class="quote-src">——{{person.quoteSource}}</text>
+      </view>
+    </view>
+
+    <view class="body-card">
+      <view class="para" wx:for="{{person.details}}" wx:key="*this">
+        <text>{{item}}</text>
+      </view>
+    </view>
+
+    <view class="section-head" wx:if="{{related.length}}">
+      <text class="section-title">生平际会 · 相关史事</text>
+    </view>
+    <view class="rel-list" wx:if="{{related.length}}">
+      <view
+        wx:for="{{related}}"
+        wx:key="id"
+        class="rel-card"
+        data-id="{{item.id}}"
+        bindtap="goEvent"
+      >
+        <text class="rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}">{{item.yearText}}</text>
+        <view class="rel-body">
+          <text class="rel-title">{{item.title}}</text>
+          <text class="rel-desc">{{item.desc}}</text>
+        </view>
+        <text class="rel-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="source-line">史料 · {{person.source}}</view>
+  </view>
+</view>
