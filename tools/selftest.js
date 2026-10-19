@@ -9,6 +9,7 @@ const path = require('path');
 const util = require('util');
 
 const ROOT = path.join(__dirname, '..', 'miniprogram');
+const store = require(path.join(ROOT, 'utils', 'store.js'));
 
 // ---------------------------------------------------------------------------
 // 统计与断言
@@ -189,9 +190,9 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 18, '史事 18 条');
+  eq(history.events.length, 19, '史事 19 条');
   eq(history.persons.length, 10, '人物 10 位');
-  ok(new Set([...eventIds]).size === 18, '史事 id 唯一');
+  ok(new Set([...eventIds]).size === 19, '史事 id 唯一');
   ok(new Set([...personIds]).size === 10, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
@@ -223,7 +224,7 @@ console.log('== 数据完整性 ==');
   ['zhao-kuangyin', 'wang-anshi', 'lin-zexu', 'tang-taizong', 'du-fu', 'li-hongzhang'].forEach((id) =>
     ok(personIds.has(id), `新人物条目存在 ${id}`)
   );
-  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898'].forEach((id) =>
+  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898', 'mobei-119'].forEach((id) =>
     ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
   ['zhang-qian'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
@@ -306,8 +307,8 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 9, '古代 9 条事件');
-  eq(p.data.events.map((e) => e.year), [-141, -138, 627, 713, 755, 960, 1005, 1069, 1127], '古代按纪年升序');
+  eq(p.data.events.length, 10, '古代 10 条事件');
+  eq(p.data.events.map((e) => e.year), [-141, -138, -119, 627, 713, 755, 960, 1005, 1069, 1127], '古代按纪年升序');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
   eq(p.data.eraName, '西汉—北宋', '时代带名来自数据推导');
   ok(p.data.eraMeta.indexOf('公元前141–1127') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 北宋') >= 0,
@@ -394,7 +395,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 18, 10, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 19, 10, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -421,12 +422,22 @@ console.log('== 我的 ==' );
   personP.onLoad({ id: 'su-shi' });
   tap(personP, 'toggleCollect');
   p.onShow();
-  eq(p.data.favs.length, 1, '取消后剩一条');
+  eq(p.data.favs.length, 1, '取消后剩一条收藏');
 
-  // 收藏条目可跳转详情
+  // 再收藏一条用于跳转与移除验证
+  tap(personP, 'toggleCollect');
+  p.onShow();
   const target = p.data.favs[0];
   tap(p, 'onEntry', { type: target.type, id: target.id });
   ok(last('navigateTo').url.indexOf(target.id) >= 0, '收藏条目跳转详情');
+
+  // 长按收藏行 → 确认移出
+  tap(p, 'onFavLongPress', { type: 'person', id: 'su-shi' });
+  eq(last('showModal').title, '移出收藏', '长按收藏行弹移出确认');
+  confirmModal(true);
+  p.onShow();
+  eq(p.data.favs.length, 1, '确认后移出收藏');
+  eq(store.listFavorites().length, 1, '存储层同步删除');
 
   tap(p, 'onSearch');
   eq(last('navigateTo').url, '/pages/search/search', '搜索入口');
@@ -519,8 +530,8 @@ console.log('== 朝代详情 ==');
   p.onLoad({ id: 'han' });
   eq(p.data.period.name, '西汉', '西汉朝代载入');
   eq(p.data.period.yearText, '前202–公元9', '纪年带载入');
-  eq(p.data.events.map((e) => e.id), ['han-wudi', 'zhangqian-138'], '西汉收录史事');
-  ok(p.data.span.indexOf('公元前141') >= 0 && p.data.span.indexOf('公元前138') >= 0, '西汉span跨越两条史事');
+  eq(p.data.events.map((e) => e.id), ['han-wudi', 'zhangqian-138', 'mobei-119'], '西汉收录三条史事');
+  ok(p.data.span.indexOf('公元前141') >= 0 && p.data.span.indexOf('公元前119') >= 0, '西汉span覆盖首尾纪年');
   eq(p.data.seal, '汉', '小印');
 
   p.onLoad({ id: 'song' });
@@ -673,6 +684,10 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '1898' });
   p.onSearch();
   ok(p.data.results.events.some((e) => e.id === 'wuxu-1898'), '年份 1898 可搜');
+
+  p.setData({ keyword: '卫青' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'mobei-119'), '「卫青」命中漠北之战（details 全文）');
 
   p.setData({ keyword: '1894' });
   p.onSearch();

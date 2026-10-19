@@ -45,6 +45,7 @@
         data-type="{{item.type}}"
         data-id="{{item.id}}"
         bindtap="onEntry"
+        bindlongpress="onFavLongPress"
       >
         <text class="row-char {{item.modern ? 'row-modern' : ''}}">{{item.type === 'person' ? '人' : '事'}}</text>
         <view class="row-main">

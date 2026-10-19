@@ -94,6 +94,22 @@ Page({
     wx.navigateTo({ url });
   },
 
+  onFavLongPress(e) {
+    const { type, id } = e.currentTarget.dataset;
+    if (!store.isFavorite(type, id)) return;
+    wx.showModal({
+      title: '移出收藏',
+      content: '确定将这条内容移出收藏？',
+      confirmText: '移出',
+      success: (res) => {
+        if (!res.confirm) return;
+        store.toggleFavorite(type, id);
+        this.onShow();
+        wx.showToast({ title: '已移出收藏', icon: 'none' });
+      }
+    });
+  },
+
   onDataNote() {
     wx.showModal({
       title: '数据与史料说明',
