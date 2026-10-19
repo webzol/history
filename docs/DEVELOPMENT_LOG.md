@@ -296,6 +296,13 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 · 移除时间轴页四边细线内框（用户要求）
+
+- `.frame`（fixed 四边 1rpx 朱砂细线框）从 timeline.wxml / timeline.wxss 中整体删除；宣纸底直接铺满屏幕。
+- 自测：该 class 仅时间轴页使用，无其他页面引用残留；wcc exit 0；validate OK 6 pages。
+
+---
+
 ## 2026-10-19 · era-band 卡右上角色差（用户：整体背景色要一致）
 
 **根源**：`.person-fade-x/-y` 是 `z-index:1` 绝对定位遮罩（330×350rpx，延伸到卡片区域），而 `.era-band` 虽 `position:relative` 但无 z-index（z auto），被 z1 遮罩压住；遮罩底部近实色宣纸（0.97 #F6F1EA）叠在 #FCFBF8 白卡上产生右上角色差。`.seg` 有 z-index:2 所以正常。
