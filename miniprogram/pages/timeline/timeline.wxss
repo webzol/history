@@ -143,6 +143,7 @@
 /* 朝代头卡 */
 .era-band {
   position: relative;
+  z-index: 2;
   margin-top: 30rpx;
   padding: 30rpx 34rpx;
   border-radius: 36rpx;
@@ -184,6 +185,7 @@
 /* 沿竖线挂卡的事件列表 */
 .event-list {
   position: relative;
+  z-index: 2;
   margin-top: 32rpx;
   padding-left: 56rpx;
 }
