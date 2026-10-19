@@ -8,6 +8,7 @@ Checks:
 - pages listed in app.json have js/json/wxml/wxss
 - local asset references in WXML exist
 - WXML tags are balanced (best-effort)
+- WXML interpolation expressions are well-formed ({{...}} pairs, balanced quotes)
 """
 
 import json
@@ -67,6 +68,16 @@ def main():
         for src in re.findall(r'src="([^"]+)"', text):
             if src.startswith("/") and not (ROOT / src.lstrip("/")).exists():
                 errors.append(f"missing asset: {src} in {wxml.name}")
+
+        # 插值表达式完整性：{{...}} 必须成对，且单个表达式内引号必须配对。
+        # wcc 编译器遇到非法表达式会报"unexpected end"（指向文件末尾），极难定位。
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if line.count("{{") != line.count("}}"):
+                errors.append(f"{wxml.name}:{lineno}: unbalanced mustache braces")
+                continue
+            for expr in re.findall(r"\{\{([^{}]*)\}\}", line):
+                if expr.count('"') % 2 or expr.count("'") % 2:
+                    errors.append(f"{wxml.name}:{lineno}: unbalanced quotes in expression: {expr}")
 
         checker = Checker()
         checker.feed(text)

@@ -40,7 +40,7 @@
         data-id="{{item.id}}"
         bindtap="goPerson"
       >
-        <text class="p-char">{{item.name']}}</text>
+        <text class="p-char">{{item.name}}</text>
         <view class="p-info">
           <text class="p-dates {{item.mode === 'modern' ? '' : ''}} {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>
           <text class="p-roles">{{item.roles}}</text>
