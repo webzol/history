@@ -189,10 +189,10 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 12, '史事 12 条');
-  eq(history.persons.length, 6, '人物 6 位');
-  ok(new Set([...eventIds]).size === 12, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 6, '人物 id 唯一');
+  eq(history.events.length, 16, '史事 16 条');
+  eq(history.persons.length, 9, '人物 9 位');
+  ok(new Set([...eventIds]).size === 16, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 9, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -220,8 +220,11 @@ console.log('== 数据完整性 ==');
   ok(personIds.has('lu-xun') && (history.events.find((e) => e.id === 'yuanmingyuan-1860').source || '').length > 0, '鲁迅人物与圆明园事件数据完整');
   ok(personIds.has('han-wudi') && eventIds.has('han-wudi'), '汉武帝人物/事件同名 id 并存');
   ok(periodIds.has('tang') && periodIds.has('modern'), '朝代含 唐 / 近现代');
-  ['zhao-kuangyin', 'wang-anshi', 'lin-zexu'].forEach((id) =>
+  ['zhao-kuangyin', 'wang-anshi', 'lin-zexu', 'tang-taizong', 'du-fu', 'li-hongzhang'].forEach((id) =>
     ok(personIds.has(id), `新人物条目存在 ${id}`)
+  );
+  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894'].forEach((id) =>
+    ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
 
   // 图片路径全部存在于磁盘
@@ -262,9 +265,9 @@ console.log('== 首页 ==');
   eq(last('redirectTo').url, '/pages/discover/discover', '全部朝代 › 发现页');
 
   tap(p, 'goPage', { page: 'person' });
-  eq(pendingSheet && pendingSheet.itemList.length, 6, '人物磁贴：ActionSheet 六位人物');
-  pickSheet(3);
-  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 4 位 → 苏轼详情');
+  eq(pendingSheet && pendingSheet.itemList.length, 9, '人物磁贴：ActionSheet 九位人物');
+  pickSheet(5);
+  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
 
   tap(p, 'goPage', { page: 'event' });
   eq(pendingSheet && pendingSheet.itemList.length, 6, '事件磁贴：ActionSheet 六条史事');
@@ -301,16 +304,16 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 5, '古代 5 条事件');
-  eq(p.data.events.map((e) => e.year), [-141, 960, 1005, 1069, 1127], '古代按纪年升序');
+  eq(p.data.events.length, 8, '古代 8 条事件');
+  eq(p.data.events.map((e) => e.year), [-141, 627, 713, 755, 960, 1005, 1069, 1127], '古代按纪年升序');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
   eq(p.data.eraName, '西汉—北宋', '时代带名来自数据推导');
-  ok(p.data.eraMeta.indexOf('公元前141–1127') >= 0 && p.data.eraMeta.indexOf('西汉 / 北宋') >= 0,
-    '时代带meta含纪年区间与时代列表');
+  ok(p.data.eraMeta.indexOf('公元前141–1127') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 北宋') >= 0,
+    '时代带meta含纪年区间与时代列表（含唐）');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
-  eq(p.data.events.length, 7, '近现代 7 条事件');
+  eq(p.data.events.length, 8, '近现代 8 条事件');
   eq(p.data.eraName, '晚清—新中国', '近现代时代带名推导');
   ok(p.data.eraMeta.indexOf('1840–1978') >= 0 && p.data.eraMeta.indexOf('新中国') >= 0,
     '近现代meta覆盖 1978 与新中国');
@@ -389,7 +392,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 12, 6, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 16, 9, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -523,15 +526,15 @@ console.log('== 朝代详情 ==');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
   p.onLoad({ id: 'modern' });
-  eq(p.data.events.length, 7, '近现代面板收录七条');
+  eq(p.data.events.length, 8, '近现代面板收录八条');
   eq(p.data.seal, '近', '近现代小印');
 
   p.onLoad({ id: 'tang' });
-  eq(p.data.events.length, 0, '唐暂无独立史事收录');
-  ok(p.data.span === '', '无史事时脉络为空');
+  eq(p.data.events.map((e) => e.id), ['zhenguan-627', 'kaiyuan-713', 'anshi-755'], '唐收录三条史事');
+  eq(p.data.span, '从627到755', '唐span按首尾纪年');
   ok(p.data.period.title === '盛唐气象', '唐卡载入');
   tap(p, 'goTimeline');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '无收录史事时引导进时间轴');
+  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '唐页底部进时间轴');
 
   wxLog.length = 0;
   p.onLoad({ id: 'han' });
@@ -636,6 +639,22 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '林则徐' });
   p.onSearch();
   ok(p.data.results.persons.some((x) => x.id === 'lin-zexu'), '林则徐命中人物');
+
+  p.setData({ keyword: '李世民' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'tang-taizong'), '李世民命中人物');
+
+  p.setData({ keyword: '杜甫' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'du-fu'), '杜甫命中人物');
+
+  p.setData({ keyword: '李鸿章' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'li-hongzhang'), '李鸿章命中人物');
+
+  p.setData({ keyword: '1894' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'jiawu-1894'), '年份 1894 可搜');
 
   p.setData({ keyword: '1978' });
   p.onSearch();
