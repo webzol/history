@@ -189,10 +189,10 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 16, '史事 16 条');
-  eq(history.persons.length, 9, '人物 9 位');
-  ok(new Set([...eventIds]).size === 16, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 9, '人物 id 唯一');
+  eq(history.events.length, 18, '史事 18 条');
+  eq(history.persons.length, 10, '人物 10 位');
+  ok(new Set([...eventIds]).size === 18, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 10, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -223,9 +223,10 @@ console.log('== 数据完整性 ==');
   ['zhao-kuangyin', 'wang-anshi', 'lin-zexu', 'tang-taizong', 'du-fu', 'li-hongzhang'].forEach((id) =>
     ok(personIds.has(id), `新人物条目存在 ${id}`)
   );
-  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894'].forEach((id) =>
+  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898'].forEach((id) =>
     ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
+  ['zhang-qian'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
 
   // 图片路径全部存在于磁盘
   const goodImg = (p) => ok(p && fs.existsSync(path.join(ROOT, p)), `素材存在 ${p}`);
@@ -265,8 +266,9 @@ console.log('== 首页 ==');
   eq(last('redirectTo').url, '/pages/discover/discover', '全部朝代 › 发现页');
 
   tap(p, 'goPage', { page: 'person' });
-  eq(pendingSheet && pendingSheet.itemList.length, 9, '人物磁贴：ActionSheet 九位人物');
-  pickSheet(5);
+  eq(pendingSheet && pendingSheet.itemList.length, 10, '人物磁贴：ActionSheet 十位人物');
+
+  pickSheet(6);
   eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
 
   tap(p, 'goPage', { page: 'event' });
@@ -304,8 +306,8 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 8, '古代 8 条事件');
-  eq(p.data.events.map((e) => e.year), [-141, 627, 713, 755, 960, 1005, 1069, 1127], '古代按纪年升序');
+  eq(p.data.events.length, 9, '古代 9 条事件');
+  eq(p.data.events.map((e) => e.year), [-141, -138, 627, 713, 755, 960, 1005, 1069, 1127], '古代按纪年升序');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
   eq(p.data.eraName, '西汉—北宋', '时代带名来自数据推导');
   ok(p.data.eraMeta.indexOf('公元前141–1127') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 北宋') >= 0,
@@ -313,7 +315,7 @@ console.log('== 时间轴 ==');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
-  eq(p.data.events.length, 8, '近现代 8 条事件');
+  eq(p.data.events.length, 9, '近现代 9 条事件');
   eq(p.data.eraName, '晚清—新中国', '近现代时代带名推导');
   ok(p.data.eraMeta.indexOf('1840–1978') >= 0 && p.data.eraMeta.indexOf('新中国') >= 0,
     '近现代meta覆盖 1978 与新中国');
@@ -392,7 +394,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 16, 9, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 18, 10, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -517,7 +519,8 @@ console.log('== 朝代详情 ==');
   p.onLoad({ id: 'han' });
   eq(p.data.period.name, '西汉', '西汉朝代载入');
   eq(p.data.period.yearText, '前202–公元9', '纪年带载入');
-  eq(p.data.events.map((e) => e.id), ['han-wudi'], '西汉收录史事');
+  eq(p.data.events.map((e) => e.id), ['han-wudi', 'zhangqian-138'], '西汉收录史事');
+  ok(p.data.span.indexOf('公元前141') >= 0 && p.data.span.indexOf('公元前138') >= 0, '西汉span跨越两条史事');
   eq(p.data.seal, '汉', '小印');
 
   p.onLoad({ id: 'song' });
@@ -526,7 +529,7 @@ console.log('== 朝代详情 ==');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
   p.onLoad({ id: 'modern' });
-  eq(p.data.events.length, 8, '近现代面板收录八条');
+  eq(p.data.events.length, 9, '近现代面板收录九条');
   eq(p.data.seal, '近', '近现代小印');
 
   p.onLoad({ id: 'tang' });
@@ -564,7 +567,7 @@ console.log('== 事件详情 ==');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
 
   p.onLoad({ id: 'han-wudi' });
-  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi'], '汉武事件反查列出汉武帝');
+  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian'], '汉武事件反查列出汉武帝与张骞');
 
   p.onLoad({ id: 'yuanmingyuan-1860' });
   eq(p.data.relatedPersons.length, 0, '圆明园无人物卡');
@@ -617,8 +620,8 @@ console.log('== 搜索 ==');
 
   p.setData({ keyword: '汉武帝' });
   p.onSearch();
-  eq(p.data.results.persons.length, 1, '汉武帝命中一位人物');
-  eq(p.data.results.persons[0].id, 'han-wudi', '命中人物 id');
+  ok(p.data.results.persons.some((x) => x.id === 'han-wudi'), '命中汉武帝人物');
+  ok(p.data.results.persons.some((x) => x.id === 'zhang-qian'), '汉武帝关联人物张骞命中（details 全文）');
   ok(p.data.results.events.some((e) => e.id === 'han-wudi'), '命中同名事件');
   ok(!p.data.empty, '非空结果');
 
@@ -657,6 +660,19 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '虎门' });
   p.onSearch();
   ok(p.data.results.events.some((e) => e.id === 'opium-war-1840'), '史实词「虎门」命中鸦片战争（details 全文）');
+
+  p.setData({ keyword: '张骞' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'zhang-qian'), '张骞命中人物');
+  ok(p.data.results.events.some((e) => e.id === 'zhangqian-138'), '张骞命中同名事件');
+
+  p.setData({ keyword: '戊戌变法' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'wuxu-1898'), '戊戌变法命中事件');
+
+  p.setData({ keyword: '1898' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'wuxu-1898'), '年份 1898 可搜');
 
   p.setData({ keyword: '1894' });
   p.onSearch();
