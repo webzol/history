@@ -296,6 +296,27 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 · 修复预览包超限（2MB）+ 时间轴画像错位
+
+**问题 1：预览报"源码包超出最大限制 source size 2455KB > 2MB"**
+
+- 大头：paper-bg.png 851KB / palace.png 526KB / tang-bg.jpg 279KB / song.jpg 230KB。
+- 处理：新增 `tools/compress_assets.py`——paper-bg 重生成并转 JPG（585 宽 q72，后重新导出 750×1624 q70 = 25KB）；palace.png 转 palace.jpg（30KB）；tang-bg/song 重压缩；删除已无引用的 pavilion.png（143KB）。
+- 全部 6 个页面 WXML 的 `paper-bg.png` → `paper-bg.jpg`、`palace.png` → `palace.jpg`（用 Python UTF-8 安全替换；**教训：PowerShell `Get-Content|Set-Content` 管道会按 GBK 误写 UTF-8 文件导致全量乱码，已用 `git checkout --` 恢复后改用 Python**）。
+- 结果：包体 2455KB → **约 550KB**；全部 6 页 wcc 编译 exit 0。
+
+**问题 2：时间轴（及人物相关展示）错位**
+
+- 水墨画像此前 top:-30rpx 高 400rpx，底部经半透明 seg 透出、面部可能被胶囊遮挡 → 图整体下移（top 40rpx、高 350rpx），seg 背景改近实色（0.94）并在 z 轴上盖住可能的重叠。
+- 两枚竖排小印（人有志 / 大事记）从"依赖宽度自动换行"改为逐字 `<text>` 堆叠的固定结构，杜绝不同字体度量下的错位。
+- 真机复核点：胶囊与画像重叠不可再遮脸；seg 圆角条内不应透出图像纹理。
+
+**校验**
+
+- wcc exit 0；validate_miniprogram.py OK 6 pages；node --check 通过；包体 550KB。
+
+---
+
 ## 2026-10-19 · 时间轴按参考图重构
 
 **用户依据**：上传时间轴页面参考图（宣纸 + 内框细线 + 水墨人物 + 朱砂印 + 竖线挂卡）。

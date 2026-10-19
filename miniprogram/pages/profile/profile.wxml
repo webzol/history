@@ -1,5 +1,5 @@
 <view class="page">
-  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
     <view class="topbar">
       <text class="brand">我的</text>

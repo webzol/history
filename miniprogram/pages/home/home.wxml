@@ -1,5 +1,5 @@
 <view class="page">
-  <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
     <view class="topbar">
       <text class="brand">史页</text>
@@ -12,7 +12,7 @@
         <text class="hero-title">{{hero.title}}</text>
         <text class="hero-desc">{{hero.desc}}</text>
       </view>
-      <image class="hero-art" src="/assets/palace.png" mode="widthFix"></image>
+      <image class="hero-art" src="/assets/palace.jpg" mode="widthFix"></image>
     </view>
 
     <view class="quick">
