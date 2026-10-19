@@ -41,8 +41,8 @@
 | 时间轴 | 已接入真实数据 | `miniprogram/pages/timeline/` | 古代/近现代切换；北宋与近现代事件列表；点击事件跳独立事件详情页 |
 | 人物详情 | 已实现 | `miniprogram/pages/person/` | 大字人名、楷体引文、正文段落、相关史事列表（跳事件详情）；支持古代/近现代双色调 |
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 大字年份、双色调色条、正文段落、"其时其人"人物卡（跳人物详情）、回时间轴按钮 |
-| 发现 | 占位 | `miniprogram/pages/discover/` | 只有风格化空态 |
-| 我的 | 占位 | `miniprogram/pages/profile/` | 只有风格化空态 |
+| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 朝代 2×2 配画卡（搜图素材）、专题长卷（盛唐/百年中国→时间轴）、精选史事列表→事件详情 |
+| 我的 | 已实现 | `miniprogram/pages/profile/` | 千里江山图头像+横幅、本地数据统计、收藏/足迹占位、数据/素材/关于说明、清除缓存 |
 
 网页预览：
 
@@ -158,6 +158,7 @@ python tools/validate_miniprogram.py
 - 当前 hero 插画、盛唐背景 PNG/JPG 是按用户要求从参考图/新图裁切的；`paper-bg.png` 由 `tools/make_paper_bg.py` 生成；图标是透明 PNG。
 - 参考图裁切素材仅用于本项目原型；正式上线前必须确认授权，或替换为有授权的素材。不要自行手绘/找图替代，除非用户明确要求。
 - 真实数据在 `miniprogram/data/history.js`；新增内容必须带 `source` 字段，正式发布前需历史审校。
+- 搜图素材（`assets/paintings/`）只用于原型：来源与授权状态见 `assets/paintings/SOURCES.md`，移除或更换某张图时要同步更新该表；复现链路 `tools/fetch_*.py`、`contact_sheet.py`。
 
 ---
 
@@ -166,7 +167,7 @@ python tools/validate_miniprogram.py
 1. **未在微信开发者工具中编译验证**。WXML/JS/JSON 结构已通过静态检查，但真机样式、胶囊避让、安全区需要实际看。
 2. **hero 插画、盛唐背景从用户参考图/新图裁切**，属于原型素材；正式上线前必须确认授权或替换。
 3. **事件/人物详情已独立成页**（`pages/event/`、`pages/person/`，2026-10-19）；朝代与专题（盛唐气象/百年中国）仍是 Modal，可后续做成朝代/专题详情页。
-4. **发现 / 我的为占位页**。
+4. **发现 / 我的已完成基础版（2026-10-19）**；收藏、浏览足迹仍为 Toast 占位。
 5. **没有后端、搜索、独立详情页**；数据是本地 `data/history.js` 种子，尚未接 CMS。
 6. `project.config.json` 使用 `touristappid`，正式开发需替换。
 7. `paper-bg.png` 约 871KB，后续可压缩或改用更小的纹理。

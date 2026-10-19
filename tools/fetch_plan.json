@@ -1,0 +1,10 @@
+{
+  "note": "搜图素材计划。产物见 assets/paintings/，来源与授权状态见 assets/paintings/SOURCES.md。",
+  "targets": [
+    { "output": "miniprogram/assets/paintings/han.jpg", "queries": ["长信宫灯 汉代"], "picked": "百度缩略 白底文物单图" },
+    { "output": "miniprogram/assets/paintings/tang.jpg", "queries": ["步辇图 阎立本"], "picked": "360百科 真迹全卷" },
+    { "output": "miniprogram/assets/paintings/song.jpg", "queries": ["清明上河图"], "picked": "故宫博物院官网 郊野段" },
+    { "output": "miniprogram/assets/paintings/modern.jpg", "queries": ["开国大典 油画"], "picked": "董希文油画 现场" },
+    { "output": "miniprogram/assets/paintings/landscape.jpg", "queries": ["千里江山图 青绿"], "picked" : "真迹横卷局部 1049x500" }
+  ]
+}

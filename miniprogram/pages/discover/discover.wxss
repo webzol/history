@@ -26,6 +26,7 @@
   height: 124rpx;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .brand {
@@ -36,36 +37,315 @@
   color: #1F1D19;
 }
 
-.placeholder {
-  margin-top: 80rpx;
-  padding: 48rpx 38rpx;
-  border-radius: 38rpx;
-  background: #FCFBF8;
-  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 36rpx;
+  margin-right: 180rpx;
 }
 
-.placeholder-title {
+.icon {
+  width: 44rpx;
+  height: 44rpx;
   display: block;
+}
+
+.intro {
+  margin-top: 26rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 34rpx;
-  letter-spacing: 0.06em;
-  color: #1F1D19;
-}
-
-.placeholder-desc {
-  display: block;
-  margin-top: 20rpx;
-  font-size: 22rpx;
-  line-height: 1.8;
+  font-size: 24rpx;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
   color: #5F5A52;
 }
 
-.placeholder-note {
-  display: block;
-  margin-top: 28rpx;
-  font-size: 18rpx;
+.section-head {
+  margin-top: 38rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-title {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 34rpx;
+  letter-spacing: 0.07em;
+  color: #1F1D19;
+}
+
+.section-link {
+  font-size: 19rpx;
   letter-spacing: 0.04em;
   color: #8C857A;
+}
+
+/* 朝代 2×2 卡 */
+.dyn-grid {
+  margin-top: 20rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.dyn-card {
+  position: relative;
+  width: 320rpx;
+  height: 300rpx;
+  border-radius: 34rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.07);
+}
+
+.dyn-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dyn-shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  background: linear-gradient(180deg, rgba(246, 241, 234, 0.06) 40%, rgba(31, 27, 22, 0.55));
+}
+
+.dyn-copy {
+  position: absolute;
+  left: 24rpx;
+  bottom: 20rpx;
+  z-index: 2;
+}
+
+.dyn-name {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 40rpx;
+  letter-spacing: 0.08em;
+  color: #FFF8EF;
+}
+
+.dyn-years {
+  display: block;
+  margin-top: 6rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 19rpx;
+  letter-spacing: 0.05em;
+  color: rgba(255, 248, 239, 0.78);
+}
+
+.dyn-title {
+  position: absolute;
+  right: 24rpx;
+  top: 20rpx;
+  z-index: 2;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 20rpx;
+  letter-spacing: 0.08em;
+  color: rgba(31, 27, 22, 0.72);
+  background: rgba(252, 251, 248, 0.72);
+  padding: 6rpx 14rpx;
+  border-radius: 16rpx;
+}
+
+.dyn-card.dyn-modern .dyn-title {
+  color: rgba(126, 154, 154, 0.95);
+}
+
+/* 专题卡（盛唐气象复用首页视觉语言） */
+.era-card {
+  position: relative;
+  height: 216rpx;
+  margin-top: 20rpx;
+  padding: 26rpx 30rpx;
+  border-radius: 38rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
+}
+
+.era-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.era-shade {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 52%;
+  background: linear-gradient(90deg, rgba(250, 247, 241, 0.42), rgba(250, 247, 241, 0));
+  pointer-events: none;
+}
+
+.era-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 480rpx;
+}
+
+.era-title {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 34rpx;
+  letter-spacing: 0.08em;
+  color: #1F1D19;
+}
+
+.era-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 19rpx;
+  line-height: 1.55;
+  color: #5F5A52;
+}
+
+.era-go {
+  position: absolute;
+  right: 28rpx;
+  bottom: 22rpx;
+  z-index: 2;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 36rpx;
+  color: rgba(31, 27, 22, 0.45);
+}
+
+.modern-card {
+  position: relative;
+  height: 200rpx;
+  margin-top: 16rpx;
+  padding: 28rpx 30rpx;
+  border-radius: 38rpx;
+  background: #FCFBF8;
+  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.05);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.modern-copy {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  padding-right: 150rpx;
+}
+
+.modern-kicker {
+  display: block;
+  font-size: 15rpx;
+  letter-spacing: 0.12em;
+  color: #7E9A9A;
+}
+
+.modern-title {
+  display: block;
+  margin-top: 8rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 34rpx;
+  letter-spacing: 0.05em;
+  color: #1F1D19;
+}
+
+.modern-desc {
+  display: block;
+  max-width: 420rpx;
+  margin-top: 9rpx;
+  font-size: 19rpx;
+  line-height: 1.55;
+  color: #5F5A52;
+}
+
+.modern-years {
+  position: absolute;
+  right: 28rpx;
+  bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 26rpx;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  color: #A9BCC4;
+}
+
+.modern-dash {
+  width: 44rpx;
+  height: 1rpx;
+  margin: 8rpx 0;
+  background: rgba(126, 154, 154, 0.55);
+}
+
+/* 精选史事 */
+.pick-list {
+  margin-top: 20rpx;
+}
+
+.pick-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+  padding: 24rpx 26rpx;
+  border-radius: 30rpx;
+  background: #FCFBF8;
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);
+}
+
+.pick-year {
+  width: 130rpx;
+  flex: 0 0 130rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 22rpx;
+  color: #A9825E;
+}
+
+.pick-year-modern {
+  color: #7E9A9A;
+}
+
+.pick-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pick-title {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 27rpx;
+  letter-spacing: 0.04em;
+  color: #1F1D19;
+}
+
+.pick-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  line-height: 1.55;
+  color: #5F5A52;
+}
+
+.pick-arrow {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 32rpx;
+  color: #A39A8E;
+}
+
+.tba-note {
+  margin-top: 26rpx;
+  font-size: 18rpx;
+  letter-spacing: 0.04em;
+  color: #A39A8E;
 }
 
 .tabbar {

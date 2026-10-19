@@ -3,12 +3,84 @@
   <view class="screen">
     <view class="topbar">
       <text class="brand">发现</text>
+      <view class="top-actions">
+        <image class="icon" src="/assets/icons/search.png" mode="aspectFit" bindtap="onSearch"></image>
+        <image class="icon" src="/assets/icons/menu.png" mode="aspectFit" bindtap="onMenu"></image>
+      </view>
     </view>
-    <view class="placeholder">
-      <text class="placeholder-title">还有更多，慢慢展开</text>
-      <text class="placeholder-desc">朝代、世纪、专题与历史地图正在整理中。</text>
-      <text class="placeholder-note">当前版本先完成首页与时间轴。</text>
+
+    <view class="intro">朝代在文物里，专题在长卷里。</view>
+
+    <view class="section-head">
+      <text class="section-title">朝代一览</text>
+      <text class="section-link">点开看简介</text>
     </view>
+    <view class="dyn-grid">
+      <view
+        wx:for="{{periods}}"
+        wx:key="id"
+        class="dyn-card {{item.isModern ? 'dyn-modern' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onPeriod"
+      >
+        <image class="dyn-bg" src="{{item.img}}" mode="aspectFill"></image>
+        <view class="dyn-shade"></view>
+        <view class="dyn-copy">
+          <text class="dyn-name">{{item.name}}</text>
+          <text class="dyn-years">{{item.yearText}}</text>
+        </view>
+        <text class="dyn-title">{{item.title}}</text>
+      </view>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">专题长卷</text>
+      <text class="section-link">进入时间轴</text>
+    </view>
+    <view class="era-card" data-mode="ancient" bindtap="goTimeline">
+      <image class="era-bg" src="/assets/tang-bg.jpg" mode="aspectFill"></image>
+      <view class="era-shade"></view>
+      <view class="era-copy">
+        <text class="era-title">{{era.title}}</text>
+        <text class="era-desc">{{era.desc}}</text>
+      </view>
+      <text class="era-go">›</text>
+    </view>
+    <view class="modern-card" data-mode="modern" bindtap="goTimeline">
+      <view class="modern-copy">
+        <text class="modern-kicker">{{modern.kicker}}</text>
+        <text class="modern-title">{{modern.shortTitle}}</text>
+        <text class="modern-desc">{{modern.desc}}</text>
+      </view>
+      <view class="modern-years">
+        <text>1840</text>
+        <view class="modern-dash"></view>
+        <text>1949</text>
+      </view>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">精选史事</text>
+      <text class="section-link">近现代起读</text>
+    </view>
+    <view class="pick-list">
+      <view
+        wx:for="{{picks}}"
+        wx:key="id"
+        class="pick-card"
+        data-id="{{item.id}}"
+        bindtap="onPick"
+      >
+        <text class="pick-year {{item.mode === 'modern' ? 'pick-year-modern' : ''}}">{{item.yearText}}</text>
+        <view class="pick-body">
+          <text class="pick-title">{{item.title}}</text>
+          <text class="pick-desc">{{item.desc}}</text>
+        </view>
+        <text class="pick-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="tba-note">世纪 · 历史地图 · 更多专题，正在整理中。</view>
   </view>
 
   <view class="tabbar">

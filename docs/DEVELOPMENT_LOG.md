@@ -296,6 +296,41 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 · 发现 / 我的占位页落地
+
+**目标**：完成两个占位页，视觉与首页/时间轴一致；素材路径走"搜图不画图"。
+
+**搜图素材（tools 搜图工具链 + cn.bing/baidu 图搜，均目检验收）**
+
+- 新增 `miniprogram/assets/paintings/`：`han.jpg`（长信宫灯）、`tang.jpg`（步辇图）、`song.jpg`（清明上河图·郊野段，故宫博物院官网）、`modern.jpg`（开国大典油画）、`landscape.jpg`（千里江山图真迹横卷局部）。
+- 全部为原型演示素材，来源与授权状态记录在 `assets/paintings/SOURCES.md`；上线前需确认授权或替换。
+- 新增工具：`tools/fetch_images.py`（Bing 搜图+下载）、`fetch_all.py`+`fetch_plan.json`（批量）、`list_candidates.py`（候选清单 JSON）、`contact_sheet.py`（九宫格对比图，PIL 拼图目检）。
+- 过程教训：cn.bing 图搜关键词易被"比亚迪汉/兔子/素材站"污染，且 Wikipedia/百度百科直连被拒（超时/403）；最终可用通道为 Bing + 百度图片 thumbURL（400px，够卡片缩略）+ 指定 URL 直下（故宫 dpm.org.cn / bkimg.cdn.bcebos.com 可达），每张图必须目检验收。
+
+**发现页（pages/discover/，替换占位）**
+
+- 数据驱动：`history.periods` 过滤出汉/唐/宋/近现代四张朝代卡（2×2，配画 aspectFill + 底部压暗渐变 + 宋体朝代名/年代 + 小浮签"大汉气象"等），点击弹 Modal 显示 period.desc/史料。
+- 专题长卷：盛唐气象复用 `tang-bg.jpg` 构图（era-card 同首页视觉语言），百年中国复用 modern-card；两点分别跳时间轴 ancient/modern。
+- 精选史事：最近 6 条事件列表（古代赭/近现代蓝灰年份色），点击进事件详情页。
+- 底部一行占位说明"世纪·历史地图·更多专题整理中"；顶部搜索/菜单图标按现行规范保留（margin-right 180rpx 避让胶囊）。
+
+**我的页（pages/profile/，替换占位）**
+
+- 头卡：千里江山图圆形头像（同样使用本图，避免再加素材）+ "史页客"昵称 + 纪念语 + 朱砂"史"印。
+- 统计卡：朝代/史事/人物/专题数据量，全部从 `history.js` 读取。
+- 千古长卷横幅：landscape.jpg 全宽卡，点击弹《千里江山图》说明 Modal。
+- 功能清单：我的收藏/浏览足迹（Toast 占位）、数据与史料说明、素材与授权说明（指向 SOURCES.md）、关于史页、清除缓存（确认后 wx.clearStorageSync）。
+- 底部四栏 tabbar，"我的"高亮。
+
+**校验**
+
+- `wcc.exe` 真编译 `discover.wxml` / `profile.wxml`：exit 0。
+- `python tools/validate_miniprogram.py`：OK: 6 pages（含新素材引用检查）。
+- `node --check`：相关 JS 全部通过。
+- 未真机验证；朝代卡在新素材下的文字可读性（浅色画+深色渐变）待开发者工具里确认。
+
+---
+
 ## 2026-10-19 · 修复事件详情页 WXML 编译错误
 
 **现象**：微信开发者工具报 `pages/event/event.wxml unexpected end`（错误指向文件末尾第 61 行空行，无有效线索）。

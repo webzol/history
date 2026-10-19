@@ -4,10 +4,59 @@
     <view class="topbar">
       <text class="brand">我的</text>
     </view>
-    <view class="placeholder">
-      <text class="placeholder-title">我的史页</text>
-      <text class="placeholder-desc">收藏、浏览足迹与阅读设置将在下一版接入。</text>
-      <text class="placeholder-note">当前版本先完成首页与时间轴。</text>
+
+    <view class="head-card">
+      <view class="avatar-wrap">
+        <image class="avatar" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
+      </view>
+      <view class="head-info">
+        <text class="nick">史页客</text>
+        <text class="tagline">以千年为卷轴，读万古事</text>
+      </view>
+      <text class="head-seal">史</text>
+    </view>
+
+    <view class="stats-card">
+      <view class="stat" wx:for="{{stats}}" wx:key="key">
+        <text class="stat-num">{{item.value}}</text>
+        <text class="stat-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="banner-card" bindtap="onAboutBanner">
+      <image class="banner-bg" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
+      <view class="banner-shade"></view>
+      <text class="banner-title">千古长卷</text>
+      <text class="banner-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
+    </view>
+
+    <view class="menu-card">
+      <view class="menu-row" bindtap="onFav">
+        <text class="menu-label">我的收藏</text>
+        <text class="menu-hint">未开放</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-row" bindtap="onFootprints">
+        <text class="menu-label">浏览足迹</text>
+        <text class="menu-hint">整理中</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-row" bindtap="onDataNote">
+        <text class="menu-label">数据与史料说明</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-row" bindtap="onAssetNote">
+        <text class="menu-label">素材与授权说明</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-row" bindtap="onAbout">
+        <text class="menu-label">关于史页</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-row last" bindtap="onClearCache">
+        <text class="menu-label">清除缓存</text>
+        <text class="menu-arrow">›</text>
+      </view>
     </view>
   </view>
 
