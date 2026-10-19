@@ -190,10 +190,10 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 19, '史事 19 条');
-  eq(history.persons.length, 10, '人物 10 位');
-  ok(new Set([...eventIds]).size === 19, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 10, '人物 id 唯一');
+  eq(history.events.length, 20, '史事 20 条');
+  eq(history.persons.length, 11, '人物 11 位');
+  ok(new Set([...eventIds]).size === 20, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 11, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -224,10 +224,10 @@ console.log('== 数据完整性 ==');
   ['zhao-kuangyin', 'wang-anshi', 'lin-zexu', 'tang-taizong', 'du-fu', 'li-hongzhang'].forEach((id) =>
     ok(personIds.has(id), `新人物条目存在 ${id}`)
   );
-  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898', 'mobei-119'].forEach((id) =>
+  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898', 'mobei-119', 'newculture-1915'].forEach((id) =>
     ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
-  ['zhang-qian'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
+  ['zhang-qian', 'chen-duxiu'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
 
   // 图片路径全部存在于磁盘
   const goodImg = (p) => ok(p && fs.existsSync(path.join(ROOT, p)), `素材存在 ${p}`);
@@ -267,7 +267,7 @@ console.log('== 首页 ==');
   eq(last('redirectTo').url, '/pages/discover/discover', '全部朝代 › 发现页');
 
   tap(p, 'goPage', { page: 'person' });
-  eq(pendingSheet && pendingSheet.itemList.length, 10, '人物磁贴：ActionSheet 十位人物');
+  eq(pendingSheet && pendingSheet.itemList.length, 11, '人物磁贴：ActionSheet 十一位人物');
 
   pickSheet(6);
   eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
@@ -316,7 +316,7 @@ console.log('== 时间轴 ==');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
-  eq(p.data.events.length, 9, '近现代 9 条事件');
+  eq(p.data.events.length, 10, '近现代 10 条事件');
   eq(p.data.eraName, '晚清—新中国', '近现代时代带名推导');
   ok(p.data.eraMeta.indexOf('1840–1978') >= 0 && p.data.eraMeta.indexOf('新中国') >= 0,
     '近现代meta覆盖 1978 与新中国');
@@ -395,7 +395,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 19, 10, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 20, 11, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -540,7 +540,7 @@ console.log('== 朝代详情 ==');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
   p.onLoad({ id: 'modern' });
-  eq(p.data.events.length, 9, '近现代面板收录九条');
+  eq(p.data.events.length, 10, '近现代面板收录十条');
   eq(p.data.seal, '近', '近现代小印');
 
   p.onLoad({ id: 'tang' });
@@ -688,6 +688,15 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '卫青' });
   p.onSearch();
   ok(p.data.results.events.some((e) => e.id === 'mobei-119'), '「卫青」命中漠北之战（details 全文）');
+
+  p.setData({ keyword: '陈独秀' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'chen-duxiu'), '陈独秀命中人物');
+  ok(p.data.results.events.some((e) => e.id === 'newculture-1915'), '同轮命中新文化运动');
+
+  p.setData({ keyword: '德先生' });
+  p.onSearch();
+  ok(p.data.results.events.some((e) => e.id === 'newculture-1915'), '「德先生」命中新文化运动（desc/details）');
 
   p.setData({ keyword: '1894' });
   p.onSearch();
