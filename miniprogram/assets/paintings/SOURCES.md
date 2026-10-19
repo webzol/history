@@ -11,7 +11,7 @@
 | modern.jpg | 《开国大典》（董希文 绘） | 发现页"近现代"朝代卡 | 网络搜索（开国大典 油画） | 未确认授权；作者 1973 年逝世，中国境内已过保护期 |
 | landscape.jpg | 《千里江山图》卷局部（王希孟） | 我的页横幅、头像圆 | 百度图片缩略（1049×500 真迹卷面） | 未确认授权；原图为公有领域 |
 | person-ink.jpg | 水墨文人 + 淡远山（近苏轼像气质） | 时间轴页右上角（渐变融入宣纸） | 百度图片缩略（关键词"苏轼 画像 水墨"），PIL 裁掉底部水印与留白 | 未确认授权；上线前替换或确认 |
-| seal.png | "史载"朱砂印章（首页 hero 同款印） | 时间轴标题旁小印、朝代头卡小印（替代手写 CSS 印） | `tools/crop_seal.py` 从 assets/palace.jpg 自动红色像素检测裁切（39×67） | 与首页同源；上线前随 palace 一起确认授权 |
+| seal.png | "史载"朱砂印章（首页 hero 同款印）**透明背景 RGBA** | 时间轴标题旁小印、朝代头卡小印（替代手写 CSS 印） | `tools/crop_seal.py`：palace.jpg 红色像素检测裁切 → 3x LANCZOS 放大 → "红度"alpha 抠图（背景全透明，任何卡片底无缝） | 与首页同源；上线前随 palace 一起确认授权 |
 
 获取方式可复现：`tools/fetch_all.py`（按 `tools/fetch_plan.json` 批量搜图）；
 候选对比用 `tools/contact_sheet.py`；指定 URL 直下用 `tools/fetch_images.py download`。
