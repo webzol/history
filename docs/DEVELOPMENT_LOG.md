@@ -296,6 +296,36 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 下午 · 搜索页上线（roadmap #3 完成）+ 全部事件补正文
+
+**新增搜索页 `pages/search/search`（已注册 app.json，全站第 7 页）**
+
+- 自定义顶栏：返回 + 「史页 · 搜索」+ 首页同款 seal.png 小印（缩至 34×58）
+- 搜索卡片：圆角纸白卡 + 朱砂 ⌕ + 无边框 input + 朱砂"搜索"按钮；input `confirm-type="search"` 支持键盘确认
+- 无关键词时显示"热门检索"标签chips（汉武帝/苏轼/澶渊之盟/辛亥革命/五四运动/盛唐），点击即搜
+- 结果分三组：**人物**（名字+朝代·身份，进人物详情）、**史事**（年代+朝代，进事件详情）、**朝代与专题**（进时间轴，古代/近现代由 period/topic 判定）；近现代结果用蓝灰 #7E9A9A 副标题色
+- 匹配字段：事件（title/era/tags/desc/yearText）、人物（name/era/roles/summary/dates）、periods+topics 合并 panel；大小写不敏感的 includes 检索
+- 空结果文案 + 建议；权限沿用首页同款宣纸底/卡片/圆角/细阴影 tokens
+
+**入口**：「我的」页 menu-card 顶部新增「搜索史事 · 人物」行（onSearch → navigateTo）。四主页面顶部仍保持纯字标（2026-10-19 约定不变）。
+
+**数据补全（roadmap #4 一部分）**
+
+- 为全部 10 个缺 `details` 的事件补写 4-5 段审校级正文：陈桥兵变、王安石变法、靖康之变、鸦片战争、五四运动、九一八事变、开国大典、十一届三中全会、圆明园罹劫、汉武帝即位——事件详情页 body-card 现在对全部 12 条事件都有多段正文；风格对齐澶渊之盟/辛亥革命既有条目（编年叙事、含具体年月日/条约/人物，结尾以影响收束）。
+- 新增 `tools/content_audit.py`：扫描 history.js 输出"哪些 events/persons 缺 details/desc"，后续扩数据可复跑。
+
+**校验**
+
+- search/profile 两页 wcc exit 0；validate OK **7 pages**；`node --check` 通过 data/history.js 与 search.js/profile.js。
+- 事件/人物详情跳转链路：search → event/person → relatedPersons 反查（复用既有逻辑）。
+
+**遗留**
+
+- 人物仅 3 位（汉武帝/苏轼/鲁迅），赵匡胤、王安石、林则徐等为搜索高频词但无独立人物卡——下一轮补人物条目。
+- 收藏/足迹仍占位（Toast）；后端方案 A（NestJS）尚未启动。
+
+---
+
 ## 2026-10-19 · 时间轴印章调小（用户要求）
 
 - `.brand-seal` 48×82 → **38×64rpx**（margin-top 10rpx）；`.era-mini-seal` 44×74 → **34×58rpx**（margin-top 8rpx）；均保持 rotate 2° 与 aspectFit 无变形。

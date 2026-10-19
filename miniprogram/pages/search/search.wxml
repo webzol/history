@@ -1,0 +1,121 @@
+<view class="page">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen">
+
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <text class="top-title">史页 · 搜索</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+
+    <view class="search-card">
+      <text class="search-icon">⌕</text>
+      <input
+        class="search-input"
+        value="{{keyword}}"
+        placeholder="搜史事 · 人物 · 朝代"
+        placeholder-class="ph"
+        confirm-type="search"
+        focus
+        bindinput="onInput"
+        bindconfirm="onSearch"
+      />
+      <text class="search-btn" bindtap="onSearch">搜索</text>
+    </view>
+
+    <block wx:if="{{!results}}">
+      <view class="section-head">
+        <text class="section-title">热门检索</text>
+      </view>
+      <view class="hot-wrap">
+        <text
+          wx:for="{{hot}}"
+          wx:key="*this"
+          class="hot-chip"
+          data-word="{{item}}"
+          bindtap="onHotTap"
+        >{{item}}</text>
+      </view>
+    </block>
+
+    <block wx:else>
+      <block wx:if="{{results.persons.length}}">
+        <view class="section-head">
+          <text class="section-title">人物</text>
+          <text class="section-count">{{results.persons.length}} 位</text>
+        </view>
+        <view class="result-card">
+          <view
+            wx:for="{{results.persons}}"
+            wx:key="id"
+            class="row"
+            data-type="person"
+            data-id="{{item.id}}"
+            bindtap="onRowTap"
+          >
+            <view class="row-main">
+              <text class="row-title">{{item.title}}</text>
+              <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+            </view>
+            <text class="row-arrow">›</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{results.events.length}}">
+        <view class="section-head">
+          <text class="section-title">史事</text>
+          <text class="section-count">{{results.events.length}} 条</text>
+        </view>
+        <view class="result-card">
+          <view
+            wx:for="{{results.events}}"
+            wx:key="id"
+            class="row"
+            data-type="event"
+            data-id="{{item.id}}"
+            bindtap="onRowTap"
+          >
+            <view class="row-main">
+              <text class="row-title">{{item.title}}</text>
+              <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+            </view>
+            <text class="row-arrow">›</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{results.panels.length}}">
+        <view class="section-head">
+          <text class="section-title">朝代与专题</text>
+          <text class="section-count">{{results.panels.length}} 个</text>
+        </view>
+        <view class="result-card">
+          <view
+            wx:for="{{results.panels}}"
+            wx:key="key"
+            class="row"
+            data-type="panel"
+            data-id="{{item.id}}"
+            data-mode="{{item.mode}}"
+            bindtap="onRowTap"
+          >
+            <view class="row-main">
+              <text class="row-title">{{item.title}}</text>
+              <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+            </view>
+            <text class="row-arrow">›</text>
+          </view>
+        </view>
+      </block>
+
+      <view class="empty" wx:if="{{empty}}">
+        <text class="empty-line">未找到"{{keyword}}"相关内容</text>
+        <text class="empty-sub">换个说法试试，比如"汉武帝""北宋""辛亥"</text>
+      </view>
+    </block>
+
+  </view>
+</view>

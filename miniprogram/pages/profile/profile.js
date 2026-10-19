@@ -31,6 +31,10 @@ Page({
     wx.redirectTo({ url: `/pages/${page}/${page}` });
   },
 
+  onSearch() {
+    wx.navigateTo({ url: '/pages/search/search' });
+  },
+
   onFav() {
     wx.showToast({ title: '收藏将在下一版开放', icon: 'none' });
   },
