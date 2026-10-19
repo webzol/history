@@ -3,10 +3,6 @@
   <view class="screen">
     <view class="topbar">
       <text class="brand">时间轴</text>
-      <view class="top-actions">
-        <image class="icon" src="/assets/icons/search.png" mode="aspectFit" bindtap="onSearch"></image>
-        <image class="icon" src="/assets/icons/menu.png" mode="aspectFit" bindtap="onMenu"></image>
-      </view>
     </view>
 
     <view class="intro">从史前到今天，一条可以走下去的河。</view>

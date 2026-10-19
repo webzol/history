@@ -3,10 +3,6 @@
   <view class="screen">
     <view class="topbar">
       <text class="brand">发现</text>
-      <view class="top-actions">
-        <image class="icon" src="/assets/icons/search.png" mode="aspectFit" bindtap="onSearch"></image>
-        <image class="icon" src="/assets/icons/menu.png" mode="aspectFit" bindtap="onMenu"></image>
-      </view>
     </view>
 
     <view class="intro">朝代在文物里，专题在长卷里。</view>

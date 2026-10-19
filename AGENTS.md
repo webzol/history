@@ -152,7 +152,7 @@ python tools/validate_miniprogram.py
 - 原生小程序，不引入 Taro/uni-app。
 - 页面结构：`pages/<name>/<name>.{js,json,wxml,wxss}`。
 - 使用 `rpx`；1px 细线可用 `px`（或 1rpx）。
-- 自定义导航栏：`navigationStyle: "custom"`；首页顶部只有“史页”字标，不放搜索/菜单。时间轴/发现/我的仍保留搜索/菜单，并给微信胶囊留出右侧空间（`top-actions` 的 `margin-right: 180rpx`）。
+- 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情页顶栏为"‹ 返回 + 页面名 + 小印"。
 - 当前没有配置原生 `tabBar`，底部四栏是自绘的，用 `wx.redirectTo` 在 4 个页面间跳转。**这是临时方案**，后续可以改为 `custom-tab-bar` 组件。
 - 图片全部本地 PNG；小程序 `<image>` 使用绝对路径 `/assets/...`。
 - 当前 hero 插画、盛唐背景 PNG/JPG 是按用户要求从参考图/新图裁切的；`paper-bg.png` 由 `tools/make_paper_bg.py` 生成；图标是透明 PNG。
@@ -171,7 +171,7 @@ python tools/validate_miniprogram.py
 5. **没有后端、搜索、独立详情页**；数据是本地 `data/history.js` 种子，尚未接 CMS。
 6. `project.config.json` 使用 `touristappid`，正式开发需替换。
 7. `paper-bg.png` 约 871KB，后续可压缩或改用更小的纹理。
-8. 首页已按用户要求去掉搜索/菜单图标；时间轴/发现/我的仍保留搜索/菜单，使用 `margin-right: 180rpx` 避让胶囊。
+8. 首页按要求去掉搜索/菜单后，2026-10-19 时间轴、发现页的搜索/菜单图标也已移除：四个主页面顶部均为纯字标；时间轴靠页内"古代/近现代"分段切换，无需菜单。
 9. 首页“今日史事”目前是编辑精选（汉武帝），与 10 月 18 日的精确日期匹配尚未完成；正式内容要按日期库核对。
 10. 旧版 `ui/neo/` 和 `docs/UI设计说明.md` 容易误用；除非用户明确要求，否则不要用旧版风格覆盖当前实现。
 

@@ -45,29 +45,5 @@ Page({
     const item = history.events.find((event) => event.id === id);
     if (!item) return;
     wx.navigateTo({ url: `/pages/event/event?id=${item.id}` });
-  },
-
-  onSearch() {
-    wx.showToast({
-      title: '搜索将在下一版接入',
-      icon: 'none'
-    });
-  },
-
-  onMenu() {
-    wx.showActionSheet({
-      itemList: ['古代', '近现代', '世纪', '关于史页'],
-      success: (res) => {
-        if (res.tapIndex === 0) this.loadMode('ancient');
-        if (res.tapIndex === 1) this.loadMode('modern');
-        if (res.tapIndex === 3) {
-          wx.showModal({
-            title: '史页',
-            content: '一页一页读历史。古代史与近现代史并列，史料可追溯。',
-            showCancel: false
-          });
-        }
-      }
-    });
   }
 });

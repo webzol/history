@@ -26,7 +26,6 @@
   height: 124rpx;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
 .brand {
@@ -36,19 +35,6 @@
   letter-spacing: 0.08em;
   line-height: 1;
   color: #1F1D19;
-}
-
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 36rpx;
-  margin-right: 180rpx;
-}
-
-.icon {
-  width: 44rpx;
-  height: 44rpx;
-  display: block;
 }
 
 .intro {

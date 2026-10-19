@@ -60,26 +60,5 @@ Page({
     wx.navigateTo({
       url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
     });
-  },
-
-  onSearch() {
-    wx.showToast({ title: '搜索将在下一版接入', icon: 'none' });
-  },
-
-  onMenu() {
-    wx.showActionSheet({
-      itemList: ['时间轴', '百年中国', '关于史页'],
-      success: (res) => {
-        if (res.tapIndex === 0) wx.redirectTo({ url: '/pages/timeline/timeline' });
-        if (res.tapIndex === 1) wx.redirectTo({ url: '/pages/timeline/timeline?mode=modern' });
-        if (res.tapIndex === 2) {
-          wx.showModal({
-            title: '史页',
-            content: '一页一页读历史。古代史与近现代史并列，史料可追溯。',
-            showCancel: false
-          });
-        }
-      }
-    });
   }
 });
