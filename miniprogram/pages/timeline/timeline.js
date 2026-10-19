@@ -21,8 +21,18 @@ Page({
   },
 
   loadMode(mode) {
-    const events = history.events.filter((item) => item.mode === mode);
     const isAncient = mode === 'ancient';
+    // 纪年升序；轴上圆点红/青相间
+    const events = history.events
+      .filter((item) => item.mode === mode)
+      .sort((a, b) => a.year - b.year)
+      .map((item, index) => ({
+        ...item,
+        dotClass: index % 2 === 0 ? 'dot-red' : 'dot-teal',
+        // 公元前的纪年用朱砂显示
+        yearAncientText: item.year < 0
+      }));
+
     this.setData({
       mode,
       events,

@@ -1,11 +1,18 @@
 <view class="page">
   <image class="paper-bg" src="/assets/paper-bg.png" mode="aspectFill"></image>
+  <view class="frame"></view>
   <view class="screen">
-    <view class="topbar">
-      <text class="brand">时间轴</text>
-    </view>
 
-    <view class="intro">从史前到今天，一条可以走下去的河。</view>
+    <view class="header">
+      <image class="person-ink" src="/assets/paintings/person-ink.jpg" mode="aspectFill"></image>
+      <view class="person-fade-x"></view>
+      <view class="person-fade-y"></view>
+      <view class="topbar">
+        <text class="brand">时间轴</text>
+        <text class="brand-seal">人有志</text>
+      </view>
+      <view class="intro">从史前到今天，一条可以走下去的河。</view>
+    </view>
 
     <view class="seg">
       <text class="seg-item {{mode === 'ancient' ? 'active' : ''}}" data-mode="ancient" bindtap="switchMode">古代</text>
@@ -13,21 +20,32 @@
     </view>
 
     <view class="era-band">
-      <view class="era-info">
+      <view class="era-title-row">
         <text class="era-name">{{eraName}}</text>
-        <text class="era-meta">{{eraMeta}}</text>
+        <text class="era-mini-seal">大事记</text>
       </view>
+      <text class="era-meta">{{eraMeta}}</text>
       <text class="era-seal">{{eraSeal}}</text>
     </view>
 
     <view class="event-list">
-      <view wx:for="{{events}}" wx:key="id" class="event-card" data-id="{{item.id}}" bindtap="onEvent">
-        <text class="event-year">{{item.yearText}}</text>
-        <view class="event-body">
-          <text class="event-title">{{item.title}}</text>
+      <view class="rail"></view>
+      <view
+        wx:for="{{events}}"
+        wx:key="id"
+        class="event-item"
+        data-id="{{item.id}}"
+        bindtap="onEvent"
+      >
+        <text class="dot {{item.dotClass}}"></text>
+        <view class="event-card">
+          <view class="event-head">
+            <text class="event-year {{item.yearAncientText ? 'year-red' : ''}}">{{item.yearText}}</text>
+            <text class="event-title">{{item.title}}</text>
+          </view>
           <text class="event-desc">{{item.desc}}</text>
           <text class="event-tags">{{item.tags}}</text>
-          <text class="event-source">{{item.source}}</text>
+          <text class="event-source">（史料 · {{item.source}}）</text>
         </view>
       </view>
     </view>
