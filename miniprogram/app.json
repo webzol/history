@@ -6,6 +6,7 @@
     "pages/profile/profile",
     "pages/event/event",
     "pages/person/person",
+    "pages/period/period",
     "pages/search/search"
   ],
   "window": {

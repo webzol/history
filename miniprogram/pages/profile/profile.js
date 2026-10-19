@@ -1,4 +1,40 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
+
+const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
+
+// type+id → 展示条目（人物/事件）
+function resolveEntry(x) {
+  if (x.type === 'person') {
+    const p = history.persons.find((item) => item.id === x.id);
+    if (!p) return null;
+    return {
+      type: 'person',
+      id: p.id,
+      title: p.name,
+      sub: `${p.era} · ${p.roles}`,
+      modern: MODERN_ERAS.indexOf(p.era) >= 0
+    };
+  }
+  if (x.type === 'event') {
+    const ev = history.events.find((item) => item.id === x.id);
+    if (!ev) return null;
+    return {
+      type: 'event',
+      id: ev.id,
+      title: ev.title,
+      sub: `${ev.yearText} · ${ev.era}`,
+      modern: ev.mode === 'modern'
+    };
+  }
+  return null;
+}
+
+function fmtWhen(ts) {
+  const d = new Date(ts);
+  const pad = (n) => (n < 10 ? '0' + n : '' + n);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 Page({
   data: {
@@ -7,7 +43,11 @@ Page({
       { key: 'events', label: '史事', value: 0 },
       { key: 'persons', label: '人物', value: 0 },
       { key: 'topics', label: '专题', value: 0 }
-    ]
+    ],
+    favs: [],
+    favCount: 0,
+    foots: [],
+    footCount: 0
   },
 
   onLoad() {
@@ -21,6 +61,21 @@ Page({
     });
   },
 
+  onShow() {
+    const favs = store
+      .listFavorites()
+      .map(resolveEntry)
+      .filter(Boolean);
+    const foots = store
+      .listFootprints()
+      .map((x) => {
+        const entry = resolveEntry(x);
+        return entry ? { ...entry, when: fmtWhen(x.ts) } : null;
+      })
+      .filter(Boolean);
+    this.setData({ favs, favCount: favs.length, foots, footCount: foots.length });
+  },
+
   goTab(e) {
     const page = e.currentTarget.dataset.page;
     if (!page || page === 'profile') return;
@@ -31,12 +86,12 @@ Page({
     wx.navigateTo({ url: '/pages/search/search' });
   },
 
-  onFav() {
-    wx.showToast({ title: '收藏将在下一版开放', icon: 'none' });
-  },
-
-  onFootprints() {
-    wx.showToast({ title: '浏览足迹整理中', icon: 'none' });
+  onEntry(e) {
+    const { type, id } = e.currentTarget.dataset;
+    const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
+    const exist = history[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
+    if (!exist) return;
+    wx.navigateTo({ url });
   },
 
   onDataNote() {
@@ -81,11 +136,12 @@ Page({
   onClearCache() {
     wx.showModal({
       title: '清除缓存',
-      content: '只清空本地临时缓存，不影响收藏（尚未开放）。',
+      content: '只清空本地临时缓存；收藏与浏览足迹会一并清除。',
       confirmText: '清除',
       success: (res) => {
         if (!res.confirm) return;
         wx.clearStorageSync();
+        this.onShow();
         wx.showToast({ title: '已清除', icon: 'success' });
       }
     });

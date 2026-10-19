@@ -285,6 +285,44 @@ const persons = [
     relatedEvents: ['han-wudi']
   },
   {
+    id: 'zhao-kuangyin',
+    name: '赵匡胤',
+    dates: '927–976',
+    era: '北宋',
+    roles: '皇帝 · 军事家',
+    summary: '黄袍加身，杯酒释兵权，奠定宋代文治基调。',
+    quote: '卧榻之侧，岂容他人鼾睡乎。',
+    quoteSource: '《续资治通鉴长编》',
+    source: '《宋史·太祖本纪》',
+    details: [
+      '赵匡胤，涿州人，出身军人家庭，早年投郭威帐下，历仕后周，因高平之战与征淮南有功，累官至殿前都点检，执掌禁军。',
+      '960年正月，奉命北上御敌的禁军行至陈桥驿，将士夜聚哗变，以黄袍加于其身，拥立为帝；回师开封，后周恭帝禅位，建国号“宋”，是为宋太祖。',
+      '即位后以“先南后北、先易后难”统一天下：攻灭荆南、后蜀、南汉，平定南唐，基本结束五代十国分裂局面；对北方的北汉与辽则取守势。',
+      '建隆二年（961年）以“杯酒释兵权”请石守信等宿将告老解除兵柄，确立禁军三衙统兵、文臣知州的制度，重文轻武自此成为宋代立国基调。',
+      '开宝九年（976年）卒于开封，年五十，死因成谜（“烛影斧声”）；其弟赵光义继位，是为宋太宗。'
+    ],
+    relatedEvents: ['chenqiao-960']
+  },
+  {
+    id: 'wang-anshi',
+    name: '王安石',
+    dates: '1021–1086',
+    era: '北宋',
+    roles: '政治家 · 改革家 · 文学家',
+    summary: '天变不足惧，人言不足恤，祖宗之法不足守。',
+    quote: '不畏浮云遮望眼，自缘身在最高层。',
+    quoteSource: '《登飞来峰》',
+    source: '《宋史·王安石传》',
+    details: [
+      '王安石，字介甫，号半山，抚州临川人。庆历二年进士，历官鄞县、常州，在地方试行贷谷于民、兴修水利，声名渐起。',
+      '嘉祐三年上万言书主张改革未被采纳；熙宁元年（1068年）越次入对，神宗问“为治所先”，答以“择术为先”，次年拜参知政事，设制置三司条例司主持变法。',
+      '新法以理财、整军为核心：青苗、免役、市易、方田均税、农田水利诸法行于财政，保甲、将兵、保马诸法行于军政，欲在不增赋税的前提下充实国用。',
+      '变法引发司马光、韩琦等激烈反对，新旧党争绵延数十年；熙宁七年罢相，九年复相、旋再罢，退居江宁钟山，著《字说》自遣。',
+      '元祐元年（1086年）卒于江宁。散文雄健，为“唐宋八大家”之一；其诗遒劲清新，《泊船瓜洲》《梅花》等为人传诵。'
+    ],
+    relatedEvents: ['wanganshi-1069', 'chanyuan-1005']
+  },
+  {
     id: 'su-shi',
     name: '苏轼',
     dates: '1037–1101',
@@ -302,6 +340,25 @@ const persons = [
       '徽宗即位后遇赦北归，建中靖国元年（1101年）卒于常州。诗、词、文、书、画皆为一代宗师，“唐宋八大家”之一，代表了宋代文化的最高峰。'
     ],
     relatedEvents: ['chenqiao-960', 'chanyuan-1005', 'wanganshi-1069', 'jingkang-1127']
+  },
+  {
+    id: 'lin-zexu',
+    name: '林则徐',
+    dates: '1785–1850',
+    era: '晚清',
+    roles: '官员 · 民族英雄',
+    summary: '苟利国家生死以，岂因祸福避趋之。',
+    quote: '苟利国家生死以，岂因祸福避趋之。',
+    quoteSource: '《赴戍登程口占示家人》',
+    source: '《清史稿·林则徐传》',
+    details: [
+      '林则徐，字元抚，一字少穆，福建侯官人。嘉庆十六年进士，历官按察使、布政使、巡抚、总督，以清廉干练著称，所至兴修水利、整顿吏治。',
+      '道光年间力主严禁鸦片，1838年上疏力陈“流毒于人身、鸦片不禁绝，国日贫、民日弱”，道光帝召对十九次，派为钦差大臣赴广东查办。',
+      '1839年抵广州，会同邓廷桢、关天培收缴英商鸦片二万余箱于虎门，6月3日起在虎门海滩当众销毁，历时二十三日，史称“虎门销烟”。',
+      '组织翻译西方书报，编《四洲志》，主张“师敌之长技以制敌”，被誉为“开眼看世界第一人”；同时整顿海防，多次挫败英军挑衅。',
+      '鸦片战争爆发后被革职查办，充军伊犁；在新疆兴修坎儿井、垦复屯田。1845年起复用，历任陕西巡抚、云贵总督；1850年病逝于赴广西途中。'
+    ],
+    relatedEvents: ['opium-war-1840']
   },
   {
     id: 'lu-xun',
@@ -342,26 +399,91 @@ const topics = [
   }
 ];
 
-// 今日史事：当前按 10 月 18 日匹配；首版先用“汉武帝即位”作为编辑精选。
-// 正式内容应按“月-日”精确匹配，并由历史审校核对日期。
+// 今日史事：按「月-日」精确匹配的公历日期库（农历事件如陈桥兵变暂不列入）。
+// 匹配不到的日子回退到 fallback 精选（汉武帝即位）。
 const daily = [
-  {
-    month: 10,
-    day: 18,
-    title: '今日史事',
-    dateText: '公元前141年',
-    desc: '公元前141年，汉武帝即位，开启西汉鼎盛时代',
-    eventId: 'han-wudi',
-    source: '《汉书·武帝纪》'
-  }
+  { month: 10, day: 18, eventId: 'yuanmingyuan-1860' },
+  { month: 10, day: 19, eventId: 'yuanmingyuan-1860' },
+  { month: 10, day: 10, eventId: 'xinhai-1911' },
+  { month: 10, day: 1, eventId: 'prc-1949' },
+  { month: 9, day: 18, eventId: 'mukden-1931' },
+  { month: 5, day: 4, eventId: 'mayfourth-1919' },
+  { month: 12, day: 18, eventId: 'reform-1978' },
+  { month: 8, day: 29, eventId: 'opium-war-1840' }
 ];
+
+// 无匹配日期时的编辑精选
+const dailyFallback = { eventId: 'han-wudi' };
 
 module.exports = {
   periods,
   events,
   persons,
   topics,
-  daily
+  daily,
+  dailyFallback
+};
+
+});
+__register('/utils/store.js', function (require, module, exports) {
+// 收藏与浏览足迹（本地存储；随数据种子走，后端接入后可替换）
+const KEY_FAV = 'shige_favorites';
+const KEY_FOOT = 'shige_footprints';
+const FOOT_MAX = 20;
+
+function load(key) {
+  try {
+    return wx.getStorageSync(key) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function save(key, list) {
+  try {
+    wx.setStorageSync(key, list);
+  } catch (e) { /* 存储异常时静默 */ }
+}
+
+function listFavorites() {
+  return load(KEY_FAV);
+}
+
+function isFavorite(type, id) {
+  return listFavorites().some((x) => x.type === type && x.id === id);
+}
+
+// 返回切换后的状态：true=已收藏，false=已取消
+function toggleFavorite(type, id) {
+  const list = listFavorites();
+  const idx = list.findIndex((x) => x.type === type && x.id === id);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    save(KEY_FAV, list);
+    return false;
+  }
+  list.unshift({ type, id, ts: Date.now() });
+  save(KEY_FAV, list);
+  return true;
+}
+
+function addFootprint(type, id) {
+  let list = load(KEY_FOOT).filter((x) => !(x.type === type && x.id === id));
+  list.unshift({ type, id, ts: Date.now() });
+  list = list.slice(0, FOOT_MAX);
+  save(KEY_FOOT, list);
+}
+
+function listFootprints() {
+  return load(KEY_FOOT);
+}
+
+module.exports = {
+  listFavorites,
+  isFavorite,
+  toggleFavorite,
+  addFootprint,
+  listFootprints
 };
 
 });
@@ -382,13 +504,18 @@ Page('project://pages/home/home.js', {
     const month = now.getMonth() + 1;
     const day = now.getDate();
 
-    const daily = history.daily.find((item) => item.month === month && item.day === day) || history.daily[0];
+    // 今日史事：按「月-日」匹配日期库；无匹配时回退编辑精选
+    const daily = history.daily.find((item) => item.month === month && item.day === day) || history.dailyFallback;
+    const dailyEvent = history.events.find((item) => item.id === daily.eventId);
+    const hero = dailyEvent
+      ? { eventId: dailyEvent.id, title: '今日史事', desc: `${dailyEvent.yearText}，${dailyEvent.desc}` }
+      : { eventId: daily.eventId, title: '今日史事', desc: daily.desc || '' };
     const era = history.topics.find((item) => item.id === 'tang');
     const modern = history.topics.find((item) => item.id === 'modern-china');
 
     this.setData({
       dateText: `${month}月${day}日 · 今天`,
-      hero: daily,
+      hero,
       era,
       modern
     });
@@ -420,7 +547,10 @@ Page('project://pages/home/home.js', {
       this.showList(
         '选择一个时代',
         history.periods.map((item) => `${item.name} · ${item.title}`),
-        (index) => this.showDetail(history.periods[index])
+        (index) => {
+          const period = history.periods[index];
+          wx.navigateTo({ url: `/pages/period/period?id=${period.id}` });
+        }
       );
       return;
     }
@@ -485,11 +615,15 @@ Page('project://pages/home/home.js', {
   },
 
   onEraTap() {
-    this.showDetail(this.data.era);
+    wx.redirectTo({ url: '/pages/timeline/timeline?mode=ancient' });
   },
 
   onModernTap() {
-    this.showDetail(this.data.modern);
+    wx.redirectTo({ url: '/pages/timeline/timeline?mode=modern' });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 一页一页读历史', path: '/pages/home/home' };
   }
 });
 
@@ -563,6 +697,10 @@ Page('project://pages/timeline/timeline.js', {
     const item = history.events.find((event) => event.id === id);
     if (!item) return;
     wx.navigateTo({ url: `/pages/event/event?id=${item.id}` });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 时间轴上的中国', path: '/pages/timeline/timeline' };
   }
 });
 
@@ -623,20 +761,18 @@ Page('project://pages/discover/discover.js', {
 
   onPeriod(e) {
     const id = e.currentTarget.dataset.id;
-    const item = history.periods.find((period) => period.id === id);
-    if (!item) return;
-    wx.showModal({
-      title: `${item.name} · ${item.title}`,
-      content: `${item.desc}\n\n史料：${item.source}`,
-      showCancel: false,
-      confirmText: '知道了'
-    });
+    if (!history.periods.find((period) => period.id === id)) return;
+    wx.navigateTo({ url: `/pages/period/period?id=${id}` });
   },
 
   onPick(e) {
     wx.navigateTo({
       url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
     });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 发现', path: '/pages/discover/discover' };
   }
 });
 
@@ -645,6 +781,42 @@ __register('/pages/discover/discover.wxml', function (require, module, exports) 
 __register('/pages/discover/discover.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 160rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 124rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.brand {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  font-weight: 400;\r\n  letter-spacing: 0.08em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.intro {\r\n  margin-top: 26rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1.6;\r\n  letter-spacing: 0.02em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 38rpx;\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-link {\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 朝代 2×2 卡 */\r\n.dyn-grid {\r\n  margin-top: 20rpx;\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  gap: 18rpx;\r\n}\r\n\r\n.dyn-card {\r\n  position: relative;\r\n  width: 320rpx;\r\n  height: 300rpx;\r\n  border-radius: 34rpx;\r\n  overflow: hidden;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.07);\r\n}\r\n\r\n.dyn-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.dyn-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  top: 0;\r\n  background: linear-gradient(180deg, rgba(246, 241, 234, 0.06) 40%, rgba(31, 27, 22, 0.55));\r\n}\r\n\r\n.dyn-copy {\r\n  position: absolute;\r\n  left: 24rpx;\r\n  bottom: 20rpx;\r\n  z-index: 2;\r\n}\r\n\r\n.dyn-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 40rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #FFF8EF;\r\n}\r\n\r\n.dyn-years {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.05em;\r\n  color: rgba(255, 248, 239, 0.78);\r\n}\r\n\r\n.dyn-title {\r\n  position: absolute;\r\n  right: 24rpx;\r\n  top: 20rpx;\r\n  z-index: 2;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.08em;\r\n  color: rgba(31, 27, 22, 0.72);\r\n  background: rgba(252, 251, 248, 0.72);\r\n  padding: 6rpx 14rpx;\r\n  border-radius: 16rpx;\r\n}\r\n\r\n.dyn-card.dyn-modern .dyn-title {\r\n  color: rgba(126, 154, 154, 0.95);\r\n}\r\n\r\n/* 专题卡（盛唐气象复用首页视觉语言） */\r\n.era-card {\r\n  position: relative;\r\n  height: 216rpx;\r\n  margin-top: 20rpx;\r\n  padding: 26rpx 30rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.era-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.era-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  width: 52%;\r\n  background: linear-gradient(90deg, rgba(250, 247, 241, 0.42), rgba(250, 247, 241, 0));\r\n  pointer-events: none;\r\n}\r\n\r\n.era-copy {\r\n  position: relative;\r\n  z-index: 2;\r\n  max-width: 480rpx;\r\n}\r\n\r\n.era-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.era-desc {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 19rpx;\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-go {\r\n  position: absolute;\r\n  right: 28rpx;\r\n  bottom: 22rpx;\r\n  z-index: 2;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 36rpx;\r\n  color: rgba(31, 27, 22, 0.45);\r\n}\r\n\r\n.modern-card {\r\n  position: relative;\r\n  height: 200rpx;\r\n  margin-top: 16rpx;\r\n  padding: 28rpx 30rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.05);\r\n  display: flex;\r\n  align-items: center;\r\n  overflow: hidden;\r\n}\r\n\r\n.modern-copy {\r\n  position: relative;\r\n  z-index: 2;\r\n  flex: 1;\r\n  min-width: 0;\r\n  padding-right: 150rpx;\r\n}\r\n\r\n.modern-kicker {\r\n  display: block;\r\n  font-size: 15rpx;\r\n  letter-spacing: 0.12em;\r\n  color: #7E9A9A;\r\n}\r\n\r\n.modern-title {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.modern-desc {\r\n  display: block;\r\n  max-width: 420rpx;\r\n  margin-top: 9rpx;\r\n  font-size: 19rpx;\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.modern-years {\r\n  position: absolute;\r\n  right: 28rpx;\r\n  bottom: 24rpx;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: flex-end;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  line-height: 1.1;\r\n  letter-spacing: 0.03em;\r\n  color: #A9BCC4;\r\n}\r\n\r\n.modern-dash {\r\n  width: 44rpx;\r\n  height: 1rpx;\r\n  margin: 8rpx 0;\r\n  background: rgba(126, 154, 154, 0.55);\r\n}\r\n\r\n/* 精选史事 */\r\n.pick-list {\r\n  margin-top: 20rpx;\r\n}\r\n\r\n.pick-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.pick-year {\r\n  width: 130rpx;\r\n  flex: 0 0 130rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.pick-year-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.pick-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.pick-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 27rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.pick-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 20rpx;\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.pick-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.tba-note {\r\n  margin-top: 26rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n"; });
 __register('/pages/profile/profile.js', function (require, module, exports) {
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
+
+const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
+
+// type+id → 展示条目（人物/事件）
+function resolveEntry(x) {
+  if (x.type === 'person') {
+    const p = history.persons.find((item) => item.id === x.id);
+    if (!p) return null;
+    return {
+      type: 'person',
+      id: p.id,
+      title: p.name,
+      sub: `${p.era} · ${p.roles}`,
+      modern: MODERN_ERAS.indexOf(p.era) >= 0
+    };
+  }
+  if (x.type === 'event') {
+    const ev = history.events.find((item) => item.id === x.id);
+    if (!ev) return null;
+    return {
+      type: 'event',
+      id: ev.id,
+      title: ev.title,
+      sub: `${ev.yearText} · ${ev.era}`,
+      modern: ev.mode === 'modern'
+    };
+  }
+  return null;
+}
+
+function fmtWhen(ts) {
+  const d = new Date(ts);
+  const pad = (n) => (n < 10 ? '0' + n : '' + n);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 Page('project://pages/profile/profile.js', {
   data: {
@@ -653,7 +825,11 @@ Page('project://pages/profile/profile.js', {
       { key: 'events', label: '史事', value: 0 },
       { key: 'persons', label: '人物', value: 0 },
       { key: 'topics', label: '专题', value: 0 }
-    ]
+    ],
+    favs: [],
+    favCount: 0,
+    foots: [],
+    footCount: 0
   },
 
   onLoad() {
@@ -667,6 +843,21 @@ Page('project://pages/profile/profile.js', {
     });
   },
 
+  onShow() {
+    const favs = store
+      .listFavorites()
+      .map(resolveEntry)
+      .filter(Boolean);
+    const foots = store
+      .listFootprints()
+      .map((x) => {
+        const entry = resolveEntry(x);
+        return entry ? { ...entry, when: fmtWhen(x.ts) } : null;
+      })
+      .filter(Boolean);
+    this.setData({ favs, favCount: favs.length, foots, footCount: foots.length });
+  },
+
   goTab(e) {
     const page = e.currentTarget.dataset.page;
     if (!page || page === 'profile') return;
@@ -677,12 +868,12 @@ Page('project://pages/profile/profile.js', {
     wx.navigateTo({ url: '/pages/search/search' });
   },
 
-  onFav() {
-    wx.showToast({ title: '收藏将在下一版开放', icon: 'none' });
-  },
-
-  onFootprints() {
-    wx.showToast({ title: '浏览足迹整理中', icon: 'none' });
+  onEntry(e) {
+    const { type, id } = e.currentTarget.dataset;
+    const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
+    const exist = history[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
+    if (!exist) return;
+    wx.navigateTo({ url });
   },
 
   onDataNote() {
@@ -727,11 +918,12 @@ Page('project://pages/profile/profile.js', {
   onClearCache() {
     wx.showModal({
       title: '清除缓存',
-      content: '只清空本地临时缓存，不影响收藏（尚未开放）。',
+      content: '只清空本地临时缓存；收藏与浏览足迹会一并清除。',
       confirmText: '清除',
       success: (res) => {
         if (!res.confirm) return;
         wx.clearStorageSync();
+        this.onShow();
         wx.showToast({ title: '已清除', icon: 'success' });
       }
     });
@@ -739,16 +931,18 @@ Page('project://pages/profile/profile.js', {
 });
 
 });
-__register('/pages/profile/profile.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <text class=\"brand\">我的</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <view class=\"avatar-wrap\">\r\n        <image class=\"avatar\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      </view>\r\n      <view class=\"head-info\">\r\n        <text class=\"nick\">史页客</text>\r\n        <text class=\"tagline\">以千年为卷轴，读万古事</text>\r\n      </view>\r\n      <text class=\"head-seal\">史</text>\r\n    </view>\r\n\r\n    <view class=\"stats-card\">\r\n      <view class=\"stat\" wx:for=\"{{stats}}\" wx:key=\"key\">\r\n        <text class=\"stat-num\">{{item.value}}</text>\r\n        <text class=\"stat-label\">{{item.label}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"banner-card\" bindtap=\"onAboutBanner\">\r\n      <image class=\"banner-bg\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      <view class=\"banner-shade\"></view>\r\n      <text class=\"banner-title\">千古长卷</text>\r\n      <text class=\"banner-sub\">王希孟《千里江山图》卷 · 故宫博物院藏</text>\r\n    </view>\r\n\r\n    <view class=\"menu-card\">\r\n      <view class=\"menu-row\" bindtap=\"onSearch\">\r\n        <text class=\"menu-label\">搜索史事 · 人物</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onFav\">\r\n        <text class=\"menu-label\">我的收藏</text>\r\n        <text class=\"menu-hint\">未开放</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onFootprints\">\r\n        <text class=\"menu-label\">浏览足迹</text>\r\n        <text class=\"menu-hint\">整理中</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onDataNote\">\r\n        <text class=\"menu-label\">数据与史料说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAssetNote\">\r\n        <text class=\"menu-label\">素材与授权说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAbout\">\r\n        <text class=\"menu-label\">关于史页</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row last\" bindtap=\"onClearCache\">\r\n        <text class=\"menu-label\">清除缓存</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n  </view>\r\n\r\n  <view class=\"tabbar\">\r\n    <view class=\"tab\" data-page=\"home\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/home.png\" mode=\"aspectFit\"></image>\r\n      <text>首页</text>\r\n    </view>\r\n    <view class=\"tab\" data-page=\"timeline\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/timeline.png\" mode=\"aspectFit\"></image>\r\n      <text>时间轴</text>\r\n    </view>\r\n    <view class=\"tab\" data-page=\"discover\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/discover.png\" mode=\"aspectFit\"></image>\r\n      <text>发现</text>\r\n    </view>\r\n    <view class=\"tab active\" data-page=\"profile\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/profile.png\" mode=\"aspectFit\"></image>\r\n      <text>我的</text>\r\n    </view>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/profile/profile.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 160rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 124rpx;\r\n  display: flex;\r\n  align-items: center;\r\n}\r\n\r\n.brand {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  font-weight: 400;\r\n  letter-spacing: 0.08em;\r\n  color: #1F1D19;\r\n}\r\n\r\n/* 用户头卡 */\r\n.head-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 24rpx;\r\n}\r\n\r\n.avatar-wrap {\r\n  width: 108rpx;\r\n  height: 108rpx;\r\n  border-radius: 50%;\r\n  overflow: hidden;\r\n  border: 2rpx solid rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.avatar {\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.head-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.nick {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 36rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.tagline {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.head-seal {\r\n  width: 46rpx;\r\n  height: 52rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n/* 数据统计 */\r\n.stats-card {\r\n  margin-top: 18rpx;\r\n  padding: 30rpx 20rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  display: flex;\r\n}\r\n\r\n.stat {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 8rpx;\r\n}\r\n\r\n.stat-num {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #A9825E;\r\n}\r\n\r\n.stat-label {\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 千古长卷横幅 */\r\n.banner-card {\r\n  position: relative;\r\n  height: 220rpx;\r\n  margin-top: 18rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.07);\r\n}\r\n\r\n.banner-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.banner-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(246, 241, 234, 0) 30%, rgba(31, 27, 22, 0.60));\r\n}\r\n\r\n.banner-title {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 44rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #FFF8EF;\r\n}\r\n\r\n.banner-sub {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 18rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: rgba(255, 248, 239, 0.82);\r\n}\r\n\r\n/* 功能清单 */\r\n.menu-card {\r\n  margin-top: 22rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  padding: 6rpx 28rpx;\r\n}\r\n\r\n.menu-row {\r\n  display: flex;\r\n  align-items: center;\r\n  height: 96rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.menu-row.last {\r\n  border-bottom: none;\r\n}\r\n\r\n.menu-label {\r\n  flex: 1;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #2C2924;\r\n}\r\n\r\n.menu-hint {\r\n  margin-right: 14rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.menu-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n"; });
+__register('/pages/profile/profile.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <text class=\"brand\">我的</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <view class=\"avatar-wrap\">\r\n        <image class=\"avatar\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      </view>\r\n      <view class=\"head-info\">\r\n        <text class=\"nick\">史页客</text>\r\n        <text class=\"tagline\">以千年为卷轴，读万古事</text>\r\n      </view>\r\n      <text class=\"head-seal\">史</text>\r\n    </view>\r\n\r\n    <view class=\"stats-card\">\r\n      <view class=\"stat\" wx:for=\"{{stats}}\" wx:key=\"key\">\r\n        <text class=\"stat-num\">{{item.value}}</text>\r\n        <text class=\"stat-label\">{{item.label}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"banner-card\" bindtap=\"onAboutBanner\">\r\n      <image class=\"banner-bg\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      <view class=\"banner-shade\"></view>\r\n      <text class=\"banner-title\">千古长卷</text>\r\n      <text class=\"banner-sub\">王希孟《千里江山图》卷 · 故宫博物院藏</text>\r\n    </view>\r\n\r\n    <view class=\"list-card\" wx:if=\"{{favs.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">我的收藏</text>\r\n        <text class=\"list-count\">{{favCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{favs}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"list-card\" wx:if=\"{{foots.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">浏览足迹</text>\r\n        <text class=\"list-count\">{{footCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{foots}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-when\">{{item.when}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"menu-card\">\r\n      <view class=\"menu-row\" bindtap=\"onSearch\">\r\n        <text class=\"menu-label\">搜索史事 · 人物</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onDataNote\">\r\n        <text class=\"menu-label\">数据与史料说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAssetNote\">\r\n        <text class=\"menu-label\">素材与授权说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAbout\">\r\n        <text class=\"menu-label\">关于史页</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row last\" bindtap=\"onClearCache\">\r\n        <text class=\"menu-label\">清除缓存</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n  </view>\r\n\r\n  <view class=\"tabbar\">\r\n    <view class=\"tab\" data-page=\"home\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/home.png\" mode=\"aspectFit\"></image>\r\n      <text>首页</text>\r\n    </view>\r\n    <view class=\"tab\" data-page=\"timeline\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/timeline.png\" mode=\"aspectFit\"></image>\r\n      <text>时间轴</text>\r\n    </view>\r\n    <view class=\"tab\" data-page=\"discover\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/discover.png\" mode=\"aspectFit\"></image>\r\n      <text>发现</text>\r\n    </view>\r\n    <view class=\"tab active\" data-page=\"profile\" bindtap=\"goTab\">\r\n      <image class=\"tab-icon\" src=\"/assets/icons/profile.png\" mode=\"aspectFit\"></image>\r\n      <text>我的</text>\r\n    </view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/profile/profile.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 160rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 124rpx;\r\n  display: flex;\r\n  align-items: center;\r\n}\r\n\r\n.brand {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  font-weight: 400;\r\n  letter-spacing: 0.08em;\r\n  color: #1F1D19;\r\n}\r\n\r\n/* 用户头卡 */\r\n.head-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 24rpx;\r\n}\r\n\r\n.avatar-wrap {\r\n  width: 108rpx;\r\n  height: 108rpx;\r\n  border-radius: 50%;\r\n  overflow: hidden;\r\n  border: 2rpx solid rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.avatar {\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.head-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.nick {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 36rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.tagline {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.head-seal {\r\n  width: 46rpx;\r\n  height: 52rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n/* 数据统计 */\r\n.stats-card {\r\n  margin-top: 18rpx;\r\n  padding: 30rpx 20rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  display: flex;\r\n}\r\n\r\n.stat {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 8rpx;\r\n}\r\n\r\n.stat-num {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #A9825E;\r\n}\r\n\r\n.stat-label {\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 千古长卷横幅 */\r\n.banner-card {\r\n  position: relative;\r\n  height: 220rpx;\r\n  margin-top: 18rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.07);\r\n}\r\n\r\n.banner-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.banner-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(246, 241, 234, 0) 30%, rgba(31, 27, 22, 0.60));\r\n}\r\n\r\n.banner-title {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 44rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #FFF8EF;\r\n}\r\n\r\n.banner-sub {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 18rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: rgba(255, 248, 239, 0.82);\r\n}\r\n\r\n/* 功能清单 */\r\n.menu-card {\r\n  margin-top: 22rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  padding: 6rpx 28rpx;\r\n}\r\n\r\n.menu-row {\r\n  display: flex;\r\n  align-items: center;\r\n  height: 96rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.menu-row.last {\r\n  border-bottom: none;\r\n}\r\n\r\n.menu-label {\r\n  flex: 1;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #2C2924;\r\n}\r\n\r\n.menu-hint {\r\n  margin-right: 14rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.menu-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n/* 收藏 / 足迹列表 */\r\n.list-card {\r\n  margin-top: 22rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  padding: 26rpx 28rpx 12rpx;\r\n}\r\n\r\n.list-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  padding: 0 4rpx 14rpx;\r\n}\r\n\r\n.list-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 27rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.list-count {\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.list-row {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  padding: 20rpx 4rpx;\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.row-char {\r\n  flex: 0 0 72rpx;\r\n  width: 72rpx;\r\n  height: 72rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border-radius: 20rpx;\r\n  background: rgba(163, 74, 62, 0.08);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  color: #A34A3E;\r\n}\r\n\r\n.row-char.row-modern {\r\n  background: rgba(126, 154, 154, 0.14);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.row-main {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.row-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.row-sub {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.row-sub.sub-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.row-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.row-when {\r\n  flex: 0 0 auto;\r\n  font-size: 17rpx;\r\n  letter-spacing: 0.02em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n"; });
 __register('/pages/event/event.js', function (require, module, exports) {
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 Page('project://pages/event/event.js', {
   data: {
     event: null,
     seal: '',
-    relatedPersons: []
+    relatedPersons: [],
+    collected: false
   },
 
   onLoad(options) {
@@ -766,8 +960,18 @@ Page('project://pages/event/event.js', {
     this.setData({
       event,
       relatedPersons,
-      seal: event.title.charAt(0)
+      seal: event.title.charAt(0),
+      collected: store.isFavorite('event', event.id)
     });
+
+    store.addFootprint('event', event.id);
+  },
+
+  toggleCollect() {
+    if (!this.data.event) return;
+    const on = store.toggleFavorite('event', this.data.event.id);
+    this.setData({ collected: on });
+    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   goBack() {
@@ -786,14 +990,23 @@ Page('project://pages/event/event.js', {
     wx.redirectTo({
       url: `/pages/timeline/timeline?mode=${this.data.event.mode}`
     });
+  },
+
+  onShareAppMessage() {
+    const event = this.data.event;
+    return {
+      title: event ? `${event.title} · 史页` : '史页',
+      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+    };
   }
 });
 
 });
-__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{event}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\">\r\n        <text class=\"back-icon\">‹</text>\r\n      </view>\r\n      <text class=\"top-title\">史页 · 事件</text>\r\n      <text class=\"top-seal {{event.mode === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\r\n    </view>\r\n\r\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\r\n      <text class=\"e-year\">{{event.yearText}}</text>\r\n      <text class=\"e-title\">{{event.title}}</text>\r\n      <view class=\"e-meta\">\r\n        <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\r\n          <text>{{event.era}}</text>\r\n        </view>\r\n        <text class=\"e-tags\">{{event.tags}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\r\n        <text>{{event.desc}}</text>\r\n      </view>\r\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\r\n      <text class=\"section-title\">其时其人</text>\r\n    </view>\r\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\r\n      <view\r\n        wx:for=\"{{relatedPersons}}\"\r\n        wx:key=\"id\"\r\n        class=\"p-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goPerson\"\r\n      >\r\n        <text class=\"p-char\">{{item.name}}</text>\r\n        <view class=\"p-info\">\r\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\r\n          <text class=\"p-roles\">{{item.roles}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\r\n        <text>回时间轴再看一眼</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{event.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  width: 64rpx;\r\n  height: 64rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n\r\n.back-icon {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #1F1D19;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.e-year {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #A9825E;\r\n}\r\n\r\n.head-modern .e-year {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-title {\r\n  display: block;\r\n  margin-top: 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  letter-spacing: 0.06em;\r\n  line-height: 1.25;\r\n  color: #1F1D19;\r\n}\r\n\r\n.e-meta {\r\n  margin-top: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 18rpx;\r\n}\r\n\r\n.era-chip {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-tags {\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: 23rpx;\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 25rpx;\r\n  color: #1F1D19;\r\n  margin-bottom: 22rpx;\r\n  padding-bottom: 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.p-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.p-char {\r\n  width: 96rpx;\r\n  flex: 0 0 96rpx;\r\n  height: 96rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border-radius: 24rpx;\r\n  background: rgba(163, 74, 62, 0.08);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.p-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.p-dates {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-roles {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 22rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: 23rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
+__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{event}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\">\r\n        <text class=\"back-icon\">‹</text>\r\n      </view>\r\n      <text class=\"top-title\">史页 · 事件</text>\r\n      <text class=\"top-seal {{event.mode === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\r\n    </view>\r\n\r\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\r\n      <text class=\"e-year\">{{event.yearText}}</text>\r\n      <text class=\"e-title\">{{event.title}}</text>\r\n      <view class=\"e-meta\">\r\n        <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\r\n          <text>{{event.era}}</text>\r\n        </view>\r\n        <text class=\"e-tags\">{{event.tags}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\r\n        <text>{{event.desc}}</text>\r\n      </view>\r\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\r\n      <text class=\"section-title\">其时其人</text>\r\n    </view>\r\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\r\n      <view\r\n        wx:for=\"{{relatedPersons}}\"\r\n        wx:key=\"id\"\r\n        class=\"p-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goPerson\"\r\n      >\r\n        <text class=\"p-char\">{{item.name}}</text>\r\n        <view class=\"p-info\">\r\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\r\n          <text class=\"p-roles\">{{item.roles}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\r\n        <text>回时间轴再看一眼</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{event.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  width: 64rpx;\r\n  height: 64rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n\r\n.back-icon {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #1F1D19;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.e-year {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #A9825E;\r\n}\r\n\r\n.head-modern .e-year {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-title {\r\n  display: block;\r\n  margin-top: 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  letter-spacing: 0.06em;\r\n  line-height: 1.25;\r\n  color: #1F1D19;\r\n}\r\n\r\n.e-meta {\r\n  margin-top: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 18rpx;\r\n}\r\n\r\n.era-chip {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-tags {\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: 23rpx;\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 25rpx;\r\n  color: #1F1D19;\r\n  margin-bottom: 22rpx;\r\n  padding-bottom: 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.p-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.p-char {\r\n  width: 96rpx;\r\n  flex: 0 0 96rpx;\r\n  height: 96rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border-radius: 24rpx;\r\n  background: rgba(163, 74, 62, 0.08);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.p-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.p-dates {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-roles {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 22rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: 23rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
 __register('/pages/person/person.js', function (require, module, exports) {
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -803,7 +1016,8 @@ Page('project://pages/person/person.js', {
     person: null,
     accent: 'ancient',
     seal: '',
-    related: []
+    related: [],
+    collected: false
   },
 
   onLoad(options) {
@@ -821,7 +1035,93 @@ Page('project://pages/person/person.js', {
       person,
       related,
       accent: MODERN_ERAS.indexOf(person.era) >= 0 ? 'modern' : 'ancient',
-      seal: person.name.charAt(0)
+      seal: person.name.charAt(0),
+      collected: store.isFavorite('person', person.id)
+    });
+
+    store.addFootprint('person', person.id);
+  },
+
+  toggleCollect() {
+    if (!this.data.person) return;
+    const on = store.toggleFavorite('person', this.data.person.id);
+    this.setData({ collected: on });
+    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
+  },
+
+  goBack() {
+    wx.navigateBack({
+      fail: () => wx.redirectTo({ url: '/pages/home/home' })
+    });
+  },
+
+  goEvent(e) {
+    wx.navigateTo({
+      url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
+    });
+  },
+
+  onShareAppMessage() {
+    const person = this.data.person;
+    return {
+      title: person ? `${person.name} · 史页` : '史页',
+      path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
+    };
+  }
+});
+
+});
+__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{person}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\">\r\n        <text class=\"back-icon\">‹</text>\r\n      </view>\r\n      <text class=\"top-title\">史页 · 人物</text>\r\n      <text class=\"top-seal {{accent === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <text class=\"p-name\">{{person.name}}</text>\r\n      <view class=\"p-meta\">\r\n        <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\r\n        <text class=\"p-dot\">·</text>\r\n        <text class=\"p-roles\">{{person.roles}}</text>\r\n      </view>\r\n      <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\r\n        <text>{{person.era}}</text>\r\n      </view>\r\n      <view class=\"quote-block\">\r\n        <text class=\"quote-mark\">“</text>\r\n        <text class=\"quote\">{{person.quote}}</text>\r\n        <text class=\"quote-src\">——{{person.quoteSource}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\r\n      <text class=\"section-title\">生平际会 · 相关史事</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\r\n      <view\r\n        wx:for=\"{{related}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{person.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  width: 64rpx;\r\n  height: 64rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n\r\n.back-icon {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #1F1D19;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 64rpx;\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-meta {\r\n  margin-top: 16rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n}\r\n\r\n.p-dates {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-dot {\r\n  color: #8C857A;\r\n}\r\n\r\n.p-roles {\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-chip {\r\n  margin-top: 22rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.quote-block {\r\n  margin-top: 28rpx;\r\n  padding: 26rpx 26rpx 24rpx;\r\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\r\n  background: rgba(246, 241, 234, 0.5);\r\n  border-radius: 0 24rpx 24rpx 0;\r\n}\r\n\r\n.quote-mark {\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 40rpx;\r\n  line-height: 0.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.quote {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 28rpx;\r\n  line-height: 1.7;\r\n  color: #1F1D19;\r\n}\r\n\r\n.quote-src {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 20rpx;\r\n  color: #8C857A;\r\n  text-align: right;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: 23rpx;\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  width: 130rpx;\r\n  flex: 0 0 130rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 20rpx;\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: 23rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
+__register('/pages/period/period.js', function (require, module, exports) {
+const history = require('../../data/history.js');
+
+// 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
+const PERIOD_META = {
+  han: { img: '/assets/paintings/han.jpg', yearText: '前202–公元9', seal: '汉' },
+  tang: { img: '/assets/paintings/tang.jpg', yearText: '618–907', seal: '唐' },
+  song: { img: '/assets/paintings/song.jpg', yearText: '960–1127', seal: '宋' },
+  modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
+};
+
+const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
+
+Page('project://pages/period/period.js', {
+  data: {
+    period: null,
+    events: [],
+    span: '',
+    seal: ''
+  },
+
+  onLoad(options) {
+    const period = history.periods.find((item) => item.id === options.id);
+    if (!period) {
+      wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+      return;
+    }
+
+    const meta = PERIOD_META[period.id] || {};
+    // 该时代下的史事：事件 era 命中朝代名，或与近现代面板对应
+    const inPeriod = (event) =>
+      event.era === period.name ||
+      (period.id === 'modern' && MODERN_ERAS.indexOf(event.era) >= 0);
+    const events = history.events
+      .filter(inPeriod)
+      .sort((a, b) => a.year - b.year);
+
+    // 时代脉络：以收录史事的首尾纪年概括跨度（单条用「自」起句）
+    const span = events.length > 1
+      ? `从${events[0].yearText}到${events[events.length - 1].yearText}`
+      : events.length === 1
+        ? `自${events[0].yearText}`
+        : '';
+
+    this.setData({
+      period: { ...period, ...meta },
+      events,
+      span,
+      seal: meta.seal || period.name.charAt(0)
     });
   },
 
@@ -835,12 +1135,26 @@ Page('project://pages/person/person.js', {
     wx.navigateTo({
       url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
     });
+  },
+
+  goTimeline() {
+    wx.redirectTo({
+      url: `/pages/timeline/timeline?mode=${this.data.period.id === 'modern' ? 'modern' : 'ancient'}`
+    });
+  },
+
+  onShareAppMessage() {
+    const period = this.data.period;
+    return {
+      title: period ? `${period.name} · 史页` : '史页',
+      path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
+    };
   }
 });
 
 });
-__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{person}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\">\r\n        <text class=\"back-icon\">‹</text>\r\n      </view>\r\n      <text class=\"top-title\">史页 · 人物</text>\r\n      <text class=\"top-seal {{accent === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <text class=\"p-name\">{{person.name}}</text>\r\n      <view class=\"p-meta\">\r\n        <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\r\n        <text class=\"p-dot\">·</text>\r\n        <text class=\"p-roles\">{{person.roles}}</text>\r\n      </view>\r\n      <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\r\n        <text>{{person.era}}</text>\r\n      </view>\r\n      <view class=\"quote-block\">\r\n        <text class=\"quote-mark\">“</text>\r\n        <text class=\"quote\">{{person.quote}}</text>\r\n        <text class=\"quote-src\">——{{person.quoteSource}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\r\n      <text class=\"section-title\">生平际会 · 相关史事</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\r\n      <view\r\n        wx:for=\"{{related}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{person.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  width: 64rpx;\r\n  height: 64rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n\r\n.back-icon {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #1F1D19;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 64rpx;\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-meta {\r\n  margin-top: 16rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n}\r\n\r\n.p-dates {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-dot {\r\n  color: #8C857A;\r\n}\r\n\r\n.p-roles {\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-chip {\r\n  margin-top: 22rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.quote-block {\r\n  margin-top: 28rpx;\r\n  padding: 26rpx 26rpx 24rpx;\r\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\r\n  background: rgba(246, 241, 234, 0.5);\r\n  border-radius: 0 24rpx 24rpx 0;\r\n}\r\n\r\n.quote-mark {\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 40rpx;\r\n  line-height: 0.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.quote {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 28rpx;\r\n  line-height: 1.7;\r\n  color: #1F1D19;\r\n}\r\n\r\n.quote-src {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 20rpx;\r\n  color: #8C857A;\r\n  text-align: right;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: 23rpx;\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  width: 130rpx;\r\n  flex: 0 0 130rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 20rpx;\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: 19rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
+__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{period}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\">\n        <text class=\"back-icon\">‹</text>\n      </view>\n      <text class=\"top-title\">史页 · 朝代</text>\n      <text class=\"top-seal {{period.id === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\n    </view>\n\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"hero-band\">\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\n        <view class=\"hero-shade\"></view>\n        <view class=\"hero-copy\">\n          <text class=\"p-name\">{{period.name}}</text>\n          <text class=\"p-years\">{{period.yearText}}</text>\n        </view>\n        <text class=\"hero-title\">{{period.title}}</text>\n      </view>\n      <text class=\"p-desc\">{{period.desc}}</text>\n    </view>\n\n    <view class=\"body-card\" wx:if=\"{{span}}\">\n      <view class=\"para\">\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\n        <text>进时间轴看这个时代的脉络</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\n      <text class=\"section-title\">这个时代的史事</text>\n      <text class=\"section-count\">{{events.length}} 条</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\n      <view\n        wx:for=\"{{events}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{period.source}}</view>\n  </view>\n</view>\n"; });
+__register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  width: 64rpx;\n  height: 64rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.back-icon {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 44rpx;\n  line-height: 1;\n  color: #1F1D19;\n}\n\n.top-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 26rpx;\n  letter-spacing: 0.08em;\n  color: #8C857A;\n}\n\n.top-seal {\n  width: 44rpx;\n  height: 50rpx;\n  background: #A34A3E;\n  color: #FFF8EF;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 20rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transform: rotate(2deg);\n}\n\n.top-seal.seal-modern {\n  background: #7E9A9A;\n}\n\n.head-card {\n  margin-top: 26rpx;\n  padding: 24rpx 24rpx 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n}\n\n.head-card.head-modern {\n  border-top-color: rgba(126, 154, 154, 0.6);\n}\n\n.hero-band {\n  position: relative;\n  height: 300rpx;\n  border-radius: 30rpx;\n  overflow: hidden;\n}\n\n.hero-img {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  display: block;\n}\n\n.hero-shade {\n  position: absolute;\n  left: 0;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\n}\n\n.hero-copy {\n  position: absolute;\n  left: 28rpx;\n  bottom: 24rpx;\n  z-index: 2;\n}\n\n.p-name {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 52rpx;\n  letter-spacing: 0.08em;\n  line-height: 1.1;\n  color: #FCFBF8;\n}\n\n.p-years {\n  display: block;\n  margin-top: 10rpx;\n  font-size: 21rpx;\n  letter-spacing: 0.08em;\n  color: rgba(252, 251, 248, 0.86);\n}\n\n.hero-title {\n  position: absolute;\n  right: 24rpx;\n  bottom: 24rpx;\n  z-index: 2;\n  height: 44rpx;\n  padding: 0 18rpx;\n  display: inline-flex;\n  align-items: center;\n  border-radius: 22rpx;\n  background: rgba(252, 251, 248, 0.92);\n  font-size: 19rpx;\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n.p-desc {\n  display: block;\n  margin-top: 24rpx;\n  padding: 0 10rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 24rpx;\n  line-height: 1.7;\n  letter-spacing: 0.02em;\n  color: #5F5A52;\n}\n\n.body-card {\n  margin-top: 22rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.para {\n  font-size: 23rpx;\n  line-height: 1.85;\n  letter-spacing: 0.02em;\n  color: #2C2924;\n}\n\n.para + .para {\n  margin-top: 22rpx;\n}\n\n.para.lead {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 25rpx;\n  color: #1F1D19;\n}\n\n.section-head {\n  margin-top: 34rpx;\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n}\n\n.section-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 30rpx;\n  letter-spacing: 0.06em;\n  color: #1F1D19;\n}\n\n.section-count {\n  font-size: 19rpx;\n  letter-spacing: 0.05em;\n  color: #8C857A;\n}\n\n.rel-list {\n  margin-top: 18rpx;\n}\n\n.rel-card {\n  display: flex;\n  align-items: center;\n  gap: 22rpx;\n  margin-bottom: 16rpx;\n  padding: 24rpx 26rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.rel-year {\n  flex: 0 0 130rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 21rpx;\n  letter-spacing: 0.02em;\n  color: #A9825E;\n}\n\n.rel-year.accent-modern {\n  color: #7E9A9A;\n}\n\n.rel-body {\n  flex: 1;\n  min-width: 0;\n}\n\n.rel-title {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 25rpx;\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.rel-desc {\n  display: block;\n  margin-top: 8rpx;\n  font-size: 20rpx;\n  line-height: 1.6;\n  color: #8C857A;\n}\n\n.rel-arrow {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 32rpx;\n  color: #A39A8E;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: 19rpx;\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n\n.foot-actions {\n  margin-top: 30rpx;\n}\n\n.time-btn {\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: 23rpx;\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n"; });
 __register('/pages/search/search.js', function (require, module, exports) {
 const history = require('../../data/history.js');
 

@@ -30,19 +30,53 @@
       <text class="banner-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
     </view>
 
+    <view class="list-card" wx:if="{{favs.length}}">
+      <view class="list-head">
+        <text class="list-title">我的收藏</text>
+        <text class="list-count">{{favCount}} 条</text>
+      </view>
+      <view
+        class="list-row"
+        wx:for="{{favs}}"
+        wx:key="id"
+        data-type="{{item.type}}"
+        data-id="{{item.id}}"
+        bindtap="onEntry"
+      >
+        <text class="row-char {{item.modern ? 'row-modern' : ''}}">{{item.type === 'person' ? '人' : '事'}}</text>
+        <view class="row-main">
+          <text class="row-title">{{item.title}}</text>
+          <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+        </view>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="list-card" wx:if="{{foots.length}}">
+      <view class="list-head">
+        <text class="list-title">浏览足迹</text>
+        <text class="list-count">{{footCount}} 条</text>
+      </view>
+      <view
+        class="list-row"
+        wx:for="{{foots}}"
+        wx:key="id"
+        data-type="{{item.type}}"
+        data-id="{{item.id}}"
+        bindtap="onEntry"
+      >
+        <text class="row-char {{item.modern ? 'row-modern' : ''}}">{{item.type === 'person' ? '人' : '事'}}</text>
+        <view class="row-main">
+          <text class="row-title">{{item.title}}</text>
+          <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+        </view>
+        <text class="row-when">{{item.when}}</text>
+      </view>
+    </view>
+
     <view class="menu-card">
       <view class="menu-row" bindtap="onSearch">
         <text class="menu-label">搜索史事 · 人物</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-row" bindtap="onFav">
-        <text class="menu-label">我的收藏</text>
-        <text class="menu-hint">未开放</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-row" bindtap="onFootprints">
-        <text class="menu-label">浏览足迹</text>
-        <text class="menu-hint">整理中</text>
         <text class="menu-arrow">›</text>
       </view>
       <view class="menu-row" bindtap="onDataNote">

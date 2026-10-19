@@ -64,5 +64,9 @@ Page({
     const item = history.events.find((event) => event.id === id);
     if (!item) return;
     wx.navigateTo({ url: `/pages/event/event?id=${item.id}` });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 时间轴上的中国', path: '/pages/timeline/timeline' };
   }
 });

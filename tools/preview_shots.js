@@ -20,7 +20,7 @@ const targets = [
   ['03-timeline-ancient', 'timeline?shot=1'],
   ['04-timeline-modern', `timeline?shot=1&s=${esc('click:.seg-item:nth-child(2)')}`],
   ['05-discover', 'discover?shot=1'],
-  ['06-discover-modal-tang', `discover?shot=1&s=${esc('click:.dyn-card:nth-child(2)')}`],
+  ['06-period-tang', `discover?shot=1&s=${esc('click:.dyn-card:nth-child(2)')}`],
   ['07-profile', 'profile?shot=1'],
   ['08-profile-clear-cache', `profile?shot=1&s=${esc('click:.menu-row.last')}`],
   ['09-search', 'search?shot=1'],
@@ -29,7 +29,10 @@ const targets = [
   ['12-person-sushi', 'person?shot=1&id=su-shi'],
   ['13-person-luxun', 'person?shot=1&id=lu-xun'],
   ['14-event-chanyuan', 'event?shot=1&id=chanyuan-1005'],
-  ['15-event-xinhai', 'event?shot=1&id=xinhai-1911']
+  ['15-event-xinhai', 'event?shot=1&id=xinhai-1911'],
+  ['16-period-han', 'period?shot=1&id=han'],
+  ['17-period-modern', 'period?shot=1&id=modern'],
+  ['18-person-collect', `person?shot=1&id=su-shi&s=${esc('click:.ghost-btn')}`]
 ];
 
 let miss = 0;

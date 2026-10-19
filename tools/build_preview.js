@@ -10,7 +10,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', 'miniprogram');
 const OUT = path.join(__dirname, '..', 'ui', 'preview');
 
-const PAGES = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'search'];
+const PAGES = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search'];
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
   function wrapJs(modPath, source) {
@@ -31,9 +31,10 @@ parts.push('  var MOD = window.__SRC = {};');
 parts.push('  function __register(p, f) { MOD[p] = f; }');
 parts.push('');
 
-// app + data
+// app + data + utils
 parts.push(wrapJs('app.js', read('app.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
+parts.push(wrapJs('utils/store.js', read('utils/store.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>
@@ -58,4 +59,4 @@ parts.push('})();');
 
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, '_bundle.js'), parts.join('\n'), 'utf8');
-console.log(`OK ui/preview/_bundle.js （7 页 + app + data 已打包）`);
+console.log(`OK ui/preview/_bundle.js （${PAGES.length} 页 + app + data + utils 已打包）`);

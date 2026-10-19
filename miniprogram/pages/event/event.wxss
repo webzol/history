@@ -234,9 +234,12 @@
 
 .foot-actions {
   margin-top: 30rpx;
+  display: flex;
+  gap: 16rpx;
 }
 
 .ghost-btn {
+  flex: 1;
   height: 76rpx;
   display: flex;
   align-items: center;
@@ -247,6 +250,18 @@
   font-size: 23rpx;
   letter-spacing: 0.05em;
   color: #5F5A52;
+}
+
+.ghost-btn.on {
+  border-color: rgba(163, 74, 62, 0.45);
+  background: rgba(163, 74, 62, 0.06);
+  color: #A34A3E;
+}
+
+.ghost-btn.on.on-modern {
+  border-color: rgba(126, 154, 154, 0.5);
+  background: rgba(126, 154, 154, 0.08);
+  color: #5F7E7E;
 }
 
 .source-line {

@@ -50,6 +50,9 @@
     </view>
 
     <view class="foot-actions">
+      <view class="ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}" bindtap="toggleCollect">
+        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>
+      </view>
       <view class="ghost-btn" bindtap="goTimeline">
         <text>回时间轴再看一眼</text>
       </view>

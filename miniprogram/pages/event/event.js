@@ -1,10 +1,12 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 Page({
   data: {
     event: null,
     seal: '',
-    relatedPersons: []
+    relatedPersons: [],
+    collected: false
   },
 
   onLoad(options) {
@@ -22,8 +24,18 @@ Page({
     this.setData({
       event,
       relatedPersons,
-      seal: event.title.charAt(0)
+      seal: event.title.charAt(0),
+      collected: store.isFavorite('event', event.id)
     });
+
+    store.addFootprint('event', event.id);
+  },
+
+  toggleCollect() {
+    if (!this.data.event) return;
+    const on = store.toggleFavorite('event', this.data.event.id);
+    this.setData({ collected: on });
+    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   goBack() {
@@ -42,5 +54,13 @@ Page({
     wx.redirectTo({
       url: `/pages/timeline/timeline?mode=${this.data.event.mode}`
     });
+  },
+
+  onShareAppMessage() {
+    const event = this.data.event;
+    return {
+      title: event ? `${event.title} · 史页` : '史页',
+      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+    };
   }
 });

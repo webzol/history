@@ -296,6 +296,43 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-19 晚 · 完善批次：人物扩充 / 日期匹配 / 收藏足迹 / 朝代详情页 / 分享
+
+**数据扩充（roadmap #4）**
+
+- 新增 3 位人物条目（现共 6 位）：**赵匡胤**（陈桥兵变一条相关）、**王安石**（变法+澶渊两条）、**林则徐**（鸦片战争一条）——每条 5 段审校级生平 `details` + `quote/quoteSource` + `source` + `relatedEvents`，era/年代按考评。
+- 今日史事改为**「月-日」公历日期库**（history.daily 8 组映射：10-18/10-19→圆明园罹劫、10-10→辛亥革命、10-1→开国大典、9-18→九一八、5-4→五四、12-18→三中全会、8-29→南京条约），匹配不到回退 `dailyFallback`（汉武帝即位编辑精选）。农历事件（陈桥兵变）暂不列入日期库。
+- home.js hero 由日期库解析事件对象生成 desc（`yearText，desc`），hero 点击直达对应事件详情。
+
+**收藏 + 浏览足迹落地（原 Toast 占位）**
+
+- 新增 `miniprogram/utils/store.js`：favorites/footprints 本地存储（`shige_favorites` / `shige_footprints`），toggle 幂等、足迹限 20 条、按浏览时间倒序。
+- person/event 详情页：底部新增「收藏此人物 / 收藏此史事」ghost 按钮（古代朱砂、近现代蓝灰两态，已收藏显示 ✓），进入即写足迹；`onShareAppMessage` 分享（带 id 直达路径）。
+- 「我的」页：新增「我的收藏」「浏览足迹」列表卡（人物/事 char 徽格 + 标题 + 副标题/时间，点击跳详情）；菜单区移除占位行；清缓存语义更新为「收藏与足迹一并清除」并在确认后即时刷新列表；头像区统计人物数自动跟随种子（6）。
+
+**朝代详情页 `pages/period/`（第 8 个页面，替换 Modal）**
+
+- 顶栏「‹ 返回 + 史页·朝代 + 小印」、配画头卡（与发现页同款搜图素材）、`body` 时代脉络段（首尾纪年跨度；单条用「自」，空收录不渲染）、收录史事列表（按纪年升序）、无收录时（唐）给「进时间轴」ghost 引导；分享带 id。
+- 接线替换：home 朝代磁贴 ActionSheet → period 页；发现页朝代卡 → period 页（原 Modal 删除）；首页盛唐/百年中国卡 → 时间轴（古代/近现代 mode）。
+- selftest 断言朝代收录：西汉 1 条、北宋 4 条、近现代 7 条、唐 0 条。
+
+**分享**
+
+- home / timeline / discover（入口型）+ person / event / period（内容型带 id）全部接入 `onShareAppMessage`并断言。
+
+**校验**
+
+- `node tools/selftest.js` **PASS 276 / FAIL 0**（扩充至 8 页断言：新增日期库、收藏/足迹流、period 页、分享、新人物检索）。
+- `python tools/validate_miniprogram.py` OK **8 pages**；`node --check` 全部 JS 通过。
+- 浏览器截图 18 张（新增 16/17 period 两张、18 人物收藏态；06 改名 period-tang）逐张核对无 UI 问题。
+
+**遗留**
+
+- 唐朝代无独立事件收录，period 页引导进时间轴；后续可补贞观/开元史事。
+- 人物 6 位仍偏少（下轮可补武则天、辛弃疾、张之洞等）；素材授权与微信开发者工具实机编译仍未完成。
+
+---
+
 ## 2026-10-19 傍晚 · 全站交互自测 + 浏览器 UI 预览 harness（201 断言 / 15 截图全过）
 
 **目标**：接入真实数据后做全站自测——mock 层跑真实页面代码验证数据与交互，浏览器渲染层核对每个页面 UI 与交互。

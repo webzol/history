@@ -51,19 +51,17 @@ Page({
 
   onPeriod(e) {
     const id = e.currentTarget.dataset.id;
-    const item = history.periods.find((period) => period.id === id);
-    if (!item) return;
-    wx.showModal({
-      title: `${item.name} · ${item.title}`,
-      content: `${item.desc}\n\n史料：${item.source}`,
-      showCancel: false,
-      confirmText: '知道了'
-    });
+    if (!history.periods.find((period) => period.id === id)) return;
+    wx.navigateTo({ url: `/pages/period/period?id=${id}` });
   },
 
   onPick(e) {
     wx.navigateTo({
       url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
     });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 发现', path: '/pages/discover/discover' };
   }
 });

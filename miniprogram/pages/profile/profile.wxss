@@ -213,6 +213,100 @@
   color: #A39A8E;
 }
 
+/* 收藏 / 足迹列表 */
+.list-card {
+  margin-top: 22rpx;
+  border-radius: 34rpx;
+  background: #FCFBF8;
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);
+  padding: 26rpx 28rpx 12rpx;
+}
+
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 4rpx 14rpx;
+}
+
+.list-title {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 27rpx;
+  letter-spacing: 0.06em;
+  color: #1F1D19;
+}
+
+.list-count {
+  font-size: 18rpx;
+  letter-spacing: 0.05em;
+  color: #A39A8E;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 4rpx;
+  border-top: 1rpx solid rgba(70, 58, 45, 0.07);
+}
+
+.row-char {
+  flex: 0 0 72rpx;
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20rpx;
+  background: rgba(163, 74, 62, 0.08);
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 24rpx;
+  color: #A34A3E;
+}
+
+.row-char.row-modern {
+  background: rgba(126, 154, 154, 0.14);
+  color: #5F7E7E;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 24rpx;
+  letter-spacing: 0.04em;
+  color: #1F1D19;
+}
+
+.row-sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 18rpx;
+  letter-spacing: 0.03em;
+  color: #8C857A;
+}
+
+.row-sub.sub-modern {
+  color: #7E9A9A;
+}
+
+.row-arrow {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 30rpx;
+  color: #A39A8E;
+}
+
+.row-when {
+  flex: 0 0 auto;
+  font-size: 17rpx;
+  letter-spacing: 0.02em;
+  color: #A39A8E;
+}
+
 .tabbar {
   position: fixed;
   left: 0;

@@ -52,6 +52,12 @@
       </view>
     </view>
 
+    <view class="foot-actions">
+      <view class="ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}" bindtap="toggleCollect">
+        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>
+      </view>
+    </view>
+
     <view class="source-line">史料 · {{person.source}}</view>
   </view>
 </view>

@@ -13,13 +13,18 @@ Page({
     const month = now.getMonth() + 1;
     const day = now.getDate();
 
-    const daily = history.daily.find((item) => item.month === month && item.day === day) || history.daily[0];
+    // 今日史事：按「月-日」匹配日期库；无匹配时回退编辑精选
+    const daily = history.daily.find((item) => item.month === month && item.day === day) || history.dailyFallback;
+    const dailyEvent = history.events.find((item) => item.id === daily.eventId);
+    const hero = dailyEvent
+      ? { eventId: dailyEvent.id, title: '今日史事', desc: `${dailyEvent.yearText}，${dailyEvent.desc}` }
+      : { eventId: daily.eventId, title: '今日史事', desc: daily.desc || '' };
     const era = history.topics.find((item) => item.id === 'tang');
     const modern = history.topics.find((item) => item.id === 'modern-china');
 
     this.setData({
       dateText: `${month}月${day}日 · 今天`,
-      hero: daily,
+      hero,
       era,
       modern
     });
@@ -51,7 +56,10 @@ Page({
       this.showList(
         '选择一个时代',
         history.periods.map((item) => `${item.name} · ${item.title}`),
-        (index) => this.showDetail(history.periods[index])
+        (index) => {
+          const period = history.periods[index];
+          wx.navigateTo({ url: `/pages/period/period?id=${period.id}` });
+        }
       );
       return;
     }
@@ -116,10 +124,14 @@ Page({
   },
 
   onEraTap() {
-    this.showDetail(this.data.era);
+    wx.redirectTo({ url: '/pages/timeline/timeline?mode=ancient' });
   },
 
   onModernTap() {
-    this.showDetail(this.data.modern);
+    wx.redirectTo({ url: '/pages/timeline/timeline?mode=modern' });
+  },
+
+  onShareAppMessage() {
+    return { title: '史页 · 一页一页读历史', path: '/pages/home/home' };
   }
 });

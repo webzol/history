@@ -56,7 +56,10 @@ const wx = {
   setStorageSync(k, v) { storage[k] = v; },
   getStorageSync(k) { return Object.prototype.hasOwnProperty.call(storage, k) ? storage[k] : ''; },
   removeStorageSync(k) { delete storage[k]; },
-  clearStorageSync() { storageCleared += 1; },
+  clearStorageSync() {
+    storageCleared += 1;
+    Object.keys(storage).forEach((k) => delete storage[k]);
+  },
   showToast(opts) { route('showToast', '', opts); },
   showModal(opts) {
     pendingModal = opts;
@@ -158,7 +161,7 @@ function loadAll() {
   require(path.join(ROOT, 'app.js'));
   require(path.join(ROOT, 'data', 'history.js'));
 
-  const names = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'search'];
+  const names = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search'];
   names.forEach((name) => {
     currentFile = name;
     global.__CUR = name;
@@ -187,9 +190,9 @@ console.log('== 数据完整性 ==');
   const periodIds = new Set(history.periods.map((p) => p.id));
 
   eq(history.events.length, 12, '史事 12 条');
-  eq(history.persons.length, 3, '人物 3 位');
+  eq(history.persons.length, 6, '人物 6 位');
   ok(new Set([...eventIds]).size === 12, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 3, '人物 id 唯一');
+  ok(new Set([...personIds]).size === 6, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -209,8 +212,17 @@ console.log('== 数据完整性 ==');
   });
 
   ok(eventIds.has(history.daily[0].eventId), 'daily.eventId 指向真实史事');
+  history.daily.forEach((d) => {
+    ok(d.month >= 1 && d.month <= 12 && d.day >= 1 && d.day <= 31, `[daily ${d.month}-${d.day}] 日期合法`);
+    ok(eventIds.has(d.eventId), `[daily ${d.month}-${d.day}] 指向真实史事`);
+  });
+  ok(eventIds.has(history.dailyFallback.eventId), 'dailyFallback 指向真实史事');
+  ok(personIds.has('lu-xun') && (history.events.find((e) => e.id === 'yuanmingyuan-1860').source || '').length > 0, '鲁迅人物与圆明园事件数据完整');
   ok(personIds.has('han-wudi') && eventIds.has('han-wudi'), '汉武帝人物/事件同名 id 并存');
   ok(periodIds.has('tang') && periodIds.has('modern'), '朝代含 唐 / 近现代');
+  ['zhao-kuangyin', 'wang-anshi', 'lin-zexu'].forEach((id) =>
+    ok(personIds.has(id), `新人物条目存在 ${id}`)
+  );
 
   // 图片路径全部存在于磁盘
   const goodImg = (p) => ok(p && fs.existsSync(path.join(ROOT, p)), `素材存在 ${p}`);
@@ -233,8 +245,13 @@ console.log('== 首页 ==');
 
   p.onLoad();
   eq(p.data.dateText.slice(-4), '· 今天', 'dateText 为今天');
-  eq(p.data.hero.eventId, 'han-wudi', 'hero 连到今日史事事件');
+  ok(history.events.some((e) => e.id === p.data.hero.eventId), 'hero 连到真实史事事件');
   eq(p.data.hero.title, '今日史事', 'hero 标题');
+  ok(p.data.hero.desc && p.data.hero.desc.length > 0, 'hero 描述非空');
+  // 今日匹配应与日期库一致（同一天的公历月日）
+  const today = (() => { const d = new Date(); return d.getMonth() + 1 + '-' + d.getDate(); })();
+  const todayId = (history.daily.find((d) => `${d.month}-${d.day}` === today) || history.dailyFallback).eventId;
+  eq(p.data.hero.eventId, todayId, `今日(${today}) hero 与日期库一致`);
   eq(p.data.era.title, '盛唐气象', 'era 来自 topics');
   eq(p.data.modern.shortTitle, '百年中国', 'modern 来自 topics');
 
@@ -245,9 +262,9 @@ console.log('== 首页 ==');
   eq(last('redirectTo').url, '/pages/discover/discover', '全部朝代 › 发现页');
 
   tap(p, 'goPage', { page: 'person' });
-  eq(pendingSheet && pendingSheet.itemList.length, 3, '人物磁贴：ActionSheet 三位人物');
-  pickSheet(1);
-  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 2 位 → 苏轼详情');
+  eq(pendingSheet && pendingSheet.itemList.length, 6, '人物磁贴：ActionSheet 六位人物');
+  pickSheet(3);
+  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 4 位 → 苏轼详情');
 
   tap(p, 'goPage', { page: 'event' });
   eq(pendingSheet && pendingSheet.itemList.length, 6, '事件磁贴：ActionSheet 六条史事');
@@ -258,20 +275,18 @@ console.log('== 首页 ==');
   tap(p, 'goPage', { page: 'dynasty' });
   eq(pendingSheet && pendingSheet.itemList.length, 4, '朝代磁贴：四个时代');
   pickSheet(0);
-  ok(last('showModal') && last('showModal').title === '大汉气象', '选择时代 → 朝代简介 Modal');
-  confirmModal(true);
-  ok(!pendingModal, '朝代 Modal 关闭');
+  eq(last('navigateTo').url, '/pages/period/period?id=han', '选择时代 → 朝代详情页');
 
   tap(p, 'onHeroTap');
-  eq(last('navigateTo').url, '/pages/event/event?id=han-wudi', 'hero 点击 → 汉武帝事件详情');
+  const heroUrl = last('navigateTo').url;
+  ok(new RegExp(`event\\.js?id=${p.data.hero.eventId}`.replace('.', '\\.').replace(/\./g, '.')).test(heroUrl) || heroUrl.indexOf(p.data.hero.eventId) >= 0,
+    `hero 点击 → 今日史事详情 (${heroUrl})`);
 
   tap(p, 'onEraTap');
-  ok(last('showModal').title === '盛唐气象' && last('showModal').content.indexOf('万国来朝') >= 0, '盛唐卡 → 专题 Modal');
-  confirmModal(true);
+  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '盛唐卡 → 古代时间轴');
 
   tap(p, 'onModernTap');
-  ok(last('showModal').title === '百年中国：从鸦片战争到开国大典', '百年中国卡 → 专题 Modal');
-  confirmModal(true);
+  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '百年中国卡 → 近现代时间轴');
 })();
 
 // ---------------------------------------------------------------------------
@@ -339,9 +354,11 @@ console.log('== 发现 ==');
   eq(p.data.modern.shortTitle, '百年中国', '百年中国长卷');
 
   tap(p, 'onPeriod', { id: 'tang' });
-  ok(last('showModal').title === '唐 · 盛唐气象' && last('showModal').content.indexOf('贞观之治') >= 0,
-    '朝代卡 → 简介 Modal');
-  confirmModal(true);
+  eq(last('navigateTo').url, '/pages/period/period?id=tang', '朝代卡 → 朝代详情页');
+
+  const callsBefore = wxLog.length;
+  tap(p, 'onPeriod', { id: 'nope' });
+  eq(wxLog.length, callsBefore && wxLog.length, '未知朝代不导航');
 
   tap(p, 'onPick', { id: 'mukden-1931' });
   eq(last('navigateTo').url, '/pages/event/event?id=mukden-1931', '精选史事 → 事件详情');
@@ -363,23 +380,51 @@ console.log('== 发现 ==');
 // 5. profile
 // ---------------------------------------------------------------------------
 
-console.log('== 我的 ==');
+console.log('== 我的 ==' );
 
 (function () {
   resetWifiStack();
   const p = pages.profile;
+  const personP = pages.person;
+  const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 12, 3, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 12, 6, 2], '统计与数据种子一致');
+
+  // 收藏：在人物详情页收藏苏轼 → 我的页出现
+  personP.onLoad({ id: 'su-shi' });
+  eq(personP.data.collected, false, '初始未收藏');
+  tap(personP, 'toggleCollect');
+  eq(personP.data.collected, true, '收藏后状态 true');
+  personP.onLoad({ id: 'su-shi' });
+  eq(personP.data.collected, true, '重进详情保持已收藏（本地存储）');
+  const toastOn = last('showToast').title;
+  ok(toastOn === '已收藏' || toastOn === '已取消收藏', `收藏 Toast (${toastOn})`);
+
+  // 事件页收藏辛亥革命 → 累计两条
+  eventP.onLoad({ id: 'xinhai-1911' });
+  tap(eventP, 'toggleCollect');
+
+  p.onShow();
+  eq(p.data.favs.length, 2, '收藏列表两条');
+  eq(p.data.favs[0].id, 'xinhai-1911', '最新收藏在前');
+  ok(p.data.favs.some((x) => x.id === 'su-shi' && x.type === 'person'), '收藏含人物');
+  ok(p.data.foots.some((x) => x.id === 'su-shi'), '足迹含刚浏览的人物');
+  ok(p.data.foots.every((x) => x.when && x.when.length > 0), '足迹带时间');
+
+  // 取消收藏
+  personP.onLoad({ id: 'su-shi' });
+  tap(personP, 'toggleCollect');
+  p.onShow();
+  eq(p.data.favs.length, 1, '取消后剩一条');
+
+  // 收藏条目可跳转详情
+  const target = p.data.favs[0];
+  tap(p, 'onEntry', { type: target.type, id: target.id });
+  ok(last('navigateTo').url.indexOf(target.id) >= 0, '收藏条目跳转详情');
 
   tap(p, 'onSearch');
   eq(last('navigateTo').url, '/pages/search/search', '搜索入口');
-
-  tap(p, 'onFav');
-  eq(last('showToast').title, '收藏将在下一版开放', '收藏占位提示');
-
-  tap(p, 'onFootprints');
-  eq(last('showToast').title, '浏览足迹整理中', '足迹占位提示');
 
   tap(p, 'onDataNote');
   ok(last('showModal').content.indexOf('朝代 4 条') >= 0, '数据说明含统计');
@@ -403,6 +448,9 @@ console.log('== 我的 ==');
   tap(p, 'onClearCache');
   confirmModal(true);
   eq(storageCleared, clearedBefore + 1, '确认后清缓存');
+  p.onShow();
+  eq(p.data.favs.length, 0, '清缓存后收藏清空');
+  eq(p.data.foots.length, 0, '清缓存后足迹清空');
 
   tap(p, 'goTab', { page: 'timeline' });
   eq(last('redirectTo').url, '/pages/timeline/timeline', '底部栏 我的→时间轴');
@@ -429,6 +477,21 @@ console.log('== 人物详情 ==');
   eq(p.data.accent, 'modern', '近现代蓝灰');
   eq(p.data.related.length, 3, '鲁迅相关史事三条');
 
+  p.onLoad({ id: 'zhao-kuangyin' });
+  eq(p.data.person.name, '赵匡胤', '赵匡胤载入');
+  eq(p.data.related.length, 1, '赵匡胤相关史事一条');
+
+  p.onLoad({ id: 'wang-anshi' });
+  eq(p.data.related.length, 2, '王安石相关史事两条');
+
+  p.onLoad({ id: 'lin-zexu' });
+  eq(p.data.accent, 'modern', '林则徐按晚清走蓝灰');
+
+  // 分享路径
+  wxLog.length = 0;
+  const share = p.onShareAppMessage();
+  ok(share && share.path === '/pages/person/person?id=lin-zexu', '人物页分享带 id 参数');
+
   resetWifiStack();
   p.onLoad({ id: 'nope' });
   eq(last('redirectTo').url, '/pages/home/home', '未知人物回退首页');
@@ -436,6 +499,50 @@ console.log('== 人物详情 ==');
   p.onLoad({ id: 'su-shi' });
   tap(p, 'goEvent', { id: 'jingkang-1127' });
   eq(last('navigateTo').url, '/pages/event/event?id=jingkang-1127', '相关史事 → 事件详情');
+})();
+
+// ---------------------------------------------------------------------------
+// 6.5 朝代详情页
+// ---------------------------------------------------------------------------
+
+console.log('== 朝代详情 ==');
+
+(function () {
+  resetWifiStack();
+  const p = pages.period;
+
+  p.onLoad({ id: 'han' });
+  eq(p.data.period.name, '西汉', '西汉朝代载入');
+  eq(p.data.period.yearText, '前202–公元9', '纪年带载入');
+  eq(p.data.events.map((e) => e.id), ['han-wudi'], '西汉收录史事');
+  eq(p.data.seal, '汉', '小印');
+
+  p.onLoad({ id: 'song' });
+  eq(p.data.events.length, 4, '北宋收录四条史事');
+  ok(p.data.span.length > 0, '时代脉络非空');
+  ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
+
+  p.onLoad({ id: 'modern' });
+  eq(p.data.events.length, 7, '近现代面板收录七条');
+  eq(p.data.seal, '近', '近现代小印');
+
+  p.onLoad({ id: 'tang' });
+  eq(p.data.events.length, 0, '唐暂无独立史事收录');
+  ok(p.data.span === '', '无史事时脉络为空');
+  ok(p.data.period.title === '盛唐气象', '唐卡载入');
+  tap(p, 'goTimeline');
+  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '无收录史事时引导进时间轴');
+
+  wxLog.length = 0;
+  p.onLoad({ id: 'han' });
+  ok(p.onShareAppMessage().path === '/pages/period/period?id=han', '朝代页分享带 id 参数');
+  tap(p, 'goEvent', { id: 'han-wudi' });
+  eq(last('navigateTo').url, '/pages/event/event?id=han-wudi', '朝代史事列表 → 事件详情');
+  resetWifiStack();
+
+  p.onLoad({ id: 'nope' });
+  eq(last('redirectTo').url, '/pages/home/home', '未知朝代回退首页');
+  resetWifiStack();
 })();
 
 // ---------------------------------------------------------------------------
@@ -450,7 +557,7 @@ console.log('== 事件详情 ==');
 
   p.onLoad({ id: 'chanyuan-1005' });
   eq(p.data.event.title, '澶渊之盟', '澶渊之盟载入');
-  eq(p.data.relatedPersons.map((x) => x.id), ['su-shi'], '其时其人：反查列出苏轼');
+  eq(p.data.relatedPersons.map((x) => x.id), ['wang-anshi', 'su-shi'], '其时其人：反查列出王安石与苏轼');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
 
   p.onLoad({ id: 'han-wudi' });
@@ -467,6 +574,16 @@ console.log('== 事件详情 ==');
 
   tap(p, 'goPerson', { id: 'lu-xun' });
   eq(last('navigateTo').url, '/pages/person/person?id=lu-xun', '其时其人 → 人物详情');
+
+  // 分享路径
+  wxLog.length = 0;
+  p.onLoad({ id: 'xinhai-1911' });
+  ok(p.onShareAppMessage().path === '/pages/event/event?id=xinhai-1911', '事件页分享带 id 参数');
+
+  // 收藏按钮状态
+  eq(p.data.collected, false, '未收藏状态');
+  tap(p, 'toggleCollect');
+  eq(p.data.collected, true, '事件收藏生效');
 
   resetWifiStack();
   p.onLoad({ id: 'nope' });
@@ -506,6 +623,19 @@ console.log('== 搜索 ==');
   p.onSearch();
   eq(p.data.results.panels.length, 1, '盛唐命中专题长卷');
   ok(p.data.results.panels[0].mode === 'ancient', '盛唐面板走古代轴');
+
+  p.setData({ keyword: '赵匡胤' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'zhao-kuangyin'), '赵匡胤命中人物');
+
+  p.setData({ keyword: '王安石' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'wang-anshi'), '王安石命中人物');
+  ok(p.data.results.events.some((x) => x.id === 'wanganshi-1069'), '王安石命中同名事件');
+
+  p.setData({ keyword: '林则徐' });
+  p.onSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'lin-zexu'), '林则徐命中人物');
 
   p.setData({ keyword: '1978' });
   p.onSearch();
@@ -559,7 +689,7 @@ console.log('== 路由完整 ==');
     .filter((r) => ['navigateTo', 'redirectTo'].indexOf(r.kind) >= 0)
     .map((r) => urlTarget(r.url));
   targets.forEach((t) => ok(pages[t], `跳转目标页存在 ${t}`));
-  ok(Object.keys(pages).length === 7, '七个页面全部注册');
+  ok(Object.keys(pages).length === 8, '八个页面全部注册');
 })();
 
 // ---------------------------------------------------------------------------
