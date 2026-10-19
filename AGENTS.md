@@ -9,9 +9,9 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（20 史事 / 11 人物 / 4 朝代 / 2 专题 + 今日史事日期库 12 组）。
+- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（22 史事 / 12 人物 / 4 朝代 / 2 专题 + 今日史事日期库 14 组）。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（390 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（18 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（418 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（18 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
