@@ -296,6 +296,19 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 修复 timeline.wxss BOM 编译错误（真机 lib 3.17.4）
+
+**现象**：时间轴页 `timeline.wxss` 开头带 UTF-8 BOM（`EF BB BF`），新版基础库 WXSS 编译器报 `unexpected '﻿' at pos 1`；此前 wcc 旧链路容忍该 BOM，未暴露。
+
+**修复**：
+
+- 新增 `tools/strip_bom.py`：扫描 miniprogram 全部 js/json/wxml/wxss，剥离文件头 BOM；本次仅 `timeline.wxss` 带 BOM，已清除（首字节现为 `.page`）。
+- 以后新会话若用 PowerShell/其他工具写文件，入库前跑一遍 `python tools/strip_bom.py`。
+
+**校验**：strip 后 0 个 BOM 文件；selftest PASS 479 / FAIL 0；validate OK 8 pages。
+
+---
+
 ## 2026-10-20 · 第十轮：秋收起义与井冈山 + 红军长征 + 人物毛泽东
 
 **新史事（共 26 条），1927–1949 连续主线上线**
