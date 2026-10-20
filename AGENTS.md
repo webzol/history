@@ -219,7 +219,15 @@ python tools/validate_miniprogram.py
 
 ---
 
-## 9. 每次开发后必须更新
+## 9. Git 工作流（每次必须）
+
+- **开发开始前**：先 `git pull origin main`（若代理 127.0.0.1:7897 未开会连接失败，先开代理；远端可能有其他会话的更新，拉取后先读日志再动手）。
+- **开发结束后**：`git add -A` → commit（信息说明改了什么与验证结果）→ `git push origin main`，保证与 GitHub 同步。
+- 若 pull 后日志/代码与本地认知不一致，以远端为准调整计划，不要覆盖其他人/会话已完成的工作。
+
+---
+
+## 10. 每次开发后必须更新
 
 - `docs/DEVELOPMENT_LOG.md`：日期、改了什么、为什么、验证结果、遗留问题、下一步。
 - 如果架构/视觉规范发生变化，同步更新本文件。
@@ -228,6 +236,8 @@ python tools/validate_miniprogram.py
 
 ---
 
-## 10. 给下一次模型的一句话
+## 11. 给下一次模型的一句话
+
+**日期**：每次动手前先 `git pull`，收工前 commit + push（见 §9）。
 
 > 先看 `docs/DEVELOPMENT_LOG.md`，再改代码；当前视觉是“参考图风格”，不是 `ui/neo/` 的极简新中式。改完记得写日志。
