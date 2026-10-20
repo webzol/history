@@ -296,6 +296,25 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第十六轮：缓存及时生效——「检查内容更新」（jsDelivr purge 强制链路）
+
+**功能**
+
+- 「我的」页新增菜单行「检查内容更新」（搜索行下第一行）：`onCheckUpdate` → `wx.showLoading(检查更新)` → 顺序三步：**purge jsDelivr CDN 缓存**（`purge.jsdelivr.net/gh/.../history.json` 官方清缓存端点）→ **绕过本地 24h 缓存**强制拉取 → 应用/提示：
+  - 有更新：toast「已更新 · builtAt」，同时 onShow 重算统计/收藏/足迹；
+  - 无更新：toast「内容已是最新」；离线：toast「暂无网络，稍后再试」；`updating` 状态防连点。
+- `utils/remote.js` 新增 `purgeRemoteCache` 与 `fetchRemoteHistory(cb,{fresh})`（fresh 跳过本地缓存）；`utils/historyData.refresh(cb,{fresh})` 透传。
+- `tools/build_data_json.js`：远端载荷新增 `meta.builtAt`（构建时间，展示用；历史校验不强制）。
+- selftest 补桩 `showLoading/hideLoading`（harness 同步）；新增断言：强制刷新先发 purge 请求、一致不重复应用、失败复位、history.json 带 builtAt。
+
+**校验（580→586）**
+
+- `node tools/selftest.js` PASS 586 / FAIL 0；validate OK；strip_bom 0；bundle 重建。
+- **真链路实测**：GitHub push c976e0a → purge 请求 → CDN 重新拉源 → cdn.jsdelivr.net 返回内容已带 `builtAt=2026-10-20 16:26` 全成功（此前最长 12h 的 CDN 缓存延迟被 purge 打穿）。
+- 域名白名单需追加：`purge.jsdelivr.net`（仅「检查更新」按钮用；未加白名单时该按钮会走离线提示，不影响其余功能）。
+
+---
+
 ## 2026-10-20 · 第十五轮：交互（二）弹层体系统一——信息详情全站去原生弹框
 
 **改动**
