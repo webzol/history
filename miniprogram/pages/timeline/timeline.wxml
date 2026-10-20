@@ -45,23 +45,4 @@
       </view>
     </view>
   </view>
-
-  <view class="tabbar">
-    <view class="tab" data-page="home" bindtap="goTab">
-      <image class="tab-icon" src="/assets/icons/home.png" mode="aspectFit"></image>
-      <text>首页</text>
-    </view>
-    <view class="tab active" data-page="timeline" bindtap="goTab">
-      <image class="tab-icon" src="/assets/icons/timeline.png" mode="aspectFit"></image>
-      <text>时间轴</text>
-    </view>
-    <view class="tab" data-page="discover" bindtap="goTab">
-      <image class="tab-icon" src="/assets/icons/discover.png" mode="aspectFit"></image>
-      <text>发现</text>
-    </view>
-    <view class="tab" data-page="profile" bindtap="goTab">
-      <image class="tab-icon" src="/assets/icons/profile.png" mode="aspectFit"></image>
-      <text>我的</text>
-    </view>
-  </view>
 </view>

@@ -1,4 +1,5 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 // 朝代卡配图（搜图素材，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -33,20 +34,26 @@ Page({
     });
   },
 
-  goTab(e) {
-    const page = e.currentTarget.dataset.page;
-    if (!page || page === 'discover') return;
-    wx.redirectTo({ url: `/pages/${page}/${page}` });
+  onShow() {
+    this.setTab();
+  },
+
+  setTab() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 'discover' });
+    }
   },
 
   goTimeline(e) {
     const mode = e.currentTarget.dataset.mode || 'ancient';
-    wx.redirectTo({ url: `/pages/timeline/timeline?mode=${mode}` });
+    store.setPendingTimelineMode(mode);
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   goTimeband(e) {
     const mode = e.currentTarget.dataset.mode || 'ancient';
-    wx.redirectTo({ url: `/pages/timeline/timeline?mode=${mode}` });
+    store.setPendingTimelineMode(mode);
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   onPeriod(e) {

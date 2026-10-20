@@ -51,9 +51,8 @@ Page({
   },
 
   goTimeline() {
-    wx.redirectTo({
-      url: `/pages/timeline/timeline?mode=${this.data.event.mode}`
-    });
+    store.setPendingTimelineMode(this.data.event.mode);
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   onShareAppMessage() {

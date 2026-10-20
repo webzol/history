@@ -1,0 +1,12 @@
+<view class="tabbar">
+  <view
+    class="tab {{active === item.key ? 'active' : ''}}"
+    wx:for="{{tabs}}"
+    wx:key="key"
+    data-key="{{item.key}}"
+    bindtap="onTabTap"
+  >
+    <image class="tab-icon" src="{{active === item.key && item.activeIcon ? item.activeIcon : item.icon}}" mode="aspectFit"></image>
+    <text>{{item.label}}</text>
+  </view>
+</view>

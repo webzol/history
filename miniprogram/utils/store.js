@@ -50,10 +50,28 @@ function listFootprints() {
   return load(KEY_FOOT);
 }
 
+// switchTab 不带查询参数：跨 tab 的 mode 通过存储交接（时间轴分段用）
+const KEY_TAB_PARAMS = 'shige_tab_params';
+
+function setPendingTimelineMode(mode) {
+  save(KEY_TAB_PARAMS, { timelineMode: mode || 'ancient' });
+}
+
+function popPendingTimelineMode() {
+  const cur = load('shige_tab_params');
+  if (!cur || !cur.timelineMode) return '';
+  try {
+    wx.removeStorageSync(KEY_TAB_PARAMS);
+  } catch (e) { /* 静默 */ }
+  return cur.timelineMode;
+}
+
 module.exports = {
   listFavorites,
   isFavorite,
   toggleFavorite,
   addFootprint,
-  listFootprints
+  listFootprints,
+  setPendingTimelineMode,
+  popPendingTimelineMode
 };

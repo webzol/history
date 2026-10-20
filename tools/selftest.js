@@ -80,6 +80,11 @@ const wx = {
     navStack[navStack.length - 1] = urlTarget(opts.url);
     if (opts.success) opts.success({});
   },
+  switchTab(opts) {
+    route('switchTab', opts.url);
+    navStack.length = 1; // tab 页为根，收掉普通页栈
+    if (opts.success) opts.success({});
+  },
   navigateBack(opts = {}) {
     if (navStack.length > 1) {
       navStack.pop();
@@ -248,7 +253,7 @@ console.log('== 首页 ==');
   resetWifiStack();
   const p = pages.home;
 
-  p.onLoad();
+  p.onShow();
   eq(p.data.dateText.slice(-4), '· 今天', 'dateText 为今天');
   ok(history.events.some((e) => e.id === p.data.hero.eventId), 'hero 连到真实史事事件');
   eq(p.data.hero.title, '今日史事', 'hero 标题');
@@ -260,11 +265,8 @@ console.log('== 首页 ==');
   eq(p.data.era.title, '盛唐气象', 'era 来自 topics');
   eq(p.data.modern.shortTitle, '百年中国', 'modern 来自 topics');
 
-  tap(p, 'goTab', { page: 'timeline' });
-  eq(last('redirectTo').url, '/pages/timeline/timeline', '底部栏 首页→时间轴');
-
   tap(p, 'goDiscover');
-  eq(last('redirectTo').url, '/pages/discover/discover', '全部朝代 › 发现页');
+  eq(last('switchTab').url, '/pages/discover/discover', '全部朝代 › 发现页（switchTab）');
 
   tap(p, 'goPage', { page: 'person' });
   eq(pendingSheet && pendingSheet.itemList.length, 12, '人物磁贴：ActionSheet 十二位人物');
@@ -288,11 +290,26 @@ console.log('== 首页 ==');
   ok(new RegExp(`event\\.js?id=${p.data.hero.eventId}`.replace('.', '\\.').replace(/\./g, '.')).test(heroUrl) || heroUrl.indexOf(p.data.hero.eventId) >= 0,
     `hero 点击 → 今日史事详情 (${heroUrl})`);
 
+  tap(p, 'goPage', { page: 'timeline' });
+  eq(last('switchTab').url, '/pages/timeline/timeline', '时间轴磁贴 → switchTab');
+
   tap(p, 'onEraTap');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '盛唐卡 → 古代时间轴');
+  eq(last('switchTab').url, '/pages/timeline/timeline', '盛唐卡 → switchTab 时间轴');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'ancient', 'pending 交接 ancient');
 
   tap(p, 'onModernTap');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '百年中国卡 → 近现代时间轴');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'modern', 'pending 交接 modern');
+
+  // 时间轴 onShow 读取并清空 pending mode
+  const tp = pages.timeline;
+  tp.onLoad({});
+  tp.onShow();
+  eq(tp.data.mode, 'modern', 'pending mode 在 onShow 落地');
+  eq(storage.shige_tab_params, undefined, 'pending 已清空');
+
+  // 同值不重载、再次 onShow 稳定
+  tp.onShow();
+  eq(tp.data.mode, 'modern', '再次 onShow 保持 modern');
 })();
 
 // ---------------------------------------------------------------------------
@@ -334,9 +351,6 @@ console.log('== 时间轴 ==');
   const callsBefore = wxLog.length;
   tap(p, 'onEvent', { id: 'nope' });
   eq(wxLog.length, callsBefore, '未知 id 不产生导航');
-
-  tap(p, 'goTab', { page: 'discover' });
-  eq(last('redirectTo').url, '/pages/discover/discover', '底部栏 时间轴→发现');
 })();
 
 // ---------------------------------------------------------------------------
@@ -370,16 +384,15 @@ console.log('== 发现 ==');
   eq(last('navigateTo').url, '/pages/event/event?id=mukden-1931', '精选史事 → 事件详情');
 
   tap(p, 'goTimeline', { mode: 'modern' });
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '专题长卷 → 近现代时间轴');
+  eq(last('switchTab').url, '/pages/timeline/timeline', '专题长卷 → switchTab 近现代');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'modern', '专题长卷 pending modern');
 
   tap(p, 'goTimeband', {});
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '进时间轴链接 → 古代');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'ancient', '进时间轴链接 pending ancient');
 
   tap(p, 'goTimeline', { mode: 'modern' });
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '近现代起读 → 近现代时间轴');
-
-  tap(p, 'goTab', { page: 'home' });
-  eq(last('redirectTo').url, '/pages/home/home', '底部栏 发现→首页');
+  tap(p, 'goTimeline', { mode: 'modern' });
+  eq(last('switchTab').url, '/pages/timeline/timeline', '近现代起读 → switchTab');
 })();
 
 // ---------------------------------------------------------------------------
@@ -467,9 +480,6 @@ console.log('== 我的 ==' );
   p.onShow();
   eq(p.data.favs.length, 0, '清缓存后收藏清空（空态引导卡显示）');
   eq(p.data.foots.length, 0, '清缓存后足迹清空（空态引导卡显示）');
-
-  tap(p, 'goTab', { page: 'timeline' });
-  eq(last('redirectTo').url, '/pages/timeline/timeline', '底部栏 我的→时间轴');
 })();
 
 // ---------------------------------------------------------------------------
@@ -548,7 +558,8 @@ console.log('== 朝代详情 ==');
   eq(p.data.span, '从627到755', '唐span按首尾纪年');
   ok(p.data.period.title === '盛唐气象', '唐卡载入');
   tap(p, 'goTimeline');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '唐页底部进时间轴');
+  eq(last('switchTab').url, '/pages/timeline/timeline', '唐页底部进时间轴（switchTab）');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'ancient', '唐页 pending ancient');
 
   wxLog.length = 0;
   p.onLoad({ id: 'han' });
@@ -583,11 +594,12 @@ console.log('== 事件详情 ==');
   p.onLoad({ id: 'yuanmingyuan-1860' });
   eq(p.data.relatedPersons.length, 0, '圆明园无人物卡');
   tap(p, 'goTimeline');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '回时间轴带 modern');
+  eq(last('switchTab').url, '/pages/timeline/timeline', '回时间轴（switchTab）');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'modern', 'modern 交接 pending');
 
   p.onLoad({ id: 'han-wudi' });
   tap(p, 'goTimeline');
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=ancient', '回时间轴带 ancient');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'ancient', 'ancient 交接 pending');
 
   tap(p, 'goPerson', { id: 'lu-xun' });
   eq(last('navigateTo').url, '/pages/person/person?id=lu-xun', '其时其人 → 人物详情');
@@ -731,7 +743,8 @@ console.log('== 搜索 ==');
   ok(p.data.results.events.some((e) => e.id === 'xinhai-1911'), '热词搜索命中辛亥革命');
 
   p.onRowTap({ currentTarget: { dataset: { type: 'panel', id: 'modern-china', mode: 'modern' } } });
-  eq(last('redirectTo').url, '/pages/timeline/timeline?mode=modern', '百年中国面板 → 近现代轴');
+  eq(last('switchTab').url, '/pages/timeline/timeline', '百年中国面板 → switchTab 近现代轴');
+  eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'modern', '面板 pending modern');
 
   p.onRowTap({ currentTarget: { dataset: { type: 'person', id: 'lu-xun' } } });
   eq(last('navigateTo').url, '/pages/person/person?id=lu-xun', '人物结果 → 人物详情');

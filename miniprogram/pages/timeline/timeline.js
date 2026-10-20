@@ -1,4 +1,5 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 Page({
   data: {
@@ -11,6 +12,19 @@ Page({
   onLoad(options) {
     const mode = options && options.mode === 'modern' ? 'modern' : 'ancient';
     this.loadMode(mode);
+  },
+
+  onShow() {
+    this.setTab();
+    // 专题长卷/朝代页等先经 switchTab 交接的 mode 参数
+    const pending = store.popPendingTimelineMode();
+    if (pending && pending !== this.data.mode) this.loadMode(pending);
+  },
+
+  setTab() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 'timeline' });
+    }
   },
 
   switchMode(e) {
@@ -48,14 +62,6 @@ Page({
       events,
       eraName,
       eraMeta
-    });
-  },
-
-  goTab(e) {
-    const page = e.currentTarget.dataset.page;
-    if (!page || page === 'timeline') return;
-    wx.redirectTo({
-      url: `/pages/${page}/${page}`
     });
   },
 

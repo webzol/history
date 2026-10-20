@@ -1,4 +1,5 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 const lower = (text) => (text || '').toLowerCase();
 
@@ -86,7 +87,8 @@ Page({
     } else if (type === 'event') {
       wx.navigateTo({ url: `/pages/event/event?id=${id}` });
     } else {
-      wx.redirectTo({ url: `/pages/timeline/timeline?mode=${mode || 'ancient'}` });
+      store.setPendingTimelineMode(mode || 'ancient');
+      wx.switchTab({ url: '/pages/timeline/timeline' });
     }
   },
 

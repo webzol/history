@@ -15,6 +15,19 @@
     "backgroundTextStyle": "dark",
     "enablePullDownRefresh": false
   },
+  "tabBar": {
+    "custom": true,
+    "color": "#7B746A",
+    "selectedColor": "#211E1A",
+    "backgroundColor": "#FAF8F3",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "首页" },
+      { "pagePath": "pages/timeline/timeline", "text": "时间轴" },
+      { "pagePath": "pages/discover/discover", "text": "发现" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json"
 }

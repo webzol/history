@@ -1,4 +1,5 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -62,9 +63,8 @@ Page({
   },
 
   goTimeline() {
-    wx.redirectTo({
-      url: `/pages/timeline/timeline?mode=${this.data.period.id === 'modern' ? 'modern' : 'ancient'}`
-    });
+    store.setPendingTimelineMode(this.data.period.id === 'modern' ? 'modern' : 'ancient');
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   onShareAppMessage() {

@@ -296,6 +296,19 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第八轮（收口）：custom-tab-bar 迁移
+
+**底层导航重构**
+
+- `app.json` 启用 `"tabBar": { "custom": true }`，新增 `custom-tab-bar/` 组件（四 tab 图标/高亮/switchTab），删除四个 tab 页内自绘 tabbar；tab 样式收编进 `app.wxss`（web 预览外壳复用），组件 wxss 真实生效。
+- 真机语义变化：tab 页间改用 `wx.switchTab`，页面常驻（onLoad 仅一次，onShow 每次触发；首页日期匹配、我的统计、时间轴分段在 onShow 中维持最新）。
+- tab 页无法带查询参数：新增 `utils/store.js` `setPendingTimelineMode/popPendingTimelineMode`（存储键 `shige_tab_params`）；首页盛唐/百年中国卡、发现页专题长卷、朝代页「进时间轴」、事件页「回时间轴」、搜索面板跳转全部改为 switchTab + pending 交接，时间轴 onShow 读取分段。分享路径中的 `?mode=` 在 switchTab 语义下会被截去，属预期（时间轴默认古代）。
+- 预览链路适配：`harness.js` 补 `wx.switchTab` mock（收栈 + onShow）、注入 tab 外壳（高亮跟随 hash）；截图与此前视觉一致。
+- 校验：`node tools/selftest.js` **PASS 423 / FAIL 0**（新增 pending 交接、switchTab 收栈断言）；`python tools/validate_miniprogram.py` OK 8 pages；`node --check` 全部通过；18 张截图核对（底部栏高亮、我的页统计 4/22/12/2 正常）。
+- **风险提醒**：custom-tab-bar 未经微信开发者工具真机编译（安全区 env() 与组件生命周期需真机确认），首次打开开发者工具时优先核对底部栏。
+
+---
+
 ## 2026-10-20 · 第七轮：遵义会议 + 抗战胜利 + 人物邓小平
 
 - **新史事（共 22 条）**：**遵义会议 1935**（民国，长征转折四段）、**抗战胜利 1945**（民国，终战诏书→密苏里号→南京受降→重庆谈判四段，source《中国共产党历史》）。近现代带 1840–1978 现共 12 条，补齐 1931–1949 主线。

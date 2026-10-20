@@ -97,9 +97,61 @@
       } else if (o.fail) {
         o.fail(new Error('no page to back'));
       }
+    },
+    switchTab: function (o) {
+      var t = targetPage(o.url);
+      navStack = [];
+      openPage(t.name, {}, 'push');
+      if (CURRENT && CURRENT.onShow) CURRENT.onShow();
+      if (o.success) o.success({});
     }
   };
   window.wx = wx;
+
+  // ---------------------------------------------------------------------------
+  // 底部 tab（custom-tab-bar 组件的可视外壳：web 预览里按当前 hash 高亮）
+  // ---------------------------------------------------------------------------
+
+  var TAB_KEYS = ['home', 'timeline', 'discover', 'profile'];
+
+  function ensureTabShell() {
+    var el = document.getElementById('tabshell');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'tabshell';
+      el.className = 'tabbar';
+      TAB_KEYS.forEach(function (key) {
+        var t = document.createElement('div');
+        t.className = 'tab';
+        t.dataset.key = key;
+        var icon = document.createElement('img');
+        icon.className = 'tab-icon';
+        icon.src = '../../miniprogram/assets/icons/' +
+          key + (key === 'home' ? '-active.png' : '.png');
+        var label = document.createElement('span');
+        label.textContent = {
+          home: '首页', timeline: '时间轴', discover: '发现', profile: '我的'
+        }[key];
+        t.appendChild(icon);
+        t.appendChild(label);
+        t.addEventListener('click', function () {
+          if (location.hash.indexOf(key) !== 1) location.hash = key + '?shot=' +
+            (document.body.classList.contains('shot') ? '1' : '');
+        });
+        el.appendChild(t);
+      });
+      // 挂到 #phone：shot 模式下 phone 有 transform，fixed 会以它为包含块，
+      // tabbar 与页面底部/安全区一致（旧版页面内自绘 tabbar 同理）
+      var host = document.getElementById('phone') || document.body;
+      host.appendChild(el);
+    }
+    var pageNo = location.hash.replace(/^#/, '').split('?')[0];
+    TAB_KEYS.forEach(function (key) {
+      el.querySelectorAll('.tab').forEach(function (tab) {
+        tab.classList.toggle('active', tab.dataset.key === pageNo);
+      });
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // 页面
@@ -515,6 +567,13 @@
       window.addEventListener('resize', fit);
     }
     openPage(pageName, query, 'replace');
+    if (
+      TAB_KEYS.indexOf(pageName) >= 0 &&
+      CURRENT &&
+      CURRENT.onShow &&
+      query.shot !== 'reentry'
+    ) CURRENT.onShow();
+    ensureTabShell();
 
     if (query.debug) {
       try {

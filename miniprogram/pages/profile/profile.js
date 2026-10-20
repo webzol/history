@@ -62,6 +62,7 @@ Page({
   },
 
   onShow() {
+    this.setTab();
     const favs = store
       .listFavorites()
       .map(resolveEntry)
@@ -76,10 +77,10 @@ Page({
     this.setData({ favs, favCount: favs.length, foots, footCount: foots.length });
   },
 
-  goTab(e) {
-    const page = e.currentTarget.dataset.page;
-    if (!page || page === 'profile') return;
-    wx.redirectTo({ url: `/pages/${page}/${page}` });
+  setTab() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 'profile' });
+    }
   },
 
   onSearch() {

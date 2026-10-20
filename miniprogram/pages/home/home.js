@@ -1,4 +1,5 @@
 const history = require('../../data/history.js');
+const store = require('../../utils/store.js');
 
 Page({
   data: {
@@ -8,7 +9,8 @@ Page({
     modern: {}
   },
 
-  onLoad() {
+  onShow() {
+    this.setTab();
     const now = new Date();
     const month = now.getMonth() + 1;
     const day = now.getDate();
@@ -30,25 +32,21 @@ Page({
     });
   },
 
-  goTab(e) {
-    const page = e.currentTarget.dataset.page;
-    if (!page || page === 'home') return;
-    wx.redirectTo({
-      url: `/pages/${page}/${page}`
-    });
+  setTab() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 'home' });
+    }
   },
 
   goDiscover() {
-    wx.redirectTo({ url: '/pages/discover/discover' });
+    wx.switchTab({ url: '/pages/discover/discover' });
   },
 
   goPage(e) {
     const page = e.currentTarget.dataset.page;
 
     if (page === 'timeline') {
-      wx.redirectTo({
-        url: '/pages/timeline/timeline'
-      });
+      wx.switchTab({ url: '/pages/timeline/timeline' });
       return;
     }
 
@@ -124,11 +122,13 @@ Page({
   },
 
   onEraTap() {
-    wx.redirectTo({ url: '/pages/timeline/timeline?mode=ancient' });
+    store.setPendingTimelineMode('ancient');
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   onModernTap() {
-    wx.redirectTo({ url: '/pages/timeline/timeline?mode=modern' });
+    store.setPendingTimelineMode('modern');
+    wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
   onShareAppMessage() {
