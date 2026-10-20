@@ -68,9 +68,6 @@
         <text class="era-title">{{era.title}}</text>
         <text class="era-desc">{{era.desc}}</text>
       </view>
-      <view class="scroll-accent">
-        <image class="scroll-accent-img" src="/assets/scroll-accent.png" mode="aspectFill"></image>
-      </view>
     </view>
 
     <view class="modern-card" bindtap="onModernTap">

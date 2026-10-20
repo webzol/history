@@ -328,20 +328,6 @@
   pointer-events: none;
 }
 
-.scroll-accent {
-  flex: 0 0 56rpx;
-  height: 216rpx;
-  border-radius: 28rpx;
-  overflow: hidden;
-  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.05);
-}
-
-.scroll-accent-img {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 .modern-card {
   position: relative;
   height: 200rpx;
