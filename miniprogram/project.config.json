@@ -39,5 +39,6 @@
   "miniprogramRoot": "./",
   "condition": {},
   "simulatorPluginLibVersion": {},
-  "editorSetting": {}
+  "editorSetting": {},
+  "isGameTourist": false
 }

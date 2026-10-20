@@ -10,7 +10,8 @@
 
 const SOURCE = 'https://60s.viki.moe/v2/today_in_history';
 const CACHE_PREFIX = 'shige_tih_';
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6h
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6h（成功结果）
+const FAIL_TTL = 30 * 60 * 1000; // 30min（失败冷却：429/断网后一段时间内不再发请求）
 
 function dateKey(date) {
   const d = date || new Date();
@@ -35,11 +36,14 @@ function normalizeToday(payload) {
     .sort((a, b) => a.year - b.year);
 }
 
+// 读缓存：命中成功数据返回 { items }；处于失败冷却期返回 { cooldown: true }；否则 null
 function readCache(day) {
   const raw = wx.getStorageSync(CACHE_PREFIX + day);
   if (!raw || raw.day !== day) return null;
-  if (Date.now() - raw.at > CACHE_TTL) return null;
-  return Array.isArray(raw.items) && raw.items.length ? raw.items : null;
+  const age = Date.now() - raw.at;
+  if (raw.fail) return age < FAIL_TTL ? { cooldown: true } : null;
+  if (age > CACHE_TTL) return null;
+  return Array.isArray(raw.items) && raw.items.length ? { items: raw.items } : null;
 }
 
 function writeCache(day, items) {
@@ -50,11 +54,22 @@ function writeCache(day, items) {
   }
 }
 
+function writeFail(day) {
+  try {
+    wx.setStorageSync(CACHE_PREFIX + day, { day, at: Date.now(), fail: true });
+  } catch (e) {
+    // 存储失败不影响本次展示
+  }
+}
+
 function fetchTodayInHistory(cb) {
   const day = dateKey();
   const cached = readCache(day);
   if (cached) {
-    if (typeof cb === 'function') cb(null, cached);
+    if (typeof cb === 'function') {
+      if (cached.cooldown) cb(new Error('cooldown')); // 冷却期：不打网络，页面自行隐藏板块
+      else cb(null, cached.items);
+    }
     return;
   }
   if (typeof wx.request !== 'function') {
@@ -68,6 +83,8 @@ function fetchTodayInHistory(cb) {
     success: (res) => {
       const items = normalizeToday(res && res.data);
       if (!items.length) {
+        // 非 200 / 空数据（含 429 限流）：写失败冷却，板块自动隐藏
+        writeFail(day);
         if (typeof cb === 'function') cb(new Error('empty payload'));
         return;
       }
@@ -75,6 +92,7 @@ function fetchTodayInHistory(cb) {
       if (typeof cb === 'function') cb(null, items);
     },
     fail: () => {
+      writeFail(day);
       if (typeof cb === 'function') cb(new Error('request fail'));
     }
   });

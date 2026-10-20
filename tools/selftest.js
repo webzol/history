@@ -998,14 +998,36 @@ console.log('== 今日接口 ==');
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '信息弹层可关闭');
 
-  // 断网：板块清空隐藏，页面其余内容不受影响
+  // 断网：板块清空隐藏，页面其余内容不受影响；失败进入冷却期不再连续发请求
   mockRequest.today = null;
-  delete storage['shige_tih_' + api.dateKey(new Date())];
+  const dayKey = api.dateKey(new Date());
+  delete storage['shige_tih_' + dayKey];
+  const reqBefore = wxLog.filter((x) => x.kind === 'request' && /today_in_history/.test(x.url)).length;
   p.onShow();
   eq(p.data.tih.length, 0, '无网时板块清空');
   ok(p.data.hero && p.data.hero.title, '无网时其余内容保持');
+  eq(wxLog.filter((x) => x.kind === 'request' && /today_in_history/.test(x.url)).length, reqBefore + 1, '断网首发失败请求');
+
+  // 失败冷却：storage 写入 fail 标记后，冷却期内不再发请求、不再回调数据
+  ok(storage['shige_tih_' + dayKey] && storage['shige_tih_' + dayKey].fail === true, '失败写入冷却标记');
+  let cdErr = null;
+  api.fetchTodayInHistory((err) => {
+    cdErr = err;
+  });
+  ok(cdErr && /cooldown/.test(cdErr.message), '冷却期内回调 cooldown');
+  eq(wxLog.filter((x) => x.kind === 'request' && /today_in_history/.test(x.url)).length, reqBefore + 1, '冷却期内不再发请求');
+
+  // 冷却过期：重新请求（_at 回拨超过 FAIL_TTL）
+  storage['shige_tih_' + dayKey].at -= 31 * 60 * 1000;
+  let retryErr = null;
+  api.fetchTodayInHistory((err) => {
+    retryErr = err;
+  });
+  ok(retryErr && /request fail/.test(retryErr.message), '冷却过期后恢复请求（仍失败再入冷却）');
+  eq(wxLog.filter((x) => x.kind === 'request' && /today_in_history/.test(x.url)).length, reqBefore + 2, '冷却过期后重新发请求');
 
   mockRequest.today = null;
+  delete storage['shige_tih_' + dayKey];
 })();
 
 // ---------------------------------------------------------------------------
