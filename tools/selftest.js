@@ -210,10 +210,10 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 33, '史事 33 条');
-  eq(history.persons.length, 19, '人物 19 位');
-  ok(new Set([...eventIds]).size === 33, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 19, '人物 id 唯一');
+  eq(history.events.length, 37, '史事 37 条');
+  eq(history.persons.length, 20, '人物 20 位');
+  ok(new Set([...eventIds]).size === 37, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 20, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -244,10 +244,19 @@ console.log('== 数据完整性 ==');
   ['zhao-kuangyin', 'wang-anshi', 'lin-zexu', 'tang-taizong', 'du-fu', 'li-hongzhang'].forEach((id) =>
     ok(personIds.has(id), `新人物条目存在 ${id}`)
   );
-  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898', 'mobei-119', 'newculture-1915', 'zunyi-1935', 'kangzhan-1945', 'xuanwumen-626', 'beifa-1926', 'jinggangshan-1927', 'longmarch-1934', 'qidan-916', 'xixia-1038', 'jurchen-1115', 'zhenghe-1405', 'tumu-1449', 'zhangjuzheng-1581', 'ming-wang-1644'].forEach((id) =>
+  ['zhenguan-627', 'kaiyuan-713', 'anshi-755', 'jiawu-1894', 'zhangqian-138', 'wuxu-1898', 'mobei-119', 'newculture-1915', 'zunyi-1935', 'kangzhan-1945', 'xuanwumen-626', 'beifa-1926', 'jinggangshan-1927', 'longmarch-1934', 'qidan-916', 'xixia-1038', 'jurchen-1115', 'zhenghe-1405', 'tumu-1449', 'zhangjuzheng-1581', 'ming-wang-1644', 'ningwang-1519', 'taizhou-1561', 'kangxi-1681', 'humen-1839'].forEach((id) =>
     ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
-  ['zhang-qian', 'chen-duxiu', 'deng-xiaoping', 'wei-qing', 'huo-qubing', 'mao-zedong', 'zheng-he', 'yu-qian', 'qi-jiguang', 'wang-shouren'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
+  ['zhang-qian', 'chen-duxiu', 'deng-xiaoping', 'wei-qing', 'huo-qubing', 'mao-zedong', 'zheng-he', 'yu-qian', 'qi-jiguang', 'wang-shouren', 'cao-xueqin'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
+
+  // relatedEvents 反查闭环：王守仁/戚继光/林则徐 均已挂真实条目
+  const reIds = (pid) => {
+    const p = history.persons.find((x) => x.id === pid);
+    return (p.relatedEvents || []).filter((id) => eventIds.has(id));
+  };
+  ok(reIds('wang-shouren').indexOf('ningwang-1519') >= 0, '王守仁反查 平宁王之乱');
+  ok(reIds('qi-jiguang').indexOf('taizhou-1561') >= 0, '戚继光反查 台州大捷');
+  ok(reIds('lin-zexu').indexOf('humen-1839') >= 0 && reIds('lin-zexu').indexOf('opium-war-1840') >= 0, '林则徐反查 销烟+鸦片战争');
 
   // 图片路径全部存在于磁盘
   const goodImg = (p) => ok(p && fs.existsSync(path.join(ROOT, p)), `素材存在 ${p}`);
@@ -293,7 +302,7 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'person' });
   ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 19, '弹层列出十九位人物');
+  eq(p.data.sheet.list.length, 20, '弹层列出二十位人物');
 
   tap(p, 'onSheetItem', { index: 6 });
   eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
@@ -354,12 +363,12 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 18, '古代 18 条事件');
-  eq(p.data.events.map((e) => e.year), [-141, -138, -119, 626, 627, 713, 755, 916, 960, 1005, 1038, 1069, 1115, 1127, 1405, 1449, 1581, 1644], '古代按纪年升序');
+  eq(p.data.events.length, 22, '古代 22 条事件');
+  eq(p.data.events.map((e) => e.year), [-141, -138, -119, 626, 627, 713, 755, 916, 960, 1005, 1038, 1069, 1115, 1127, 1405, 1449, 1519, 1561, 1581, 1644, 1681, 1839], '古代按纪年升序');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
-  eq(p.data.eraName, '西汉—明', '时代带名来自数据推导');
-  ok(p.data.eraMeta.indexOf('公元前141–1644') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 辽 / 北宋 / 西夏 / 金 / 明') >= 0,
-    '时代带meta含纪年区间与时代列表（含辽/西夏/金/明）');
+  eq(p.data.eraName, '西汉—清', '时代带名来自数据推导');
+  ok(p.data.eraMeta.indexOf('公元前141–1839') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 辽 / 北宋 / 西夏 / 金 / 明 / 清') >= 0,
+    '时代带meta含纪年区间与时代列表（含辽/西夏/金/明/清）');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
@@ -438,7 +447,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 33, 19, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [4, 37, 20, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
