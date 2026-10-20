@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 // 朝代卡配图（搜图素材，见 assets/paintings/SOURCES.md）
@@ -18,6 +18,18 @@ Page({
   },
 
   onLoad() {
+    this.build();
+  },
+
+  onShow() {
+    this.setTab();
+    hd.refresh((changed) => {
+      if (changed) this.build();
+    });
+  },
+
+  build() {
+    const history = hd.get();
     const periods = history.periods
       .filter((item) => PERIOD_META[item.id])
       .map((item) => ({
@@ -32,10 +44,6 @@ Page({
       modern: history.topics.find((item) => item.id === 'modern-china'),
       picks: history.events.slice(-6).reverse()
     });
-  },
-
-  onShow() {
-    this.setTab();
   },
 
   setTab() {
@@ -58,7 +66,7 @@ Page({
 
   onPeriod(e) {
     const id = e.currentTarget.dataset.id;
-    if (!history.periods.find((period) => period.id === id)) return;
+    if (!hd.get().periods.find((period) => period.id === id)) return;
     wx.navigateTo({ url: `/pages/period/period?id=${id}` });
   },
 

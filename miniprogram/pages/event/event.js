@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 Page({
@@ -10,16 +10,27 @@ Page({
   },
 
   onLoad(options) {
-    const event = history.events.find((item) => item.id === options.id);
+    this.curId = options.id;
+    this.apply(true);
+    hd.refresh((changed) => {
+      if (changed) this.apply(false);
+    });
+  },
+
+  apply(redirectOnMiss) {
+    const event = hd.get().events.find((item) => item.id === this.curId);
     if (!event) {
+      if (!redirectOnMiss) return;
       wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
       return;
     }
 
     // 反查人物列表：人物详情里登记过 relatedEvents 的人，即与该事件相关
-    const relatedPersons = history.persons.filter((person) =>
-      (person.relatedEvents || []).indexOf(event.id) >= 0
-    );
+    const relatedPersons = hd
+      .get()
+      .persons.filter((person) =>
+        (person.relatedEvents || []).indexOf(event.id) >= 0
+      );
 
     this.setData({
       event,

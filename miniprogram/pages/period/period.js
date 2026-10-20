@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
@@ -20,8 +20,18 @@ Page({
   },
 
   onLoad(options) {
-    const period = history.periods.find((item) => item.id === options.id);
+    this.curId = options.id;
+    this.apply(true);
+    hd.refresh((changed) => {
+      if (changed) this.apply(false);
+    });
+  },
+
+  apply(redirectOnMiss) {
+    const history = hd.get();
+    const period = history.periods.find((item) => item.id === this.curId);
     if (!period) {
+      if (!redirectOnMiss) return;
       wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
       return;
     }

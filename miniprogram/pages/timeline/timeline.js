@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 Page({
@@ -19,6 +19,9 @@ Page({
     // 专题长卷/朝代页等先经 switchTab 交接的 mode 参数
     const pending = store.popPendingTimelineMode();
     if (pending && pending !== this.data.mode) this.loadMode(pending);
+    hd.refresh((changed) => {
+      if (changed) this.loadMode(this.data.mode);
+    });
   },
 
   setTab() {
@@ -34,6 +37,7 @@ Page({
   },
 
   loadMode(mode) {
+    const history = hd.get();
     // 纪年升序；轴上圆点红/青相间
     const events = history.events
       .filter((item) => item.mode === mode)
@@ -67,7 +71,7 @@ Page({
 
   onEvent(e) {
     const id = e.currentTarget.dataset.id;
-    const item = history.events.find((event) => event.id === id);
+    const item = hd.get().events.find((event) => event.id === id);
     if (!item) return;
     wx.navigateTo({ url: `/pages/event/event?id=${item.id}` });
   },

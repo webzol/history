@@ -35,6 +35,9 @@ parts.push('');
 parts.push(wrapJs('app.js', read('app.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
 parts.push(wrapJs('utils/store.js', read('utils/store.js')));
+parts.push(wrapJs('utils/historyData.js', read('utils/historyData.js')));
+parts.push(wrapJs('utils/remote.js', read('utils/remote.js')));
+parts.push(wrapJs('utils/api.js', read('utils/api.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>

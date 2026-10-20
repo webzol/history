@@ -1,7 +1,12 @@
 {
   "description": "史页 · 中国历史微信小程序",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "file",
+        "value": "data/history.json"
+      }
+    ],
     "include": []
   },
   "setting": {

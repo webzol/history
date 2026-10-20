@@ -9,7 +9,7 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（26 史事 / 15 人物 / 4 朝代 / 2 专题 + 今日史事日期库 16 组）。
+- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（26 史事 / 15 人物 / 4 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；60s API 封装在 `utils/api.js` 暂未启用。在线域名白名单：`cdn.jsdelivr.net`（已启用）、`60s.viki.moe`（预留）。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；分享已接入各页。
 - 质量链路：`node tools/selftest.js`（418 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（18 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
@@ -230,6 +230,7 @@ python tools/validate_miniprogram.py
 ## 10. 每次开发后必须更新
 
 - `docs/DEVELOPMENT_LOG.md`：日期、改了什么、为什么、验证结果、遗留问题、下一步。
+- **如果改了 `data/history.js`：必须 `node tools/build_data_json.js` 重建 `data/history.json` 并一并提交**（否则线上 jsDelivr 数据不更新）。
 - 如果架构/视觉规范发生变化，同步更新本文件。
 - 保持网页预览与小程序的视觉同步；如果改了颜色/字体/卡片，两个地方都要改。
 - 不要删除 `ui/reference/assets/` 里的参考图裁切、`paper-bg.png` 和 `tools/make_paper_bg.py`；它们是目前视觉复现的依据。

@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 Page({
@@ -11,6 +11,20 @@ Page({
 
   onShow() {
     this.setTab();
+    this.apply();
+    hd.refresh((changed) => {
+      if (changed) this.apply();
+    });
+  },
+
+  setTab() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 'home' });
+    }
+  },
+
+  apply() {
+    const history = hd.get();
     const now = new Date();
     const month = now.getMonth() + 1;
     const day = now.getDate();
@@ -32,18 +46,13 @@ Page({
     });
   },
 
-  setTab() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ active: 'home' });
-    }
-  },
-
   goDiscover() {
     wx.switchTab({ url: '/pages/discover/discover' });
   },
 
   goPage(e) {
     const page = e.currentTarget.dataset.page;
+    const history = hd.get();
 
     if (page === 'timeline') {
       wx.switchTab({ url: '/pages/timeline/timeline' });

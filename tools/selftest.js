@@ -45,6 +45,7 @@ const wxLog = [];
 let pendingModal = null;    // 最近一次 showModal(opts)
 let pendingSheet = null;    // 最近一次 showActionSheet(opts)
 const storage = {};
+const mockRequest = { payload: null }; // wx.request 白名单桩载荷
 let storageCleared = 0;
 
 function route(kind, url, rest) {
@@ -69,6 +70,11 @@ const wx = {
   showActionSheet(opts) {
     pendingSheet = opts;
     route('showActionSheet', '', { alertText: opts.alertText, count: (opts.itemList || []).length });
+  },
+  request(opts) {
+    route('request', opts.url);
+    if (mockRequest.payload) opts.success({ data: mockRequest.payload });
+    else if (opts.fail) opts.fail(new Error('offline'));
   },
   navigateTo(opts) {
     route('navigateTo', opts.url);
@@ -790,6 +796,113 @@ console.log('== 路由完整 ==');
     .map((r) => urlTarget(r.url));
   targets.forEach((t) => ok(pages[t], `跳转目标页存在 ${t}`));
   ok(Object.keys(pages).length === 8, '八个页面全部注册');
+})();
+
+// ---------------------------------------------------------------------------
+// 数据中枢 + 在线数据源（放最后：远端热替换不污染前面的页面断言）
+// ---------------------------------------------------------------------------
+
+console.log('== 数据中枢 ==');
+
+(function () {
+  resetWifiStack();
+  const hd = require(path.join(ROOT, 'utils', 'historyData.js'));
+  const remote = require(path.join(ROOT, 'utils', 'remote.js'));
+  const api = require(path.join(ROOT, 'utils', 'api.js'));
+
+  // 打包种子为初始数据
+  eq(hd.get(), history, '未刷新前返回本地种子');
+
+  // 远端合法 JSON：热替换 + 订阅通知
+  const remoteSeed = JSON.parse(JSON.stringify(history));
+  remoteSeed.events.push({
+    id: 'demo-remote',
+    mode: 'ancient',
+    year: -100,
+    yearText: '公元前100年',
+    era: '西汉',
+    title: '演示事件',
+    desc: '演示用',
+    tags: '演示',
+    source: 'selftest',
+    details: ['演示段落']
+  });
+  mockRequest.payload = remoteSeed;
+
+  let notified = 0;
+  hd.subscribe(() => {
+    notified += 1;
+  });
+  eq(notified, 0, '种子态注册订阅不触发');
+
+  let changed = null;
+  hd.refresh((c) => {
+    changed = c;
+  });
+  eq(changed, true, '远端数据应用成功');
+  eq(hd.get().events.length, history.events.length + 1, '热替换后史事 +1');
+  eq(notified, 1, '订阅回调收到通知');
+
+  // 缓存命中：不再发请求；相同数据不重复应用
+  const before = wxLog.filter((x) => x.kind === 'request').length;
+  mockRequest.payload = null;
+  let second = null;
+  hd.refresh((c) => {
+    second = c;
+  });
+  eq(second, false, '相同数据不重复应用');
+  eq(wxLog.filter((x) => x.kind === 'request').length, before, '缓存命中不再发请求');
+
+  // 非法 payload：不应用
+  mockRequest.payload = { events: [] };
+  let bad = null;
+  hd.refresh((c) => {
+    bad = c;
+  });
+  eq(bad, false, '坏数据不应用');
+  eq(hd.get().events.length, history.events.length + 1, 'current 保持远端合法数据');
+
+  // remote 模块独立回调
+  mockRequest.payload = remoteSeed;
+  let fetched = null;
+  remote.fetchRemoteHistory((err, data) => {
+    fetched = err ? null : data;
+  });
+  eq(fetched, remoteSeed, 'remote.fetchRemoteHistory 返回缓存数据');
+  ok(remote.REMOTE_URL.indexOf('https://cdn.jsdelivr.net') === 0, '远端域名 jsDelivr(https)');
+
+  // api.js：60s 历史上的今天 归一化
+  const fix = {
+    code: 200,
+    data: {
+      items: [
+        { title: '事件甲', year: '1949', description: 'd1', event_type: 'event', link: 'l1' },
+        { title: '人物乙[注 1]', year: '1921', description: '', event_type: 'birth' },
+        { title: '无效项', year: '', description: 'x', event_type: 'event' }
+      ]
+    }
+  };
+  const items = api.normalizeToday(fix);
+  eq(items.map((i) => i.year), [1921, 1949], 'normalize 年份升序并剔除缺年项');
+  eq(items[0].type, '出生', 'event_type 映射出生');
+  ok(items[1].title.indexOf('[注') < 0, '条目标记文本已清理');
+  eq(api.normalizeToday(null).length, 0, '空载荷归零');
+  eq(api.dateKey(new Date(2026, 9, 20)), '10-20', 'dateKey 月-日无补零');
+
+  // api.js：请求 + 天级缓存
+  mockRequest.payload = fix;
+  let tih = null;
+  api.fetchTodayInHistory((e, list) => {
+    tih = list;
+  });
+  ok(tih && tih.length === 2, 'fetchTodayInHistory 回调归一化数据');
+  const tihKey = 'shige_tih_' + api.dateKey(new Date());
+  ok(storage[tihKey] && storage[tihKey].items.length === 2, '60s 结果写入天级缓存');
+
+  // 清场：本地存储与 mock 载荷，块与块之间互不影响
+  mockRequest.payload = null;
+  delete storage['shige_history_remote'];
+  delete storage[tihKey];
 })();
 
 // ---------------------------------------------------------------------------

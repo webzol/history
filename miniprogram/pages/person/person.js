@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
@@ -14,8 +14,18 @@ Page({
   },
 
   onLoad(options) {
-    const person = history.persons.find((item) => item.id === options.id);
+    this.curId = options.id;
+    this.apply(true);
+    hd.refresh((changed) => {
+      if (changed) this.apply(false);
+    });
+  },
+
+  apply(redirectOnMiss) {
+    const history = hd.get();
+    const person = history.persons.find((item) => item.id === this.curId);
     if (!person) {
+      if (!redirectOnMiss) return;
       wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
       return;
     }

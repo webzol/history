@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -6,7 +6,7 @@ const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 // type+id → 展示条目（人物/事件）
 function resolveEntry(x) {
   if (x.type === 'person') {
-    const p = history.persons.find((item) => item.id === x.id);
+    const p = hd.get().persons.find((item) => item.id === x.id);
     if (!p) return null;
     return {
       type: 'person',
@@ -17,7 +17,7 @@ function resolveEntry(x) {
     };
   }
   if (x.type === 'event') {
-    const ev = history.events.find((item) => item.id === x.id);
+    const ev = hd.get().events.find((item) => item.id === x.id);
     if (!ev) return null;
     return {
       type: 'event',
@@ -51,18 +51,15 @@ Page({
   },
 
   onLoad() {
-    this.setData({
-      stats: [
-        { key: 'periods', label: '朝代', value: history.periods.length },
-        { key: 'events', label: '史事', value: history.events.length },
-        { key: 'persons', label: '人物', value: history.persons.length },
-        { key: 'topics', label: '专题', value: history.topics.length }
-      ]
-    });
+    this.doStats();
   },
 
   onShow() {
     this.setTab();
+    this.doStats();
+    hd.refresh((changed) => {
+      if (changed) this.doStats();
+    });
     const favs = store
       .listFavorites()
       .map(resolveEntry)
@@ -75,6 +72,18 @@ Page({
       })
       .filter(Boolean);
     this.setData({ favs, favCount: favs.length, foots, footCount: foots.length });
+  },
+
+  doStats() {
+    const history = hd.get();
+    this.setData({
+      stats: [
+        { key: 'periods', label: '朝代', value: history.periods.length },
+        { key: 'events', label: '史事', value: history.events.length },
+        { key: 'persons', label: '人物', value: history.persons.length },
+        { key: 'topics', label: '专题', value: history.topics.length }
+      ]
+    });
   },
 
   setTab() {
@@ -90,7 +99,7 @@ Page({
   onEntry(e) {
     const { type, id } = e.currentTarget.dataset;
     const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
-    const exist = history[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
+    const exist = hd.get()[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
     if (!exist) return;
     wx.navigateTo({ url });
   },

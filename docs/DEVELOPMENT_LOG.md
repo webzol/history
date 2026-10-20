@@ -296,6 +296,34 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第十一轮：数据接口化第一步——jsDelivr 远端热更（用户确认选 B 方案）
+
+**架构（本轮落地）**
+
+- 新增 `utils/remote.js`：`wx.request` 拉 `https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/history.json`（仓库直出、免服务器、HSV 缓存最长 12h），本地 24h 敏缓存。
+- 新增 `utils/historyData.js` 数据中枢：初始=打包内种子（离线零依赖）；`refresh()` 拉远端 JSON → 结构校验（events/persons/periods/topics/daily 结构齐全）→ 通过则**热替换** current 并通知订阅回调重建页面。
+- **8 个页面全部接中枢**：四个 tab 页在 onShow 应用数据并静默 refresh（changed 再重渲染）；event/person/period 以 `apply(redirectOnMiss)` 模式支持刷新后重建同一条目；search 每次检索实时读中枢。
+- 新增 `tools/build_data_json.js`：把 history.js 种子序列化为 history.json（48.8KB）随仓库提交；`project.config.json` packOptions **忽略该文件**不进包（种子 js 仍在包内兜底）。
+- 早前新建的 `utils/api.js`（60s「历史上的今天」）本轮一并纳入中枢体系与测试，页面暂不使用，A 方案触发时即插即用。
+
+**工程纪律（新增）**
+
+- 每次改动 `data/history.js` 后必须跑 `node tools/build_data_json.js` 重建 history.json 并提交，远端才同步。
+- 上线前需在小程序后台把 `cdn.jsdelivr.net`（B）与 `60s.viki.moe`（A）加入 request 合法域名；开发期勾选「不校验合法域名」。
+
+**测试与校验（423→479→497）**
+
+- selftest 新增 `wx.request` 桩与「数据中枢」段（置于文件末尾，避免远端热替换污染页面断言）：种子初始态、远端热替换+订阅通知、相同数据不重复应用、缓存命中不发请求、坏数据拒绝、normalizeToday 归一化、天级缓存写入。
+- `node tools/selftest.js` **PASS 497 / FAIL 0**；validate OK 8 pages；全部 JS `node --check` 通过。
+- bundle 重建；18 张截图重截 OK（首页等无回归；预览版无 request 能力自动回退种子）。
+
+**遗留**
+
+- jsDelivr 有 CDN 缓存（最长 12h），内容更新存在延迟；NestJS 上线（remote.js 单点替换）后消除。
+- 真机需确认 request 域名与「不校验合法域名」开关；custom-tab-bar 安全区仍待真机核对。
+
+---
+
 ## 2026-10-20 · 修复 timeline.wxss BOM 编译错误（真机 lib 3.17.4）
 
 **现象**：时间轴页 `timeline.wxss` 开头带 UTF-8 BOM（`EF BB BF`），新版基础库 WXSS 编译器报 `unexpected '﻿' at pos 1`；此前 wcc 旧链路容忍该 BOM，未暴露。

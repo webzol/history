@@ -1,4 +1,4 @@
-const history = require('../../data/history.js');
+const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 
 const lower = (text) => (text || '').toLowerCase();
@@ -29,6 +29,7 @@ Page({
     const kw = lower(word);
     const hit = (fields) => fields.some((field) => lower(field).indexOf(kw) >= 0);
     const modern = (era) => (era || '').indexOf('近现') >= 0 || (era || '').indexOf('民国') >= 0;
+    const history = hd.get();
 
     const persons = history.persons
       .filter((p) => hit([p.name, p.era, p.roles, p.summary, p.dates].concat(p.details || [])))
