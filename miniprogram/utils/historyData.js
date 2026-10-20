@@ -60,18 +60,30 @@ function sameData(a, b) {
 }
 
 // cb(changed:boolean, err:Error|null)
-function refresh(cb) {
-  remote.fetchRemoteHistory((err, data) => {
-    if (err || !data) {
-      if (typeof cb === 'function') cb(false, err);
+// opts.fresh：用户主动「检查更新」——先 purge jsDelivr 缓存，再绕过本地缓存强制拉取
+function refresh(cb, opts) {
+  const fresh = !!(opts && opts.fresh);
+
+  const proceed = (purgeErr) => {
+    if (purgeErr) {
+      if (typeof cb === 'function') cb(false, purgeErr);
       return;
     }
-    if (sameData(data, current)) {
-      if (typeof cb === 'function') cb(false, null);
-      return;
-    }
-    if (typeof cb === 'function') cb(apply(data), null);
-  });
+    remote.fetchRemoteHistory((err, data) => {
+      if (err || !data) {
+        if (typeof cb === 'function') cb(false, err);
+        return;
+      }
+      if (sameData(data, current)) {
+        if (typeof cb === 'function') cb(false, null);
+        return;
+      }
+      if (typeof cb === 'function') cb(apply(data), null);
+    }, { fresh });
+  };
+
+  if (fresh) remote.purgeRemoteCache(proceed);
+  else proceed(null);
 }
 
 module.exports = {

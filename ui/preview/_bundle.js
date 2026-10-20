@@ -1184,18 +1184,30 @@ function sameData(a, b) {
 }
 
 // cb(changed:boolean, err:Error|null)
-function refresh(cb) {
-  remote.fetchRemoteHistory((err, data) => {
-    if (err || !data) {
-      if (typeof cb === 'function') cb(false, err);
+// opts.fresh：用户主动「检查更新」——先 purge jsDelivr 缓存，再绕过本地缓存强制拉取
+function refresh(cb, opts) {
+  const fresh = !!(opts && opts.fresh);
+
+  const proceed = (purgeErr) => {
+    if (purgeErr) {
+      if (typeof cb === 'function') cb(false, purgeErr);
       return;
     }
-    if (sameData(data, current)) {
-      if (typeof cb === 'function') cb(false, null);
-      return;
-    }
-    if (typeof cb === 'function') cb(apply(data), null);
-  });
+    remote.fetchRemoteHistory((err, data) => {
+      if (err || !data) {
+        if (typeof cb === 'function') cb(false, err);
+        return;
+      }
+      if (sameData(data, current)) {
+        if (typeof cb === 'function') cb(false, null);
+        return;
+      }
+      if (typeof cb === 'function') cb(apply(data), null);
+    }, { fresh });
+  };
+
+  if (fresh) remote.purgeRemoteCache(proceed);
+  else proceed(null);
 }
 
 module.exports = {
@@ -1215,6 +1227,8 @@ __register('/utils/remote.js', function (require, module, exports) {
 
 const REMOTE_URL =
   'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/history.json';
+const PURGE_URL =
+  'https://purge.jsdelivr.net/gh/webzol/history@main/miniprogram/data/history.json';
 const CACHE_KEY = 'shige_history_remote';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -1233,8 +1247,28 @@ function writeCache(data) {
   }
 }
 
-function fetchRemoteHistory(cb) {
-  const cached = readCache();
+// 请求 jsDelivr 清其 CDN 缓存（官方 purge 端点），让「检查更新」即时拉到新内容
+function purgeRemoteCache(cb) {
+  if (typeof wx.request !== 'function') {
+    if (typeof cb === 'function') cb(new Error('request unavailable'));
+    return;
+  }
+  wx.request({
+    url: PURGE_URL,
+    method: 'GET',
+    timeout: 10000,
+    success: () => {
+      if (typeof cb === 'function') cb(null);
+    },
+    fail: () => {
+      if (typeof cb === 'function') cb(new Error('purge fail'));
+    }
+  });
+}
+
+function fetchRemoteHistory(cb, opts) {
+  const fresh = !!(opts && opts.fresh); // true = 绕过本地缓存强制拉取
+  const cached = fresh ? null : readCache();
   if (cached) {
     if (typeof cb === 'function') cb(null, cached);
     return;
@@ -1264,6 +1298,8 @@ function fetchRemoteHistory(cb) {
 
 module.exports = {
   REMOTE_URL,
+  PURGE_URL,
+  purgeRemoteCache,
   fetchRemoteHistory
 };
 
@@ -1776,7 +1812,8 @@ Page('project://pages/profile/profile.js', {
     favCount: 0,
     foots: [],
     footCount: 0,
-    info: { open: false, title: '', paragraphs: [] }
+    info: { open: false, title: '', paragraphs: [] },
+    updating: false
   },
 
   onLoad() {
@@ -1823,6 +1860,32 @@ Page('project://pages/profile/profile.js', {
 
   onSearch() {
     wx.navigateTo({ url: '/pages/search/search' });
+  },
+
+  // 检查内容更新：purge jsDelivr 缓存 → 绕过本地缓存强制拉取
+  onCheckUpdate() {
+    if (this.data.updating) return;
+    this.setData({ updating: true });
+    wx.showLoading({ title: '检查更新', mask: true });
+    hd.refresh((changed, err) => {
+      this.setData({ updating: false });
+      wx.hideLoading();
+      if (err) {
+        wx.showToast({ title: '暂无网络，稍后再试', icon: 'none' });
+        return;
+      }
+      if (changed) {
+        const meta = hd.get().meta || {};
+        this.onShow(); // 重算统计与收藏/足迹解析
+        wx.showToast({
+          title: meta.builtAt ? `已更新 · ${meta.builtAt}` : '已更新至最新内容',
+          icon: 'none',
+          duration: 2600
+        });
+        return;
+      }
+      wx.showToast({ title: '内容已是最新', icon: 'none' });
+    }, { fresh: true });
   },
 
   closeInfo() {
@@ -1918,7 +1981,7 @@ Page('project://pages/profile/profile.js', {
 });
 
 });
-__register('/pages/profile/profile.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <text class=\"brand\">我的</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <view class=\"avatar-wrap\">\r\n        <image class=\"avatar\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      </view>\r\n      <view class=\"head-info\">\r\n        <text class=\"nick\">史页客</text>\r\n        <text class=\"tagline\">以千年为卷轴，读万古事</text>\r\n      </view>\r\n      <text class=\"head-seal\">史</text>\r\n    </view>\r\n\r\n    <view class=\"stats-card\">\r\n      <view class=\"stat\" wx:for=\"{{stats}}\" wx:key=\"key\">\r\n        <text class=\"stat-num\">{{item.value}}</text>\r\n        <text class=\"stat-label\">{{item.label}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"banner-card\" bindtap=\"onAboutBanner\">\r\n      <image class=\"banner-bg\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      <view class=\"banner-shade\"></view>\r\n      <text class=\"banner-title\">千古长卷</text>\r\n      <text class=\"banner-sub\">王希孟《千里江山图》卷 · 故宫博物院藏</text>\r\n    </view>\r\n\r\n    <view class=\"list-card hint-card\" wx:if=\"{{!favs.length}}\">\r\n      <text class=\"hint-text\">还没有收藏。在人物、史事详情页点「收藏」，就会出现在这里。</text>\r\n    </view>\r\n    <view class=\"list-card\" wx:if=\"{{favs.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">我的收藏</text>\r\n        <text class=\"list-count\">{{favCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{favs}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n        bindlongpress=\"onFavLongPress\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"list-card hint-card\" wx:if=\"{{!foots.length}}\">\r\n      <text class=\"hint-text\">还没有足迹。浏览人物、史事、朝代详情页后会留下足迹。</text>\r\n    </view>\r\n    <view class=\"list-card\" wx:if=\"{{foots.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">浏览足迹</text>\r\n        <text class=\"list-count\">{{footCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{foots}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-when\">{{item.when}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"menu-card\">\r\n      <view class=\"menu-row\" bindtap=\"onSearch\">\r\n        <text class=\"menu-label\">搜索史事 · 人物</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onDataNote\">\r\n        <text class=\"menu-label\">数据与史料说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAssetNote\">\r\n        <text class=\"menu-label\">素材与授权说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAbout\">\r\n        <text class=\"menu-label\">关于史页</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row last\" bindtap=\"onClearCache\">\r\n        <text class=\"menu-label\">清除缓存</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n  </view>\r\n\r\n  <view class=\"sheet-layer\" wx:if=\"{{info.open}}\">\r\n    <view class=\"sheet-mask\" bindtap=\"closeInfo\"></view>\r\n    <view class=\"info-panel\" catchtap=\"noop\">\r\n      <view class=\"sheet-grip\"></view>\r\n      <view class=\"sheet-head\">\r\n        <text class=\"sheet-title\">{{info.title}}</text>\r\n        <text class=\"sheet-close\" bindtap=\"closeInfo\">×</text>\r\n      </view>\r\n      <view class=\"info-body\">\r\n        <text class=\"info-para\" wx:for=\"{{info.paragraphs}}\" wx:key=\"*this\">{{item}}</text>\r\n      </view>\r\n      <view class=\"sheet-cancel\" bindtap=\"closeInfo\">知道了</view>\r\n    </view>\r\n  </view>\r\n\r\n</view>\r\n"; });
+__register('/pages/profile/profile.wxml', function (require, module, exports) { module.exports = "<view class=\"page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <text class=\"brand\">我的</text>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <view class=\"avatar-wrap\">\r\n        <image class=\"avatar\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      </view>\r\n      <view class=\"head-info\">\r\n        <text class=\"nick\">史页客</text>\r\n        <text class=\"tagline\">以千年为卷轴，读万古事</text>\r\n      </view>\r\n      <text class=\"head-seal\">史</text>\r\n    </view>\r\n\r\n    <view class=\"stats-card\">\r\n      <view class=\"stat\" wx:for=\"{{stats}}\" wx:key=\"key\">\r\n        <text class=\"stat-num\">{{item.value}}</text>\r\n        <text class=\"stat-label\">{{item.label}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"banner-card\" bindtap=\"onAboutBanner\">\r\n      <image class=\"banner-bg\" src=\"/assets/paintings/landscape.jpg\" mode=\"aspectFill\"></image>\r\n      <view class=\"banner-shade\"></view>\r\n      <text class=\"banner-title\">千古长卷</text>\r\n      <text class=\"banner-sub\">王希孟《千里江山图》卷 · 故宫博物院藏</text>\r\n    </view>\r\n\r\n    <view class=\"list-card hint-card\" wx:if=\"{{!favs.length}}\">\r\n      <text class=\"hint-text\">还没有收藏。在人物、史事详情页点「收藏」，就会出现在这里。</text>\r\n    </view>\r\n    <view class=\"list-card\" wx:if=\"{{favs.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">我的收藏</text>\r\n        <text class=\"list-count\">{{favCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{favs}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n        bindlongpress=\"onFavLongPress\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"list-card hint-card\" wx:if=\"{{!foots.length}}\">\r\n      <text class=\"hint-text\">还没有足迹。浏览人物、史事、朝代详情页后会留下足迹。</text>\r\n    </view>\r\n    <view class=\"list-card\" wx:if=\"{{foots.length}}\">\r\n      <view class=\"list-head\">\r\n        <text class=\"list-title\">浏览足迹</text>\r\n        <text class=\"list-count\">{{footCount}} 条</text>\r\n      </view>\r\n      <view\r\n        class=\"list-row\"\r\n        wx:for=\"{{foots}}\"\r\n        wx:key=\"id\"\r\n        data-type=\"{{item.type}}\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"onEntry\"\r\n      >\r\n        <text class=\"row-char {{item.modern ? 'row-modern' : ''}}\">{{item.type === 'person' ? '人' : '事'}}</text>\r\n        <view class=\"row-main\">\r\n          <text class=\"row-title\">{{item.title}}</text>\r\n          <text class=\"row-sub {{item.modern ? 'sub-modern' : ''}}\">{{item.sub}}</text>\r\n        </view>\r\n        <text class=\"row-when\">{{item.when}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"menu-card\">\r\n      <view class=\"menu-row\" bindtap=\"onSearch\">\r\n        <text class=\"menu-label\">搜索史事 · 人物</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onCheckUpdate\">\r\n        <text class=\"menu-label\">检查内容更新</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onDataNote\">\r\n        <text class=\"menu-label\">数据与史料说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAssetNote\">\r\n        <text class=\"menu-label\">素材与授权说明</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row\" bindtap=\"onAbout\">\r\n        <text class=\"menu-label\">关于史页</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n      <view class=\"menu-row last\" bindtap=\"onClearCache\">\r\n        <text class=\"menu-label\">清除缓存</text>\r\n        <text class=\"menu-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n  </view>\r\n\r\n  <view class=\"sheet-layer\" wx:if=\"{{info.open}}\">\r\n    <view class=\"sheet-mask\" bindtap=\"closeInfo\"></view>\r\n    <view class=\"info-panel\" catchtap=\"noop\">\r\n      <view class=\"sheet-grip\"></view>\r\n      <view class=\"sheet-head\">\r\n        <text class=\"sheet-title\">{{info.title}}</text>\r\n        <text class=\"sheet-close\" bindtap=\"closeInfo\">×</text>\r\n      </view>\r\n      <view class=\"info-body\">\r\n        <text class=\"info-para\" wx:for=\"{{info.paragraphs}}\" wx:key=\"*this\">{{item}}</text>\r\n      </view>\r\n      <view class=\"sheet-cancel\" bindtap=\"closeInfo\">知道了</view>\r\n    </view>\r\n  </view>\r\n\r\n</view>\r\n"; });
 __register('/pages/profile/profile.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 160rpx;\r\n}\r\n\r\n.topbar {\r\n  margin-top: 88rpx;\r\n  height: 124rpx;\r\n  display: flex;\r\n  align-items: center;\r\n}\r\n\r\n.brand {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 54rpx;\r\n  font-weight: 400;\r\n  letter-spacing: 0.08em;\r\n  color: #1F1D19;\r\n}\r\n\r\n/* 用户头卡 */\r\n.head-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 24rpx;\r\n}\r\n\r\n.avatar-wrap {\r\n  width: 108rpx;\r\n  height: 108rpx;\r\n  border-radius: 50%;\r\n  overflow: hidden;\r\n  border: 2rpx solid rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.avatar {\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.5) brightness(1.06);\r\n}\r\n\r\n.head-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.nick {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 36rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.tagline {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.head-seal {\r\n  width: 46rpx;\r\n  height: 52rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n/* 数据统计 */\r\n.stats-card {\r\n  margin-top: 18rpx;\r\n  padding: 30rpx 20rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  display: flex;\r\n}\r\n\r\n.stat {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 8rpx;\r\n}\r\n\r\n.stat-num {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 44rpx;\r\n  line-height: 1;\r\n  color: #A9825E;\r\n}\r\n\r\n.stat-label {\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 千古长卷横幅（淡彩：宣纸晕染过渡，墨字，不抢屏） */\r\n.banner-card {\r\n  position: relative;\r\n  height: 220rpx;\r\n  margin-top: 18rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  border: 1rpx solid rgba(80, 65, 48, 0.05);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.banner-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.42) contrast(0.94) brightness(1.08);\r\n}\r\n\r\n.banner-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(97deg, rgba(246, 241, 234, 0.92) 0%, rgba(246, 241, 234, 0.74) 44%, rgba(246, 241, 234, 0.34) 100%);\r\n}\r\n\r\n.banner-title {\r\n  position: absolute;\r\n  left: 30rpx;\r\n  bottom: 44rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 34rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #2A2722;\r\n}\r\n\r\n.banner-sub {\r\n  position: absolute;\r\n  left: 30rpx;\r\n  bottom: 18rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #5F5A52;\r\n}\r\n\r\n/* 功能清单 */\r\n.menu-card {\r\n  margin-top: 22rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  padding: 6rpx 28rpx;\r\n}\r\n\r\n.menu-row {\r\n  display: flex;\r\n  align-items: center;\r\n  height: 96rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.menu-row.last {\r\n  border-bottom: none;\r\n}\r\n\r\n.menu-label {\r\n  flex: 1;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #2C2924;\r\n}\r\n\r\n.menu-hint {\r\n  margin-right: 14rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.menu-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n/* 收藏 / 足迹列表 */\r\n.list-card {\r\n  margin-top: 22rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n  padding: 26rpx 28rpx 12rpx;\r\n}\r\n\r\n.hint-card {\r\n  padding: 26rpx 28rpx;\r\n}\r\n\r\n.hint-text {\r\n  display: block;\r\n  font-size: 24rpx;\r\n  line-height: 38rpx;\r\n  color: #8C857A;\r\n}\r\n\r\n.list-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  padding: 0 4rpx 14rpx;\r\n}\r\n\r\n.list-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 27rpx;\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.list-count {\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.05em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.list-row {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  padding: 20rpx 4rpx;\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.row-char {\r\n  flex: 0 0 72rpx;\r\n  width: 72rpx;\r\n  height: 72rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border-radius: 20rpx;\r\n  background: rgba(163, 74, 62, 0.08);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  color: #A34A3E;\r\n}\r\n\r\n.row-char.row-modern {\r\n  background: rgba(126, 154, 154, 0.14);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.row-main {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.row-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 24rpx;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.row-sub {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: 18rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.row-sub.sub-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.row-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 30rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.row-when {\r\n  flex: 0 0 auto;\r\n  font-size: 17rpx;\r\n  letter-spacing: 0.02em;\r\n  color: #A39A8E;\r\n}\r\n\r\n/* 信息弹层（与首页磁贴弹层同风格） */\r\n.sheet-layer {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  z-index: 120;\r\n}\r\n\r\n.sheet-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  background: rgba(31, 29, 25, 0.3);\r\n  animation: sheetFade 0.18s ease both;\r\n}\r\n\r\n.info-panel {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  max-height: 62vh;\r\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\r\n  background: #FCFBF8;\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\r\n  animation: sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n\r\n.sheet-grip {\r\n  width: 66rpx;\r\n  height: 6rpx;\r\n  margin: 4rpx auto 14rpx;\r\n  border-radius: 3rpx;\r\n  background: #E6E0D4;\r\n}\r\n\r\n.sheet-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 6rpx 8rpx 16rpx;\r\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\r\n}\r\n\r\n.sheet-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 33rpx;\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.sheet-close {\r\n  font-size: 40rpx;\r\n  line-height: 1;\r\n  padding: 6rpx 12rpx;\r\n  color: #8C857A;\r\n}\r\n\r\n.info-body {\r\n  max-height: 40vh;\r\n  overflow-y: auto;\r\n  padding: 10rpx 8rpx 6rpx;\r\n}\r\n\r\n.info-para {\r\n  display: block;\r\n  margin-bottom: 22rpx;\r\n  font-size: 24rpx;\r\n  line-height: 1.8;\r\n  color: #3B3731;\r\n}\r\n\r\n.sheet-cancel {\r\n  margin-top: 18rpx;\r\n  height: 84rpx;\r\n  border-radius: 42rpx;\r\n  background: #EEF0F0;\r\n  font-size: 26rpx;\r\n  letter-spacing: 0.08em;\r\n  color: #5F5A52;\r\n  text-align: center;\r\n  line-height: 84rpx;\r\n}\r\n\r\n@keyframes sheetFade {\r\n  from { opacity: 0; }\r\n  to { opacity: 1; }\r\n}\r\n\r\n@keyframes sheetUp {\r\n  from { transform: translateY(42%); opacity: 0.4; }\r\n  to { transform: translateY(0); opacity: 1; }\r\n}\r\n\r\n"; });
 __register('/pages/event/event.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');

@@ -78,6 +78,8 @@
     showToast: function (o) { drawToast((o && o.title) || ''); },
     showModal: function (o) { drawModal(o); },
     showActionSheet: function (o) { drawSheet(o); },
+    showLoading: function () {},
+    hideLoading: function () {},
     // 60s「历史上的今天」返回样例载荷；其余请求（jsDelivr）走离线失败 → 回退种子
     request: function (o) {
       if (o && o.url && o.url.indexOf('today_in_history') >= 0 && o.success) {

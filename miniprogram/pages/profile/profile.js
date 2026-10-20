@@ -48,7 +48,8 @@ Page({
     favCount: 0,
     foots: [],
     footCount: 0,
-    info: { open: false, title: '', paragraphs: [] }
+    info: { open: false, title: '', paragraphs: [] },
+    updating: false
   },
 
   onLoad() {
@@ -95,6 +96,32 @@ Page({
 
   onSearch() {
     wx.navigateTo({ url: '/pages/search/search' });
+  },
+
+  // 检查内容更新：purge jsDelivr 缓存 → 绕过本地缓存强制拉取
+  onCheckUpdate() {
+    if (this.data.updating) return;
+    this.setData({ updating: true });
+    wx.showLoading({ title: '检查更新', mask: true });
+    hd.refresh((changed, err) => {
+      this.setData({ updating: false });
+      wx.hideLoading();
+      if (err) {
+        wx.showToast({ title: '暂无网络，稍后再试', icon: 'none' });
+        return;
+      }
+      if (changed) {
+        const meta = hd.get().meta || {};
+        this.onShow(); // 重算统计与收藏/足迹解析
+        wx.showToast({
+          title: meta.builtAt ? `已更新 · ${meta.builtAt}` : '已更新至最新内容',
+          icon: 'none',
+          duration: 2600
+        });
+        return;
+      }
+      wx.showToast({ title: '内容已是最新', icon: 'none' });
+    }, { fresh: true });
   },
 
   closeInfo() {

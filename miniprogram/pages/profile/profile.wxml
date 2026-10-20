@@ -86,6 +86,10 @@
         <text class="menu-label">搜索史事 · 人物</text>
         <text class="menu-arrow">›</text>
       </view>
+      <view class="menu-row" bindtap="onCheckUpdate">
+        <text class="menu-label">检查内容更新</text>
+        <text class="menu-arrow">›</text>
+      </view>
       <view class="menu-row" bindtap="onDataNote">
         <text class="menu-label">数据与史料说明</text>
         <text class="menu-arrow">›</text>

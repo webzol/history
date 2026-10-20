@@ -71,6 +71,8 @@ const wx = {
     pendingSheet = opts;
     route('showActionSheet', '', { alertText: opts.alertText, count: (opts.itemList || []).length });
   },
+  showLoading(o) { route('showLoading', '', { title: o && o.title }); },
+  hideLoading() { route('hideLoading', '', {}); },
   request(opts) {
     route('request', opts.url);
     const hook = opts.url.indexOf('today_in_history') >= 0 ? mockRequest.today : mockRequest.payload;
@@ -254,6 +256,14 @@ console.log('== 数据完整性 ==');
     goodImg('/assets/paintings/' + id + '.jpg')
   );
   goodImg('/assets/paintings/landscape.jpg');
+
+  // 远端 data/history.json 应带 builtAt 版本戳
+  try {
+    const remoteJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'history.json'), 'utf8'));
+    ok(remoteJson.meta && remoteJson.meta.builtAt, 'history.json 带 builtAt 版本戳');
+  } catch (e) {
+    ok(false, `history.json 可解析且带 meta（${e.message}）`);
+  }
 })();
 
 // ---------------------------------------------------------------------------
@@ -474,6 +484,11 @@ console.log('== 我的 ==' );
 
   tap(p, 'onSearch');
   eq(last('navigateTo').url, '/pages/search/search', '搜索入口');
+
+  // 检查内容更新（离线路径）：提示 + 状态复位
+  tap(p, 'onCheckUpdate');
+  eq(last('showToast').title, '暂无网络，稍后再试', '检查更新离线提示');
+  eq(p.data.updating, false, '检查更新失败后状态复位');
 
   tap(p, 'onDataNote');
   ok(p.data.info.open && p.data.info.title === '数据与史料说明', '数据说明：自绘弹层打开');
@@ -878,6 +893,22 @@ console.log('== 数据中枢 ==');
   });
   eq(bad, false, '坏数据不应用');
   eq(hd.get().events.length, history.events.length + 1, 'current 保持远端合法数据');
+
+  // 强制刷新：先 purge jsDelivr 缓存，再绕过本地缓存重新拉取并应用
+  mockRequest.payload = remoteSeed;
+  delete storage['shige_history_remote'];
+  const purgeBefore = wxLog.filter((x) => x.kind === 'request' && /purge\.jsdelivr\.net/.test(x.url)).length;
+  let freshChanged = null;
+  let freshErr = null;
+  hd.refresh((c, e) => {
+    freshChanged = c;
+    freshErr = e;
+  }, { fresh: true });
+  const purgeAfter = wxLog.filter((x) => x.kind === 'request' && /purge\.jsdelivr\.net/.test(x.url)).length;
+  ok(purgeAfter > purgeBefore, '强制刷新先发 purge 请求');
+  eq(freshChanged, false, '远端与当前一致不重复应用');
+  eq(freshErr, null, '强制刷新无错误');
+  mockRequest.payload = null;
 
   // remote 模块独立回调
   mockRequest.payload = remoteSeed;

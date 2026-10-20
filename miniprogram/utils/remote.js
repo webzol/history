@@ -6,6 +6,8 @@
 
 const REMOTE_URL =
   'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/history.json';
+const PURGE_URL =
+  'https://purge.jsdelivr.net/gh/webzol/history@main/miniprogram/data/history.json';
 const CACHE_KEY = 'shige_history_remote';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -24,8 +26,28 @@ function writeCache(data) {
   }
 }
 
-function fetchRemoteHistory(cb) {
-  const cached = readCache();
+// 请求 jsDelivr 清其 CDN 缓存（官方 purge 端点），让「检查更新」即时拉到新内容
+function purgeRemoteCache(cb) {
+  if (typeof wx.request !== 'function') {
+    if (typeof cb === 'function') cb(new Error('request unavailable'));
+    return;
+  }
+  wx.request({
+    url: PURGE_URL,
+    method: 'GET',
+    timeout: 10000,
+    success: () => {
+      if (typeof cb === 'function') cb(null);
+    },
+    fail: () => {
+      if (typeof cb === 'function') cb(new Error('purge fail'));
+    }
+  });
+}
+
+function fetchRemoteHistory(cb, opts) {
+  const fresh = !!(opts && opts.fresh); // true = 绕过本地缓存强制拉取
+  const cached = fresh ? null : readCache();
   if (cached) {
     if (typeof cb === 'function') cb(null, cached);
     return;
@@ -55,5 +77,7 @@ function fetchRemoteHistory(cb) {
 
 module.exports = {
   REMOTE_URL,
+  PURGE_URL,
+  purgeRemoteCache,
   fetchRemoteHistory
 };
