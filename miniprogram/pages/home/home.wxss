@@ -519,6 +519,33 @@
   to { opacity: 1; }
 }
 
+.info-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 62vh;
+  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));
+  background: #FCFBF8;
+  border-radius: 42rpx 42rpx 0 0;
+  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);
+  animation: sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.info-body {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 10rpx 8rpx 6rpx;
+}
+
+.info-para {
+  display: block;
+  margin-bottom: 22rpx;
+  font-size: 24rpx;
+  line-height: 1.8;
+  color: #3B3731;
+}
+
 @keyframes sheetUp {
   from { transform: translateY(42%); opacity: 0.4; }
   to { transform: translateY(0); opacity: 1; }

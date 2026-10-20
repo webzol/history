@@ -11,7 +11,8 @@ Page({
     tih: [],
     tihTotal: 0,
     tihDate: '',
-    sheet: { open: false, title: '', list: [] }
+    sheet: { open: false, title: '', list: [] },
+    info: { open: false, title: '', paragraphs: [] }
   },
 
   onShow() {
@@ -132,29 +133,32 @@ Page({
   },
 
   showDetail(item) {
-    const content = [
+    const paragraphs = [
       item.dateText ? `时间：${item.dateText}` : '',
       item.desc || item.summary || '',
       item.source ? `史料：${item.source}` : ''
-    ].filter(Boolean).join('\n\n');
+    ].filter(Boolean);
 
-    wx.showModal({
-      title: item.title || item.name,
-      content,
-      showCancel: false,
-      confirmText: '知道了'
+    this.setData({
+      info: { open: true, title: item.title || item.name, paragraphs }
     });
   },
 
   onTihTap(e) {
     const item = this.data.tih[e.currentTarget.dataset.index];
     if (!item) return;
-    wx.showModal({
-      title: `${item.yearText} · ${item.title}`,
-      content: item.desc || '上游百科暂无进一步说明',
-      confirmText: '知道了',
-      showCancel: false
+    this.setData({
+      info: {
+        open: true,
+        title: `${item.yearText} · ${item.title}`,
+        paragraphs: [item.desc || '上游百科暂无进一步说明。'],
+        kind: 'tih'
+      }
     });
+  },
+
+  closeInfo() {
+    this.setData({ 'info.open': false });
   },
 
   onHeroTap() {

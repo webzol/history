@@ -104,4 +104,18 @@
       <view class="sheet-cancel" bindtap="closeSheet">取消</view>
     </view>
   </view>
+  <view class="sheet-layer" wx:if="{{info.open}}">
+    <view class="sheet-mask" bindtap="closeInfo"></view>
+    <view class="info-panel" catchtap="noop">
+      <view class="sheet-grip"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">{{info.title}}</text>
+        <text class="sheet-close" bindtap="closeInfo">×</text>
+      </view>
+      <view class="info-body">
+        <text class="info-para" wx:for="{{info.paragraphs}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="sheet-cancel" bindtap="closeInfo">知道了</view>
+    </view>
+  </view>
 </view>

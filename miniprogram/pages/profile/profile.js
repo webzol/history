@@ -47,7 +47,8 @@ Page({
     favs: [],
     favCount: 0,
     foots: [],
-    footCount: 0
+    footCount: 0,
+    info: { open: false, title: '', paragraphs: [] }
   },
 
   onLoad() {
@@ -96,6 +97,12 @@ Page({
     wx.navigateTo({ url: '/pages/search/search' });
   },
 
+  closeInfo() {
+    this.setData({ 'info.open': false });
+  },
+
+  noop() {},
+
   onEntry(e) {
     const { type, id } = e.currentTarget.dataset;
     const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
@@ -121,41 +128,49 @@ Page({
   },
 
   onDataNote() {
-    wx.showModal({
-      title: '数据与史料说明',
-      content: [
-        '当前内容为本地真实史料种子：',
-        `朝代 ${this.data.stats[0].value} 条、史事 ${this.data.stats[1].value} 条、人物 ${this.data.stats[2].value} 条、专题 ${this.data.stats[3].value} 条。`,
-        '每条均附史料出处索引；正式发布前会逐条完成历史审校。'
-      ].join('\n'),
-      showCancel: false,
-      confirmText: '知道了'
+    this.setData({
+      info: {
+        open: true,
+        title: '数据与史料说明',
+        paragraphs: [
+          '当前内容为本地真实史料种子：',
+          `朝代 ${this.data.stats[0].value} 条、史事 ${this.data.stats[1].value} 条、人物 ${this.data.stats[2].value} 条、专题 ${this.data.stats[3].value} 条。`,
+          '每条均附史料出处索引；正式发布前会逐条完成历史审校。'
+        ]
+      }
     });
   },
 
   onAssetNote() {
-    wx.showModal({
-      title: '素材与授权说明',
-      content: '插画与文物图片来自公开网络搜索与参考图裁切，仅用于原型演示；正式上线前将替换为有授权的来源。明细见工程 assets/paintings/SOURCES.md。',
-      showCancel: false,
-      confirmText: '知道了'
+    this.setData({
+      info: {
+        open: true,
+        title: '素材与授权说明',
+        paragraphs: [
+          '插画与文物图片来自公开网络搜索与参考图裁切，仅用于原型演示；正式上线前将替换为有授权的来源。',
+          '明细见工程 assets/paintings/SOURCES.md。'
+        ]
+      }
     });
   },
 
   onAbout() {
-    wx.showModal({
-      title: '史页',
-      content: '一页一页读历史。古代史与近现代史并列，史料可追溯。',
-      showCancel: false
+    this.setData({
+      info: {
+        open: true,
+        title: '史页',
+        paragraphs: ['一页一页读历史。古代史与近现代史并列，史料可追溯。']
+      }
     });
   },
 
   onAboutBanner() {
-    wx.showModal({
-      title: '千古长卷',
-      content: '王希孟《千里江山图》卷（局部），现藏故宫博物院。十八岁完成此卷，青绿千年不褪。',
-      showCancel: false,
-      confirmText: '知道了'
+    this.setData({
+      info: {
+        open: true,
+        title: '千古长卷',
+        paragraphs: ['王希孟《千里江山图》卷（局部），现藏故宫博物院。十八岁完成此卷，青绿千年不褪。']
+      }
     });
   },
 

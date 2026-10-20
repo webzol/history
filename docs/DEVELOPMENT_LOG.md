@@ -296,6 +296,27 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第十五轮：交互（二）弹层体系统一——信息详情全站去原生弹框
+
+**改动**
+
+- 首页「历史上的今天」条目点击：原生 `showModal` → 同风格宣纸信息弹层（`info` 状态 + `info-panel`/`info-body`/`info-para` 样式，多段正文、× / 知道了 / 遮罩三种关闭）。
+- 首页 hero 点击的兜底详情（`showDetail`，hero 无 eventId 时）：同上替换，字段（时间/描述/史料）拆为多段。
+- 「我的」页四个信息菜单（数据与史料说明 / 素材与授权说明 / 关于史页 / 千古长卷 banner）：原生 `showModal` → 信息弹层；统计段落仍实时读 `stats`（33 史事 / 19 人物等）。
+- **保留原生**：`profile.onClearCache` 与 `onFavLongPress`（确认型双按钮）、`wx.showToast`（轻提示）——纯信息展示才用自绘弹层。
+- selftest：tih 点击/profile 四菜单断言改为 info 弹层打开·内容·关闭；喊掉旧的 showModal 断言。
+
+**校验**
+
+- `node tools/selftest.js` **PASS 580 / FAIL 0**；validate OK；strip_bom 0；bundle 重建；20 张截图重截（profile 首屏核对 33/19 统计卡片）。
+- 全站 `wx.showModal` 仅剩 2 处（均为确认型），`wx.showActionSheet` 0 处。
+
+**遗留**
+
+- 8137 场景暂未把 info 弹层纳入固定套件（本次临时截图核对）；如需回归可在 preview_shots 加 `profile?shot=1&s=click:.menu-row:nth-child(2)` 场景。
+
+---
+
 ## 2026-10-20 · 第十四轮：交互（一）磁贴自绘弹层替代原生 ActionSheet + 时代带右侧竖条移除
 
 **改动**

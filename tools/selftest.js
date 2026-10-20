@@ -476,19 +476,22 @@ console.log('== 我的 ==' );
   eq(last('navigateTo').url, '/pages/search/search', '搜索入口');
 
   tap(p, 'onDataNote');
-  ok(last('showModal').content.indexOf('朝代 4 条') >= 0, '数据说明含统计');
-  confirmModal(true);
+  ok(p.data.info.open && p.data.info.title === '数据与史料说明', '数据说明：自绘弹层打开');
+  ok(p.data.info.paragraphs.join('').indexOf('朝代 4 条') >= 0, '数据说明含统计');
+  tap(p, 'closeInfo');
+  eq(p.data.info.open, false, '数据说明弹层可关闭');
 
   tap(p, 'onAssetNote');
-  ok(last('showModal').content.indexOf('SOURCES.md') >= 0, '素材说明指向来源表');
-  confirmModal(true);
+  ok(p.data.info.open && p.data.info.paragraphs.join('').indexOf('SOURCES.md') >= 0, '素材说明指向来源表');
+  tap(p, 'closeInfo');
 
   tap(p, 'onAboutBanner');
-  ok(last('showModal').content.indexOf('千里江山图') >= 0, '横幅 → 关于千里江山图');
-  confirmModal(true);
+  ok(p.data.info.open && p.data.info.paragraphs.join('').indexOf('千里江山图') >= 0, '横幅 → 关于千里江山图');
+  tap(p, 'closeInfo');
 
   tap(p, 'onAbout');
-  confirmModal(true);
+  ok(p.data.info.open && p.data.info.title === '史页', '关于史页弹层');
+  tap(p, 'closeInfo');
 
   tap(p, 'onClearCache');
   const clearedBefore = storageCleared;
@@ -950,10 +953,10 @@ console.log('== 今日接口 ==');
   eq(p.data.tihTotal, 3, '板块总数正确');
   eq(p.data.tihDate, `${new Date().getMonth() + 1}月${new Date().getDate()}日`, '板块显示当日日期');
 
-  pendingModal = null;
   p.onTihTap({ currentTarget: { dataset: { index: 0 } } });
-  ok(pendingModal && pendingModal.title.indexOf('1881') >= 0, '板块条目点击出详情模态');
-  pendingModal = null;
+  ok(p.data.info.open && p.data.info.title.indexOf('1881') >= 0, '板块条目点击出信息弹层');
+  tap(p, 'closeInfo');
+  eq(p.data.info.open, false, '信息弹层可关闭');
 
   // 断网：板块清空隐藏，页面其余内容不受影响
   mockRequest.today = null;
