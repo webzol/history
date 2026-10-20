@@ -32,7 +32,9 @@ const targets = [
   ['15-event-xinhai', 'event?shot=1&id=xinhai-1911'],
   ['16-period-han', 'period?shot=1&id=han'],
   ['17-period-modern', 'period?shot=1&id=modern'],
-  ['18-person-collect', `person?shot=1&id=su-shi&s=${esc('click:.ghost-btn')}`]
+  ['18-person-collect', `person?shot=1&id=su-shi&s=${esc('click:.ghost-btn')}`],
+  ['19-event-zhenghe', 'event?shot=1&id=zhenghe-1405'],
+  ['20-person-yuqian', 'person?shot=1&id=yu-qian']
 ];
 
 let miss = 0;

@@ -19,7 +19,7 @@
       <view class="era-chip {{accent === 'modern' ? 'chip-modern' : ''}}">
         <text>{{person.era}}</text>
       </view>
-      <view class="quote-block">
+      <view class="quote-block" wx:if="{{person.quote}}">
         <text class="quote-mark">“</text>
         <text class="quote">{{person.quote}}</text>
         <text class="quote-src">——{{person.quoteSource}}</text>

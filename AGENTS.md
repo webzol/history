@@ -9,9 +9,9 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（26 史事 / 15 人物 / 4 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`60s.viki.moe`（均已启用）。
+- 原生小程序（8 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页；数据=本地真实历史种子 `miniprogram/data/history.js`（33 史事 / 19 人物 / 4 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`60s.viki.moe`（均已启用）。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（418 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（18 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（571 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -73,7 +73,7 @@ E:\hish\
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
 │  └─ pages\home|timeline|discover|profile|person|event|period|search
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 201 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 571 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
 │  ├─ preview_shots.js              # 批量截图 15 张 → ui/preview/shots/
@@ -122,7 +122,7 @@ E:\hish\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 201 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 571 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
