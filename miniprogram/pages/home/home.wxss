@@ -151,6 +151,102 @@
   color: #3B3731;
 }
 
+/* 「历史上的今天」——60s API 实时板块 */
+.tih {
+  margin-top: 34rpx;
+  padding: 28rpx 30rpx 6rpx;
+  border-radius: 38rpx;
+  background: #FCFBF8;
+  border: 1rpx solid rgba(80, 65, 48, 0.05);
+  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
+}
+
+.tih-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.tih-title {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 32rpx;
+  letter-spacing: 0.07em;
+  color: #1F1D19;
+}
+
+.tih-sub {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 19rpx;
+  letter-spacing: 0.04em;
+  color: #8C857A;
+}
+
+.tih-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 22rpx 0 20rpx;
+  border-top: 1rpx solid rgba(31, 29, 25, 0.05);
+}
+
+.tih-year {
+  flex: none;
+  width: 128rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 26rpx;
+  line-height: 34rpx;
+  color: #A34A3E;
+}
+
+.tih-tag {
+  flex: none;
+  height: 32rpx;
+  padding: 0 10rpx;
+  margin-top: 1rpx;
+  border-radius: 8rpx;
+  font-size: 18rpx;
+  line-height: 32rpx;
+  letter-spacing: 0.04em;
+}
+
+.tag-e { background: #F1E8DD; color: #5F5A52; }
+.tag-b { background: #EEF0F0; color: #5F5A52; }
+.tag-d { background: #F0F0F1; color: #8C857A; }
+
+.tih-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.tih-name {
+  display: block;
+  font-size: 23rpx;
+  line-height: 34rpx;
+  color: #1F1D19;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tih-desc {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  line-height: 28rpx;
+  color: #8C857A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tih-foot {
+  padding: 18rpx 0 20rpx;
+  border-top: 1rpx solid rgba(31, 29, 25, 0.05);
+  font-size: 19rpx;
+  letter-spacing: 0.04em;
+  color: #8C857A;
+}
+
 .section-head {
   margin-top: 38rpx;
   display: flex;

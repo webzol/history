@@ -296,6 +296,28 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第十二轮：A 方案落地——首页「历史上的今天」60s 实时板块
+
+**功能（本轮上线）**
+
+- 首页新增「历史上的今天」板块（`pages/home/`）：数据来自 60s API `https://60s.viki.moe/v2/today_in_history`（免费无 key，上游百度百科）。
+  - `utils/api.js` 归一化：剔脏项（缺年/缺题）、清理 `[注 x]` 标记、event_type 映射「出生/逝世/事件」、按年份升序；**天级缓存 6h**（storage `shige_tih_月-日`，防上游限流）。
+  - 板块展示前 6 条：朱砂纪年 + 类型标签（出生 #EEF0F0 / 事件 #F1E8DD / 逝世 #F0F0F1）+ 单行标题/简介；底部显示「共 N 条 · 点击条目看详情」；点击条目 `showModal` 出详情。
+  - 失败兜底：无网/空数据/坏载荷 → 板块整体隐藏（`wx:if tih.length`），页面其余内容零影响；预览 harness 无 request 能力时同样自动回退。
+- selftest 桩升级：`wx.request` 按 URL 分流（`today_in_history` → `mockRequest.today`，jsDelivr → `mockRequest.payload`），新增「今日接口」块（放文件末尾，涉及当天缓存不污染前面的断言）：归一化条数、升序、总数、当日日期、点击模态、断网清空板块。
+
+**测试与校验（497→504）**
+
+- `node tools/selftest.js` **PASS 504 / FAIL 0**；validate OK 8 pages；strip_bom 0；bundle 重建；18 张截图重截 OK（首页板块渲染核对通过）。
+- 域名白名单：用户已在小程序后台添加 `cdn.jsdelivr.net`；**`60s.viki.moe` 也需加入**（本轮板块的 request 域名），开发期可先勾「不校验合法域名」。
+
+**遗留**
+
+- 板块内容来自百科上游，正式发布前需抽样审校（尤其年份/事件表述）。
+- jsDelivr CDN 缓存最长 12h；NestJS 上线后统一替换 remote.js/api.js 的 URL 与解析。
+
+---
+
 ## 2026-10-20 · 第十一轮：数据接口化第一步——jsDelivr 远端热更（用户确认选 B 方案）
 
 **架构（本轮落地）**

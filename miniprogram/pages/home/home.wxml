@@ -34,6 +34,28 @@
       </view>
     </view>
 
+    <view class="tih" wx:if="{{tih.length}}">
+      <view class="tih-head">
+        <text class="tih-title">历史上的今天</text>
+        <text class="tih-sub">{{tihDate}}</text>
+      </view>
+      <view
+        class="tih-item"
+        wx:for="{{tih}}"
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="onTihTap"
+      >
+        <text class="tih-year">{{item.yearText}}</text>
+        <text class="tih-tag {{item.type === '出生' ? 'tag-b' : item.type === '逝世' ? 'tag-d' : 'tag-e'}}">{{item.type}}</text>
+        <view class="tih-main">
+          <text class="tih-name">{{item.title}}</text>
+          <text class="tih-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
+        </view>
+      </view>
+      <view class="tih-foot" wx:if="{{tihTotal > tih.length}}">共 {{tihTotal}} 条 · 点击条目看详情</view>
+    </view>
+
     <view class="section-head">
       <text class="section-title">沿着时间走</text>
       <text class="section-link" bindtap="goDiscover">全部朝代 ›</text>

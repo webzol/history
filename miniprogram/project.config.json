@@ -3,8 +3,8 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "file",
-        "value": "data/history.json"
+        "value": "data/history.json",
+        "type": "file"
       }
     ],
     "include": []
@@ -34,7 +34,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.4.0",
-  "appid": "wx1f06ef196b319e37",
+  "appid": "wxe61b785946958cc7",
   "projectname": "shiye",
   "miniprogramRoot": "./",
   "condition": {},

@@ -1,4 +1,5 @@
 const hd = require('../../utils/historyData.js');
+const api = require('../../utils/api.js');
 const store = require('../../utils/store.js');
 
 Page({
@@ -6,12 +7,17 @@ Page({
     dateText: '10月18日 · 今天',
     hero: {},
     era: {},
-    modern: {}
+    modern: {},
+    tih: [],
+    tihTotal: 0,
+    tihDate: ''
   },
 
   onShow() {
     this.setTab();
     this.apply();
+    // 60s「历史上的今天」：失败自动隐藏板块，不占位
+    this.loadTih();
     hd.refresh((changed) => {
       if (changed) this.apply();
     });
@@ -43,6 +49,22 @@ Page({
       hero,
       era,
       modern
+    });
+  },
+
+  // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏
+  loadTih() {
+    api.fetchTodayInHistory((err, items) => {
+      if (err || !items) {
+        if (this.data.tih.length) this.setData({ tih: [], tihTotal: 0, tihDate: '' });
+        return;
+      }
+      const now = new Date();
+      this.setData({
+        tih: items.slice(0, 6),
+        tihTotal: items.length,
+        tihDate: `${now.getMonth() + 1}月${now.getDate()}日`
+      });
     });
   },
 
@@ -118,6 +140,17 @@ Page({
       content,
       showCancel: false,
       confirmText: '知道了'
+    });
+  },
+
+  onTihTap(e) {
+    const item = this.data.tih[e.currentTarget.dataset.index];
+    if (!item) return;
+    wx.showModal({
+      title: `${item.yearText} · ${item.title}`,
+      content: item.desc || '上游百科暂无进一步说明',
+      confirmText: '知道了',
+      showCancel: false
     });
   },
 

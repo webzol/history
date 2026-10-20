@@ -78,6 +78,28 @@
     showToast: function (o) { drawToast((o && o.title) || ''); },
     showModal: function (o) { drawModal(o); },
     showActionSheet: function (o) { drawSheet(o); },
+    // 60s「历史上的今天」返回样例载荷；其余请求（jsDelivr）走离线失败 → 回退种子
+    request: function (o) {
+      if (o && o.url && o.url.indexOf('today_in_history') >= 0 && o.success) {
+        o.success({
+          data: {
+            code: 200,
+            data: {
+              items: [
+                { title: '武昌起义爆发', year: '1911', description: '湖北新军工程营枪响，辛亥革命由此揭幕。', event_type: 'event', link: '' },
+                { title: '鲁迅逝世', year: '1936', description: '中国现代文学的奠基人在上海病逝。', event_type: 'death', link: '' },
+                { title: '陈独秀逝世', year: '1942', description: '', event_type: 'death', link: '' },
+                { title: '茅盾诞辰', year: '1896', description: '原名沈德鸿，字雁冰，浙江桐乡人。', event_type: 'birth', link: '' },
+                { title: '辛亥革命元勋黄兴病逝', year: '1916', description: '', event_type: 'death', link: '' },
+                { title: '护国战争爆发', year: '1915', description: '蔡锷、唐继尧等在云南起兵讨袁。', event_type: 'event', link: '' }
+              ]
+            }
+          }
+        });
+        return;
+      }
+      if (o && o.fail) o.fail(new Error('offline'));
+    },
     navigateTo: function (o) {
       var t = targetPage(o.url);
       openPage(t.name, t.query, 'push');

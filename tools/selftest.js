@@ -45,7 +45,7 @@ const wxLog = [];
 let pendingModal = null;    // 最近一次 showModal(opts)
 let pendingSheet = null;    // 最近一次 showActionSheet(opts)
 const storage = {};
-const mockRequest = { payload: null }; // wx.request 白名单桩载荷
+const mockRequest = { payload: null, today: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）
 let storageCleared = 0;
 
 function route(kind, url, rest) {
@@ -73,7 +73,8 @@ const wx = {
   },
   request(opts) {
     route('request', opts.url);
-    if (mockRequest.payload) opts.success({ data: mockRequest.payload });
+    const hook = opts.url.indexOf('today_in_history') >= 0 ? mockRequest.today : mockRequest.payload;
+    if (hook) opts.success({ data: hook });
     else if (opts.fail) opts.fail(new Error('offline'));
   },
   navigateTo(opts) {
@@ -889,8 +890,8 @@ console.log('== 数据中枢 ==');
   eq(api.normalizeToday(null).length, 0, '空载荷归零');
   eq(api.dateKey(new Date(2026, 9, 20)), '10-20', 'dateKey 月-日无补零');
 
-  // api.js：请求 + 天级缓存
-  mockRequest.payload = fix;
+  // api.js：请求 + 天级缓存（60s URL 用 mockRequest.today）
+  mockRequest.today = fix;
   let tih = null;
   api.fetchTodayInHistory((e, list) => {
     tih = list;
@@ -901,8 +902,54 @@ console.log('== 数据中枢 ==');
 
   // 清场：本地存储与 mock 载荷，块与块之间互不影响
   mockRequest.payload = null;
+  mockRequest.today = null;
   delete storage['shige_history_remote'];
   delete storage[tihKey];
+})();
+
+// ---------------------------------------------------------------------------
+// 首页 60s「历史上的今天」板块（放最后：涉及当天缓存，避免污染前面断言）
+// ---------------------------------------------------------------------------
+
+console.log('== 今日接口 ==');
+
+(function () {
+  resetWifiStack();
+  const api = require(path.join(ROOT, 'utils', 'api.js'));
+  const p = pages.home;
+
+  p.setData({ tih: [], tihTotal: 0, tihDate: '' });
+  mockRequest.today = {
+    code: 200,
+    data: {
+      items: [
+        { title: '事件甲', year: '1949', description: '开国大典', event_type: 'event', link: 'l1' },
+        { title: '人物乙', year: '1881', description: '', event_type: 'birth' },
+        { title: '无效项', year: '', description: 'x', event_type: 'event' },
+        { title: '事件乙', year: '1921', description: '一大召开', event_type: 'event' }
+      ]
+    }
+  };
+
+  p.onShow();
+  eq(p.data.tih.length, 3, '今日接口归一化后出有效条目');
+  eq(p.data.tih[0].yearText, '1881', '板块条目按年份升序');
+  eq(p.data.tihTotal, 3, '板块总数正确');
+  eq(p.data.tihDate, `${new Date().getMonth() + 1}月${new Date().getDate()}日`, '板块显示当日日期');
+
+  pendingModal = null;
+  p.onTihTap({ currentTarget: { dataset: { index: 0 } } });
+  ok(pendingModal && pendingModal.title.indexOf('1881') >= 0, '板块条目点击出详情模态');
+  pendingModal = null;
+
+  // 断网：板块清空隐藏，页面其余内容不受影响
+  mockRequest.today = null;
+  delete storage['shige_tih_' + api.dateKey(new Date())];
+  p.onShow();
+  eq(p.data.tih.length, 0, '无网时板块清空');
+  ok(p.data.hero && p.data.hero.title, '无网时其余内容保持');
+
+  mockRequest.today = null;
 })();
 
 // ---------------------------------------------------------------------------
