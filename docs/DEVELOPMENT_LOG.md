@@ -296,6 +296,29 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 第十四轮：交互（一）磁贴自绘弹层替代原生 ActionSheet + 时代带右侧竖条移除
+
+**改动**
+
+- **视觉（用户指图反馈）**：首页时代带右侧的 scroll-accent 半屏竖条（千里江山装饰列）整体移除，盛唐卡经 `era-row` flex 独占整行（`_`assets/scroll-accent.png 保留在 assets，未删文件）。
+- **交互（用户要求“不要自带弹框”）**：首页三个磁贴（朝代/人物/事件）的选择列表由 `wx.showActionSheet` 改为**自绘底部弹层**：
+  - `home.js`：`openSheet/closeSheet/noop/onSheetItem` 四件套；三种弹层内容仍全部实时取自 `hd.get()`（4 时代含起讫纪年 / 19 人物带时代与身份 / 精选 6 史事带纪年与朝代）；选中即关弹层并 `navigateTo` 真实条目。
+  - `home.wxml`：页面根级 `sheet-layer`（遮罩 + 面板 + 拖柄 + 标题行 + 滚动列表 + 取消胶囊）；面板 `catchtap=noop` 阻冒泡，点遮罩/×/取消均关闭。
+  - `home.wxss`：宣纸白卡圆角顶、淡墨分隔线、入场 `sheetUp` 动画、`env(safe-area-inset-bottom)` 安全区。
+- **selftest 保真**：mock `setData` 升级支持 `'a.b'` 点路径（与真机行为一致）；首页块断言改为弹层打开/条数/选择跳转/选择后关闭/点取消关闭。
+- 截图套件不变（`02-home-sheet-dynasty` 场景即拍到新弹层，视觉核对通过）。
+
+**校验**
+
+- `node tools/selftest.js` **PASS 576 / FAIL 0**；validate OK；strip_bom 0；bundle 重建。
+- 原生 `wx.showActionSheet` 全站已无调用（home.js 的 showList 移除）；harness 的 drawSheet 桩仍保留（无调用方，不影响）。
+
+**遗留**
+
+- 发现页/朝代页等列表均为页面内真实渲染，无原生弹层依赖；detail 页收藏 Toast 仍用 wx.showToast（原生提示，保留）。
+
+---
+
 ## 2026-10-20 · 第十三轮：内容扩充——明代 + 辽/西夏/金建国线（33 史事 / 19 人物）
 
 **新增史事（7 条，全部 ancient，插在 `yuanmingyuan-1860` 之前保住精选首条契约）**

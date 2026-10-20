@@ -396,3 +396,130 @@
   margin: 8rpx 0;
   background: rgba(126, 154, 154, 0.55);
 }
+
+/* 磁贴选择弹层（自绘底部面板，替换原生 ActionSheet） */
+.sheet-layer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 120;
+}
+
+.sheet-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(31, 29, 25, 0.3);
+  animation: sheetFade 0.18s ease both;
+}
+
+.sheet-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 62vh;
+  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));
+  background: #FCFBF8;
+  border-radius: 42rpx 42rpx 0 0;
+  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);
+  animation: sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.sheet-grip {
+  width: 66rpx;
+  height: 6rpx;
+  margin: 4rpx auto 14rpx;
+  border-radius: 3rpx;
+  background: #E6E0D4;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6rpx 8rpx 16rpx;
+  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);
+}
+
+.sheet-title {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 33rpx;
+  letter-spacing: 0.07em;
+  color: #1F1D19;
+}
+
+.sheet-close {
+  font-size: 40rpx;
+  line-height: 1;
+  padding: 6rpx 12rpx;
+  color: #8C857A;
+}
+
+.sheet-list {
+  max-height: 44vh;
+  overflow-y: auto;
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 24rpx 8rpx;
+  border-bottom: 1rpx solid rgba(31, 29, 25, 0.05);
+}
+
+.sheet-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-row-title {
+  display: block;
+  font-size: 26rpx;
+  color: #1F1D19;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-row-sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: #8C857A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-row-arrow {
+  font-size: 30rpx;
+  color: #C9C2B6;
+}
+
+.sheet-cancel {
+  margin-top: 18rpx;
+  height: 84rpx;
+  border-radius: 42rpx;
+  background: #EEF0F0;
+  font-size: 26rpx;
+  letter-spacing: 0.08em;
+  color: #5F5A52;
+  text-align: center;
+  line-height: 84rpx;
+}
+
+@keyframes sheetFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(42%); opacity: 0.4; }
+  to { transform: translateY(0); opacity: 1; }
+}

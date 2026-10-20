@@ -10,7 +10,8 @@ Page({
     modern: {},
     tih: [],
     tihTotal: 0,
-    tihDate: ''
+    tihDate: '',
+    sheet: { open: false, title: '', list: [] }
   },
 
   onShow() {
@@ -82,50 +83,52 @@ Page({
     }
 
     if (page === 'dynasty') {
-      this.showList(
+      this.openSheet(
         '选择一个时代',
-        history.periods.map((item) => `${item.name} · ${item.title}`),
-        (index) => {
-          const period = history.periods[index];
-          wx.navigateTo({ url: `/pages/period/period?id=${period.id}` });
-        }
+        history.periods.map((item) => ({ id: item.id, kind: 'period', title: item.name, sub: `${item.start < 0 ? '公元前' + (-item.start) : item.start}–${item.end} · ${item.title}` }))
       );
       return;
     }
 
     if (page === 'person') {
-      this.showList(
+      this.openSheet(
         '选择一位人物',
-        history.persons.map((item) => `${item.name} · ${item.roles}`),
-        (index) => {
-          const person = history.persons[index];
-          wx.navigateTo({ url: `/pages/person/person?id=${person.id}` });
-        }
+        history.persons.map((item) => ({ id: item.id, kind: 'person', title: item.name, sub: `${item.era} · ${item.roles}` }))
       );
       return;
     }
 
     if (page === 'event') {
       const items = history.events.slice(-6).reverse();
-      this.showList(
+      this.openSheet(
         '选择一件史事',
-        items.map((item) => `${item.yearText} · ${item.title}`),
-        (index) => {
-          const event = items[index];
-          wx.navigateTo({ url: `/pages/event/event?id=${event.id}` });
-        }
+        items.map((item) => ({ id: item.id, kind: 'event', title: item.title, sub: `${item.yearText} · ${item.era}` }))
       );
     }
   },
 
-  showList(title, itemList, onSelect) {
-    wx.showActionSheet({
-      alertText: title,
-      itemList,
-      success: (res) => {
-        onSelect(res.tapIndex);
-      }
-    });
+  openSheet(title, list) {
+    this.setData({ sheet: { open: true, title, list } });
+  },
+
+  closeSheet() {
+    this.setData({ 'sheet.open': false });
+  },
+
+  // 阻挡面板内点击冒泡到遮罩
+  noop() {},
+
+  onSheetItem(e) {
+    const item = this.data.sheet.list[e.currentTarget.dataset.index];
+    if (!item) return;
+    const url =
+      item.kind === 'person'
+        ? `/pages/person/person?id=${item.id}`
+        : item.kind === 'event'
+          ? `/pages/event/event?id=${item.id}`
+          : `/pages/period/period?id=${item.id}`;
+    this.setData({ 'sheet.open': false });
+    wx.navigateTo({ url });
   },
 
   showDetail(item) {

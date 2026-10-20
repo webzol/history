@@ -156,11 +156,17 @@ global.wx = wx;
 
 function instantiate(cfg, name) {
   const page = Object.assign({ __name: name, data: JSON.parse(JSON.stringify(cfg.data || {})) }, cfg);
-  // setData：按整键替换，供断言读取（与 wx 顶層键覆盖行为一致）
+  // setData：顶层键整键替换 + 支持 'a.b.c' 点路径（与真机 setData 行为一致）
   Object.defineProperty(page, 'setData', {
     value(patch, cb) {
       Object.keys(patch).forEach((key) => {
-        page.data[key] = patch[key];
+        const path = key.split('.');
+        let node = page.data;
+        for (let i = 0; i < path.length - 1; i++) {
+          if (node[path[i]] === undefined || typeof node[path[i]] !== 'object') node[path[i]] = {};
+          node = node[path[i]];
+        }
+        node[path[path.length - 1]] = patch[key];
       });
       if (cb) cb();
     }
@@ -276,20 +282,27 @@ console.log('== 首页 ==');
   eq(last('switchTab').url, '/pages/discover/discover', '全部朝代 › 发现页（switchTab）');
 
   tap(p, 'goPage', { page: 'person' });
-  eq(pendingSheet && pendingSheet.itemList.length, 19, '人物磁贴：ActionSheet 十九位人物');
+  ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
+  eq(p.data.sheet.list.length, 19, '弹层列出十九位人物');
 
-  pickSheet(6);
+  tap(p, 'onSheetItem', { index: 6 });
   eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
+  eq(p.data.sheet.open, false, '选择后弹层自动关闭');
 
   tap(p, 'goPage', { page: 'event' });
-  eq(pendingSheet && pendingSheet.itemList.length, 6, '事件磁贴：ActionSheet 六条史事');
-  pickSheet(0);
+  ok(p.data.sheet.open, '事件磁贴：打开自绘弹层');
+  eq(p.data.sheet.list.length, 6, '弹层列出六条史事');
+  tap(p, 'onSheetItem', { index: 0 });
   const evUrl = last('navigateTo').url;
   ok(/event\?id=yuanmingyuan-1860|event\?id=reform-1978/.test(evUrl), `事件磁贴选择命中真实事件 (${evUrl})`);
 
   tap(p, 'goPage', { page: 'dynasty' });
-  eq(pendingSheet && pendingSheet.itemList.length, 4, '朝代磁贴：四个时代');
-  pickSheet(0);
+  ok(p.data.sheet.open, '朝代磁贴：打开自绘弹层');
+  eq(p.data.sheet.list.length, 4, '弹层列出四个时代');
+  tap(p, 'closeSheet');
+  eq(p.data.sheet.open, false, '点遮罩/取消可关闭');
+  tap(p, 'goPage', { page: 'dynasty' });
+  tap(p, 'onSheetItem', { index: 0 });
   eq(last('navigateTo').url, '/pages/period/period?id=han', '选择时代 → 朝代详情页');
 
   tap(p, 'onHeroTap');
