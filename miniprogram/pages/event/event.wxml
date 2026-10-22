@@ -3,10 +3,7 @@
   <view class="screen" wx:if="{{event}}">
     <view class="topbar">
       <view class="back" bindtap="goBack">
-        <view class="back-arrow">
-          <view class="arrow-shaft"></view>
-          <view class="arrow-head"></view>
-        </view>
+        <view class="back-arrow"></view>
         <text class="back-label">返回</text>
       </view>
       <text class="top-title">史页 · 事件</text>

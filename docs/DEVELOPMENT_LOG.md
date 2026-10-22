@@ -296,6 +296,22 @@ miniprogram/data/history.js
 
 ---
 
+## 2026-10-20 · 修复返回胶囊「扭曲/拉伸」——箭头改内联位图、文字不再随字号撑开
+
+**现象（用户反馈）**：`pages/event/event` 顶部返回胶囊里的箭头/文字看起来被拉长扭曲，要求正常展示、不拉伸。
+
+**原因**：原箭头由「2rpx 长横线 + 旋转 45° 的边框方块」两个 view 拼成，细线在真机不同 DPR 下会被拉伸模糊、箭头与横线接缝错位；同时文字用 `flex:1` 撑满剩余空间并随 `--fs` 字号缩放，胶囊高度固定 56rpx，字号变大后文字被挤压/错位。
+
+**修复（6 个内页统一：event/person/period/search/favorites/footprints）**
+
+- 箭头改为单元素 + 内联 2x PNG（`data:image/png;base64`，112×48 画布显示 56×24rpx）：等比缩放、任意 DPR 下不拉伸不发虚，去掉 `arrow-shaft`/`arrow-head` 两个 view。
+- 胶囊布局改为 `justify-content: center`，箭头绝对定位在左侧 22rpx，「返回」真正居中；文字固定 26rpx、`line-height: 1`、`letter-spacing: 0.12em` + `text-indent` 抵消尾部空白，**不再随阅读字号缩放**（避免撑破固定高度胶囊）。
+- 胶囊保持 240×56rpx（4.29:1）不变形。
+
+**校验**：selftest **PASS 1271 / FAIL 0**；validate OK 10 pages；strip_bom 0；bundle 重建；20 张截图重截核对（14 事件页 / 15 辛亥革命 / 12 人物页胶囊箭头与「返回」居中正常）。
+
+---
+
 ## 2026-10-20 · 真机首跑修复：60s API 429 限流 → 失败冷却 30min
 
 **现象（开发者工具/真机 lib 3.17.4 首跑）**：首页「历史上的今天」每次 onShow 都请求 `60s.viki.moe`，上游限流返回 **429**；此前失败不写缓存，导致反复越限越请求。

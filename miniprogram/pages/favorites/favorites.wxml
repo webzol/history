@@ -3,10 +3,7 @@
   <view class="screen">
     <view class="topbar">
       <view class="back" bindtap="goBack">
-        <view class="back-arrow">
-          <view class="arrow-shaft"></view>
-          <view class="arrow-head"></view>
-        </view>
+        <view class="back-arrow"></view>
         <text class="back-label">返回</text>
       </view>
       <text class="top-title">史页 · 收藏</text>
