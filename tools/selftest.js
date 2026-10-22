@@ -210,11 +210,11 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 41, '史事 41 条');
-  eq(history.persons.length, 23, '人物 23 位');
-  ok(new Set([...eventIds]).size === 41, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 23, '人物 id 唯一');
-  ok(new Set([...periodIds]).size === 6, '朝代 id 唯一');
+  eq(history.events.length, 93, '史事 93 条');
+  eq(history.persons.length, 48, '人物 48 位');
+  ok(new Set([...eventIds]).size === 93, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 48, '人物 id 唯一');
+  ok(new Set([...periodIds]).size === 24, '朝代 id 唯一');
 
   history.events.forEach((e) => {
     ok(e.mode === 'ancient' || e.mode === 'modern', `[${e.id}] mode 合法`);
@@ -331,10 +331,11 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'person' });
   ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 23, '弹层列出二十三位人物');
+  eq(p.data.sheet.list.length, 48, '弹层列出四十八位人物');
 
-  tap(p, 'onSheetItem', { index: 6 });
-  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择第 6 位 → 苏轼详情');
+  const suIdx = p.data.sheet.list.findIndex((x) => x.id === 'su-shi');
+  tap(p, 'onSheetItem', { index: suIdx });
+  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '选择苏轼 → 人物详情');
   eq(p.data.sheet.open, false, '选择后弹层自动关闭');
 
   tap(p, 'goPage', { page: 'event' });
@@ -346,14 +347,16 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'dynasty' });
   ok(p.data.sheet.open, '朝代磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 6, '弹层列出六个时代');
+  eq(p.data.sheet.list.length, 24, '弹层列出二十四个时代');
   tap(p, 'closeSheet');
   eq(p.data.sheet.open, false, '点遮罩/取消可关闭');
   tap(p, 'goPage', { page: 'dynasty' });
-  tap(p, 'onSheetItem', { index: 0 });
-  eq(last('navigateTo').url, '/pages/period/period?id=han', '选择时代 → 朝代详情页');
+  const hanIdx = p.data.sheet.list.findIndex((x) => x.id === 'han');
+  tap(p, 'onSheetItem', { index: hanIdx });
+  eq(last('navigateTo').url, '/pages/period/period?id=han', '选择西汉 → 朝代详情页');
   tap(p, 'goPage', { page: 'dynasty' });
-  tap(p, 'onSheetItem', { index: 3 });
+  const mingIdx = p.data.sheet.list.findIndex((x) => x.id === 'ming');
+  tap(p, 'onSheetItem', { index: mingIdx });
   eq(last('navigateTo').url, '/pages/period/period?id=ming', '朝代弹层含明代并正确跳转');
 
   tap(p, 'onHeroTap');
@@ -395,12 +398,15 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 23, '古代 23 条事件');
-  eq(p.data.events.map((e) => e.year), [-141, -138, -119, 626, 627, 713, 755, 916, 960, 1005, 1038, 1069, 1115, 1127, 1405, 1449, 1519, 1561, 1581, 1644, 1681, 1754, 1839], '古代按纪年升序');
+  eq(p.data.events.length, 75, '古代 75 条事件');
+  ok(p.data.events.every((e, i, arr) => i === 0 || arr[i - 1].year <= e.year), '古代按纪年升序');
+  ok(p.data.events[0].id === 'xia-establish' && p.data.events[p.data.events.length - 1].id === 'humen-1839',
+    '古代时间轴首尾为夏建立/虎门销烟');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
-  eq(p.data.eraName, '西汉—清', '时代带名来自数据推导');
-  ok(p.data.eraMeta.indexOf('公元前141–1839') >= 0 && p.data.eraMeta.indexOf('西汉 / 唐 / 辽 / 北宋 / 西夏 / 金 / 明 / 清') >= 0,
-    '时代带meta含纪年区间与时代列表（含辽/西夏/金/明/清）');
+  eq(p.data.eraName, '夏—清', '时代带名来自数据推导');
+  ok(p.data.eraMeta.indexOf('公元前2070–1839') >= 0 && p.data.eraMeta.indexOf('夏 / 商 / 西周 / 春秋 / 战国 / 秦') >= 0 &&
+    p.data.eraMeta.indexOf('辽 / 北宋 / 西夏 / 金 / 南宋 / 元 / 明 / 清') >= 0,
+    '时代带meta含纪年区间与时代列表（含先秦/辽金西夏/元/明清）');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
@@ -479,7 +485,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [6, 41, 23, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [24, 93, 48, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -537,7 +543,7 @@ console.log('== 我的 ==' );
 
   tap(p, 'onDataNote');
   ok(p.data.info.open && p.data.info.title === '数据与史料说明', '数据说明：自绘弹层打开');
-  ok(p.data.info.paragraphs.join('').indexOf('朝代 6 条') >= 0, '数据说明含统计');
+  ok(p.data.info.paragraphs.join('').indexOf('朝代 24 条') >= 0, '数据说明含统计');
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '数据说明弹层可关闭');
 
@@ -709,8 +715,8 @@ console.log('== 朝代详情 ==');
   p.onLoad({ id: 'han' });
   eq(p.data.period.name, '西汉', '西汉朝代载入');
   eq(p.data.period.yearText, '前202–公元9', '纪年带载入');
-  eq(p.data.events.map((e) => e.id), ['han-wudi', 'zhangqian-138', 'mobei-119'], '西汉收录三条史事');
-  ok(p.data.span.indexOf('公元前141') >= 0 && p.data.span.indexOf('公元前119') >= 0, '西汉span覆盖首尾纪年');
+  eq(p.data.events.map((e) => e.id), ['chuhan', 'han-wudi', 'zhangqian-138', 'mobei-119', 'simaqian-shiji'], '西汉收录五条史事');
+  ok(p.data.span.indexOf('公元前202') >= 0 && p.data.span.indexOf('前91') >= 0, '西汉span覆盖首尾纪年');
   eq(p.data.seal, '汉', '小印');
 
   p.onLoad({ id: 'song' });
@@ -718,25 +724,35 @@ console.log('== 朝代详情 ==');
   ok(p.data.span.length > 0, '时代脉络非空');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
+  p.onLoad({ id: 'qin' });
+  eq(p.data.period.name, '秦', '秦朝代载入');
+  eq(p.data.events.map((e) => e.id), ['qin-unify', 'fen-shu', 'chensheng'], '秦收录统一/焚书/陈胜');
+  eq(p.data.seal, '秦', '秦代小印');
+  ok(p.data.period.img && fs.existsSync(path.join(ROOT, p.data.period.img)), '秦代配图存在');
+
+  p.onLoad({ id: 'nansong' });
+  eq(p.data.events.map((e) => e.id), ['yuefei', 'shaoxing', 'zhuxi-ehu', 'yashan'], '南宋收录四条史事');
+  ok(p.data.span.indexOf('1140') >= 0 && p.data.span.indexOf('1279') >= 0, '南宋 span 覆盖首尾');
+
   p.onLoad({ id: 'ming' });
   eq(p.data.period.name, '明', '明代载入');
   eq(p.data.events.map((e) => e.id),
-    ['zhenghe-1405', 'tumu-1449', 'ningwang-1519', 'taizhou-1561', 'zhangjuzheng-1581', 'ming-wang-1644'],
-    '明收录六条史事（纪年升序）');
+    ['ming-establish', 'zhenghe-1405', 'yongle-beijing', 'tumu-1449', 'ningwang-1519', 'taizhou-1561', 'bencao', 'zhangjuzheng-1581', 'tiangong', 'nongzheng', 'ming-wang-1644'],
+    '明收录十一条史事（纪年升序）');
   eq(p.data.seal, '明', '明代小印');
 
   p.onLoad({ id: 'qing' });
   eq(p.data.period.name, '清', '清代载入');
-  eq(p.data.events.map((e) => e.year), [1681, 1754, 1839, 1840, 1851, 1860, 1861, 1878, 1894, 1898], '清合并「清/晚清」史事（纪年升序）');
-  ok(p.data.span.indexOf('1681') >= 0 && p.data.span.indexOf('1898') >= 0, '清 span 覆盖首尾纪年');
+  eq(p.data.events.map((e) => e.year), [1644, 1673, 1681, 1754, 1839, 1840, 1851, 1860, 1861, 1878, 1894, 1898], '清合并「清/晚清」史事（纪年升序）');
+  ok(p.data.span.indexOf('1644') >= 0 && p.data.span.indexOf('1898') >= 0, '清 span 覆盖首尾纪年');
 
   p.onLoad({ id: 'modern' });
   eq(p.data.events.length, 18, '近现代面板收录十八条');
   eq(p.data.seal, '近', '近现代小印');
 
   p.onLoad({ id: 'tang' });
-  eq(p.data.events.map((e) => e.id), ['xuanwumen-626', 'zhenguan-627', 'kaiyuan-713', 'anshi-755'], '唐收录四条史事');
-  eq(p.data.span, '从626到755', '唐span按首尾纪年');
+  eq(p.data.events.map((e) => e.id), ['xuanwumen-626', 'zhenguan-627', 'xuanzang', 'wuzetian', 'kaiyuan-713', 'anshi-755', 'huangchao'], '唐收录七条史事');
+  ok(p.data.span.indexOf('626') >= 0 && p.data.span.indexOf('875') >= 0, '唐span按首尾纪年');
   ok(p.data.period.title === '盛唐气象', '唐卡载入');
   tap(p, 'goTimeline');
   eq(last('switchTab').url, '/pages/timeline/timeline', '唐页底部进时间轴（switchTab）');
@@ -772,9 +788,9 @@ console.log('== 事件详情 ==');
   ok(p.data.relatedPersons.every((x) => x.img && fs.existsSync(path.join(ROOT, x.img))), '其时其人：每人有配图且文件存在');
 
   p.onLoad({ id: 'han-wudi' });
-  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病');
+  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing', 'sima-qian'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病/司马迁');
   eq(p.data.headImg, '/assets/paintings/han.jpg', '事件头卡：西汉配长信宫灯');
-  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：同代四人缩略图各不相同');
+  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：同代人物 4 张缩略图轮换');
 
   p.onLoad({ id: 'qidan-916' });
   eq(p.data.headImg, '/assets/palace.jpg', '事件头卡：无专属绘画时代回退水墨宫阙');

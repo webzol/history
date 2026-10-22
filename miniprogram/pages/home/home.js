@@ -11,6 +11,7 @@ Page({
     modern: {},
     tih: [],
     tihTotal: 0,
+    tihMore: false,
     tihDate: '',
     sheet: { open: false, title: '', list: [] },
     info: { open: false, title: '', paragraphs: [] },
@@ -61,13 +62,14 @@ Page({
   loadTih() {
     api.fetchTodayInHistory((err, items) => {
       if (err || !items) {
-        if (this.data.tih.length) this.setData({ tih: [], tihTotal: 0, tihDate: '' });
+        if (this.data.tih.length) this.setData({ tih: [], tihTotal: 0, tihMore: false, tihDate: '' });
         return;
       }
       const now = new Date();
       this.setData({
         tih: items.slice(0, 6),
         tihTotal: items.length,
+        tihMore: items.length > 6,
         tihDate: `${now.getMonth() + 1}月${now.getDate()}日`
       });
     });

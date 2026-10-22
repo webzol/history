@@ -1,9 +1,13 @@
 // 时代配图：按事件/人物所属时代取画画局部（与发现页朝代卡同源，见 assets/paintings/SOURCES.md）
 // 无对应绘制的时代（辽/西夏/金等）回退到首页同款水墨宫阙 palace.jpg
 const ERA_IMAGES = {
+  东汉: '/assets/paintings/han.jpg',
   西汉: '/assets/paintings/han.jpg',
+  东晋: '/assets/paintings/landscape.jpg',
+  南北朝: '/assets/paintings/landscape.jpg',
   唐: '/assets/paintings/tang.jpg',
   北宋: '/assets/paintings/song.jpg',
+  南宋: '/assets/paintings/song.jpg',
   明: '/assets/paintings/ming.jpg',
   清: '/assets/paintings/qing.jpg',
   晚清: '/assets/paintings/qing.jpg',
@@ -18,9 +22,13 @@ const FALLBACK = '/assets/palace.jpg';
 // 人物缩略图：每个时代从原画裁 4 个细部（assets/thumbs/*-1..4.jpg），按行序轮换避免整列重复
 // 民国/近现代用《千里江山图》山河底色（与「我的」横幅同源），避免把 1949 开国大典错配给鲁迅、辛亥革命
 const THUMB_BASE = {
+  东汉: 'han',
   西汉: 'han',
+  东晋: 'republic',
+  南北朝: 'republic',
   唐: 'tang',
   北宋: 'song',
+  南宋: 'song',
   明: 'ming',
   清: 'qing',
   晚清: 'qing',

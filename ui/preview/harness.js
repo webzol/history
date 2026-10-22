@@ -594,6 +594,10 @@
 
     if (query.shot === '1') {
       document.body.classList.add('shot');
+      // 截图时关闭动画/过渡，避免截到弹层滑入中途的半透明状态
+      var still = document.createElement('style');
+      still.textContent = '.shot *, .shot *::before, .shot *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }';
+      document.head.appendChild(still);
       // 手机恒定 390×844（与设计基准/真机一致）；视口因 headless 限制无法恰为
       // 390×844，因此以 transform 缩放适配（transform 祖先会成为 fixed 包含块，
       // tabbar/纸底位置随之正确）。

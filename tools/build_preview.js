@@ -33,6 +33,7 @@ parts.push('');
 
 // app + data + utils
 parts.push(wrapJs('app.js', read('app.js')));
+parts.push(wrapJs('data/history-extra.js', read('data/history-extra.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
 parts.push(wrapJs('utils/store.js', read('utils/store.js')));
 parts.push(wrapJs('utils/historyData.js', read('utils/historyData.js')));

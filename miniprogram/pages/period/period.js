@@ -4,9 +4,27 @@ const font = require('../../utils/font.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
+  xia: { img: '/assets/palace.jpg', yearText: '约前2070–前1600', seal: '夏' },
+  shang: { img: '/assets/palace.jpg', yearText: '约前1600–前1046', seal: '商' },
+  xizhou: { img: '/assets/palace.jpg', yearText: '前1046–前771', seal: '周' },
+  chunqiu: { img: '/assets/palace.jpg', yearText: '前770–前476', seal: '春' },
+  zhanguo: { img: '/assets/palace.jpg', yearText: '前475–前221', seal: '战' },
+  qin: { img: '/assets/palace.jpg', yearText: '前221–前207', seal: '秦' },
   han: { img: '/assets/paintings/han.jpg', yearText: '前202–公元9', seal: '汉' },
+  donghan: { img: '/assets/paintings/han.jpg', yearText: '25–220', seal: '汉' },
+  sanguo: { img: '/assets/palace.jpg', yearText: '184–280', seal: '三' },
+  xijin: { img: '/assets/palace.jpg', yearText: '266–316', seal: '晋' },
+  dongjin: { img: '/assets/paintings/landscape.jpg', yearText: '317–420', seal: '晋' },
+  nanbeichao: { img: '/assets/paintings/landscape.jpg', yearText: '420–589', seal: '南' },
+  sui: { img: '/assets/palace.jpg', yearText: '581–618', seal: '隋' },
   tang: { img: '/assets/paintings/tang.jpg', yearText: '618–907', seal: '唐' },
+  wudai: { img: '/assets/palace.jpg', yearText: '907–979', seal: '五' },
   song: { img: '/assets/paintings/song.jpg', yearText: '960–1127', seal: '宋' },
+  nansong: { img: '/assets/paintings/song.jpg', yearText: '1127–1279', seal: '宋' },
+  liao: { img: '/assets/palace.jpg', yearText: '916–1125', seal: '辽' },
+  xixia: { img: '/assets/palace.jpg', yearText: '1038–1227', seal: '夏' },
+  jin: { img: '/assets/palace.jpg', yearText: '1115–1234', seal: '金' },
+  yuan: { img: '/assets/palace.jpg', yearText: '1206–1368', seal: '元' },
   ming: { img: '/assets/paintings/ming.jpg', yearText: '1368–1644', seal: '明' },
   qing: { img: '/assets/paintings/qing.jpg', yearText: '1644–1912', seal: '清' },
   modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
@@ -59,12 +77,16 @@ Page({
       .filter(inPeriod)
       .sort((a, b) => a.year - b.year);
 
-    // 时代脉络：以收录史事的首尾纪年概括跨度（单条用「自」起句）
-    const span = events.length > 1
-      ? `从${events[0].yearText}到${events[events.length - 1].yearText}`
-      : events.length === 1
-        ? `自${events[0].yearText}`
-        : '';
+    // 时代脉络：以收录史事的首尾年份概括跨度，统一「公元前/公元」写法
+    const span = (() => {
+      if (!events.length) return '';
+      const y0 = events[0].year;
+      const y1 = events[events.length - 1].year;
+      if (events.length === 1) return y0 < 0 ? `公元前${-y0}年` : `公元${y0}年`;
+      if (y0 < 0 && y1 < 0) return `公元前${-y0}–前${-y1}年`;
+      if (y0 < 0) return `公元前${-y0}–公元${y1}年`;
+      return `公元${y0}–${y1}年`;
+    })();
 
     this.setData({
       period: { ...period, ...meta },

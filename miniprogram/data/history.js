@@ -1203,6 +1203,20 @@ const persons = [
   }
 ];
 
+// 第二十五轮：合并历代扩展数据（夏商周至元，以及明清理科节点）
+const extra = require('./history-extra.js');
+periods.push(...extra.periods);
+periods.sort((a, b) => a.start - b.start);
+events.unshift(...extra.events);
+persons.push(...extra.persons);
+
+// 人物按时代先后排列，便于「选择人物」长列表阅读
+const ERA_START = { 晚清: 1840, 民国: 1912, 新中国: 1949 };
+periods.forEach((p) => {
+  if (!(p.name in ERA_START)) ERA_START[p.name] = p.start;
+});
+persons.sort((a, b) => (ERA_START[a.era] || 9999) - (ERA_START[b.era] || 9999));
+
 const topics = [
   {
     id: 'tang',

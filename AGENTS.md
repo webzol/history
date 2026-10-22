@@ -9,9 +9,9 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（10 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页；数据=本地真实历史种子 `miniprogram/data/history.js`（41 史事 / 23 人物 / 6 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
+- 原生小程序（10 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页；数据=本地真实历史种子 `miniprogram/data/history.js`（93 史事 / 48 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（797 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（1271 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -45,8 +45,8 @@
 | 足迹 | 已实现 | `miniprogram/pages/footprints/` | 同收藏页，额外显示浏览时间「10月22日 16:41」；清空后空态提示 |
 | 人物详情 | 已实现 | `miniprogram/pages/person/` | 大字人名 + 时代配画底纹头卡、楷体引文、正文段落、相关史事列表（配画缩略图，跳事件详情）；支持古代/近现代双色调 |
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 头卡右侧装裱画片（按 era 取画，200rpx 白边小画）、大字年份、双色调色条、正文段落、"其时其人"人物卡（时代细部缩略图 + 姓名，跳人物详情）、收藏按钮、回时间轴按钮 |
-| 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；无收录史事时（唐）引导进时间轴 |
-| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 朝代 6 张配画卡（2 列：西汉/唐/北宋/明/清/近现代；明卡《出警图》、清卡《乾隆南巡图》为 Wikimedia CC0）、专题长卷（盛唐/百年中国→时间轴）、精选史事列表→事件详情 |
+| 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；24 个朝代均有 PERIOD_META，西晋/秦/南宋等可直接查看 |
+| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
 | 我的 | 已实现 | `miniprogram/pages/profile/` | 手绘史官头像（`assets/avatar-scholar.png`）、装裱画片横幅、收藏/足迹配图缩略图（各只展示前 3 条 + 查看全部入口）、阅读字号设置、本地数据统计、数据/素材/关于说明、清除缓存 |
 
 网页预览：
@@ -70,7 +70,8 @@ E:\hish\
 │  ├─ app.js / app.json / app.wxss
 │  ├─ project.config.json
 │  ├─ sitemap.json
-│  ├─ data\history.js               # 本地真实历史数据种子
+│  ├─ data\history.js               # 本地真实历史数据种子（合并 history-extra.js）
+│  ├─ data\history-extra.js         # 夏商周—元及明清理科节点扩展（18 朝代/50+ 史事/25 人物）
 │  ├─ utils\store.js                # 收藏 / 浏览足迹 / 阅读字号（本地存储）
 │  ├─ utils\font.js                 # 阅读字号选项、根节点类名、页面同步
 │  ├─ utils\entries.js              # 收藏/足迹条目解析、时间格式、分组与展平
@@ -78,7 +79,7 @@ E:\hish\
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
 │  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 797 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1271 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
 │  ├─ preview_shots.js              # 批量截图 20 张 → ui/preview/shots/
@@ -127,7 +128,7 @@ E:\hish\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 797 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 1271 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
@@ -227,7 +228,7 @@ python tools/validate_miniprogram.py
 1. 在微信开发者工具中跑通首页与时间轴，修胶囊/安全区/字体回退。
 2. ~~做独立的人物详情（苏轼 / 鲁迅）与事件详情（澶渊之盟 / 辛亥革命），替换当前 Modal。~~ ✅ 2026-10-19 已完成。
 3. ~~做搜索页~~ ✅ 2026-10-19 下午已完成（入口：我的页首行）；下轮可补人物条目（赵匡胤/王安石/林则徐等）让搜索结果更完整。~~ → ✅ 2026-10-19 晚已补 3 位。
-4. 扩充 `data/history.js` 真实内容，补日期匹配、史料审校和更多近现代条目。
+4. 内容扩展已完成第一轮（24 朝代 / 93 史事 / 48 人物）；下一步做史料审校、补近现代条目与专题。
 5. 接入后端 API / CMS；在此之前保持本地数据种子可替换。
 6. 做分享卡片与收藏。~~ → ✅ 2026-10-19 晚：收藏/足迹/分享已落地。
 

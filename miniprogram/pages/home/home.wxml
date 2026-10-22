@@ -53,7 +53,7 @@
           <text class="tih-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
         </view>
       </view>
-      <view class="tih-foot" wx:if="{{tihTotal > tih.length}}">共 {{tihTotal}} 条 · 点击条目看详情</view>
+      <view class="tih-foot" wx:if="{{tihMore}}">共 {{tihTotal}} 条 · 点击条目看详情</view>
     </view>
 
     <view class="section-head">

@@ -7,7 +7,7 @@ const lower = (text) => (text || '').toLowerCase();
 Page({
   data: {
     keyword: '',
-    hot: ['汉武帝', '苏轼', '澶渊之盟', '辛亥革命', '五四运动', '盛唐'],
+    hot: ['孔子', '秦始皇', '赤壁之战', '岳飞', '张居正', '辛亥革命'],
     results: null,
     empty: false,
     fontClass: 'm'
