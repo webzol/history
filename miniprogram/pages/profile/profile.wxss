@@ -49,18 +49,19 @@
 }
 
 .avatar-wrap {
-  width: 108rpx;
-  height: 108rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
   overflow: hidden;
-  border: 2rpx solid rgba(169, 130, 94, 0.35);
+  background: #F3EFE6;
+  border: 4rpx solid #FFFDF8;
+  box-shadow: 0 8rpx 20rpx rgba(90, 70, 50, 0.12);
 }
 
 .avatar {
   width: 100%;
   height: 100%;
   display: block;
-  filter: saturate(0.5) brightness(1.06);
 }
 
 .head-info {
@@ -85,15 +86,11 @@
 }
 
 .head-seal {
-  width: 46rpx;
-  height: 52rpx;
-  background: #A34A3E;
-  color: #FFF8EF;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 22rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  flex: 0 0 72rpx;
+  display: block;
+  opacity: 0.92;
   transform: rotate(2deg);
 }
 
@@ -128,53 +125,51 @@
   color: #8C857A;
 }
 
-/* 千古长卷横幅（淡彩：宣纸晕染过渡，墨字，不抢屏） */
-.banner-card {
-  position: relative;
-  height: 220rpx;
+/* 千古长卷：装裱画片（画心 + 底部题签） */
+.plate-card {
   margin-top: 18rpx;
-  border-radius: 38rpx;
-  overflow: hidden;
-  border: 1rpx solid rgba(80, 65, 48, 0.05);
+  padding: 14rpx 14rpx 16rpx;
+  border-radius: 36rpx;
+  background: #FCFBF8;
   box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
 }
 
-.banner-bg {
-  position: absolute;
-  left: 0;
-  top: 0;
+.plate-frame {
+  height: 208rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: #F3EFE6;
+  border: 1rpx solid rgba(70, 58, 45, 0.08);
+}
+
+.plate-img {
   width: 100%;
   height: 100%;
   display: block;
-  filter: saturate(0.42) contrast(0.94) brightness(1.08);
+  filter: saturate(0.86) contrast(1.02) brightness(1.02);
 }
 
-.banner-shade {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(97deg, rgba(246, 241, 234, 0.92) 0%, rgba(246, 241, 234, 0.74) 44%, rgba(246, 241, 234, 0.34) 100%);
+.plate-cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 16rpx 10rpx 2rpx;
 }
 
-.banner-title {
-  position: absolute;
-  left: 30rpx;
-  bottom: 44rpx;
+.plate-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 34rpx;
+  font-size: 28rpx;
   letter-spacing: 0.08em;
-  color: #2A2722;
+  color: #1F1D19;
 }
 
-.banner-sub {
-  position: absolute;
-  left: 30rpx;
-  bottom: 18rpx;
-  font-size: 18rpx;
-  letter-spacing: 0.04em;
-  color: #5F5A52;
+.plate-sub {
+  font-size: 17rpx;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  color: #8C857A;
+  text-align: right;
 }
 
 /* 功能清单 */
@@ -265,23 +260,20 @@
   border-top: 1rpx solid rgba(70, 58, 45, 0.07);
 }
 
-.row-char {
+.row-thumb {
   flex: 0 0 72rpx;
   width: 72rpx;
   height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 20rpx;
-  background: rgba(163, 74, 62, 0.08);
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 24rpx;
-  color: #A34A3E;
+  display: block;
+  border-radius: 18rpx;
+  background: #F3EFE6;
+  border: 3rpx solid #FFFDF8;
+  box-shadow: 0 4rpx 10rpx rgba(90, 70, 50, 0.08);
+  filter: saturate(0.86) brightness(1.02);
 }
 
-.row-char.row-modern {
-  background: rgba(126, 154, 154, 0.14);
-  color: #5F7E7E;
+.row-thumb.row-thumb-modern {
+  filter: saturate(0.7) brightness(1.03);
 }
 
 .row-main {

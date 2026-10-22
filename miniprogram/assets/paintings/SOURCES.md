@@ -13,7 +13,8 @@
 | ming.jpg | 《出警入跸图·出警图》局部（明，佚名，台北故宫博物院藏） | 发现页"明"朝代卡 | Wikimedia Commons `File:Imperial Palanquin Departure Herald (51171617918).jpg` | **CC0**；已按卡片 16:15 裁切并压至 560×525 |
 | qing.jpg | 《乾隆南巡图》卷四·淮黄交流局部（清 徐扬等，大都会艺术博物馆藏） | 发现页"清"朝代卡 | Wikimedia Commons `File:清 徐揚等 乾隆南巡圖…MET DP105279.jpg` | **CC0**；已按卡片 16:15 裁切并压至 560×525 |
 | ~~person-ink.jpg~~ | 已移除（2026-10-19，用户觉得展示效果奇怪） | — | 曾用于时间轴右上角；已从引用与资产中删除 | — |
-| `assets/thumbs/*-1..4.jpg` | 上述 han/tang/song/ming/qing/modern/landscape 原画各裁 4 个 160×160 细部 | 事件页「其时其人」缩略图、人物页相关史事缩略图 | 同源派生（原画裁切，未新增外部素材） | 随原画授权状态 |
+| `assets/thumbs/*-1..4.jpg` | 上述 han/tang/song/ming/qing/modern/landscape 原画各裁 4 个 160×160 细部 | 事件页「其时其人」缩略图、人物页相关史事缩略图、我的页收藏/足迹缩略图 | 同源派生（原画裁切，未新增外部素材） | 随原画授权状态 |
+| avatar-scholar.png | 手绘史官形象（幞头 + 圆领袍），216×216 | 「我的」页头像 | 自绘：`tools/avatar-scholar.svg`（矢量）→ Chrome 光栅化 | 自有素材 |
 | seal.png | "史载"朱砂印章（首页 hero 同款印）**透明背景 RGBA** | 时间轴标题旁小印、朝代头卡小印（替代手写 CSS 印） | `tools/crop_seal.py`：palace.jpg 红色像素检测裁切 → 3x LANCZOS 放大 → "红度"alpha 抠图（背景全透明，任何卡片底无缝） | 与首页同源；上线前随 palace 一起确认授权 |
 
 获取方式可复现：`tools/fetch_all.py`（按 `tools/fetch_plan.json` 批量搜图）；

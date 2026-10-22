@@ -7,13 +7,13 @@
 
     <view class="head-card">
       <view class="avatar-wrap">
-        <image class="avatar" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
+        <image class="avatar" src="/assets/avatar-scholar.png" mode="aspectFill"></image>
       </view>
       <view class="head-info">
         <text class="nick">史页客</text>
         <text class="tagline">以千年为卷轴，读万古事</text>
       </view>
-      <text class="head-seal">史</text>
+      <image class="head-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>
 
     <view class="stats-card">
@@ -23,11 +23,14 @@
       </view>
     </view>
 
-    <view class="banner-card" bindtap="onAboutBanner">
-      <image class="banner-bg" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
-      <view class="banner-shade"></view>
-      <text class="banner-title">千古长卷</text>
-      <text class="banner-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
+    <view class="plate-card" bindtap="onAboutBanner">
+      <view class="plate-frame">
+        <image class="plate-img" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
+      </view>
+      <view class="plate-cap">
+        <text class="plate-title">千古长卷</text>
+        <text class="plate-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
+      </view>
     </view>
 
     <view class="list-card hint-card" wx:if="{{!favs.length}}">
@@ -47,7 +50,7 @@
         bindtap="onEntry"
         bindlongpress="onFavLongPress"
       >
-        <text class="row-char {{item.modern ? 'row-modern' : ''}}">{{item.type === 'person' ? '人' : '事'}}</text>
+        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFill"></image>
         <view class="row-main">
           <text class="row-title">{{item.title}}</text>
           <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
@@ -72,7 +75,7 @@
         data-id="{{item.id}}"
         bindtap="onEntry"
       >
-        <text class="row-char {{item.modern ? 'row-modern' : ''}}">{{item.type === 'person' ? '人' : '事'}}</text>
+        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFill"></image>
         <view class="row-main">
           <text class="row-title">{{item.title}}</text>
           <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>

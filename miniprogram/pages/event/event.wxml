@@ -10,10 +10,6 @@
     </view>
 
     <view class="head-card {{event.mode === 'modern' ? 'head-modern' : ''}}">
-      <view class="e-band" wx:if="{{headImg}}">
-        <image class="e-bg" src="{{headImg}}" mode="aspectFill"></image>
-        <view class="e-band-shade"></view>
-      </view>
       <view class="e-copy">
         <text class="e-year">{{event.yearText}}</text>
         <text class="e-title">{{event.title}}</text>
@@ -23,6 +19,9 @@
           </view>
           <text class="e-tags">{{event.tags}}</text>
         </view>
+      </view>
+      <view class="e-fig" wx:if="{{headImg}}">
+        <image class="e-fig-img" src="{{headImg}}" mode="aspectFill"></image>
       </view>
     </view>
 

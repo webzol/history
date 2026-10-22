@@ -501,6 +501,10 @@ console.log('== 我的 ==' );
   ok(p.data.favs.some((x) => x.id === 'su-shi' && x.type === 'person'), '收藏含人物');
   ok(p.data.foots.some((x) => x.id === 'su-shi'), '足迹含刚浏览的人物');
   ok(p.data.foots.every((x) => x.when && x.when.length > 0), '足迹带时间');
+  ok(p.data.favs.every((x) => x.img && fs.existsSync(path.join(ROOT, x.img))), '收藏条目带配图');
+  eq(p.data.favs.find((x) => x.id === 'xinhai-1911').img, '/assets/thumbs/republic-1.jpg', '辛亥革命收藏用山河细部');
+  ok(p.data.foots.every((x) => x.img && fs.existsSync(path.join(ROOT, x.img))), '足迹条目带配图');
+  ok(fs.existsSync(path.join(ROOT, 'assets/avatar-scholar.png')), '手绘历史形象头像存在');
 
   // 取消收藏
   personP.onLoad({ id: 'su-shi' });

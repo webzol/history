@@ -2,6 +2,7 @@
 // - 真实页面 JS 交互（wx mock 渲染原生风格 Modal/ActionSheet/Toast）
 // - WXML/WXSS 运行时渲染（覆盖本工程用到的子集）
 // - ?s= 场景脚本：click:<selector> / input:<selector>|<value> / scroll:<px>
+// - ?fav=person:su-shi,event:xinhai-1911&foot=... 预置收藏/足迹（截图用）
 
 (function () {
   'use strict';
@@ -570,6 +571,20 @@
       if (parts[pi].indexOf('s=') === 0) continue;
       var q2 = parseQuery(parts[pi]);
       for (var qk in q2) query[qk] = q2[qk];
+    }
+
+    // 截图预置：?fav=person:su-shi,event:xinhai-1911 / ?foot=...（仅预览 harness 用）
+    if (query.fav) {
+      storage['shige_favorites'] = query.fav.split(',').map(function (s) {
+        var p = s.split(':');
+        return { type: p[0], id: p[1], ts: Date.now() };
+      });
+    }
+    if (query.foot) {
+      storage['shige_footprints'] = query.foot.split(',').map(function (s) {
+        var p = s.split(':');
+        return { type: p[0], id: p[1], ts: Date.now() };
+      });
     }
 
     if (query.shot === '1') {

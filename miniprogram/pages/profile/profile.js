@@ -1,10 +1,11 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const personThumb = require('../../utils/eraImages.js').personThumb;
 
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 
-// type+id → 展示条目（人物/事件）
-function resolveEntry(x) {
+// type+id → 展示条目（人物/事件）；index 用于同代图片轮换
+function resolveEntry(x, index) {
   if (x.type === 'person') {
     const p = hd.get().persons.find((item) => item.id === x.id);
     if (!p) return null;
@@ -13,6 +14,7 @@ function resolveEntry(x) {
       id: p.id,
       title: p.name,
       sub: `${p.era} · ${p.roles}`,
+      img: personThumb(p.era, index),
       modern: MODERN_ERAS.indexOf(p.era) >= 0
     };
   }
@@ -24,6 +26,7 @@ function resolveEntry(x) {
       id: ev.id,
       title: ev.title,
       sub: `${ev.yearText} · ${ev.era}`,
+      img: personThumb(ev.era, index),
       modern: ev.mode === 'modern'
     };
   }
@@ -64,12 +67,12 @@ Page({
     });
     const favs = store
       .listFavorites()
-      .map(resolveEntry)
+      .map((x, i) => resolveEntry(x, i))
       .filter(Boolean);
     const foots = store
       .listFootprints()
-      .map((x) => {
-        const entry = resolveEntry(x);
+      .map((x, i) => {
+        const entry = resolveEntry(x, i);
         return entry ? { ...entry, when: fmtWhen(x.ts) } : null;
       })
       .filter(Boolean);
