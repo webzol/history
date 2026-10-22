@@ -310,6 +310,13 @@ miniprogram/data/history.js
 
 **校验**：selftest **PASS 1271 / FAIL 0**；validate OK 10 pages；strip_bom 0；bundle 重建；20 张截图重截核对（14 事件页 / 15 辛亥革命 / 12 人物页胶囊箭头与「返回」居中正常）。
 
+**二次修复（同日晚，真机仍反馈变形）**：
+
+- 放弃 WXSS `background-image` + data URI（真机对 `background-size` 折算不稳，箭头/文字比例会跑偏）。
+- 箭头改为本地资源 `assets/back-arrow.png`（128×56，圆头长箭头），wxml 用 `<image class="back-arrow" src="/assets/back-arrow.png" mode="aspectFit">`，容器钉死 56×24rpx —— `aspectFit` 保证任何情况下等比缩放、不拉伸。
+- 文字改为**绝对定位铺满胶囊 + `line-height: 56rpx`**，去掉 flex 居中（真机 `flex + line-height` 会导致文字下沉）；胶囊加 `overflow: hidden` 兜底。
+- 复现方式：截图 harness 4x 放大核对；文字不再偏移、箭头与杆身接缝连续。
+
 ---
 
 ## 2026-10-20 · 真机首跑修复：60s API 429 限流 → 失败冷却 30min

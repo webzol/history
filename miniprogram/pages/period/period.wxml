@@ -3,7 +3,7 @@
   <view class="screen" wx:if="{{period}}">
     <view class="topbar">
       <view class="back" bindtap="goBack">
-        <view class="back-arrow"></view>
+        <image class="back-arrow" src="/assets/back-arrow.png" mode="aspectFit"></image>
         <text class="back-label">返回</text>
       </view>
       <text class="top-title">史页 · 朝代</text>
