@@ -30,7 +30,7 @@
 
 .brand {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 54rpx;
+  font-size: calc(54rpx * var(--fs, 1));
   font-weight: 400;
   letter-spacing: 0.08em;
   color: #1F1D19;
@@ -72,7 +72,7 @@
 .nick {
   display: block;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 36rpx;
+  font-size: calc(36rpx * var(--fs, 1));
   letter-spacing: 0.06em;
   color: #1F1D19;
 }
@@ -80,7 +80,7 @@
 .tagline {
   display: block;
   margin-top: 10rpx;
-  font-size: 20rpx;
+  font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.03em;
   color: #8C857A;
 }
@@ -114,15 +114,79 @@
 
 .stat-num {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 44rpx;
+  font-size: calc(44rpx * var(--fs, 1));
   line-height: 1;
   color: #A9825E;
 }
 
 .stat-label {
-  font-size: 20rpx;
+  font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.05em;
   color: #8C857A;
+}
+
+/* 阅读设置 */
+.pref-card {
+  margin-top: 18rpx;
+  padding: 26rpx 28rpx 24rpx;
+  border-radius: 34rpx;
+  background: #FCFBF8;
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);
+}
+
+.pref-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pref-title {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(27rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+  color: #1F1D19;
+}
+
+.pref-note {
+  font-size: calc(18rpx * var(--fs, 1));
+  letter-spacing: 0.03em;
+  color: #A39A8E;
+}
+
+.seg {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 20rpx;
+}
+
+.seg-item {
+  flex: 1;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 32rpx;
+  border: 1rpx solid rgba(70, 58, 45, 0.12);
+  background: #FBF9F6;
+  font-size: calc(22rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+  color: #5F5A52;
+}
+
+.seg-item.on {
+  border-color: rgba(169, 130, 94, 0.55);
+  background: rgba(169, 130, 94, 0.10);
+  color: #8E5E36;
+}
+
+.pref-preview {
+  display: block;
+  margin-top: 18rpx;
+  font-size: calc(22rpx * var(--fs, 1));
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #3B3731;
 }
 
 /* 千古长卷：装裱画片（画心 + 底部题签） */
@@ -159,13 +223,13 @@
 
 .plate-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--fs, 1));
   letter-spacing: 0.08em;
   color: #1F1D19;
 }
 
 .plate-sub {
-  font-size: 17rpx;
+  font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.03em;
   line-height: 1.5;
   color: #8C857A;
@@ -194,14 +258,14 @@
 
 .menu-label {
   flex: 1;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--fs, 1));
   letter-spacing: 0.04em;
   color: #2C2924;
 }
 
 .menu-hint {
   margin-right: 14rpx;
-  font-size: 18rpx;
+  font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.04em;
   color: #A39A8E;
 }
@@ -227,8 +291,8 @@
 
 .hint-text {
   display: block;
-  font-size: 24rpx;
-  line-height: 38rpx;
+  font-size: calc(24rpx * var(--fs, 1));
+  line-height: calc(38rpx * var(--fs, 1));
   color: #8C857A;
 }
 
@@ -241,13 +305,13 @@
 
 .list-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 27rpx;
+  font-size: calc(27rpx * var(--fs, 1));
   letter-spacing: 0.06em;
   color: #1F1D19;
 }
 
 .list-count {
-  font-size: 18rpx;
+  font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.05em;
   color: #A39A8E;
 }
@@ -284,7 +348,7 @@
 .row-title {
   display: block;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--fs, 1));
   letter-spacing: 0.04em;
   color: #1F1D19;
 }
@@ -292,7 +356,7 @@
 .row-sub {
   display: block;
   margin-top: 6rpx;
-  font-size: 18rpx;
+  font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.03em;
   color: #8C857A;
 }
@@ -309,9 +373,38 @@
 
 .row-when {
   flex: 0 0 auto;
-  font-size: 17rpx;
+  font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.02em;
   color: #A39A8E;
+}
+
+/* 足迹折叠：只展示前三条，查看更多进独立页 */
+.list-fold {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 22rpx 4rpx 12rpx;
+  border-top: 1rpx solid rgba(70, 58, 45, 0.07);
+}
+
+.fold-text {
+  flex: 1;
+  font-size: calc(20rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+  color: #8E5E36;
+}
+
+.fold-count {
+  font-size: calc(17rpx * var(--fs, 1));
+  letter-spacing: 0.03em;
+  color: #A39A8E;
+}
+
+.fold-arrow {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 30rpx;
+  line-height: 1;
+  color: #A9825E;
 }
 
 /* 信息弹层（与首页磁贴弹层同风格） */
@@ -365,7 +458,7 @@
 
 .sheet-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 33rpx;
+  font-size: calc(33rpx * var(--fs, 1));
   letter-spacing: 0.07em;
   color: #1F1D19;
 }
@@ -386,7 +479,7 @@
 .info-para {
   display: block;
   margin-bottom: 22rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--fs, 1));
   line-height: 1.8;
   color: #3B3731;
 }
@@ -396,11 +489,11 @@
   height: 84rpx;
   border-radius: 42rpx;
   background: #EEF0F0;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
   color: #5F5A52;
   text-align: center;
-  line-height: 84rpx;
+  line-height: calc(84rpx * var(--fs, 1));
 }
 
 @keyframes sheetFade {

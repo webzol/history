@@ -7,7 +7,9 @@
     "pages/event/event",
     "pages/person/person",
     "pages/period/period",
-    "pages/search/search"
+    "pages/search/search",
+    "pages/footprints/footprints",
+    "pages/favorites/favorites"
   ],
   "window": {
     "navigationStyle": "custom",

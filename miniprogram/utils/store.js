@@ -50,8 +50,35 @@ function listFootprints() {
   return load(KEY_FOOT);
 }
 
+function clearFavorites() {
+  save(KEY_FAV, []);
+}
+
+function clearFootprints() {
+  save(KEY_FOOT, []);
+}
+
 // switchTab 不带查询参数：跨 tab 的 mode 通过存储交接（时间轴分段用）
 const KEY_TAB_PARAMS = 'shige_tab_params';
+
+// 阅读字号：s 小 / m 标准 / l 大 / xl 特大（默认标准）
+const KEY_FONT = 'shige_font_key';
+const FONT_KEYS = ['s', 'm', 'l', 'xl'];
+
+function getFontKey() {
+  try {
+    const v = wx.getStorageSync(KEY_FONT);
+    return FONT_KEYS.indexOf(v) >= 0 ? v : 'm';
+  } catch (e) {
+    return 'm';
+  }
+}
+
+function setFontKey(key) {
+  const v = FONT_KEYS.indexOf(key) >= 0 ? key : 'm';
+  save(KEY_FONT, v);
+  return v;
+}
 
 function setPendingTimelineMode(mode) {
   save(KEY_TAB_PARAMS, { timelineMode: mode || 'ancient' });
@@ -72,6 +99,10 @@ module.exports = {
   toggleFavorite,
   addFootprint,
   listFootprints,
+  clearFavorites,
+  clearFootprints,
   setPendingTimelineMode,
-  popPendingTimelineMode
+  popPendingTimelineMode,
+  getFontKey,
+  setFontKey
 };

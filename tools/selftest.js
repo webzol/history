@@ -182,7 +182,7 @@ function loadAll() {
   require(path.join(ROOT, 'app.js'));
   require(path.join(ROOT, 'data', 'history.js'));
 
-  const names = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search'];
+  const names = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search', 'footprints', 'favorites'];
   names.forEach((name) => {
     currentFile = name;
     global.__CUR = name;
@@ -566,7 +566,85 @@ console.log('== 我的 ==' );
 })();
 
 // ---------------------------------------------------------------------------
-// 6. person
+// 6. 收藏 / 足迹折叠与分类页
+// ---------------------------------------------------------------------------
+
+console.log('== 收藏与足迹折叠 ==');
+
+(function () {
+  resetWifiStack();
+  const p = pages.profile;
+
+  ['su-shi', 'lu-xun'].forEach((id) => store.toggleFavorite('person', id));
+  ['xinhai-1911', 'chanyuan-1005'].forEach((id) => store.toggleFavorite('event', id));
+  store.addFootprint('person', 'su-shi');
+  store.addFootprint('person', 'lu-xun');
+  store.addFootprint('event', 'xinhai-1911');
+  store.addFootprint('event', 'chanyuan-1005');
+
+  p.onShow();
+  eq(p.data.favCount, 4, '收藏总数四条');
+  eq(p.data.favsShow.length, 3, '我的页收藏只展示前三条');
+  eq(p.data.favHasMore, true, '收藏超过三条显示查看全部');
+  eq(p.data.footsShow.length, 3, '我的页足迹只展示前三条');
+  eq(p.data.footHasMore, true, '足迹超过三条显示查看全部');
+
+  tap(p, 'onAllFavs');
+  eq(last('navigateTo').url, '/pages/favorites/favorites', '查看全部收藏进独立页');
+  const favPage = pages.favorites;
+  favPage.onShow();
+  eq(favPage.data.favCount, 4, '收藏页展示全部四条');
+  eq(favPage.data.groups.map((g) => g.label), ['人物', '史事'], '收藏页按人物/史事分类');
+  eq(favPage.data.groups.map((g) => g.items.length), [2, 2], '收藏分类计数');
+  eq(favPage.data.fontClass, 'm', '收藏页同步字号');
+  tap(favPage, 'onEntry', { type: 'person', id: 'su-shi' });
+  eq(last('navigateTo').url, '/pages/person/person?id=su-shi', '收藏页条目跳人物详情');
+
+  resetWifiStack();
+  tap(p, 'onAllFoots');
+  eq(last('navigateTo').url, '/pages/footprints/footprints', '查看全部足迹进独立页');
+  const footPage = pages.footprints;
+  footPage.onShow();
+  eq(footPage.data.footCount, 4, '足迹页展示全部四条');
+  eq(footPage.data.groups.map((g) => g.label), ['人物', '史事'], '足迹页按人物/史事分类');
+  ok(footPage.data.foots.every((x) => x.when), '足迹页保留浏览时间');
+  tap(footPage, 'onEntry', { type: 'event', id: 'chanyuan-1005' });
+  eq(last('navigateTo').url, '/pages/event/event?id=chanyuan-1005', '足迹页条目跳事件详情');
+
+  // 三条以内不出现「查看全部」
+  store.toggleFavorite('person', 'su-shi');
+  store.toggleFavorite('person', 'lu-xun');
+  p.onShow();
+  eq(p.data.favCount, 2, '取消后收藏两条');
+  eq(p.data.favHasMore, false, '两条收藏不显示查看全部');
+
+  // 返回键：胶囊「← 返回」，保持 240×56 比例
+  ['person', 'event', 'period', 'search', 'footprints', 'favorites'].forEach((name) => {
+    const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
+    ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0, `${name} 使用返回胶囊`);
+  });
+
+  // 独立页清空：确认后清空并刷新
+  favPage.onShow();
+  tap(favPage, 'onClear');
+  eq(last('showModal').title, '清空收藏', '收藏页清空确认');
+  confirmModal(true);
+  eq(favPage.data.favCount, 0, '确认后收藏页清空');
+  eq(store.listFavorites().length, 0, '收藏存储清空');
+
+  footPage.onShow();
+  tap(footPage, 'onClear');
+  eq(last('showModal').title, '清空足迹', '足迹页清空确认');
+  confirmModal(false);
+  eq(footPage.data.footCount, 4, '取消不清空足迹');
+  tap(footPage, 'onClear');
+  confirmModal(true);
+  eq(footPage.data.footCount, 0, '确认后足迹页清空');
+  eq(store.listFootprints().length, 0, '足迹存储清空');
+})();
+
+// ---------------------------------------------------------------------------
+// 7. person
 // ---------------------------------------------------------------------------
 
 console.log('== 人物详情 ==');
@@ -899,7 +977,7 @@ console.log('== 路由完整 ==');
     .filter((r) => ['navigateTo', 'redirectTo'].indexOf(r.kind) >= 0)
     .map((r) => urlTarget(r.url));
   targets.forEach((t) => ok(pages[t], `跳转目标页存在 ${t}`));
-  ok(Object.keys(pages).length === 8, '八个页面全部注册');
+  ok(Object.keys(pages).length === 10, '十个页面全部注册');
 })();
 
 // ---------------------------------------------------------------------------
@@ -1091,6 +1169,55 @@ console.log('== 今日接口 ==');
 
   mockRequest.today = null;
   delete storage['shige_tih_' + dayKey];
+})();
+
+// ---------------------------------------------------------------------------
+// 阅读字号
+// ---------------------------------------------------------------------------
+
+console.log('== 阅读字号 ==');
+
+(function () {
+  const font = require(path.join(ROOT, 'utils', 'font.js'));
+  eq(store.getFontKey(), 'm', '默认字号标准');
+  eq(font.OPTIONS.map((o) => o.key), ['s', 'm', 'l', 'xl'], '字号四档');
+  eq(font.fontKey(), 'm', '字号工具读取设置');
+
+  // 非法值回落
+  eq(store.setFontKey('huge'), 'm', '非法字号回落标准');
+  eq(store.getFontKey(), 'm', '非法字号不落库');
+
+  // 详情页与主页面根节点都挂 fs-*
+  const names = ['home', 'timeline', 'discover', 'profile', 'person', 'event', 'period', 'search', 'footprints', 'favorites'];
+  names.forEach((name) => {
+    const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
+    ok(wxml.indexOf('class="page fs-{{fontClass}}"') >= 0, `${name} 根节点挂字号类`);
+  });
+
+  store.setFontKey('xl');
+  names.forEach((name) => {
+    const page = pages[name];
+    page.onShow();
+    eq(page.data.fontClass, 'xl', `${name} 切到特大字号`);
+  });
+
+  // 「我的」页分段控件：点选 → 落库 + Toast
+  const p = pages.profile;
+  p.onShow();
+  eq(p.data.fontKey, 'xl', '我的页同步当前字号');
+  tap(p, 'onFontPick', { key: 'l' });
+  eq(p.data.fontKey, 'l', '我的页点选大号');
+  eq(p.data.fontClass, 'l', '我的页根节点跟随字号');
+  eq(storage.shige_font_key, 'l', '字号写入本地存储');
+  eq(last('showToast').title, '字号：大', '字号切换 Toast 反馈');
+  p.onShow();
+  eq(p.data.fontKey, 'l', '重进我的页保持字号');
+  pages.person.onShow();
+  eq(pages.person.data.fontClass, 'l', '已开人物页随 onShow 更新');
+
+  eq(store.setFontKey('m'), 'm', '字号复位标准');
+  p.onShow();
+  eq(p.data.fontClass, 'm', '复位后根节点标准');
 })();
 
 // ---------------------------------------------------------------------------

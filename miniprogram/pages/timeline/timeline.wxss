@@ -38,7 +38,7 @@
 
 .brand {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 60rpx;
+  font-size: calc(60rpx * var(--fs, 1));
   font-weight: 400;
   letter-spacing: 0.10em;
   line-height: 1.15;
@@ -58,7 +58,7 @@
   z-index: 2;
   margin-top: 22rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--fs, 1));
   line-height: 1.6;
   letter-spacing: 0.02em;
   color: #5F5A52;
@@ -84,7 +84,7 @@
   justify-content: center;
   border-radius: 36rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--fs, 1));
   letter-spacing: 0.10em;
   color: #1F1D19;
 }
@@ -114,7 +114,7 @@
 
 .era-name {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 52rpx;
+  font-size: calc(52rpx * var(--fs, 1));
   letter-spacing: 0.10em;
   line-height: 1.15;
   color: #1F1D19;
@@ -132,7 +132,7 @@
   display: block;
   margin-top: 14rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--fs, 1));
   letter-spacing: 0.04em;
   color: #8C857A;
 }
@@ -193,19 +193,19 @@
 
 .event-year {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--fs, 1));
   letter-spacing: 0.05em;
   color: #1F1D19;
 }
 
 .event-year.year-red {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--fs, 1));
   color: #A34A3E;
 }
 
 .event-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--fs, 1));
   letter-spacing: 0.07em;
   color: #1F1D19;
 }
@@ -213,7 +213,7 @@
 .event-desc {
   display: block;
   margin-top: 14rpx;
-  font-size: 21rpx;
+  font-size: calc(21rpx * var(--fs, 1));
   line-height: 1.7;
   color: #5F5A52;
 }
@@ -221,7 +221,7 @@
 .event-tags {
   display: block;
   margin-top: 12rpx;
-  font-size: 17rpx;
+  font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.05em;
   color: #8C857A;
 }
@@ -230,7 +230,7 @@
   display: block;
   margin-top: 8rpx;
   font-family: "KaiTi", "STKaiti", serif;
-  font-size: 17rpx;
+  font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.02em;
   color: #A39A8E;
 }

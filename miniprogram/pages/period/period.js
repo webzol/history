@@ -1,5 +1,6 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -21,15 +22,21 @@ Page({
     period: null,
     events: [],
     span: '',
-    seal: ''
+    seal: '',
+    fontClass: 'm'
   },
 
   onLoad(options) {
+    font.apply(this);
     this.curId = options.id;
     this.apply(true);
     hd.refresh((changed) => {
       if (changed) this.apply(false);
     });
+  },
+
+  onShow() {
+    font.apply(this);
   },
 
   apply(redirectOnMiss) {

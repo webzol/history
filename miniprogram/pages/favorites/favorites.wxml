@@ -1,0 +1,51 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <view class="back-arrow">
+          <view class="arrow-shaft"></view>
+          <view class="arrow-head"></view>
+        </view>
+        <text class="back-label">返回</text>
+      </view>
+      <text class="top-title">史页 · 收藏</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+
+    <view class="head">
+      <view class="head-row">
+        <text class="head-title">我的收藏</text>
+        <view class="clear-btn" wx:if="{{favCount}}" bindtap="onClear">清空</view>
+      </view>
+      <text class="head-sub">按收藏时间排序 · 共 {{favCount}} 条</text>
+    </view>
+
+    <view class="list-card" wx:if="{{favs.length}}">
+      <block wx:for="{{rows}}" wx:key="key">
+        <view class="group-head" wx:if="{{item.kind === 'header'}}">
+          <text class="group-label">{{item.label}}</text>
+          <text class="group-count">{{item.count}} 条</text>
+        </view>
+        <view
+          wx:else
+          class="list-row"
+          data-type="{{item.type}}"
+          data-id="{{item.id}}"
+          bindtap="onEntry"
+        >
+          <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFill"></image>
+          <view class="row-main">
+            <text class="row-title">{{item.title}}</text>
+            <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+          </view>
+          <text class="row-arrow">›</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="list-card hint-card" wx:else>
+      <text class="hint-text">还没有收藏。在人物、史事详情页点「收藏」，就会出现在这里。</text>
+    </view>
+  </view>
+</view>

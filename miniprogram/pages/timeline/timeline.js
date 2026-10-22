@@ -1,21 +1,25 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 
 Page({
   data: {
     mode: 'ancient',
     eraName: '',
     eraMeta: '',
-    events: []
+    events: [],
+    fontClass: 'm'
   },
 
   onLoad(options) {
+    font.apply(this);
     const mode = options && options.mode === 'modern' ? 'modern' : 'ancient';
     this.loadMode(mode);
   },
 
   onShow() {
     this.setTab();
+    font.apply(this);
     // 专题长卷/朝代页等先经 switchTab 交接的 mode 参数
     const pending = store.popPendingTimelineMode();
     if (pending && pending !== this.data.mode) this.loadMode(pending);

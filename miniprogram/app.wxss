@@ -54,3 +54,9 @@ view, text, image {
 .tab.active .tab-icon {
   opacity: 1;
 }
+
+/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */
+.fs-s { --fs: 0.9; }
+.fs-m { --fs: 1; }
+.fs-l { --fs: 1.14; }
+.fs-xl { --fs: 1.28; }

@@ -1,43 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
-const personThumb = require('../../utils/eraImages.js').personThumb;
-
-const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
-
-// type+id → 展示条目（人物/事件）；index 用于同代图片轮换
-function resolveEntry(x, index) {
-  if (x.type === 'person') {
-    const p = hd.get().persons.find((item) => item.id === x.id);
-    if (!p) return null;
-    return {
-      type: 'person',
-      id: p.id,
-      title: p.name,
-      sub: `${p.era} · ${p.roles}`,
-      img: personThumb(p.era, index),
-      modern: MODERN_ERAS.indexOf(p.era) >= 0
-    };
-  }
-  if (x.type === 'event') {
-    const ev = hd.get().events.find((item) => item.id === x.id);
-    if (!ev) return null;
-    return {
-      type: 'event',
-      id: ev.id,
-      title: ev.title,
-      sub: `${ev.yearText} · ${ev.era}`,
-      img: personThumb(ev.era, index),
-      modern: ev.mode === 'modern'
-    };
-  }
-  return null;
-}
-
-function fmtWhen(ts) {
-  const d = new Date(ts);
-  const pad = (n) => (n < 10 ? '0' + n : '' + n);
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const font = require('../../utils/font.js');
+const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
 
 Page({
   data: {
@@ -48,11 +12,18 @@ Page({
       { key: 'topics', label: '专题', value: 0 }
     ],
     favs: [],
+    favsShow: [],
     favCount: 0,
+    favHasMore: false,
     foots: [],
+    footsShow: [],
     footCount: 0,
+    footHasMore: false,
     info: { open: false, title: '', paragraphs: [] },
-    updating: false
+    updating: false,
+    fontOptions: font.OPTIONS,
+    fontKey: 'm',
+    fontClass: 'm'
   },
 
   onLoad() {
@@ -62,6 +33,8 @@ Page({
   onShow() {
     this.setTab();
     this.doStats();
+    font.apply(this);
+    this.setData({ fontKey: store.getFontKey() });
     hd.refresh((changed) => {
       if (changed) this.doStats();
     });
@@ -76,7 +49,16 @@ Page({
         return entry ? { ...entry, when: fmtWhen(x.ts) } : null;
       })
       .filter(Boolean);
-    this.setData({ favs, favCount: favs.length, foots, footCount: foots.length });
+    this.setData({
+      favs,
+      favsShow: favs.slice(0, 3),
+      favCount: favs.length,
+      favHasMore: favs.length > 3,
+      foots,
+      footsShow: foots.slice(0, 3),
+      footCount: foots.length,
+      footHasMore: foots.length > 3
+    });
   },
 
   doStats() {
@@ -99,6 +81,22 @@ Page({
 
   onSearch() {
     wx.navigateTo({ url: '/pages/search/search' });
+  },
+
+  onAllFoots() {
+    wx.navigateTo({ url: '/pages/footprints/footprints' });
+  },
+
+  onAllFavs() {
+    wx.navigateTo({ url: '/pages/favorites/favorites' });
+  },
+
+  onFontPick(e) {
+    const key = e.currentTarget.dataset.key;
+    const saved = store.setFontKey(key);
+    this.setData({ fontKey: saved, fontClass: saved });
+    const opt = font.OPTIONS.find((x) => x.key === saved);
+    wx.showToast({ title: `字号：${opt ? opt.label : '标准'}`, icon: 'none' });
   },
 
   // 检查内容更新：purge jsDelivr 缓存 → 绕过本地缓存强制拉取

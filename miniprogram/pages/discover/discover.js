@@ -1,5 +1,6 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 
 // 朝代卡配图（搜图素材，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -16,15 +17,18 @@ Page({
     periods: [],
     era: {},
     modern: {},
-    picks: []
+    picks: [],
+    fontClass: 'm'
   },
 
   onLoad() {
+    font.apply(this);
     this.build();
   },
 
   onShow() {
     this.setTab();
+    font.apply(this);
     hd.refresh((changed) => {
       if (changed) this.build();
     });

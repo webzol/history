@@ -1,0 +1,233 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #F6F1EA;
+}
+
+.paper-bg {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.96;
+}
+
+.screen {
+  position: relative;
+  z-index: 2;
+  padding: 0 46rpx 120rpx;
+}
+
+.topbar {
+  position: relative;
+  margin-top: 88rpx;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  width: 240rpx;
+  height: 56rpx;
+  padding: 0 18rpx 0 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  border-radius: 28rpx;
+  border: 1rpx solid rgba(176, 142, 96, 0.42);
+  background: rgba(252, 251, 248, 0.86);
+  box-shadow: 0 4rpx 12rpx rgba(90, 70, 50, 0.05);
+}
+
+.back-arrow {
+  position: relative;
+  width: 58rpx;
+  height: 22rpx;
+  flex: 0 0 58rpx;
+}
+
+.arrow-shaft {
+  position: absolute;
+  left: 1rpx;
+  top: 10rpx;
+  width: 56rpx;
+  height: 2rpx;
+  border-radius: 2rpx;
+  background: #B98556;
+}
+
+.arrow-head {
+  position: absolute;
+  left: 0;
+  top: 2rpx;
+  width: 17rpx;
+  height: 17rpx;
+  border-left: 2rpx solid #B98556;
+  border-bottom: 2rpx solid #B98556;
+  transform: rotate(45deg);
+}
+
+.back-label {
+  flex: 1;
+  text-align: center;
+  font-family: "KaiTi", "STKaiti", "Songti SC", serif;
+  font-size: calc(27rpx * var(--fs, 1));
+  letter-spacing: 0.14em;
+  color: #6B5A33;
+}
+
+.top-title {
+  position: absolute;
+  left: 54%;
+  transform: translateX(-50%);
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(26rpx * var(--fs, 1));
+  letter-spacing: 0.08em;
+  color: #8C857A;
+}
+
+.top-seal {
+  width: 44rpx;
+  height: 50rpx;
+  display: block;
+  transform: rotate(2deg);
+}
+
+.head {
+  margin-top: 26rpx;
+  padding: 6rpx 4rpx 0;
+}
+
+.head-title {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(44rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+  color: #1F1D19;
+}
+
+.head-sub {
+  display: block;
+  margin-top: 12rpx;
+  font-size: calc(19rpx * var(--fs, 1));
+  letter-spacing: 0.04em;
+  color: #A39A8E;
+}
+
+.head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.clear-btn {
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(70, 58, 45, 0.16);
+  font-size: calc(18rpx * var(--fs, 1));
+  letter-spacing: 0.08em;
+  color: #8C857A;
+}
+
+.list-card {
+  margin-top: 26rpx;
+  padding: 10rpx 28rpx 16rpx;
+  border-radius: 34rpx;
+  background: #FCFBF8;
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);
+}
+
+.group + .group {
+  margin-top: 8rpx;
+}
+
+.group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 22rpx 4rpx 8rpx;
+}
+
+.group-label {
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(26rpx * var(--fs, 1));
+  letter-spacing: 0.08em;
+  color: #8E5E36;
+}
+
+.group-count {
+  font-size: calc(17rpx * var(--fs, 1));
+  letter-spacing: 0.04em;
+  color: #A39A8E;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 4rpx;
+  border-top: 1rpx solid rgba(70, 58, 45, 0.07);
+}
+
+.row-thumb {
+  flex: 0 0 72rpx;
+  width: 72rpx;
+  height: 72rpx;
+  display: block;
+  border-radius: 18rpx;
+  background: #F3EFE6;
+  border: 3rpx solid #FFFDF8;
+  box-shadow: 0 4rpx 10rpx rgba(90, 70, 50, 0.08);
+  filter: saturate(0.86) brightness(1.02);
+}
+
+.row-thumb.row-thumb-modern {
+  filter: saturate(0.7) brightness(1.03);
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(24rpx * var(--fs, 1));
+  letter-spacing: 0.04em;
+  color: #1F1D19;
+}
+
+.row-sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: calc(18rpx * var(--fs, 1));
+  letter-spacing: 0.03em;
+  color: #8C857A;
+}
+
+.row-sub.sub-modern {
+  color: #7E9A9A;
+}
+
+.row-when {
+  flex: 0 0 auto;
+  font-size: calc(17rpx * var(--fs, 1));
+  letter-spacing: 0.02em;
+  color: #A39A8E;
+}
+
+.hint-card {
+  padding: 26rpx 28rpx;
+}
+
+.hint-text {
+  display: block;
+  font-size: calc(24rpx * var(--fs, 1));
+  line-height: calc(38rpx * var(--fs, 1));
+  color: #8C857A;
+}

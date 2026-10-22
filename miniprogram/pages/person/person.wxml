@@ -1,9 +1,13 @@
-<view class="page">
+<view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen" wx:if="{{person}}">
     <view class="topbar">
       <view class="back" bindtap="goBack">
-        <text class="back-icon">‹</text>
+        <view class="back-arrow">
+          <view class="arrow-shaft"></view>
+          <view class="arrow-head"></view>
+        </view>
+        <text class="back-label">返回</text>
       </view>
       <text class="top-title">史页 · 人物</text>
       <text class="top-seal {{accent === 'modern' ? 'seal-modern' : ''}}">{{seal}}</text>

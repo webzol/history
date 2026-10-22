@@ -1,0 +1,51 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <view class="back-arrow">
+          <view class="arrow-shaft"></view>
+          <view class="arrow-head"></view>
+        </view>
+        <text class="back-label">返回</text>
+      </view>
+      <text class="top-title">史页 · 足迹</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+
+    <view class="head">
+      <view class="head-row">
+        <text class="head-title">浏览足迹</text>
+        <view class="clear-btn" wx:if="{{footCount}}" bindtap="onClear">清空</view>
+      </view>
+      <text class="head-sub">按最近浏览排序 · 共 {{footCount}} 条</text>
+    </view>
+
+    <view class="list-card" wx:if="{{foots.length}}">
+      <block wx:for="{{rows}}" wx:key="key">
+        <view class="group-head" wx:if="{{item.kind === 'header'}}">
+          <text class="group-label">{{item.label}}</text>
+          <text class="group-count">{{item.count}} 条</text>
+        </view>
+        <view
+          wx:else
+          class="list-row"
+          data-type="{{item.type}}"
+          data-id="{{item.id}}"
+          bindtap="onEntry"
+        >
+          <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFill"></image>
+          <view class="row-main">
+            <text class="row-title">{{item.title}}</text>
+            <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
+          </view>
+          <text class="row-when">{{item.when}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="list-card hint-card" wx:else>
+      <text class="hint-text">还没有足迹。浏览人物、史事、朝代详情页后会留在这里。</text>
+    </view>
+  </view>
+</view>

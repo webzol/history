@@ -1,5 +1,6 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 
 const lower = (text) => (text || '').toLowerCase();
 
@@ -8,7 +9,12 @@ Page({
     keyword: '',
     hot: ['汉武帝', '苏轼', '澶渊之盟', '辛亥革命', '五四运动', '盛唐'],
     results: null,
-    empty: false
+    empty: false,
+    fontClass: 'm'
+  },
+
+  onShow() {
+    font.apply(this);
   },
 
   onInput(e) {

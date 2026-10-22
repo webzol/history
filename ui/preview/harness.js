@@ -106,6 +106,7 @@
     navigateTo: function (o) {
       var t = targetPage(o.url);
       openPage(t.name, t.query, 'push');
+      if (CURRENT && CURRENT.onShow) CURRENT.onShow();
       if (o.success) o.success({});
     },
     redirectTo: function (o) {
@@ -586,6 +587,10 @@
         return { type: p[0], id: p[1], ts: Date.now() };
       });
     }
+    // 字号预置：?font=xl（s/m/l/xl，仅预览 harness 用）
+    if (query.font && ['s', 'm', 'l', 'xl'].indexOf(query.font) >= 0) {
+      storage['shige_font_key'] = query.font;
+    }
 
     if (query.shot === '1') {
       document.body.classList.add('shot');
@@ -606,12 +611,7 @@
       window.addEventListener('resize', fit);
     }
     openPage(pageName, query, 'replace');
-    if (
-      TAB_KEYS.indexOf(pageName) >= 0 &&
-      CURRENT &&
-      CURRENT.onShow &&
-      query.shot !== 'reentry'
-    ) CURRENT.onShow();
+    if (CURRENT && CURRENT.onShow && query.shot !== 'reentry') CURRENT.onShow();
     ensureTabShell();
 
     if (query.debug) {
@@ -625,6 +625,25 @@
         var r = scr.getBoundingClientRect();
         m.push('screen.w=' + Math.round(r.width));
         m.push('screen.pad=' + getComputedStyle(scr).paddingLeft + '/' + getComputedStyle(scr).paddingRight);
+      }
+      var tb = document.querySelector('.topbar');
+      if (tb) {
+        var tr = tb.getBoundingClientRect();
+        m.push('topbar=' + Math.round(tr.left) + ',' + Math.round(tr.width));
+      }
+      var bk = document.querySelector('.back');
+      if (bk) {
+        var br = bk.getBoundingClientRect();
+        m.push('back=' + Math.round(br.left) + ',' + Math.round(br.right) + ',' + Math.round(br.width));
+      }
+      var tt = document.querySelector('.top-title');
+      if (tt) {
+        var rr = tt.getBoundingClientRect();
+        m.push('title=' + Math.round(rr.left) + ',' + Math.round(rr.right));
+        m.push('titleLeft=' + getComputedStyle(tt).left);
+        m.push('titleFs=' + getComputedStyle(tt).fontSize);
+        m.push('fsVar=' + getComputedStyle(tt).getPropertyValue('--fs'));
+        m.push('pageCls=' + (document.querySelector('.page') ? document.querySelector('.page').className : 'none'));
       }
       var brand = document.querySelector('.brand');
       if (brand) m.push('brand.fs=' + getComputedStyle(brand).fontSize);

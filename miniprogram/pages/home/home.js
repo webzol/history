@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const api = require('../../utils/api.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 
 Page({
   data: {
@@ -12,11 +13,13 @@ Page({
     tihTotal: 0,
     tihDate: '',
     sheet: { open: false, title: '', list: [] },
-    info: { open: false, title: '', paragraphs: [] }
+    info: { open: false, title: '', paragraphs: [] },
+    fontClass: 'm'
   },
 
   onShow() {
     this.setTab();
+    font.apply(this);
     this.apply();
     // 60s「历史上的今天」：失败自动隐藏板块，不占位
     this.loadTih();

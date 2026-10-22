@@ -1,5 +1,6 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const font = require('../../utils/font.js');
 const eraImage = require('../../utils/eraImages.js').eraImage;
 const personThumb = require('../../utils/eraImages.js').personThumb;
 
@@ -13,15 +14,21 @@ Page({
     seal: '',
     headImg: '',
     related: [],
-    collected: false
+    collected: false,
+    fontClass: 'm'
   },
 
   onLoad(options) {
+    font.apply(this);
     this.curId = options.id;
     this.apply(true);
     hd.refresh((changed) => {
       if (changed) this.apply(false);
     });
+  },
+
+  onShow() {
+    font.apply(this);
   },
 
   apply(redirectOnMiss) {
