@@ -279,18 +279,21 @@ console.log('== 数据完整性 ==');
   const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
   eq(eraImages.eraImage('西汉'), '/assets/paintings/han.jpg', '时代配图 · 西汉');
   eq(eraImages.eraImage('晚清'), '/assets/paintings/qing.jpg', '时代配图 · 晚清并到清');
-  eq(eraImages.eraImage('民国'), '/assets/paintings/modern.jpg', '时代配图 · 民国并到近现代');
+  eq(eraImages.eraImage('民国'), '/assets/paintings/landscape.jpg', '时代配图 · 民国用千里江山图');
+  eq(eraImages.eraImage('近现代'), '/assets/paintings/landscape.jpg', '时代配图 · 近现代用千里江山图');
+  eq(eraImages.eraImage('新中国'), '/assets/paintings/modern.jpg', '时代配图 · 新中国用开国大典');
   eq(eraImages.eraImage('辽'), '/assets/palace.jpg', '时代配图 · 无专属绘画回退宫阙');
   eq(eraImages.personThumb('西汉', 0), '/assets/thumbs/han-1.jpg', '人物缩略图 · 西汉轮换起点');
   eq(eraImages.personThumb('西汉', 1), '/assets/thumbs/han-2.jpg', '人物缩略图 · 西汉第二张');
+  eq(eraImages.personThumb('民国', 0), '/assets/thumbs/republic-1.jpg', '人物缩略图 · 民国用山河细部');
   eq(eraImages.personThumb('辽', 0), '/assets/palace.jpg', '人物缩略图 · 无专属绘画回退宫阙');
   let thumbCount = 0;
-  ['han', 'tang', 'song', 'ming', 'qing', 'modern'].forEach((base) => {
+  ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic'].forEach((base) => {
     [1, 2, 3, 4].forEach((n) => {
       if (fs.existsSync(path.join(ROOT, `/assets/thumbs/${base}-${n}.jpg`))) thumbCount += 1;
     });
   });
-  eq(thumbCount, 24, '人物缩略图 6 时代 × 4 张齐备');
+  eq(thumbCount, 28, '人物缩略图 7 组 × 4 张齐备');
 
   // 远端 data/history.json 应带 builtAt 版本戳
   try {
@@ -574,10 +577,18 @@ console.log('== 人物详情 ==');
     '相关史事映射');
   eq(p.data.accent, 'ancient', '古代赭石');
   eq(p.data.seal, '苏', '顶栏小印取自人名首字');
+  eq(p.data.headImg, '/assets/paintings/song.jpg', '人物头卡：苏轼配宋画');
+  eq(p.data.related.map((e) => e.img), ['/assets/thumbs/song-1.jpg', '/assets/thumbs/song-2.jpg', '/assets/thumbs/song-3.jpg', '/assets/thumbs/song-4.jpg'],
+    '相关史事缩略图按行轮换，四张不重复');
 
   p.onLoad({ id: 'lu-xun' });
   eq(p.data.accent, 'modern', '近现代蓝灰');
   eq(p.data.related.length, 3, '鲁迅相关史事三条');
+  eq(p.data.headImg, '/assets/paintings/landscape.jpg', '鲁迅头卡用千里江山图（不误配开国大典）');
+  ok(p.data.related.every((e) => e.img && fs.existsSync(path.join(ROOT, e.img))), '鲁迅相关史事缩略图存在');
+
+  p.onLoad({ id: 'mao-zedong' });
+  eq(p.data.headImg, '/assets/paintings/modern.jpg', '毛泽东头卡用开国大典');
 
   p.onLoad({ id: 'zhao-kuangyin' });
   eq(p.data.person.name, '赵匡胤', '赵匡胤载入');

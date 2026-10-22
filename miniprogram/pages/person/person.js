@@ -1,5 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const eraImage = require('../../utils/eraImages.js').eraImage;
+const personThumb = require('../../utils/eraImages.js').personThumb;
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -9,6 +11,7 @@ Page({
     person: null,
     accent: 'ancient',
     seal: '',
+    headImg: '',
     related: [],
     collected: false
   },
@@ -32,11 +35,13 @@ Page({
 
     const related = (person.relatedEvents || [])
       .map((id) => history.events.find((event) => event.id === id))
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((event, index) => ({ ...event, img: personThumb(event.era, index) }));
 
     this.setData({
       person,
       related,
+      headImg: eraImage(person.era),
       accent: MODERN_ERAS.indexOf(person.era) >= 0 ? 'modern' : 'ancient',
       seal: person.name.charAt(0),
       collected: store.isFavorite('person', person.id)

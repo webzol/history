@@ -10,19 +10,23 @@
     </view>
 
     <view class="head-card">
-      <text class="p-name">{{person.name}}</text>
-      <view class="p-meta">
-        <text class="p-dates {{accent === 'modern' ? 'accent-modern' : ''}}">{{person.dates}}</text>
-        <text class="p-dot">·</text>
-        <text class="p-roles">{{person.roles}}</text>
-      </view>
-      <view class="era-chip {{accent === 'modern' ? 'chip-modern' : ''}}">
-        <text>{{person.era}}</text>
-      </view>
-      <view class="quote-block" wx:if="{{person.quote}}">
-        <text class="quote-mark">“</text>
-        <text class="quote">{{person.quote}}</text>
-        <text class="quote-src">——{{person.quoteSource}}</text>
+      <image class="p-bg" wx:if="{{headImg}}" src="{{headImg}}" mode="aspectFill"></image>
+      <view class="p-veil"></view>
+      <view class="p-copy">
+        <text class="p-name">{{person.name}}</text>
+        <view class="p-meta">
+          <text class="p-dates {{accent === 'modern' ? 'accent-modern' : ''}}">{{person.dates}}</text>
+          <text class="p-dot">·</text>
+          <text class="p-roles">{{person.roles}}</text>
+        </view>
+        <view class="era-chip {{accent === 'modern' ? 'chip-modern' : ''}}">
+          <text>{{person.era}}</text>
+        </view>
+        <view class="quote-block" wx:if="{{person.quote}}">
+          <text class="quote-mark">“</text>
+          <text class="quote">{{person.quote}}</text>
+          <text class="quote-src">——{{person.quoteSource}}</text>
+        </view>
       </view>
     </view>
 
@@ -48,6 +52,7 @@
           <text class="rel-title">{{item.title}}</text>
           <text class="rel-desc">{{item.desc}}</text>
         </view>
+        <image class="rel-thumb" wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill"></image>
         <text class="rel-arrow">›</text>
       </view>
     </view>
