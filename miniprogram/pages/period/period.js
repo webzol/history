@@ -6,10 +6,15 @@ const PERIOD_META = {
   han: { img: '/assets/paintings/han.jpg', yearText: '前202–公元9', seal: '汉' },
   tang: { img: '/assets/paintings/tang.jpg', yearText: '618–907', seal: '唐' },
   song: { img: '/assets/paintings/song.jpg', yearText: '960–1127', seal: '宋' },
+  ming: { img: '/assets/paintings/ming.jpg', yearText: '1368–1644', seal: '明' },
+  qing: { img: '/assets/paintings/qing.jpg', yearText: '1644–1912', seal: '清' },
   modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
 };
 
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
+
+// 清代史事的 era 分「清」「晚清」两段；朝代页合并收录
+const PERIOD_ERAS = { qing: ['清', '晚清'] };
 
 Page({
   data: {
@@ -38,9 +43,11 @@ Page({
 
     const meta = PERIOD_META[period.id] || {};
     // 该时代下的史事：事件 era 命中朝代名，或与近现代面板对应
-    const inPeriod = (event) =>
-      event.era === period.name ||
-      (period.id === 'modern' && MODERN_ERAS.indexOf(event.era) >= 0);
+    const inPeriod = (event) => {
+      const eras = PERIOD_ERAS[period.id] || [period.name];
+      return eras.indexOf(event.era) >= 0 ||
+        (period.id === 'modern' && MODERN_ERAS.indexOf(event.era) >= 0);
+    };
     const events = history.events
       .filter(inPeriod)
       .sort((a, b) => a.year - b.year);

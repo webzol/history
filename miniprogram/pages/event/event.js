@@ -1,10 +1,13 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
+const eraImage = require('../../utils/eraImages.js').eraImage;
+const personThumb = require('../../utils/eraImages.js').personThumb;
 
 Page({
   data: {
     event: null,
     seal: '',
+    headImg: '',
     relatedPersons: [],
     collected: false
   },
@@ -30,10 +33,12 @@ Page({
       .get()
       .persons.filter((person) =>
         (person.relatedEvents || []).indexOf(event.id) >= 0
-      );
+      )
+      .map((person, index) => ({ ...person, img: personThumb(person.era, index) }));
 
     this.setData({
       event,
+      headImg: eraImage(event.era),
       relatedPersons,
       seal: event.title.charAt(0),
       collected: store.isFavorite('event', event.id)

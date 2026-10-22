@@ -214,7 +214,7 @@ console.log('== 数据完整性 ==');
   eq(history.persons.length, 23, '人物 23 位');
   ok(new Set([...eventIds]).size === 41, '史事 id 唯一');
   ok(new Set([...personIds]).size === 23, '人物 id 唯一');
-  ok(new Set([...periodIds]).size === 4, '朝代 id 唯一');
+  ok(new Set([...periodIds]).size === 6, '朝代 id 唯一');
 
   history.events.forEach((e) => {
     ok(e.mode === 'ancient' || e.mode === 'modern', `[${e.id}] mode 合法`);
@@ -275,6 +275,23 @@ console.log('== 数据完整性 ==');
   );
   goodImg('/assets/paintings/landscape.jpg');
 
+  // 时代配图映射（事件头卡 / 人物缩略图共用）
+  const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
+  eq(eraImages.eraImage('西汉'), '/assets/paintings/han.jpg', '时代配图 · 西汉');
+  eq(eraImages.eraImage('晚清'), '/assets/paintings/qing.jpg', '时代配图 · 晚清并到清');
+  eq(eraImages.eraImage('民国'), '/assets/paintings/modern.jpg', '时代配图 · 民国并到近现代');
+  eq(eraImages.eraImage('辽'), '/assets/palace.jpg', '时代配图 · 无专属绘画回退宫阙');
+  eq(eraImages.personThumb('西汉', 0), '/assets/thumbs/han-1.jpg', '人物缩略图 · 西汉轮换起点');
+  eq(eraImages.personThumb('西汉', 1), '/assets/thumbs/han-2.jpg', '人物缩略图 · 西汉第二张');
+  eq(eraImages.personThumb('辽', 0), '/assets/palace.jpg', '人物缩略图 · 无专属绘画回退宫阙');
+  let thumbCount = 0;
+  ['han', 'tang', 'song', 'ming', 'qing', 'modern'].forEach((base) => {
+    [1, 2, 3, 4].forEach((n) => {
+      if (fs.existsSync(path.join(ROOT, `/assets/thumbs/${base}-${n}.jpg`))) thumbCount += 1;
+    });
+  });
+  eq(thumbCount, 24, '人物缩略图 6 时代 × 4 张齐备');
+
   // 远端 data/history.json 应带 builtAt 版本戳
   try {
     const remoteJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'history.json'), 'utf8'));
@@ -326,12 +343,15 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'dynasty' });
   ok(p.data.sheet.open, '朝代磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 4, '弹层列出四个时代');
+  eq(p.data.sheet.list.length, 6, '弹层列出六个时代');
   tap(p, 'closeSheet');
   eq(p.data.sheet.open, false, '点遮罩/取消可关闭');
   tap(p, 'goPage', { page: 'dynasty' });
   tap(p, 'onSheetItem', { index: 0 });
   eq(last('navigateTo').url, '/pages/period/period?id=han', '选择时代 → 朝代详情页');
+  tap(p, 'goPage', { page: 'dynasty' });
+  tap(p, 'onSheetItem', { index: 3 });
+  eq(last('navigateTo').url, '/pages/period/period?id=ming', '朝代弹层含明代并正确跳转');
 
   tap(p, 'onHeroTap');
   const heroUrl = last('navigateTo').url;
@@ -412,7 +432,7 @@ console.log('== 发现 ==');
   const p = pages.discover;
 
   p.onLoad();
-  eq(p.data.periods.length, 4, '朝代四张卡');
+  eq(p.data.periods.length, 6, '朝代六张卡');
   p.data.periods.forEach((item) =>
     ok(item.img && fs.existsSync(path.join(ROOT, item.img)), `朝代卡有图 ${item.id}`)
   );
@@ -456,7 +476,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [4, 41, 23, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [6, 41, 23, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -510,7 +530,7 @@ console.log('== 我的 ==' );
 
   tap(p, 'onDataNote');
   ok(p.data.info.open && p.data.info.title === '数据与史料说明', '数据说明：自绘弹层打开');
-  ok(p.data.info.paragraphs.join('').indexOf('朝代 4 条') >= 0, '数据说明含统计');
+  ok(p.data.info.paragraphs.join('').indexOf('朝代 6 条') >= 0, '数据说明含统计');
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '数据说明弹层可关闭');
 
@@ -605,6 +625,18 @@ console.log('== 朝代详情 ==');
   ok(p.data.span.length > 0, '时代脉络非空');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
+  p.onLoad({ id: 'ming' });
+  eq(p.data.period.name, '明', '明代载入');
+  eq(p.data.events.map((e) => e.id),
+    ['zhenghe-1405', 'tumu-1449', 'ningwang-1519', 'taizhou-1561', 'zhangjuzheng-1581', 'ming-wang-1644'],
+    '明收录六条史事（纪年升序）');
+  eq(p.data.seal, '明', '明代小印');
+
+  p.onLoad({ id: 'qing' });
+  eq(p.data.period.name, '清', '清代载入');
+  eq(p.data.events.map((e) => e.year), [1681, 1754, 1839, 1840, 1851, 1860, 1861, 1878, 1894, 1898], '清合并「清/晚清」史事（纪年升序）');
+  ok(p.data.span.indexOf('1681') >= 0 && p.data.span.indexOf('1898') >= 0, '清 span 覆盖首尾纪年');
+
   p.onLoad({ id: 'modern' });
   eq(p.data.events.length, 18, '近现代面板收录十八条');
   eq(p.data.seal, '近', '近现代小印');
@@ -643,9 +675,16 @@ console.log('== 事件详情 ==');
   eq(p.data.event.title, '澶渊之盟', '澶渊之盟载入');
   eq(p.data.relatedPersons.map((x) => x.id), ['wang-anshi', 'su-shi'], '其时其人：反查列出王安石与苏轼');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
+  eq(p.data.headImg, '/assets/paintings/song.jpg', '事件头卡：北宋配《清明上河图》');
+  ok(p.data.relatedPersons.every((x) => x.img && fs.existsSync(path.join(ROOT, x.img))), '其时其人：每人有配图且文件存在');
 
   p.onLoad({ id: 'han-wudi' });
   eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病');
+  eq(p.data.headImg, '/assets/paintings/han.jpg', '事件头卡：西汉配长信宫灯');
+  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：同代四人缩略图各不相同');
+
+  p.onLoad({ id: 'qidan-916' });
+  eq(p.data.headImg, '/assets/palace.jpg', '事件头卡：无专属绘画时代回退水墨宫阙');
 
   p.onLoad({ id: 'mobei-119' });
   eq(p.data.relatedPersons.map((x) => x.id), ['wei-qing', 'huo-qubing'], '漠北之战反查列出卫青与霍去病');

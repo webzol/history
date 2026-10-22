@@ -1,7 +1,7 @@
 ﻿// 浏览器预览/自测运行时：
 // - 真实页面 JS 交互（wx mock 渲染原生风格 Modal/ActionSheet/Toast）
 // - WXML/WXSS 运行时渲染（覆盖本工程用到的子集）
-// - ?s= 场景脚本：click:<selector> / input:<selector>|<value>
+// - ?s= 场景脚本：click:<selector> / input:<selector>|<value> / scroll:<px>
 
 (function () {
   'use strict';
@@ -658,6 +658,10 @@
             if (!inp) throw new Error('input 未找到 ' + mm[1]);
             inp.value = mm[2];
             inp.dispatchEvent(new Event('input', { bubbles: true }));
+          } else if ((mm = /^scroll:(\d+)$/.exec(step))) {
+            var host = document.getElementById('page-host');
+            host.style.overflow = 'auto';
+            host.scrollTop = parseInt(mm[1], 10);
           } else if ((mm = /^mark:(.+)$/.exec(step))) {
             var m = [];
             m.push(step);

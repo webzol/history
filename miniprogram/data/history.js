@@ -31,6 +31,24 @@ const periods = [
     source: '《宋史》'
   },
   {
+    id: 'ming',
+    name: '明',
+    start: 1368,
+    end: 1644,
+    title: '大明',
+    desc: '从洪武开国到崇祯殉国，内阁、厂卫与白银贸易共塑的二百七十六年。',
+    source: '《明史》'
+  },
+  {
+    id: 'qing',
+    name: '清',
+    start: 1644,
+    end: 1912,
+    title: '大清',
+    desc: '从入关定鼎到辛亥鼎革，康乾盛世与近代危局交织的二百六十八年。',
+    source: '《清史稿》'
+  },
+  {
     id: 'modern',
     name: '近现代',
     start: 1840,

@@ -10,13 +10,19 @@
     </view>
 
     <view class="head-card {{event.mode === 'modern' ? 'head-modern' : ''}}">
-      <text class="e-year">{{event.yearText}}</text>
-      <text class="e-title">{{event.title}}</text>
-      <view class="e-meta">
-        <view class="era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}">
-          <text>{{event.era}}</text>
+      <view class="e-band" wx:if="{{headImg}}">
+        <image class="e-bg" src="{{headImg}}" mode="aspectFill"></image>
+        <view class="e-band-shade"></view>
+      </view>
+      <view class="e-copy">
+        <text class="e-year">{{event.yearText}}</text>
+        <text class="e-title">{{event.title}}</text>
+        <view class="e-meta">
+          <view class="era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}">
+            <text>{{event.era}}</text>
+          </view>
+          <text class="e-tags">{{event.tags}}</text>
         </view>
-        <text class="e-tags">{{event.tags}}</text>
       </view>
     </view>
 
@@ -40,8 +46,9 @@
         data-id="{{item.id}}"
         bindtap="goPerson"
       >
-        <text class="p-char">{{item.name}}</text>
+        <image class="p-thumb" src="{{item.img}}" mode="aspectFill"></image>
         <view class="p-info">
+          <text class="p-name">{{item.name}}</text>
           <text class="p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>
           <text class="p-roles">{{item.roles}}</text>
         </view>
