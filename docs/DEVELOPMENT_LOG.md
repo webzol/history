@@ -1438,3 +1438,24 @@ miniprogram/data/history.js
 - 诗文列表只做索引字段搜索，暂不支持全文检索；如需要，另建轻量全文索引或后端搜索。
 - 资料库仍未接入收藏/足迹；接入前需扩展 `utils/entries.js` 与「我的」页分组。
 - 数据仍需逐条史实/授权审校。
+
+---
+
+## 2026-10-23 · 第二十九轮：资料库首页 UI 修复
+
+**用户反馈**：`pages/archive/archive` 在真机/开发者工具中，9 个辞条分类变成单列窄卡，右侧大量留白；顶栏小印与微信原生胶囊重叠。
+
+**调整**
+
+- 辞条分类改为稳定的两列布局：去掉对 `flex gap` 的依赖，卡片使用 `width: 48.5%` + `box-sizing: border-box` + `justify-content: space-between`，避免旧基础库下 `calc(50% - 7rpx)` 与 padding 叠加导致换行。
+- 分类卡补充 `:active` 状态与底部间距，9 类在移动端恢复为 5 行两列。
+- 资料库顶栏移除右侧小印，避免与微信原生胶囊重叠；标题仅保留「返回 + 史页 · 资料库」。
+- 第二段标题由「人物 · 事件 · 文献」改为「人物 · 事件 · 文献 · 诗文」，与现有 13 个入口一致。
+- 重建预览 bundle 并重截 `21-archive.png`；另用滚动截图核对第二段 13 行入口布局。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1553 / FAIL 0**。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` / `node tools/preview_shots.js`：27 张截图成功；`21-archive.png` 已更新为两列布局。
+- 仍需在微信开发者工具/真机确认原生胶囊位置、底部安全区与分类卡在窄屏（320px）下的文字换行。
