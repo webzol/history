@@ -16,7 +16,6 @@
         </view>
         <text class="tagline">{{identity.motto}}</text>
       </view>
-      <image class="head-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>
 
     <view class="stats-card">

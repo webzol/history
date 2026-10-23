@@ -123,15 +123,6 @@
   background: rgba(163, 74, 62, 0.14);
 }
 
-.head-seal {
-  width: 72rpx;
-  height: 72rpx;
-  flex: 0 0 72rpx;
-  display: block;
-  opacity: 0.92;
-  transform: rotate(2deg);
-}
-
 /* 数据统计 */
 .stats-card {
   margin-top: 18rpx;
