@@ -5,10 +5,13 @@
 
 输出（提交到仓库，供 jsDelivr 远端按需加载）：
   miniprogram/data/apk/catalog.json
-  miniprogram/data/apk/cards/<type>.json
-  miniprogram/data/apk/{figures,events,wars,emperors,dynasty-events,quotes,wenyanwen,poem-quotes}.json
+  miniprogram/data/apk/cards/<type>/{index,00,01...}.json
+  miniprogram/data/apk/{figures,events,wars,emperors,dynasty,quotes,wenyan,poemquotes}/{index,00,01...}.json
   miniprogram/data/apk/poems/<shi|ci|wen|qu|fu>/{index,00,01...}.json
   miniprogram/data/archive-meta.js
+
+列表只请求 index.json（id/title/meta/summary/shard），详情按 shard 请求单卷；
+分卷按条目数与 UTF-8 字节数双重封顶，避免个别超长条目把单卷撑大。
 
 用法：
   python tools/import_apk_data.py
@@ -20,6 +23,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -158,6 +162,89 @@ def write_json(name: str, data):
     return path
 
 
+# 列表索引只保留列表页需要的字段；详情正文放进分卷，避免首屏拉整类数据。
+INDEX_SUMMARY_LIMIT = 44
+SHARD_MAX_ITEMS = 180
+SHARD_MAX_BYTES = 320 * 1024
+POEM_SHARD_MAX_ITEMS = 120
+POEM_SHARD_MAX_BYTES = 320 * 1024
+
+
+def reset_output():
+    """清空生成目录，避免旧版整类 JSON 或旧分卷残留。"""
+    if OUT.exists():
+        for child in OUT.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    OUT.mkdir(parents=True, exist_ok=True)
+
+
+def json_bytes(value) -> int:
+    return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+
+
+def split_shards(items, max_items: int, max_bytes: int):
+    shards = []
+    bucket = []
+    size = 0
+    for item in items:
+        item_size = json_bytes(item)
+        if bucket and (len(bucket) >= max_items or size + item_size > max_bytes):
+            shards.append(bucket)
+            bucket = []
+            size = 0
+        bucket.append(item)
+        size += item_size
+    if bucket:
+        shards.append(bucket)
+    return shards
+
+
+def index_summary(item) -> str:
+    """列表摘要优先取第一个正文段，避免预览里全是【原文】【注释】标签。"""
+    text = item.get("summary") or ""
+    if not text:
+        return ""
+    parts = [part.strip() for part in re.split(r"【[^】]{1,12}】", text) if part.strip()]
+    if not parts:
+        return ""
+    if len(parts) > 1 and len(parts[0]) < 12:
+        parts = parts[1:]
+    title = cut(item.get("title") or "", INDEX_SUMMARY_LIMIT)
+    for part in parts:
+        summary = cut(part, INDEX_SUMMARY_LIMIT)
+        if summary != title:
+            return summary
+    return ""
+
+
+def index_entry(item, shard: str):
+    # 固定列数组比对象数组少约 25% 的 key 字节；小程序侧再映射回对象。
+    return [
+        item.get("id", ""),
+        item.get("title", ""),
+        item.get("meta", ""),
+        index_summary(item),
+        shard,
+    ]
+
+
+def write_collection(rel_dir: str, items, max_items: int = SHARD_MAX_ITEMS, max_bytes: int = SHARD_MAX_BYTES):
+    """写入 <rel_dir>/index.json 与 00.json、01.json… 分卷。"""
+    shards = split_shards(items, max_items, max_bytes)
+    index = []
+    for number, shard in enumerate(shards):
+        key = f"{number:02d}"
+        for item in shard:
+            item["shard"] = key
+        write_json(f"{rel_dir}/{key}.json", shard)
+        index.extend(index_entry(item, key) for item in shard)
+    write_json(f"{rel_dir}/index.json", index)
+    return index
+
+
 def build_cards():
     rows = q(
         "history_card_v2.db",
@@ -210,12 +297,12 @@ def build_cards():
     categories = []
     for key, group in sorted(by_type.items(), key=lambda kv: -len(kv[1]["items"])):
         items = group["items"]
-        write_json(f"cards/{key}.json", items)
+        write_collection(f"cards/{key}", items)
         categories.append({
             "key": key,
             "name": group["name"],
             "count": len(items),
-            "file": f"cards/{key}.json",
+            "file": f"cards/{key}/index.json",
             "sample": items[0]["title"] if items else "",
         })
     return categories, sum(c["count"] for c in categories)
@@ -475,7 +562,6 @@ POEM_GENRES = [
     ("qu", "曲"),
     ("fu", "赋"),
 ]
-POEM_SHARD_SIZE = {"shi": 300, "ci": 300, "wen": 100, "qu": 300, "fu": 300}
 
 
 def build_poem_works():
@@ -492,7 +578,7 @@ def build_poem_works():
          annotation, translation, appreciation, master_comment, quotes_count) = row
         genre = clean(kind) or "wen"
         label = clean(kind_cn) or dict(POEM_GENRES).get(genre, "文")
-        group = groups.setdefault(genre, {"label": label, "index": [], "shards": {}})
+        group = groups.setdefault(genre, {"label": label, "items": []})
         title = clean(title)
         author = clean(author)
         dynasty = clean(dynasty)
@@ -516,10 +602,7 @@ def build_poem_works():
                 facts.append(f"{fact_label}：{value}")
         if quotes_count:
             facts.append(f"名句：{int(quotes_count)} 条")
-        idx = len(group["index"])
-        size = POEM_SHARD_SIZE.get(genre, 300)
-        shard = f"{idx // size:02d}"
-        item = {
+        group["items"].append({
             "id": f"hpw-{clean(rid)}",
             "title": title,
             "meta": " · ".join(x for x in [dynasty, author, label] if x),
@@ -529,13 +612,7 @@ def build_poem_works():
             "facts": facts,
             "source": "诗文全文",
             "era": era_of(dynasty),
-            "shard": shard,
-        }
-        group["index"].append({
-            key: item[key]
-            for key in ("id", "title", "meta", "summary", "era", "source", "shard")
         })
-        group["shards"].setdefault(shard, []).append(item)
 
     sections = []
     total = 0
@@ -543,10 +620,13 @@ def build_poem_works():
         group = groups.get(genre)
         if not group:
             continue
-        write_json(f"poems/{genre}/index.json", group["index"])
-        for shard, items in sorted(group["shards"].items()):
-            write_json(f"poems/{genre}/{shard}.json", items)
-        count = len(group["index"])
+        index = write_collection(
+            f"poems/{genre}",
+            group["items"],
+            POEM_SHARD_MAX_ITEMS,
+            POEM_SHARD_MAX_BYTES,
+        )
+        count = len(index)
         total += count
         sections.append({
             "key": f"poems-{genre}",
@@ -559,7 +639,7 @@ def build_poem_works():
 
 
 def main():
-    OUT.mkdir(parents=True, exist_ok=True)
+    reset_output()
     categories, card_count = build_cards()
     figures = build_figures()
     events = build_events()
@@ -571,23 +651,23 @@ def main():
     poem_quotes = build_poem_quotes({norm(x.get("text", "")) for x in quotes})
     poem_sections, poem_count = build_poem_works()
 
-    for name, items in [
-        ("figures.json", figures), ("events.json", events), ("wars.json", wars),
-        ("emperors.json", emperors), ("dynasty-events.json", dynasty_events),
-        ("quotes.json", quotes), ("wenyanwen.json", wenyan),
-        ("poem-quotes.json", poem_quotes),
+    for key, items in [
+        ("figures", figures), ("events", events), ("wars", wars),
+        ("emperors", emperors), ("dynasty", dynasty_events),
+        ("quotes", quotes), ("wenyan", wenyan),
+        ("poemquotes", poem_quotes),
     ]:
-        write_json(name, items)
+        write_collection(key, items)
 
     sections = [
-        {"key": "figures", "name": "历代人物", "count": len(figures), "file": "figures.json", "desc": "按朝代与身份浏览人物小传"},
-        {"key": "events", "name": "历史事件", "count": len(events), "file": "events.json", "desc": "从上古到近现代的事件索引"},
-        {"key": "emperors", "name": "历代帝王", "count": len(emperors), "file": "emperors.json", "desc": "帝王世系、庙号与在位信息"},
-        {"key": "wars", "name": "历代战争", "count": len(wars), "file": "wars.json", "desc": "战争背景与结果速览"},
-        {"key": "dynasty", "name": "三国纪事", "count": len(dynasty_events), "file": "dynasty-events.json", "desc": "三国时期专题长文"},
-        {"key": "quotes", "name": "名句赏析", "count": len(quotes), "file": "quotes.json", "desc": "原文、出处与白话译文"},
-        {"key": "wenyan", "name": "文言辞条", "count": len(wenyan), "file": "wenyanwen.json", "desc": "古文常见字词的读音、释义与例句"},
-        {"key": "poemquotes", "name": "诗文名句", "count": len(poem_quotes), "file": "poem-quotes.json", "desc": "历代诗词名句，按朝代与作者浏览"},
+        {"key": "figures", "name": "历代人物", "count": len(figures), "file": "figures/index.json", "desc": "按朝代与身份浏览人物小传"},
+        {"key": "events", "name": "历史事件", "count": len(events), "file": "events/index.json", "desc": "从上古到近现代的事件索引"},
+        {"key": "emperors", "name": "历代帝王", "count": len(emperors), "file": "emperors/index.json", "desc": "帝王世系、庙号与在位信息"},
+        {"key": "wars", "name": "历代战争", "count": len(wars), "file": "wars/index.json", "desc": "战争背景与结果速览"},
+        {"key": "dynasty", "name": "三国纪事", "count": len(dynasty_events), "file": "dynasty/index.json", "desc": "三国时期专题长文"},
+        {"key": "quotes", "name": "名句赏析", "count": len(quotes), "file": "quotes/index.json", "desc": "原文、出处与白话译文"},
+        {"key": "wenyan", "name": "文言辞条", "count": len(wenyan), "file": "wenyan/index.json", "desc": "古文常见字词的读音、释义与例句"},
+        {"key": "poemquotes", "name": "诗文名句", "count": len(poem_quotes), "file": "poemquotes/index.json", "desc": "历代诗词名句，按朝代与作者浏览"},
     ] + poem_sections
     stats = {
         "cards": card_count,

@@ -100,9 +100,10 @@ Page({
 
   applyFilter() {
     const kw = (this.data.keyword || '').trim().toLowerCase();
+    // 列表索引只保留标题/分类/摘要；全文不再下载，避免首屏拉整类正文。
     const list = kw
       ? this.all.filter((item) =>
-          `${item.title || ''} ${item.meta || ''} ${item.summary || ''} ${item.text || ''}`
+          `${item.title || ''} ${item.meta || ''} ${item.summary || ''}`
             .toLowerCase()
             .indexOf(kw) >= 0
         )
@@ -143,7 +144,7 @@ Page({
     const shard = e.currentTarget.dataset.shard || '';
     const type = this.data.kind.indexOf('poems-') === 0 ? shard : this.data.type;
     wx.navigateTo({
-      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
+      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&shard=${encodeURIComponent(shard)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
     });
   },
 

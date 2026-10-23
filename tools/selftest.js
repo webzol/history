@@ -764,7 +764,14 @@ console.log('== 资料库 ==');
   );
 
   const list = pages['archive-list'];
+  const listBefore = wxLog.length;
   list.onLoad({ kind: 'cards', type: '12', title: '诸子百家名句赏析' });
+  const listUrls = wxLog
+    .slice(listBefore)
+    .filter((entry) => entry.kind === 'request')
+    .map((entry) => entry.url);
+  ok(listUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '列表首屏只拉轻量索引');
+  ok(!listUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '列表首屏不拉详情分卷');
   eq(list.data.loading, false, '资料库列表加载完成');
   eq(list.data.total, 246, '资料库列表总数');
   eq(list.data.cover, '/assets/paintings/tang.jpg', '资料库列表分类题图');
@@ -773,18 +780,36 @@ console.log('== 资料库 ==');
   list.onMore();
   eq(list.data.shown.length, 120, '资料库列表加载更多');
   const first = list.data.shown[0];
+  ok(first.shard, '列表索引带详情分卷 key');
+  ok(!first.text, '列表索引不携带正文');
+  ok(fs.existsSync(path.join(ROOT, 'data', 'apk', 'cards', '12', 'index.json')), '分类列表索引文件存在');
+  ok(!fs.existsSync(path.join(ROOT, 'data', 'apk', 'cards', '12.json')), '旧整类 JSON 已移除');
+  ok(
+    storage['shige_apk_v2_cards_12_index_json'] &&
+      storage['shige_apk_v2_cards_12_index_json'].items.length === 246,
+    '列表索引写入本地缓存'
+  );
   list.onInput({ detail: { value: first.title.slice(0, 2) } });
   ok(list.data.total > 0, '资料库列表可搜索');
   list.clearKeyword();
   eq(list.data.total, 246, '清空搜索恢复全量');
 
   const detail = pages['archive-detail'];
+  const detailBefore = wxLog.length;
   detail.onLoad({
     kind: 'cards',
     type: '12',
+    shard: first.shard,
     title: '诸子百家名句赏析',
     id: first.id
   });
+  const detailUrls = wxLog
+    .slice(detailBefore)
+    .filter((entry) => entry.kind === 'request')
+    .map((entry) => entry.url);
+  ok(detailUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '详情直接请求单卷');
+  ok(!detailUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '详情不再重复拉列表索引');
+  ok(storage['shige_apk_v2_cards_12_00_json'], '详情分卷写入本地缓存');
   eq(detail.data.loading, false, '资料库详情加载完成');
   eq(detail.data.item.id, first.id, '资料库详情命中条目');
   eq(detail.data.cover, '/assets/paintings/tang.jpg', '资料详情分类题图');
@@ -794,6 +819,7 @@ console.log('== 资料库 ==');
   ok(detail.data.showSections === true, '名句详情启用结构化段落');
   ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
   ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
+  ok(detail.onShareAppMessage().path.indexOf('shard=' + first.shard) >= 0, '资料库详情分享带分卷');
 
   list.onLoad({ kind: 'figures', title: '历代人物' });
   eq(list.data.total, 4869, '人物资料列表总数');
@@ -828,7 +854,7 @@ console.log('== 资料库 ==');
   detail.onLoad({ kind: 'poemquotes', title: '诗文名句', id: poemQuote.id });
   eq(detail.data.loading, false, '诗文名句详情加载完成');
   ok(detail.data.item.facts.length > 0, '诗文名句详情保留出处信息');
-  eq(detail.data.factRows.length, poemQuote.facts.length, '诗文名句资料卡解析为键值');
+  eq(detail.data.factRows.length, detail.data.item.facts.length, '诗文名句资料卡解析为键值');
   ok(detail.data.factRows.every((row) => row.key), '诗文名句资料卡都有字段名');
   ok(detail.data.showLead === false, '诗文名句不重复摘要');
 

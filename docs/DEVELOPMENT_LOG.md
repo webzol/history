@@ -1569,3 +1569,39 @@ miniprogram/data/history.js
 - 已核对 `23-archive-detail.png`（四段式正文 + 来源底注）、`25-archive-poemquote.png`（2×2 资料卡）、`27-archive-poem-detail.png`（题解 / 原文 / 注释分段）。
 - 仍需真机确认：长文滚动、320px 窄屏资料卡两列换行、字号切换后的段间距。
 - 本次只改详情展示层；资料库列表/详情仍按整类 JSON 加载，首屏慢的索引 + 分卷迁移未包含在本轮。
+
+---
+
+## 2026-10-23 · 第三十四轮：轻量列表索引 + 详情分卷
+
+**用户反馈**：做“轻量列表索引 + 详情分卷”，直接解决首屏等待。
+
+**调整**
+
+- 全部资料栏目统一改为「列表索引 + 详情分卷」，不再保留 `cards/<type>.json`、`figures.json`、`wenyanwen.json` 等整类大文件。
+  - 索引：`cards/<type>/index.json`、`figures/index.json`、`events/index.json`、`wars/index.json`、`emperors/index.json`、`dynasty/index.json`、`quotes/index.json`、`wenyan/index.json`、`poemquotes/index.json`、`poems/<shi|ci|wen|qu|fu>/index.json`。
+  - 分卷：同目录 `00.json`、`01.json`…；非诗文 ≤180 条 / ≤320KB，诗文 ≤120 条 / ≤320KB，按条目数与 UTF-8 字节数双重封顶。
+- 索引改为固定列数组 `[id, title, meta, summary, shard]`，摘要压到 44 字，并优先取第一个正文段，去掉 `【原文】【注释】` 等标签，列表预览不再被标签占满。
+- `utils/apkData.js` 新增 `loadIndex` / `loadShard`；`load` 只加载索引，`find` 可直接按 `shard` 取单卷。旧分享链接没有 `shard` 时，先查索引定位、再加载对应分卷，保证兼容。
+- 列表页只请求 `index.json`；点条目把 `shard` 带进详情页。详情页按 `shard` 只拉一册，分享路径也带 `shard`。
+- 缓存改为「单文件 ≤1.5MB + 资料库总预算 5MB」：超预算先淘汰旧分卷，索引优先保留；索引与最近详情分卷仍缓存 7 天。缓存前缀升级为 `shige_apk_v2_`，首次启动清理旧版整类 JSON 缓存，避免旧分卷映射残留。
+- 列表搜索改为只覆盖索引字段（标题 / 分类 / 摘要；诗词为篇名 / 作者 / 朝代 / 摘要），不下载正文；全文检索需要另建索引或后端搜索。
+- `tools/import_apk_data.py` 重写生成逻辑：清空旧输出后统一生成索引/分卷，并重新切分诗文分卷；39,067 条数据量不变。
+- `tools/selftest.js` 增补列表只拉索引、详情只拉分卷、旧整类 JSON 已移除、索引/分卷写入缓存等断言。
+
+**体积变化（单项 UTF-8）**
+
+- `cards/6`：3.46MB → 索引 500KB + 15 卷（单卷最大 322KB）。
+- `cards/5`：2.34MB → 索引 607KB + 21 卷（单卷最大 125KB）。
+- `figures`：1.47MB → 索引 482KB + 28 卷（单卷最大 60KB）。
+- `wenyan`：2.87MB → 索引 565KB + 22 卷（单卷最大 163KB）。
+- `poems/ci`：索引 1.77MB → 901KB + 51 卷（单卷最大 321KB）。
+- 全部索引合计约 6.0MB，最大单卷 322KB；首屏不再拉整类正文。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1600 / FAIL 0**。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
+- 已核对 `22-archive-list.png`（摘要干净、分页正常）、`23-archive-detail.png`、`24-archive-wenyan.png`、`25-archive-poemquote.png`、`26-archive-poems.png`、`27-archive-poem-detail.png`。
+- 仍需真机确认：jsDelivr 冷启动/缓存命中下的索引首屏耗时、分卷切换、5MB 缓存预算与返回栈表现。

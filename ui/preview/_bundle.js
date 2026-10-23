@@ -3267,7 +3267,7 @@ module.exports = {
 });
 __register('/data/archive-meta.js', function (require, module, exports) {
 // 自动生成：python tools/import_apk_data.py（勿手改）
-module.exports = {"generatedAt":"2026-10-23","source":"org.raphets.history APK","stats":{"cards":13287,"figures":4869,"events":705,"emperors":373,"wars":466,"dynastyEvents":29,"quotes":677,"wenyan":3889,"poemQuotes":3955,"poemWorks":10817,"categories":9,"total":39067},"categories":[{"key":"5","name":"职官辞典","count":3720,"file":"cards/5.json","sample":"一字王"},{"key":"14","name":"典故小词典","count":2705,"file":"cards/14.json","sample":"一丝不挂"},{"key":"6","name":"历史文化常识","count":2545,"file":"cards/6.json","sample":"伊拉克战争"},{"key":"7","name":"成语故事","count":1379,"file":"cards/7.json","sample":"一木难支"},{"key":"13","name":"历代诗词名句鉴赏","count":1345,"file":"cards/13.json","sample":"爱东西双涧，纵横水绕"},{"key":"4","name":"历史典故","count":611,"file":"cards/4.json","sample":"华夏祖先——黄帝和炎帝"},{"key":"8","name":"历史年表","count":493,"file":"cards/8.json","sample":"元谋人"},{"key":"12","name":"诸子百家名句赏析","count":246,"file":"cards/12.json","sample":"杀一人而三军震者，杀之；赏一人而万人悦者，赏之。"},{"key":"11","name":"二十五史名句赏析","count":243,"file":"cards/11.json","sample":"前事之不忘，后事之师也。"}],"sections":[{"key":"figures","name":"历代人物","count":4869,"file":"figures.json","desc":"按朝代与身份浏览人物小传"},{"key":"events","name":"历史事件","count":705,"file":"events.json","desc":"从上古到近现代的事件索引"},{"key":"emperors","name":"历代帝王","count":373,"file":"emperors.json","desc":"帝王世系、庙号与在位信息"},{"key":"wars","name":"历代战争","count":466,"file":"wars.json","desc":"战争背景与结果速览"},{"key":"dynasty","name":"三国纪事","count":29,"file":"dynasty-events.json","desc":"三国时期专题长文"},{"key":"quotes","name":"名句赏析","count":677,"file":"quotes.json","desc":"原文、出处与白话译文"},{"key":"wenyan","name":"文言辞条","count":3889,"file":"wenyanwen.json","desc":"古文常见字词的读音、释义与例句"},{"key":"poemquotes","name":"诗文名句","count":3955,"file":"poem-quotes.json","desc":"历代诗词名句，按朝代与作者浏览"},{"key":"poems-shi","name":"诗文全文 · 诗","count":2938,"file":"poems/shi/index.json","desc":"诗：原文、注释、译文与赏析"},{"key":"poems-ci","name":"诗文全文 · 词","count":4523,"file":"poems/ci/index.json","desc":"词：原文、注释、译文与赏析"},{"key":"poems-wen","name":"诗文全文 · 文","count":2991,"file":"poems/wen/index.json","desc":"文：原文、注释、译文与赏析"},{"key":"poems-qu","name":"诗文全文 · 曲","count":338,"file":"poems/qu/index.json","desc":"曲：原文、注释、译文与赏析"},{"key":"poems-fu","name":"诗文全文 · 赋","count":27,"file":"poems/fu/index.json","desc":"赋：原文、注释、译文与赏析"}]};
+module.exports = {"generatedAt":"2026-10-23","source":"org.raphets.history APK","stats":{"cards":13287,"figures":4869,"events":705,"emperors":373,"wars":466,"dynastyEvents":29,"quotes":677,"wenyan":3889,"poemQuotes":3955,"poemWorks":10817,"categories":9,"total":39067},"categories":[{"key":"5","name":"职官辞典","count":3720,"file":"cards/5/index.json","sample":"一字王"},{"key":"14","name":"典故小词典","count":2705,"file":"cards/14/index.json","sample":"一丝不挂"},{"key":"6","name":"历史文化常识","count":2545,"file":"cards/6/index.json","sample":"伊拉克战争"},{"key":"7","name":"成语故事","count":1379,"file":"cards/7/index.json","sample":"一木难支"},{"key":"13","name":"历代诗词名句鉴赏","count":1345,"file":"cards/13/index.json","sample":"爱东西双涧，纵横水绕"},{"key":"4","name":"历史典故","count":611,"file":"cards/4/index.json","sample":"华夏祖先——黄帝和炎帝"},{"key":"8","name":"历史年表","count":493,"file":"cards/8/index.json","sample":"元谋人"},{"key":"12","name":"诸子百家名句赏析","count":246,"file":"cards/12/index.json","sample":"杀一人而三军震者，杀之；赏一人而万人悦者，赏之。"},{"key":"11","name":"二十五史名句赏析","count":243,"file":"cards/11/index.json","sample":"前事之不忘，后事之师也。"}],"sections":[{"key":"figures","name":"历代人物","count":4869,"file":"figures/index.json","desc":"按朝代与身份浏览人物小传"},{"key":"events","name":"历史事件","count":705,"file":"events/index.json","desc":"从上古到近现代的事件索引"},{"key":"emperors","name":"历代帝王","count":373,"file":"emperors/index.json","desc":"帝王世系、庙号与在位信息"},{"key":"wars","name":"历代战争","count":466,"file":"wars/index.json","desc":"战争背景与结果速览"},{"key":"dynasty","name":"三国纪事","count":29,"file":"dynasty/index.json","desc":"三国时期专题长文"},{"key":"quotes","name":"名句赏析","count":677,"file":"quotes/index.json","desc":"原文、出处与白话译文"},{"key":"wenyan","name":"文言辞条","count":3889,"file":"wenyan/index.json","desc":"古文常见字词的读音、释义与例句"},{"key":"poemquotes","name":"诗文名句","count":3955,"file":"poemquotes/index.json","desc":"历代诗词名句，按朝代与作者浏览"},{"key":"poems-shi","name":"诗文全文 · 诗","count":2938,"file":"poems/shi/index.json","desc":"诗：原文、注释、译文与赏析"},{"key":"poems-ci","name":"诗文全文 · 词","count":4523,"file":"poems/ci/index.json","desc":"词：原文、注释、译文与赏析"},{"key":"poems-wen","name":"诗文全文 · 文","count":2991,"file":"poems/wen/index.json","desc":"文：原文、注释、译文与赏析"},{"key":"poems-qu","name":"诗文全文 · 曲","count":338,"file":"poems/qu/index.json","desc":"曲：原文、注释、译文与赏析"},{"key":"poems-fu","name":"诗文全文 · 赋","count":27,"file":"poems/fu/index.json","desc":"赋：原文、注释、译文与赏析"}]};
 
 });
 __register('/utils/store.js', function (require, module, exports) {
@@ -3822,42 +3822,85 @@ module.exports = { resolveEntry, fmtWhen, groupByType, flattenGroups };
 
 });
 __register('/utils/apkData.js', function (require, module, exports) {
-// APK 资料库远端数据：按需加载，减少主包体积。
+// APK 资料库远端数据：列表索引 + 详情分卷，按需加载，减少主包体积与首屏等待。
 // 数据由 tools/import_apk_data.py 生成，放在 data/apk/ 下并从主包排除，
-// 通过 jsDelivr 读取；首次打开某类后写入本地缓存，7 天内离线可读。
+// 通过 jsDelivr 读取；索引和最近看过的分卷会写入本地缓存，7 天内离线可读。
 const meta = require('../data/archive-meta.js');
 
 const BASE =
   'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/apk/';
-const CACHE_PREFIX = 'shige_apk_';
+// v2：数据结构从“整类 JSON”改为“索引 + 分卷”，旧缓存需整体失效。
+const CACHE_PREFIX = 'shige_apk_v2_';
+const LEGACY_CACHE_PREFIX = 'shige_apk_';
+const CACHE_META_KEY = CACHE_PREFIX + 'meta';
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-// 单类数据过大时只放内存，避免挤占小程序 10MB 本地存储
+// 单个文件缓存上限；索引约 40–900KB，分卷约 50–320KB。
 const MAX_CACHE_BYTES = 1.5 * 1024 * 1024;
+// 资料库缓存总预算，给收藏/足迹/字号等业务数据留空间；超预算先淘汰旧分卷。
+const CACHE_TOTAL_BYTES = 5 * 1024 * 1024;
 const memory = {};
 const inflight = {};
 
-const FILES = {
-  figures: 'figures.json',
-  events: 'events.json',
-  wars: 'wars.json',
-  emperors: 'emperors.json',
-  dynasty: 'dynasty-events.json',
-  quotes: 'quotes.json',
-  wenyan: 'wenyanwen.json',
-  poemquotes: 'poem-quotes.json'
+const DIRS = {
+  figures: 'figures',
+  events: 'events',
+  wars: 'wars',
+  emperors: 'emperors',
+  dynasty: 'dynasty',
+  quotes: 'quotes',
+  wenyan: 'wenyan',
+  poemquotes: 'poemquotes'
 };
+
+let legacyCacheCleaned = false;
+
+function cleanupLegacyCache() {
+  if (legacyCacheCleaned) return;
+  legacyCacheCleaned = true;
+  try {
+    if (typeof wx === 'undefined' || typeof wx.getStorageInfoSync !== 'function') return;
+    const info = wx.getStorageInfoSync() || {};
+    (info.keys || []).forEach((key) => {
+      if (key.indexOf(LEGACY_CACHE_PREFIX) !== 0 || key.indexOf(CACHE_PREFIX) === 0) return;
+      try {
+        wx.removeStorageSync(key);
+      } catch (e) {
+        // 单个旧 key 删除失败不阻断新缓存
+      }
+    });
+  } catch (e) {
+    // 存储信息不可用时留给正常读写兜底
+  }
+}
+
+cleanupLegacyCache();
 
 function getMeta() {
   return meta;
 }
 
-function fileFor(kind, type) {
-  if (kind === 'cards') return type ? `cards/${type}.json` : '';
+function dirFor(kind, type) {
+  if (kind === 'cards') return type ? `cards/${type}` : '';
   if (kind.indexOf('poems-') === 0) {
     const genre = kind.slice(6);
-    return type ? `poems/${genre}/${type}.json` : `poems/${genre}/index.json`;
+    return genre ? `poems/${genre}` : '';
   }
-  return FILES[kind] || '';
+  return DIRS[kind] || '';
+}
+
+function indexFileFor(kind, type) {
+  const dir = dirFor(kind, type);
+  return dir ? `${dir}/index.json` : '';
+}
+
+function shardFileFor(kind, type, shard) {
+  const dir = dirFor(kind, type);
+  return dir && shard ? `${dir}/${shard}.json` : '';
+}
+
+// 兼容旧调用：fileFor 现在指向列表索引。
+function fileFor(kind, type) {
+  return indexFileFor(kind, type);
 }
 
 function cacheKey(file) {
@@ -3886,11 +3929,55 @@ function utf8Bytes(text) {
   return bytes;
 }
 
+function readCacheMeta() {
+  try {
+    const value = wx.getStorageSync(CACHE_META_KEY);
+    return value && typeof value === 'object' ? value : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function pruneCache(cacheMeta, currentFile) {
+  let keys = Object.keys(cacheMeta);
+  let total = keys.reduce((sum, key) => sum + (cacheMeta[key].bytes || 0), 0);
+  while (total > CACHE_TOTAL_BYTES && keys.length > 1) {
+    const candidates = keys
+      .filter((key) => key !== currentFile)
+      .sort((a, b) => {
+        const ai = cacheMeta[a].index ? 1 : 0;
+        const bi = cacheMeta[b].index ? 1 : 0;
+        if (ai !== bi) return ai - bi;
+        return (cacheMeta[a].at || 0) - (cacheMeta[b].at || 0);
+      });
+    const victim = candidates[0];
+    if (!victim) break;
+    try {
+      wx.removeStorageSync(cacheKey(victim));
+    } catch (e) {
+      // 单个 key 删除失败不阻断后续读取
+    }
+    total -= cacheMeta[victim].bytes || 0;
+    delete cacheMeta[victim];
+    keys = Object.keys(cacheMeta);
+  }
+}
+
 function writeCache(file, items) {
   try {
     const raw = JSON.stringify(items);
-    if (utf8Bytes(raw) > MAX_CACHE_BYTES) return;
-    wx.setStorageSync(cacheKey(file), { at: Date.now(), items });
+    const bytes = utf8Bytes(raw);
+    if (bytes > MAX_CACHE_BYTES) return;
+    const at = Date.now();
+    wx.setStorageSync(cacheKey(file), { at, items });
+    const cacheMeta = readCacheMeta();
+    cacheMeta[file] = {
+      at,
+      bytes,
+      index: /\/index\.json$/.test(file)
+    };
+    pruneCache(cacheMeta, file);
+    wx.setStorageSync(CACHE_META_KEY, cacheMeta);
   } catch (e) {
     // 超过本地存储上限时只保留内存缓存，不阻断阅读
   }
@@ -3909,12 +3996,22 @@ function parsePayload(data) {
   return null;
 }
 
-// kind: cards | figures | events | wars | emperors | dynasty | quotes | wenyan | poemquotes | poems-<genre>
-// type: cards 的分类 key（如 5）
-function load(kind, type, cb) {
-  const file = fileFor(kind, type);
+// 索引是固定列数组 [id, title, meta, summary, shard]；同时兼容旧对象数组。
+function normalizeIndex(data) {
+  if (!Array.isArray(data)) return null;
+  if (!data.length || !Array.isArray(data[0])) return data;
+  return data.map((row) => ({
+    id: row[0] || '',
+    title: row[1] || '',
+    meta: row[2] || '',
+    summary: row[3] || '',
+    shard: row[4] || ''
+  }));
+}
+
+function loadFile(file, cb) {
   if (!file) {
-    if (typeof cb === 'function') cb(new Error('unknown kind'));
+    if (typeof cb === 'function') cb(new Error('unknown file'));
     return;
   }
   if (memory[file]) {
@@ -3961,22 +4058,99 @@ function load(kind, type, cb) {
   });
 }
 
-function find(kind, type, id, cb) {
-  load(kind, type, (err, items) => {
+function loadIndex(kind, type, cb) {
+  const file = indexFileFor(kind, type);
+  loadFile(file, (err, data) => {
+    if (err) {
+      if (typeof cb === 'function') cb(err);
+      return;
+    }
+    const items = normalizeIndex(data);
+    if (!items) {
+      if (typeof cb === 'function') cb(new Error('bad index'));
+      return;
+    }
+    if (typeof cb === 'function') cb(null, items);
+  });
+}
+
+function loadShard(kind, type, shard, cb) {
+  const file = shardFileFor(kind, type, shard);
+  loadFile(file, cb);
+}
+
+function resolveShard(kind, type, shard) {
+  if (kind.indexOf('poems-') === 0) return shard || type || '';
+  return shard || '';
+}
+
+function findIn(items, id) {
+  return (items || []).find((x) => x.id === id);
+}
+
+function findByIndex(kind, type, id, cb) {
+  loadIndex(kind, type, (err, items) => {
     if (err) {
       cb(err);
       return;
     }
-    const item = items.find((x) => x.id === id);
-    cb(item ? null : new Error('not found'), item);
+    const hit = findIn(items, id);
+    if (!hit || !hit.shard) {
+      cb(new Error('not found'));
+      return;
+    }
+    loadShard(kind, type, hit.shard, (shardErr, shardItems) => {
+      if (shardErr) {
+        cb(shardErr);
+        return;
+      }
+      const item = findIn(shardItems, id);
+      cb(item ? null : new Error('not found'), item);
+    });
   });
+}
+
+// kind: cards | figures | events | wars | emperors | dynasty | quotes | wenyan | poemquotes | poems-<genre>
+// type: cards 的分类 key（如 5）；poems-* 可传旧 shard。
+// shard: 新的详情分卷 key（如 00）；不传时按索引查找并自动加载对应分卷。
+function find(kind, type, id, shard, cb) {
+  if (typeof shard === 'function') {
+    cb = shard;
+    shard = '';
+  }
+  const direct = resolveShard(kind, type, shard);
+  if (!direct) {
+    findByIndex(kind, type, id, cb);
+    return;
+  }
+  loadShard(kind, type, direct, (err, items) => {
+    if (!err) {
+      const item = findIn(items, id);
+      if (item) {
+        cb(null, item);
+        return;
+      }
+    }
+    // 分享链接里的 shard 可能过期或被重新分卷；回退到索引重新定位。
+    findByIndex(kind, type, id, cb);
+  });
+}
+
+// 列表加载：只取 index.json，不再拉整类正文。
+function load(kind, type, cb) {
+  loadIndex(kind, type, cb);
 }
 
 module.exports = {
   BASE,
   getMeta,
+  dirFor,
+  indexFileFor,
+  shardFileFor,
   fileFor,
   load,
+  loadIndex,
+  loadShard,
   find
 };
 
@@ -5509,9 +5683,10 @@ Page('project://pages/archive-list/archive-list.js', {
 
   applyFilter() {
     const kw = (this.data.keyword || '').trim().toLowerCase();
+    // 列表索引只保留标题/分类/摘要；全文不再下载，避免首屏拉整类正文。
     const list = kw
       ? this.all.filter((item) =>
-          `${item.title || ''} ${item.meta || ''} ${item.summary || ''} ${item.text || ''}`
+          `${item.title || ''} ${item.meta || ''} ${item.summary || ''}`
             .toLowerCase()
             .indexOf(kw) >= 0
         )
@@ -5552,7 +5727,7 @@ Page('project://pages/archive-list/archive-list.js', {
     const shard = e.currentTarget.dataset.shard || '';
     const type = this.data.kind.indexOf('poems-') === 0 ? shard : this.data.type;
     wx.navigateTo({
-      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
+      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&shard=${encodeURIComponent(shard)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
     });
   },
 
@@ -5699,6 +5874,8 @@ Page('project://pages/archive-detail/archive-detail.js', {
     this.kind = opts.kind || 'figures';
     this.type = opts.type || '';
     this.id = safeTitle(opts.id, '');
+    // 列表页会带上 shard；旧分享链接没有 shard 时，find 会先用索引定位。
+    this.shard = opts.shard || (this.kind.indexOf('poems-') === 0 ? this.type : '');
     this.setData({
       kicker: safeTitle(opts.title, this.fallbackTitle(this.kind, this.type)),
       cover: archiveImages.cover(this.kind, this.type),
@@ -5736,11 +5913,12 @@ Page('project://pages/archive-detail/archive-detail.js', {
       showSections: false,
       showTranslation: false
     });
-    apk.find(this.kind, this.type, this.id, (err, item) => {
+    apk.find(this.kind, this.type, this.id, this.shard, (err, item) => {
       if (err || !item) {
         this.setData({ loading: false, error: '资料加载失败，请检查网络后重试' });
         return;
       }
+      this.shard = item.shard || this.shard;
       const kicker = this.data.kicker;
       const blocks = blocksOf(item.text);
       const sections = sectionsOf(item.text);
@@ -5782,7 +5960,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
     const item = this.data.item;
     return {
       title: item ? `史页 · ${item.title}` : '史页 · 资料库',
-      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
     };
   }
 });

@@ -125,6 +125,8 @@ Page({
     this.kind = opts.kind || 'figures';
     this.type = opts.type || '';
     this.id = safeTitle(opts.id, '');
+    // 列表页会带上 shard；旧分享链接没有 shard 时，find 会先用索引定位。
+    this.shard = opts.shard || (this.kind.indexOf('poems-') === 0 ? this.type : '');
     this.setData({
       kicker: safeTitle(opts.title, this.fallbackTitle(this.kind, this.type)),
       cover: archiveImages.cover(this.kind, this.type),
@@ -162,11 +164,12 @@ Page({
       showSections: false,
       showTranslation: false
     });
-    apk.find(this.kind, this.type, this.id, (err, item) => {
+    apk.find(this.kind, this.type, this.id, this.shard, (err, item) => {
       if (err || !item) {
         this.setData({ loading: false, error: '资料加载失败，请检查网络后重试' });
         return;
       }
+      this.shard = item.shard || this.shard;
       const kicker = this.data.kicker;
       const blocks = blocksOf(item.text);
       const sections = sectionsOf(item.text);
@@ -208,7 +211,7 @@ Page({
     const item = this.data.item;
     return {
       title: item ? `史页 · ${item.title}` : '史页 · 资料库',
-      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
     };
   }
 });
