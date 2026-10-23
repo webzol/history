@@ -20,11 +20,11 @@
         </view>
         <view class="hstat">
           <text class="hnum">{{stats.figuresText}}</text>
-          <text class="hlab">历代人物</text>
+          <text class="hlab">人物</text>
         </view>
         <view class="hstat">
           <text class="hnum">{{stats.eventsText}}</text>
-          <text class="hlab">历史事件</text>
+          <text class="hlab">事件</text>
         </view>
       </view>
     </view>

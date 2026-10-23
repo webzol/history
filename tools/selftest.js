@@ -700,15 +700,39 @@ console.log('== 资料库 ==');
   eq(archive.data.categories.length, 9, '资料库九个辞条分类');
   eq(archive.data.sections.length, 13, '资料库十三个人物/事件/文献入口');
   eq(archive.data.categories[0].name, '职官辞典', '资料库分类按数量排序');
-  eq(archive.data.rows.length, 4, '资料库首屏只展示四个分类组');
+  eq(archive.data.rows.length, 5, '资料库首屏展示五个分类组');
   eq(archive.data.rows[0].name, '典籍辞条', '资料库首组为典籍辞条');
+  eq(archive.data.groups.length, 5, '资料库五个分类组');
+  eq(archive.data.groups[1].name, '人物', '人物单独成组');
+  eq(archive.data.groups[1].countText, '5,242', '人物组数量');
+  eq(archive.data.groups[2].name, '事件', '事件单独成组');
+  eq(archive.data.groups[2].countText, '1,200', '事件组数量');
+  eq(archive.data.groups[3].name, '文献', '文献单独成组');
+  eq(archive.data.groups[3].countText, '4,566', '文献组数量');
+  eq(archive.data.groups[4].name, '诗文', '诗文单独成组');
+  eq(archive.data.groups[4].countText, '14,772', '诗文组数量');
+  eq(archive.data.stats.figuresText, '5,242', '首屏人物统计与人物组一致');
+  eq(archive.data.stats.eventsText, '1,200', '首屏事件统计与事件组一致');
 
   tap(archive, 'onToggle', { key: 'cards' });
   eq(archive.data.openKey, 'cards', '展开典籍辞条');
-  eq(archive.data.rows.length, 13, '展开后显示九个辞条分类');
+  eq(archive.data.rows.length, 14, '展开后显示九个辞条分类');
   eq(archive.data.rows[1].name, '职官辞典', '展开后首条为职官辞典');
   tap(archive, 'onToggle', { key: 'cards' });
-  eq(archive.data.rows.length, 4, '再次点击收起分类组');
+  eq(archive.data.rows.length, 5, '再次点击收起分类组');
+
+  tap(archive, 'onToggle', { key: 'people' });
+  eq(archive.data.rows.length, 7, '展开人物组显示两个入口');
+  eq(archive.data.rows[2].name, '历代人物', '人物组首条为历代人物');
+  tap(archive, 'onToggle', { key: 'people' });
+
+  tap(archive, 'onToggle', { key: 'events' });
+  eq(archive.data.rows.length, 8, '展开事件组显示三个入口');
+  ok(
+    archive.data.rows.some((row) => row.name === '历代战争'),
+    '事件组包含历代战争'
+  );
+  tap(archive, 'onToggle', { key: 'events' });
 
   tap(archive, 'onToggle', { key: 'poems' });
   ok(

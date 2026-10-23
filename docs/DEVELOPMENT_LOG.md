@@ -1491,3 +1491,28 @@ miniprogram/data/history.js
 - `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**，新增 `28-archive-cards-open`。
 - 仍需真机确认：折叠展开后的滚动位置、资料库首次加载耗时、微信原生胶囊实际位置、320px 窄屏布局与底部安全区。
+
+---
+
+## 2026-10-23 · 第三十一轮：人物 / 事件 / 文献 / 诗文 单独成组
+
+**用户反馈**：资料库首页应按「人物 · 事件 · 文献 · 诗文」分别展示，不再把人物和事件合成一组。
+
+**调整**
+
+- 资料库首页分类组由 4 组调整为 5 组，保留典籍辞条，并把人物、事件拆开：
+  - 典籍辞条：9 类，13,287 条
+  - 人物：2 类（历代人物 4,869 / 历代帝王 373），5,242 条
+  - 事件：3 类（历史事件 705 / 历代战争 466 / 三国纪事 29），1,200 条
+  - 文献：2 类（名句赏析 677 / 文言辞条 3,889），4,566 条
+  - 诗文：6 类（诗文名句 3,955 / 诗 2,938 / 词 4,523 / 文 2,991 / 曲 338 / 赋 27），14,772 条
+- 五组合计仍为 39,067 条，数据未增删；首页首屏只显示 5 个组头，默认全部收起。
+- 首屏统计改为 `13,287 / 5,242 / 1,200`（典籍辞条 / 人物 / 事件），与分组数量一致，标签由「历代人物 / 历史事件」改为「人物 / 事件」。
+- `GROUP_DEFS` / `GROUP_KEYS` 拆分人物与事件；折叠、展开、单组互斥和进入列表逻辑不变。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1576 / FAIL 0**；新增五组名称/数量、人物组首条、事件组包含历代战争、首屏统计与分组一致等断言。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**；`21-archive.png` 已更新为五组首屏，`28-archive-cards-open.png` 仍正常。
+- 仍需真机确认五组首屏高度、展开后的滚动位置和原生胶囊位置。

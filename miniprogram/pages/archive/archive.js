@@ -14,15 +14,17 @@ function safeTitle(value, fallback) {
 
 const GROUP_DEFS = [
   { key: 'cards', name: '典籍辞条', desc: '职官、典故、成语与诗词名句' },
-  { key: 'people', name: '人物与事件', desc: '人物、事件、帝王、战争与三国纪事' },
-  { key: 'poems', name: '诗文', desc: '名句与诗、词、文、曲、赋全文' },
-  { key: 'docs', name: '文献', desc: '名句赏析与文言辞条' }
+  { key: 'people', name: '人物', desc: '历代人物与帝王世系' },
+  { key: 'events', name: '事件', desc: '历史事件、战争与三国纪事' },
+  { key: 'docs', name: '文献', desc: '名句赏析与文言辞条' },
+  { key: 'poems', name: '诗文', desc: '名句与诗、词、文、曲、赋全文' }
 ];
 
 const GROUP_KEYS = {
-  people: ['figures', 'events', 'emperors', 'wars', 'dynasty'],
-  poems: ['poemquotes', 'poems-shi', 'poems-ci', 'poems-wen', 'poems-qu', 'poems-fu'],
-  docs: ['quotes', 'wenyan']
+  people: ['figures', 'emperors'],
+  events: ['events', 'wars', 'dynasty'],
+  docs: ['quotes', 'wenyan'],
+  poems: ['poemquotes', 'poems-shi', 'poems-ci', 'poems-wen', 'poems-qu', 'poems-fu']
 };
 
 function buildRows(groups, openKey) {
@@ -110,6 +112,12 @@ Page({
         items
       };
     });
+    const groupByKey = {};
+    groups.forEach((group) => {
+      groupByKey[group.key] = group;
+    });
+    stats.figuresText = fmt(groupByKey.people.count);
+    stats.eventsText = fmt(groupByKey.events.count);
     this.groups = groups;
     this.setData({
       stats,
