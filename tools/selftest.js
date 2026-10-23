@@ -309,18 +309,23 @@ console.log('== 数据完整性 ==');
   eq(eraImages.eraImage('民国'), '/assets/paintings/landscape.jpg', '时代配图 · 民国用千里江山图');
   eq(eraImages.eraImage('近现代'), '/assets/paintings/landscape.jpg', '时代配图 · 近现代用千里江山图');
   eq(eraImages.eraImage('新中国'), '/assets/paintings/modern.jpg', '时代配图 · 新中国用开国大典');
-  eq(eraImages.eraImage('辽'), '/assets/palace.jpg', '时代配图 · 无专属绘画回退宫阙');
+  eq(eraImages.eraImage('辽'), '/assets/paintings/liao.jpg', '时代配图 · 辽代有专属绘画');
+  eq(eraImages.eraImage('秦'), '/assets/paintings/qin.jpg', '时代配图 · 秦代有专属绘画');
+  eq(eraImages.eraImage('元'), '/assets/paintings/yuan.jpg', '时代配图 · 元代有专属绘画');
   eq(eraImages.personThumb('西汉', 0), '/assets/thumbs/han-1.jpg', '人物缩略图 · 西汉轮换起点');
   eq(eraImages.personThumb('西汉', 1), '/assets/thumbs/han-2.jpg', '人物缩略图 · 西汉第二张');
   eq(eraImages.personThumb('民国', 0), '/assets/thumbs/republic-1.jpg', '人物缩略图 · 民国用山河细部');
-  eq(eraImages.personThumb('辽', 0), '/assets/palace.jpg', '人物缩略图 · 无专属绘画回退宫阙');
+  eq(eraImages.personThumb('辽', 0), '/assets/thumbs/liao-1.jpg', '人物缩略图 · 辽代有专属细部');
+  eq(eraImages.personThumb('战国', 0), '/assets/thumbs/zhanguo-1.jpg', '人物缩略图 · 战国有专属细部');
   let thumbCount = 0;
-  ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic'].forEach((base) => {
+  ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
+     'shanggu', 'xia', 'shang', 'zhou', 'chunqiu', 'zhanguo', 'qin', 'sanguo',
+     'xijin', 'sui', 'wudai', 'yuan', 'liao', 'xixia', 'jin'].forEach((base) => {
     [1, 2, 3, 4].forEach((n) => {
       if (fs.existsSync(path.join(ROOT, `/assets/thumbs/${base}-${n}.jpg`))) thumbCount += 1;
     });
   });
-  eq(thumbCount, 28, '人物缩略图 7 组 × 4 张齐备');
+  eq(thumbCount, 88, '人物缩略图 22 组 × 4 张齐备');
 
   // 远端 data/history.json 应带 builtAt 版本戳
   try {
@@ -1022,7 +1027,10 @@ console.log('== 事件详情 ==');
   eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：同代人物 4 张缩略图轮换');
 
   p.onLoad({ id: 'qidan-916' });
-  eq(p.data.headImg, '/assets/palace.jpg', '事件头卡：无专属绘画时代回退水墨宫阙');
+  eq(p.data.headImg, '/assets/paintings/liao.jpg', '事件头卡：辽代配专属绘画');
+  
+  p.onLoad({ id: 'fen-shu' });
+  eq(p.data.headImg, '/assets/paintings/qin.jpg', '事件头卡：秦代配专属绘画');
 
   p.onLoad({ id: 'mobei-119' });
   eq(p.data.relatedPersons.map((x) => x.id), ['wei-qing', 'huo-qubing'], '漠北之战反查列出卫青与霍去病');

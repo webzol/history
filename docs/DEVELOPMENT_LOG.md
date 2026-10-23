@@ -1651,3 +1651,14 @@ miniprogram/data/history.js
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
+
+## 2026-10-23 · 补全 14 个无专属绘画时代的朝代配画（人物/事件"有事件但缺图"清零回退）
+
+- 背景：72 位有 `relatedEvents` 的人物中 47 位时代有专属绘画，25 位（夏/商/西周/春秋/战国/秦/三国/西晋/隋/五代十国/元/辽/西夏/金）时代无绘画、人物页头卡与相关史事缩略图全部回退 `palace.jpg`。
+- 新增 `miniprogram/assets/paintings/` 15 张：shanggu/xia/shang/zhou/chunqiu/zhanguo/qin/sanguo/xijin/sui/wudai/yuan/liao/xixia/jin（百度图搜 thumbURL 直下，PIL 压至 640 内、JPEG q74），每张均经目检验收（换图剔除带水印/大标题条/明显错位的候选）。
+- 新增 `miniprogram/assets/thumbs/` 60 张（15 画 × 4 个 160×160 细部，JPEG q72），沿用既有派生裁切约定（`tools/add_era_paintings.py` 可复现；Bing 旧 `m="..."` 接口已失效，改走百度通道）。
+- `utils/eraImages.js`：`ERA_IMAGES` / `THUMB_BASE` 补全上述时代映射；未知朝代仍回退 `palace.jpg`。
+- `tools/selftest.js`：`辽/秦/元/战国` 专属画图断言、缩略图 22 组 × 4 = 88 张、`qidan-916/fen-shu` 头卡断言同步更新。
+- 文档：`SOURCES.md` 登记 15 张新画与 60 张派生缩略图（均为未确认授权，上线前需审校）；`AGENTS.md §5` 回退说明更新。
+- 验证：`node tools/selftest.js` PASS / FAIL 0；`python tools/validate_miniprogram.py` 通过。
+- 遗留：15 张新画未逐张确认授权（标注"未确认授权"）；`ui/preview/era_refetch_sheet*.jpg` 为目检临时产物，不提交。
