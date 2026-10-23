@@ -1680,6 +1680,14 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 人物图全站不裁人：aspectFit + 修复预览 harness 模块缺失
+
+- 用户反馈人物图被裁成半张。排查：人物页头卡垫底（`.p-bg`）与事件页装裱画片（`.e-fig-img`）槽位与源图比例不符，`aspectFill` 裁切掉人物。
+- 改 `aspectFit`（完整显示、等比缩放）：人物页头卡 46% 透明垫底（留白处透出纸底，不突兀）、事件页装裱画片（留白契合装裱美学，槽底已有 `#F3EFE6` 衬色）。方形小缩略图（行图 72/104rpx）源图全为方图无裁切，保持 `aspectFill`；朝代 hero、发现页朝代卡等全幅山水裁切是设计意图，不动。
+- **修复预览 harness 自 artRemote 起全挂**：`tools/build_preview.js` 的 utils 打包清单是手写的，漏了新增的 `utils/artRemote.js` / `utils/identity.js`，浏览器预览报 `SRC[full] is not a function`，28 张截图全为错误页。补齐两模块后截图恢复。**教训：往 `utils/` 加新模块要同步登记 `build_preview.js`，selftest 不覆盖这条链路。**
+- 自检：`preview_shots` 28 张重拍，抽查苏轼/鲁迅（人物画像完整露出）、澶渊之盟/郑和下西洋（装裱画片整幅不裁）确认人物不被裁。
+- 验证：`node tools/selftest.js` PASS 1649 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+
 ## 2026-10-23 · 我的页随机身份：20 张历史风格头像变体 + 字号式随机昵称
 
 - 原「我的」页头卡是固定史官头像 + 写死昵称「史页客」；本次改为**随机身份**：

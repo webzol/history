@@ -15,7 +15,7 @@
     </view>
 
     <view class="head-card">
-      <image class="p-bg" wx:if="{{headImg}}" src="{{headImg}}" mode="aspectFill"></image>
+      <image class="p-bg" wx:if="{{headImg}}" src="{{headImg}}" mode="aspectFit"></image>
       <view class="p-veil"></view>
       <view class="p-copy">
         <text class="p-name">{{person.name}}</text>

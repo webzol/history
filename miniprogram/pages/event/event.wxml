@@ -26,7 +26,7 @@
         </view>
       </view>
       <view class="e-fig" wx:if="{{headImg}}">
-        <image class="e-fig-img" src="{{headImg}}" mode="aspectFill"></image>
+        <image class="e-fig-img" src="{{headImg}}" mode="aspectFit"></image>
       </view>
     </view>
 

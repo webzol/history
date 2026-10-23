@@ -48,6 +48,8 @@ parts.push(wrapJs('utils/font.js', read('utils/font.js')));
 parts.push(wrapJs('utils/entries.js', read('utils/entries.js')));
 parts.push(wrapJs('utils/apkData.js', read('utils/apkData.js')));
 parts.push(wrapJs('utils/archiveImages.js', read('utils/archiveImages.js')));
+parts.push(wrapJs('utils/artRemote.js', read('utils/artRemote.js')));
+parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>
