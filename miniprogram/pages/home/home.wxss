@@ -550,9 +550,7 @@
   from { transform: translateY(42%); }
   to { transform: translateY(0); }
 }
-
-
-/* —— 页面进场动效（宣纸水墨气质：克制、缓出、不喧宾夺主）—— */
+/* —— 页面进场动效（宣纸水墨气质：克制、缓出、不喧宾夺主；仅用类选择器，兼容 WXSS 编译器）—— */
 
 /* 宣纸底：墨韵沉降（缩放 1.03→1、透明度 0→96%，像宣纸缓缓铺定） */
 .paper-bg {
@@ -563,20 +561,19 @@
   from { opacity: 0; transform: scale(1.03); }
 }
 
-/* 内容区块按文档顺序依次淡入上浮；fill: backwards 保证结束后回到自然态，
+/* 内容区块按视觉顺序依次淡入上浮；fill: backwards 结束后回自然态，
    不锁死 transform（卡片按压 :active 缩放仍可用） */
-.screen > * {
+.topbar, .date, .hero, .quick, .tih, .section-head, .era-row, .modern-card {
   animation: riseIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
 }
-
-.screen > :nth-child(1) { animation-delay: 0.08s; } /* topbar */
-.screen > :nth-child(2) { animation-delay: 0.16s; } /* date */
-.screen > :nth-child(3) { animation-delay: 0.24s; } /* hero */
-.screen > :nth-child(4) { animation-delay: 0.32s; } /* quick */
-.screen > :nth-child(5) { animation-delay: 0.40s; } /* tih（异步出现时同样柔和淡入）/ section-head */
-.screen > :nth-child(6) { animation-delay: 0.46s; }
-.screen > :nth-child(7) { animation-delay: 0.52s; }
-.screen > :nth-child(8) { animation-delay: 0.58s; }
+.topbar { animation-delay: 0.08s; }
+.date { animation-delay: 0.16s; }
+.hero { animation-delay: 0.24s; }
+.quick { animation-delay: 0.32s; }
+.tih { animation-delay: 0.40s; }
+.section-head { animation-delay: 0.46s; }
+.era-row { animation-delay: 0.52s; }
+.modern-card { animation-delay: 0.58s; }
 
 @keyframes riseIn {
   from { opacity: 0; transform: translateY(26rpx); }
@@ -607,9 +604,7 @@
 
 /* 无障碍：系统开启「减弱动态效果」时关闭进场动画 */
 @media (prefers-reduced-motion: reduce) {
-  .paper-bg,
-  .screen > *,
-  .hero-art {
+  .paper-bg, .topbar, .date, .hero, .quick, .tih, .section-head, .era-row, .modern-card, .hero-art {
     animation: none !important;
   }
 }
