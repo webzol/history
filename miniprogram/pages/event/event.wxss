@@ -98,10 +98,18 @@
   white-space: nowrap;
 }
 
-.top-title {
+.top-center {
   position: absolute;
-  left: 54%;
+  left: 50%;
   transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.top-title {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
@@ -109,25 +117,10 @@
 }
 
 .top-seal {
-  position: absolute;
-  right: 200rpx;
-  top: 0;
-  bottom: 0;
-  margin: auto 0;
-  width: 44rpx;
-  height: 50rpx;
-  background: #A34A3E;
-  color: #FFF8EF;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(2deg);
-}
-
-.top-seal.seal-modern {
-  background: #7E9A9A;
+  width: 40rpx;
+  height: 44rpx;
+  opacity: 0.92;
+  transform: rotate(3deg);
 }
 
 .head-card {

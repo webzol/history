@@ -10,8 +10,10 @@
         <view class="back-divider"></view>
         <text class="back-label">返回</text>
       </view>
-      <text class="top-title">事件</text>
-      <text class="top-seal {{event.mode === 'modern' ? 'seal-modern' : ''}}">{{seal}}</text>
+      <view class="top-center">
+        <text class="top-title">事件</text>
+        <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+      </view>
     </view>
 
     <view class="head-card {{event.mode === 'modern' ? 'head-modern' : ''}}">
@@ -51,7 +53,7 @@
         bindtap="goPerson"
       >
         <view class="p-thumb-wrap">
-          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFill"></image>
+          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit"></image>
           <image
             wx:if="{{item.img !== item.fallback}}"
             class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}"

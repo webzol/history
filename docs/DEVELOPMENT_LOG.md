@@ -1680,6 +1680,17 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 其时其人改人物整幅画 + 事件页顶栏居中标题配史载印
+
+- 用户反馈事件页「其时其人」头像显示的是画的局部碎片（题字/沙地/箭杆），认不出人。
+- `utils/eraImages.js` `personImageThumb` 优先级反转：**人物整幅画（本地 `personart/` 480×360 > 远端 `data/img/persons/` 480×360）> 细部裁切（`thumbs/<id>.jpg`，只作兜底）> 朝代细部**——细部是画上抠的局部，可能完全不含人。
+- 行图槽位改 `aspectFit` 完整显示：事件页 `.p-thumb-bg/.p-thumb-img`（米色槽底衬留白）、收藏/足迹/我的 `.row-thumb`（3 页）。
+- 自检：浏览器 harness 打开 `#event?id=han-wudi` 实测——汉武帝/张骞/卫青/霍去病走 `personart` 整幅画、司马迁走远端画像，全部完整不裁；`naturalWidth` 逐张核对为 480×360/远端图。
+- 事件页顶栏：标题「事件」真正居中（`.top-center` 绝对居中，实测中心点 195px=页面正中），右侧紧跟 `assets/seal.png` 古代「史载」印（40×44rpx 微倾）——替换掉原 CSS 手绘红方块字印（违反「印章一律用 seal.png」规范）；`seal-modern` 双色变体随之移除。
+- selftest：2 条断言随优先级更新（zhang-qian 小图改断 personart 整幅、5 图不重复文案修正）；PASS 1649 / FAIL 0。
+- 验证：`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+- 遗留：其余 8 个详情页顶栏仍是「左 54% 标题 + 右 200rpx CSS 印」，如需统一成「居中标题 + seal.png」另行处理。
+
 ## 2026-10-23 · 人物图全站不裁人：aspectFit + 修复预览 harness 模块缺失
 
 - 用户反馈人物图被裁成半张。排查：人物页头卡垫底（`.p-bg`）与事件页装裱画片（`.e-fig-img`）槽位与源图比例不符，`aspectFill` 裁切掉人物。

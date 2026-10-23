@@ -131,7 +131,9 @@ function personImage(id, era) {
 }
 
 function personImageThumb(id, era, index) {
-  return PERSON_THUMB[id] || remotePerson(id) || personThumb(era, index);
+  // 人物整幅画优先（本地 480×360 > 远端 480×360），细部裁切只是兜底——
+  // 细部是画上抠的局部，可能只有题字/山水碎片，认不出人
+  return PERSON_ART[id] || remotePerson(id) || PERSON_THUMB[id] || personThumb(era, index);
 }
 
 function eventImage(id, era) {
