@@ -1676,3 +1676,13 @@ miniprogram/data/history.js
 - 首页 60s 板块 `loadTih()` 展示上限 6 → 3（`miniprogram/pages/home/home.js`）；`tihTotal` 仍为全量，WXML「共 N 条 · 点击条目看详情」提示不变。
 - `tools/selftest.js`：mock 增至 4 条有效项，新增「展示 3 / 总数 4」断言。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0。
+
+## 2026-10-23 · 首页进场动效（宣纸晕染 + 区块浮入 + 卡片按压）
+
+- `miniprogram/pages/home/home.wxss` 追加克制的水墨进场动效（纯 CSS，不改 WXML 结构、不动 JS）：
+  - 宣纸底 `.paper-bg`：墨韵沉降（scale 1.03→1 + 透明度 0→96%，0.9s）。
+  - `.screen` 八个区块按文档顺序依次淡入上浮（riseIn 0.55s，阶梯延迟 0.08–0.58s；`fill: backwards` 结束后回自然态，不影响按压反馈；「历史上的今天」异步插入时同样柔和淡入）。
+  - hero 底画 `.hero-art`：9s 往复微幅轻漂（Ken Burns，scale 1→1.045），水墨呼吸感。
+  - 卡片按压：`.hero/.quick-item/.era-card/.modern-card` 按压缩放 0.98、`.tih-item` 0.99（transition 0.18s）。
+  - `@media (prefers-reduced-motion: reduce)` 下关闭全部进场动画（无障碍兜底）。
+- 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过。
