@@ -1459,3 +1459,35 @@ miniprogram/data/history.js
 - `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
 - `node tools/build_preview.js` / `node tools/preview_shots.js`：27 张截图成功；`21-archive.png` 已更新为两列布局。
 - 仍需在微信开发者工具/真机确认原生胶囊位置、底部安全区与分类卡在窄屏（320px）下的文字换行。
+
+---
+
+## 2026-10-23 · 第三十轮：资料库分类折叠 + 全站顶栏避让
+
+**用户需求**：继续优化 UI/交互，不要一进页面就铺开大量分类/条目；按分类组织；逐页检查并自测。
+
+**资料库首页**
+
+- 首屏从「9 个辞条卡 + 13 行入口」改为 **4 个默认收起的分类组**：
+  - 典籍辞条：9 类，13,287 条
+  - 人物与事件：5 类，6,442 条
+  - 诗文：6 类，14,772 条
+  - 文献：2 类，4,566 条
+- 四组合计 39,067 条；每组显示序号、条目数、条数与一句说明，点击组头展开/收起，一次只展开一组。
+- 展开后使用单列入口行（名称 / 示例或说明 / 条数 / 箭头），避免再次出现密集双列；保留 `:active` 按下态与箭头旋转动效。
+- `archive.js` 新增 `GROUP_DEFS`、`GROUP_KEYS`、`buildRows`、`onToggle`、`onEntry`；保留 `categories`、`sections`、`onCategory`、`onSection` 兼容旧调用和自测。
+- `archive.wxml` 用扁平 `rows` 渲染组头和条目，规避嵌套 `wx:for-item` 在旧基础库/预览 harness 中的差异。
+
+**顶栏统一**
+
+- 详情/列表页标题不再带「史页 · 」前缀，改为短页面名：人物 / 事件 / 朝代 / 搜索 / 收藏 / 足迹 / 资料库。
+- 小印统一 `position: absolute; right: 200rpx`，位于标题右侧、微信原生胶囊左侧；`archive` 首页继续不显示小印。
+- `app.wxss` 增加 `@media (max-width: 360px)`：隐藏 `.page .top-seal`，并把 `.page .top-title` 略移到 `left: 56%`，让窄屏优先保证标题与返回胶囊。
+- 复核 `09-search`、`12-person-sushi`、`14-event-chanyuan`、`16-period-han`、`21-archive`、`22-archive-list`、`23-archive-detail`、`28-archive-cards-open`：标题不再被小印压字，展开态列表与底部栏正常。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1561 / FAIL 0**；新增「首屏 4 组」「展开 9 类」「再次收起」「诗文组入口」「折叠项进列表」断言。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**，新增 `28-archive-cards-open`。
+- 仍需真机确认：折叠展开后的滚动位置、资料库首次加载耗时、微信原生胶囊实际位置、320px 窄屏布局与底部安全区。

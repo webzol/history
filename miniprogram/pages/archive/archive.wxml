@@ -6,7 +6,7 @@
         <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
         <text class="back-label">返回</text>
       </view>
-      <text class="top-title">史页 · 资料库</text>
+      <text class="top-title">资料库</text>
     </view>
 
     <view class="hero">
@@ -30,44 +30,44 @@
     </view>
 
     <view class="section-head">
-      <text class="section-title">典籍辞条</text>
-      <text class="section-link">{{stats.categories}} 类</text>
+      <text class="section-title">按类翻阅</text>
+      <text class="section-link">{{openKey ? '再点收起' : '点击展开'}}</text>
     </view>
-    <view class="cat-grid">
-      <view
-        wx:for="{{categories}}"
-        wx:key="key"
-        class="cat-card"
-        data-key="{{item.key}}"
-        data-name="{{item.name}}"
-        bindtap="onCategory"
-      >
-        <text class="cat-name">{{item.name}}</text>
-        <text class="cat-count">{{item.countText}} 条</text>
-        <text class="cat-sample">{{item.sample}}</text>
-      </view>
-    </view>
-
-    <view class="section-head">
-      <text class="section-title">人物 · 事件 · 文献 · 诗文</text>
-      <text class="section-link">按需加载</text>
-    </view>
-    <view class="sec-list">
-      <view
-        wx:for="{{sections}}"
-        wx:key="key"
-        class="sec-row"
-        data-key="{{item.key}}"
-        data-name="{{item.name}}"
-        bindtap="onSection"
-      >
-        <view class="sec-main">
-          <text class="sec-name">{{item.name}}</text>
-          <text class="sec-desc">{{item.desc}}</text>
+    <view class="group-list">
+      <block wx:for="{{rows}}" wx:key="key">
+        <view
+          wx:if="{{item.rowType === 'group'}}"
+          class="group-card {{item.open ? 'open' : ''}}"
+          data-key="{{item.groupKey}}"
+          bindtap="onToggle"
+        >
+          <text class="group-index">{{item.index}}</text>
+          <view class="group-main">
+            <view class="group-title-row">
+              <text class="group-name">{{item.name}}</text>
+              <text class="group-meta">{{item.meta}}</text>
+            </view>
+            <text class="group-desc">{{item.desc}}</text>
+          </view>
+          <text class="group-count">{{item.countText}}</text>
+          <text class="group-chevron {{item.open ? 'open' : ''}}">›</text>
         </view>
-        <text class="sec-count">{{item.countText}}</text>
-        <text class="sec-arrow">›</text>
-      </view>
+        <view
+          wx:elif="{{item.rowType === 'item'}}"
+          class="entry-row"
+          data-kind="{{item.kind}}"
+          data-type="{{item.type}}"
+          data-name="{{item.name}}"
+          bindtap="onEntry"
+        >
+          <view class="entry-main">
+            <text class="entry-name">{{item.name}}</text>
+            <text class="entry-desc">{{item.desc}}</text>
+          </view>
+          <text class="entry-count">{{item.countText}}</text>
+          <text class="entry-arrow">›</text>
+        </view>
+      </block>
     </view>
 
     <view class="note">资料为原型整理内容，仅作阅读与内容迁移；正式发布前请逐条核对史实与授权。</view>

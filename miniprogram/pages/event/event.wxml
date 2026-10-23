@@ -6,7 +6,7 @@
         <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
         <text class="back-label">返回</text>
       </view>
-      <text class="top-title">史页 · 事件</text>
+      <text class="top-title">事件</text>
       <text class="top-seal {{event.mode === 'modern' ? 'seal-modern' : ''}}">{{seal}}</text>
     </view>
 

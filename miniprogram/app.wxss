@@ -60,3 +60,9 @@ view, text, image {
 .fs-m { --fs: 1; }
 .fs-l { --fs: 1.14; }
 .fs-xl { --fs: 1.28; }
+
+/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */
+@media (max-width: 360px) {
+  .page .top-seal { display: none; }
+  .page .top-title { left: 56%; }
+}

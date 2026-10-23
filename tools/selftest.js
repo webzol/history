@@ -700,6 +700,27 @@ console.log('== 资料库 ==');
   eq(archive.data.categories.length, 9, '资料库九个辞条分类');
   eq(archive.data.sections.length, 13, '资料库十三个人物/事件/文献入口');
   eq(archive.data.categories[0].name, '职官辞典', '资料库分类按数量排序');
+  eq(archive.data.rows.length, 4, '资料库首屏只展示四个分类组');
+  eq(archive.data.rows[0].name, '典籍辞条', '资料库首组为典籍辞条');
+
+  tap(archive, 'onToggle', { key: 'cards' });
+  eq(archive.data.openKey, 'cards', '展开典籍辞条');
+  eq(archive.data.rows.length, 13, '展开后显示九个辞条分类');
+  eq(archive.data.rows[1].name, '职官辞典', '展开后首条为职官辞典');
+  tap(archive, 'onToggle', { key: 'cards' });
+  eq(archive.data.rows.length, 4, '再次点击收起分类组');
+
+  tap(archive, 'onToggle', { key: 'poems' });
+  ok(
+    archive.data.rows.some((row) => row.name === '诗文全文 · 诗'),
+    '展开诗文组显示诗文入口'
+  );
+  resetWifiStack();
+  tap(archive, 'onEntry', { kind: 'poems-shi', type: '', name: '诗文全文 · 诗' });
+  ok(
+    last('navigateTo').url.indexOf('/pages/archive-list/archive-list?kind=poems-shi') === 0,
+    '资料库折叠项进列表页'
+  );
 
   resetWifiStack();
   tap(archive, 'onCategory', { key: '12', name: '诸子百家名句赏析' });

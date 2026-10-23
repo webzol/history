@@ -41,7 +41,8 @@ const targets = [
   ['24-archive-wenyan', `archive-list?shot=1&kind=wenyan&title=${esc('文言辞条')}`],
   ['25-archive-poemquote', `archive-detail?shot=1&kind=poemquotes&title=${esc('诗文名句')}&id=hpq-1`],
   ['26-archive-poems', `archive-list?shot=1&kind=poems-shi&title=${esc('诗文全文 · 诗')}`],
-  ['27-archive-poem-detail', `archive-detail?shot=1&kind=poems-shi&type=00&title=${esc('诗文全文 · 诗')}&id=hpw-10020`]
+  ['27-archive-poem-detail', `archive-detail?shot=1&kind=poems-shi&type=00&title=${esc('诗文全文 · 诗')}&id=hpw-10020`],
+  ['28-archive-cards-open', `archive?shot=1&s=${esc('click:.group-card')}`]
 ];
 
 let miss = 0;

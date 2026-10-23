@@ -7,7 +7,7 @@
         <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
         <text class="back-label">返回</text>
       </view>
-      <text class="top-title">史页 · 搜索</text>
+      <text class="top-title">搜索</text>
       <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>
 

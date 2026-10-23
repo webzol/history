@@ -78,6 +78,11 @@
 }
 
 .top-seal {
+  position: absolute;
+  right: 200rpx;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
   width: 34rpx;
   height: 58rpx;
   transform: rotate(2deg);
