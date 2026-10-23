@@ -1545,3 +1545,27 @@ miniprogram/data/history.js
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
 - 已核对 `21-archive.png`（五组题图）、`22-archive-list.png`（分类横幅 + 列表）、`23-archive-detail.png`（详情题图）、`24–27` 诗文/文言题图、`28-archive-cards-open.png`（展开态）。
 - 仍需真机确认：题图在 320px 窄屏的裁切、长分类名的省略、图片加载抖动与顶部胶囊位置。
+
+---
+
+## 2026-10-23 · 第三十三轮：资料详情阅读版式
+
+**用户反馈**：`pages/archive-detail/archive-detail` 页面 UI 需要优化展示。
+
+**调整**
+
+- 正文不再整块铺开：解析 `【原文】/【注释】/【译文】/【赏析】` 与 `### 题解` 等内嵌小标题，按段渲染；小标题用宋体朱砂 + 细渐变线，`原文` 用宋体大行距，`注释/译文` 降一级字号和对比。
+- 没有小标题的条目继续按原段落兜底；`item.translation` 与正文里的 `译文` 段去重，避免重复展示。
+- 资料卡从整行文字改为 2 列键值网格，显示条目数；字段名与值分层，无字段名的长内容自动整行。
+- 头卡分类标签改为药丸样式，meta 加虚线分隔，题图底部渐隐到暖白卡片；来源行改为浅米底注。
+- WXML 嵌套循环统一使用默认 `item`，避开预览 harness 对 `wx:for-item` 的兼容差异；无 `source` 时不显示空来源行。
+- 数据与题图仍走 `utils/apkData.js` / `utils/archiveImages.js`，不逐条配图。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1589 / FAIL 0**；新增名句正文分段、原文小标题、结构化开关、诗文名句资料卡键值、诗文原文段断言。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
+- 已核对 `23-archive-detail.png`（四段式正文 + 来源底注）、`25-archive-poemquote.png`（2×2 资料卡）、`27-archive-poem-detail.png`（题解 / 原文 / 注释分段）。
+- 仍需真机确认：长文滚动、320px 窄屏资料卡两列换行、字号切换后的段间距。
+- 本次只改详情展示层；资料库列表/详情仍按整类 JSON 加载，首屏慢的索引 + 分卷迁移未包含在本轮。

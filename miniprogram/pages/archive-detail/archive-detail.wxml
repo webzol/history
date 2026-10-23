@@ -22,7 +22,10 @@
 
     <block wx:else>
       <view class="head-card">
-        <image class="head-cover" src="{{cover}}" mode="aspectFill"></image>
+        <view class="head-cover-wrap">
+          <image class="head-cover" src="{{cover}}" mode="aspectFill"></image>
+          <view class="head-cover-fade"></view>
+        </view>
         <view class="head-body">
           <text class="head-kicker">{{kicker}}</text>
           <text class="head-title">{{item.title}}</text>
@@ -30,11 +33,26 @@
         </view>
       </view>
 
-      <view wx:if="{{showBody || item.translation}}" class="body-card">
+      <view wx:if="{{showLead || showSections || showBody || showTranslation}}" class="body-card">
         <view wx:if="{{showLead}}" class="lead">
           <text>{{item.summary}}</text>
         </view>
-        <block wx:if="{{showBody}}">
+
+        <view wx:if="{{showSections}}" class="sections">
+          <view wx:for="{{sections}}" wx:key="id" class="section {{item.tone}}">
+            <view wx:if="{{item.label}}" class="section-head">
+              <text class="section-label">{{item.label}}</text>
+              <text class="section-rule"></text>
+            </view>
+            <text
+              wx:for="{{item.paras}}"
+              wx:key="id"
+              class="section-para"
+            >{{item.text}}</text>
+          </view>
+        </view>
+
+        <block wx:elif="{{showBody}}">
           <block wx:for="{{blocks}}" wx:key="id">
             <text wx:if="{{item.kind === 'heading'}}" class="para-head">{{item.text}}</text>
             <view wx:else class="para">
@@ -42,18 +60,27 @@
             </view>
           </block>
         </block>
-        <view wx:if="{{item.translation}}" class="translation">
+
+        <view wx:if="{{showTranslation}}" class="translation">
           <text class="trans-title">译文</text>
           <text class="trans-text">{{item.translation}}</text>
         </view>
       </view>
 
-      <view wx:if="{{item.facts.length}}" class="facts">
-        <text class="facts-title">资料卡</text>
-        <text wx:for="{{item.facts}}" wx:key="*this" class="fact">{{item}}</text>
+      <view wx:if="{{factRows.length}}" class="facts">
+        <view class="facts-head">
+          <text class="facts-title">资料卡</text>
+          <text class="facts-count">{{factRows.length}} 项</text>
+        </view>
+        <view class="fact-grid">
+          <view wx:for="{{factRows}}" wx:key="id" class="fact-item {{item.wide ? 'wide' : ''}}">
+            <text wx:if="{{item.key}}" class="fact-key">{{item.key}}</text>
+            <text class="fact-value">{{item.value}}</text>
+          </view>
+        </view>
       </view>
 
-      <view class="source-line">来源：{{item.source}} · 史页资料库</view>
+      <view wx:if="{{item.source}}" class="source-line">来源：{{item.source}} · 史页资料库</view>
     </block>
   </view>
 </view>

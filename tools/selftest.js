@@ -789,6 +789,9 @@ console.log('== 资料库 ==');
   eq(detail.data.item.id, first.id, '资料库详情命中条目');
   eq(detail.data.cover, '/assets/paintings/tang.jpg', '资料详情分类题图');
   ok(detail.data.blocks.length > 0, '资料库详情正文分段');
+  ok(detail.data.sections.length >= 4, '名句详情拆出原文/注释/译文/赏析');
+  ok(detail.data.sections.some((section) => section.label === '原文'), '名句详情保留原文小标题');
+  ok(detail.data.showSections === true, '名句详情启用结构化段落');
   ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
   ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
 
@@ -808,6 +811,7 @@ console.log('== 资料库 ==');
   detail.onLoad({ kind: 'quotes', title: '名句赏析', id: quote.id });
   eq(detail.data.loading, false, '名句资料详情加载完成');
   ok(detail.data.item.translation, '名句资料带译文');
+  ok(detail.data.showTranslation === true, '名句资料显示译文段');
 
   list.onLoad({ kind: 'wenyan', title: '文言辞条' });
   eq(list.data.total, 3889, '文言辞条列表总数');
@@ -824,6 +828,8 @@ console.log('== 资料库 ==');
   detail.onLoad({ kind: 'poemquotes', title: '诗文名句', id: poemQuote.id });
   eq(detail.data.loading, false, '诗文名句详情加载完成');
   ok(detail.data.item.facts.length > 0, '诗文名句详情保留出处信息');
+  eq(detail.data.factRows.length, poemQuote.facts.length, '诗文名句资料卡解析为键值');
+  ok(detail.data.factRows.every((row) => row.key), '诗文名句资料卡都有字段名');
   ok(detail.data.showLead === false, '诗文名句不重复摘要');
 
   list.onLoad({ kind: 'poems-shi', title: '诗文全文 · 诗' });
@@ -842,6 +848,7 @@ console.log('== 资料库 ==');
   ok(detail.data.item.text.indexOf('### 原文') >= 0, '诗文全文含原文分段');
   ok(detail.data.showLead === false, '诗文全文不重复摘要');
   ok(detail.data.blocks.length > 1, '诗文全文详情多段渲染');
+  ok(detail.data.sections.some((section) => section.label === '原文'), '诗文详情拆出原文段');
 })();
 
 // ---------------------------------------------------------------------------

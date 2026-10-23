@@ -30,15 +30,90 @@ function blocksOf(text) {
   return blocks;
 }
 
+function toneOf(label) {
+  if (label === '原文' || label === '诗文') return 'verse';
+  if (label === '注释' || label === '译文') return 'note';
+  return '';
+}
+
+// 把「【原文】/### 题解」这类内嵌小标题整理成独立段落，避免整页挤成一块。
+function sectionsOf(text) {
+  const source = String(text || '').replace(/\r\n/g, '\n');
+  const sections = [];
+  let current = null;
+
+  const ensure = (label) => {
+    current = {
+      id: `s${sections.length}`,
+      label: label || '',
+      tone: toneOf(label || ''),
+      paras: []
+    };
+    sections.push(current);
+    return current;
+  };
+
+  const addPara = (value) => {
+    const body = String(value || '').trim();
+    if (!body) return;
+    if (!current) ensure('');
+    current.paras.push({
+      id: `${current.id}-p${current.paras.length}`,
+      text: body
+    });
+  };
+
+  source.split('\n').forEach((line) => {
+    const value = line.trim();
+    if (!value) return;
+    const heading = /^#{1,6}\s*(.+)$/.exec(value);
+    if (heading) {
+      ensure(heading[1].trim());
+      return;
+    }
+    const bracket = /^【([^】]{1,12})】\s*(.*)$/.exec(value);
+    if (bracket) {
+      ensure(bracket[1].trim());
+      if (bracket[2].trim()) addPara(bracket[2]);
+      return;
+    }
+    addPara(value);
+  });
+
+  return sections.filter((section) => section.label || section.paras.length);
+}
+
+function factRowsOf(facts) {
+  return (facts || [])
+    .map((fact, index) => {
+      const value = String(fact || '').trim();
+      const match = /^([^：:]{1,10})[：:]\s*(.+)$/.exec(value);
+      if (match) {
+        return {
+          id: `f${index}`,
+          key: match[1].trim(),
+          value: match[2].trim(),
+          wide: false
+        };
+      }
+      return { id: `f${index}`, key: '', value, wide: true };
+    })
+    .filter((row) => row.key || row.value);
+}
+
 Page({
   data: {
     kicker: '资料库',
     cover: '/assets/palace.jpg',
     item: null,
     blocks: [],
+    sections: [],
+    factRows: [],
     showLead: false,
     showMeta: false,
     showBody: false,
+    showSections: false,
+    showTranslation: false,
     loading: true,
     error: '',
     fontClass: 'm'
@@ -74,7 +149,19 @@ Page({
   },
 
   fetch() {
-    this.setData({ loading: true, error: '', item: null, blocks: [], showLead: false, showMeta: false, showBody: false });
+    this.setData({
+      loading: true,
+      error: '',
+      item: null,
+      blocks: [],
+      sections: [],
+      factRows: [],
+      showLead: false,
+      showMeta: false,
+      showBody: false,
+      showSections: false,
+      showTranslation: false
+    });
     apk.find(this.kind, this.type, this.id, (err, item) => {
       if (err || !item) {
         this.setData({ loading: false, error: '资料加载失败，请检查网络后重试' });
@@ -82,12 +169,20 @@ Page({
       }
       const kicker = this.data.kicker;
       const blocks = blocksOf(item.text);
+      const sections = sectionsOf(item.text);
+      const factRows = factRowsOf(item.facts);
+      const hasTranslationSection = sections.some((section) => section.label === '译文');
+      const showSections = sections.length > 0 && item.text !== item.title;
       this.setData({
         loading: false,
         error: '',
         item,
         blocks,
-        showBody: blocks.length > 0 && item.text !== item.title,
+        sections,
+        factRows,
+        showSections,
+        showBody: !showSections && blocks.length > 0 && item.text !== item.title,
+        showTranslation: !!item.translation && !hasTranslationSection,
         showLead:
           this.kind !== 'cards' &&
           this.kind !== 'quotes' &&

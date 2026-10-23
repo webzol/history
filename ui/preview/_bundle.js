@@ -5604,15 +5604,90 @@ function blocksOf(text) {
   return blocks;
 }
 
+function toneOf(label) {
+  if (label === '原文' || label === '诗文') return 'verse';
+  if (label === '注释' || label === '译文') return 'note';
+  return '';
+}
+
+// 把「【原文】/### 题解」这类内嵌小标题整理成独立段落，避免整页挤成一块。
+function sectionsOf(text) {
+  const source = String(text || '').replace(/\r\n/g, '\n');
+  const sections = [];
+  let current = null;
+
+  const ensure = (label) => {
+    current = {
+      id: `s${sections.length}`,
+      label: label || '',
+      tone: toneOf(label || ''),
+      paras: []
+    };
+    sections.push(current);
+    return current;
+  };
+
+  const addPara = (value) => {
+    const body = String(value || '').trim();
+    if (!body) return;
+    if (!current) ensure('');
+    current.paras.push({
+      id: `${current.id}-p${current.paras.length}`,
+      text: body
+    });
+  };
+
+  source.split('\n').forEach((line) => {
+    const value = line.trim();
+    if (!value) return;
+    const heading = /^#{1,6}\s*(.+)$/.exec(value);
+    if (heading) {
+      ensure(heading[1].trim());
+      return;
+    }
+    const bracket = /^【([^】]{1,12})】\s*(.*)$/.exec(value);
+    if (bracket) {
+      ensure(bracket[1].trim());
+      if (bracket[2].trim()) addPara(bracket[2]);
+      return;
+    }
+    addPara(value);
+  });
+
+  return sections.filter((section) => section.label || section.paras.length);
+}
+
+function factRowsOf(facts) {
+  return (facts || [])
+    .map((fact, index) => {
+      const value = String(fact || '').trim();
+      const match = /^([^：:]{1,10})[：:]\s*(.+)$/.exec(value);
+      if (match) {
+        return {
+          id: `f${index}`,
+          key: match[1].trim(),
+          value: match[2].trim(),
+          wide: false
+        };
+      }
+      return { id: `f${index}`, key: '', value, wide: true };
+    })
+    .filter((row) => row.key || row.value);
+}
+
 Page('project://pages/archive-detail/archive-detail.js', {
   data: {
     kicker: '资料库',
     cover: '/assets/palace.jpg',
     item: null,
     blocks: [],
+    sections: [],
+    factRows: [],
     showLead: false,
     showMeta: false,
     showBody: false,
+    showSections: false,
+    showTranslation: false,
     loading: true,
     error: '',
     fontClass: 'm'
@@ -5648,7 +5723,19 @@ Page('project://pages/archive-detail/archive-detail.js', {
   },
 
   fetch() {
-    this.setData({ loading: true, error: '', item: null, blocks: [], showLead: false, showMeta: false, showBody: false });
+    this.setData({
+      loading: true,
+      error: '',
+      item: null,
+      blocks: [],
+      sections: [],
+      factRows: [],
+      showLead: false,
+      showMeta: false,
+      showBody: false,
+      showSections: false,
+      showTranslation: false
+    });
     apk.find(this.kind, this.type, this.id, (err, item) => {
       if (err || !item) {
         this.setData({ loading: false, error: '资料加载失败，请检查网络后重试' });
@@ -5656,12 +5743,20 @@ Page('project://pages/archive-detail/archive-detail.js', {
       }
       const kicker = this.data.kicker;
       const blocks = blocksOf(item.text);
+      const sections = sectionsOf(item.text);
+      const factRows = factRowsOf(item.facts);
+      const hasTranslationSection = sections.some((section) => section.label === '译文');
+      const showSections = sections.length > 0 && item.text !== item.title;
       this.setData({
         loading: false,
         error: '',
         item,
         blocks,
-        showBody: blocks.length > 0 && item.text !== item.title,
+        sections,
+        factRows,
+        showSections,
+        showBody: !showSections && blocks.length > 0 && item.text !== item.title,
+        showTranslation: !!item.translation && !hasTranslationSection,
         showLead:
           this.kind !== 'cards' &&
           this.kind !== 'quotes' &&
@@ -5693,8 +5788,8 @@ Page('project://pages/archive-detail/archive-detail.js', {
 });
 
 });
-__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\">\n        <image class=\"back-arrow\" src=\"/assets/back-arrow.png\" mode=\"widthFix\"></image>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n        <view class=\"head-body\">\n          <text class=\"head-kicker\">{{kicker}}</text>\n          <text class=\"head-title\">{{item.title}}</text>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showBody || item.translation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n        <block wx:if=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n        <view wx:if=\"{{item.translation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.facts.length}}\" class=\"facts\">\n        <text class=\"facts-title\">资料卡</text>\n        <text wx:for=\"{{item.facts}}\" wx:key=\"*this\" class=\"fact\">{{item}}</text>\n      </view>\n\n      <view class=\"source-line\">来源：{{item.source}} · 史页资料库</view>\n    </block>\n  </view>\n</view>\n"; });
-__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  width: 240rpx;\n  height: 56rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(176, 142, 96, 0.42);\n  background: rgba(252, 251, 248, 0.86);\n  box-shadow: 0 4rpx 12rpx rgba(90, 70, 50, 0.05);\n  overflow: hidden;\n}\n\n.back-arrow {\n  position: absolute;\n  left: 20rpx;\n  top: 50%;\n  width: 56rpx;\n  height: auto;\n  display: block;\n  transform: translateY(-50%);\n}\n\n.back-label {\n  position: absolute;\n  left: 76rpx;\n  right: 18rpx;\n  top: 0;\n  height: 56rpx;\n  line-height: 56rpx;\n  text-align: center;\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 26rpx;\n  letter-spacing: 0.1em;\n  text-indent: 0.1em;\n  color: #6B5A33;\n}\n\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  max-width: 360rpx;\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #8C857A;\n}\n\n.top-seal {\n  position: absolute;\n  right: 200rpx;\n  top: 0;\n  bottom: 0;\n  margin: auto 0;\n  width: 44rpx;\n  height: 50rpx;\n  display: block;\n}\n\n.head-card {\n  margin-top: 28rpx;\n  padding: 0;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n  overflow: hidden;\n}\n\n.head-cover {\n  display: block;\n  width: 100%;\n  height: 160rpx;\n  background: #E8E2D6;\n}\n\n.head-body {\n  padding: 28rpx 34rpx 34rpx;\n}\n\n.head-kicker {\n  display: block;\n  font-size: calc(17rpx * var(--fs, 1));\n  letter-spacing: 0.12em;\n  color: #A9825E;\n}\n\n.head-title {\n  display: block;\n  margin-top: 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(40rpx * var(--fs, 1));\n  line-height: 1.45;\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.head-meta {\n  display: block;\n  margin-top: 14rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  line-height: 1.5;\n  color: #8C857A;\n}\n\n.body-card {\n  margin-top: 20rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.lead {\n  margin-bottom: 26rpx;\n  padding: 20rpx 22rpx;\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\n  border-radius: 0 18rpx 18rpx 0;\n  background: #F7F2E9;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.75;\n  color: #5F5A52;\n}\n\n.para {\n  margin-bottom: 22rpx;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.9;\n  letter-spacing: 0.015em;\n  color: #2C2924;\n  text-align: justify;\n}\n\n.para:last-child {\n  margin-bottom: 0;\n}\n\n.para-head {\n  display: block;\n  margin: 30rpx 0 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A34A3E;\n}\n\n.para-head:first-child {\n  margin-top: 0;\n}\n\n.translation {\n  margin-top: 28rpx;\n  padding-top: 24rpx;\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\n}\n\n.trans-title {\n  display: block;\n  margin-bottom: 10rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #A9825E;\n}\n\n.trans-text {\n  display: block;\n  font-size: calc(22rpx * var(--fs, 1));\n  line-height: 1.85;\n  color: #5F5A52;\n}\n\n.facts {\n  margin-top: 20rpx;\n  padding: 26rpx 30rpx;\n  border-radius: 28rpx;\n  background: #F3EFE6;\n}\n\n.facts-title {\n  display: block;\n  margin-bottom: 12rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #6B5A33;\n}\n\n.fact {\n  display: block;\n  margin-top: 7rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  line-height: 1.65;\n  color: #5F5A52;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: calc(18rpx * var(--fs, 1));\n  line-height: 1.6;\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n\n.state-card {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 12rpx;\n  margin-top: 24rpx;\n  padding: 70rpx 30rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  text-align: center;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.state-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  color: #5F5A52;\n}\n\n.state-desc {\n  font-size: calc(18rpx * var(--fs, 1));\n  line-height: 1.6;\n  color: #A39A8E;\n}\n\n.state-action {\n  margin-top: 4rpx;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #A34A3E;\n}\n"; });
+__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\">\n        <image class=\"back-arrow\" src=\"/assets/back-arrow.png\" mode=\"widthFix\"></image>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <view class=\"head-cover-wrap\">\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n          <view class=\"head-cover-fade\"></view>\n        </view>\n        <view class=\"head-body\">\n          <text class=\"head-kicker\">{{kicker}}</text>\n          <text class=\"head-title\">{{item.title}}</text>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\n              <text class=\"section-label\">{{item.label}}</text>\n              <text class=\"section-rule\"></text>\n            </view>\n            <text\n              wx:for=\"{{item.paras}}\"\n              wx:key=\"id\"\n              class=\"section-para\"\n            >{{item.text}}</text>\n          </view>\n        </view>\n\n        <block wx:elif=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\n        <view class=\"facts-head\">\n          <text class=\"facts-title\">资料卡</text>\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\n        </view>\n        <view class=\"fact-grid\">\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\n            <text class=\"fact-value\">{{item.value}}</text>\n          </view>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 史页资料库</view>\n    </block>\n  </view>\n</view>\n"; });
+__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  width: 240rpx;\n  height: 56rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(176, 142, 96, 0.42);\n  background: rgba(252, 251, 248, 0.86);\n  box-shadow: 0 4rpx 12rpx rgba(90, 70, 50, 0.05);\n  overflow: hidden;\n}\n\n.back-arrow {\n  position: absolute;\n  left: 20rpx;\n  top: 50%;\n  width: 56rpx;\n  height: auto;\n  display: block;\n  transform: translateY(-50%);\n}\n\n.back-label {\n  position: absolute;\n  left: 76rpx;\n  right: 18rpx;\n  top: 0;\n  height: 56rpx;\n  line-height: 56rpx;\n  text-align: center;\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 26rpx;\n  letter-spacing: 0.1em;\n  text-indent: 0.1em;\n  color: #6B5A33;\n}\n\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  max-width: 360rpx;\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #8C857A;\n}\n\n.top-seal {\n  position: absolute;\n  right: 200rpx;\n  top: 0;\n  bottom: 0;\n  margin: auto 0;\n  width: 44rpx;\n  height: 50rpx;\n  display: block;\n}\n\n.head-card {\n  margin-top: 28rpx;\n  padding: 0;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n  overflow: hidden;\n}\n\n.head-cover-wrap {\n  position: relative;\n  height: 160rpx;\n  background: #E8E2D6;\n  overflow: hidden;\n}\n\n.head-cover {\n  display: block;\n  width: 100%;\n  height: 100%;\n}\n\n.head-cover-fade {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  height: 54rpx;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\n}\n\n.head-body {\n  padding: 28rpx 34rpx 32rpx;\n}\n\n.head-kicker {\n  display: inline-block;\n  padding: 5rpx 13rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\n  border-radius: 999rpx;\n  background: #F7F2E9;\n  font-size: calc(16rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C6A45;\n}\n\n.head-title {\n  display: block;\n  margin-top: 16rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(40rpx * var(--fs, 1));\n  line-height: 1.42;\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.head-meta {\n  display: block;\n  margin-top: 18rpx;\n  padding-top: 16rpx;\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\n  font-size: calc(19rpx * var(--fs, 1));\n  line-height: 1.5;\n  color: #8C857A;\n}\n\n.body-card {\n  margin-top: 20rpx;\n  padding: 32rpx 32rpx 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.sections {\n  display: block;\n}\n\n.section {\n  margin-bottom: 30rpx;\n}\n\n.section:last-child {\n  margin-bottom: 0;\n}\n\n.section-head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 14rpx;\n}\n\n.section-label {\n  flex: none;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.12em;\n  color: #A34A3E;\n}\n\n.section-rule {\n  display: block;\n  flex: 1;\n  height: 1rpx;\n  margin-left: 14rpx;\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\n}\n\n.section-para {\n  display: block;\n  margin-bottom: 16rpx;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.9;\n  letter-spacing: 0.015em;\n  color: #2C2924;\n  text-align: justify;\n}\n\n.section-para:last-child {\n  margin-bottom: 0;\n}\n\n.section.verse .section-para {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 2;\n  color: #1F1D19;\n}\n\n.section.note .section-para {\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.82;\n  color: #5F5A52;\n}\n\n.lead {\n  margin-bottom: 26rpx;\n  padding: 20rpx 22rpx;\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\n  border-radius: 0 18rpx 18rpx 0;\n  background: #F7F2E9;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.75;\n  color: #5F5A52;\n}\n\n.para {\n  margin-bottom: 22rpx;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.9;\n  letter-spacing: 0.015em;\n  color: #2C2924;\n  text-align: justify;\n}\n\n.para:last-child {\n  margin-bottom: 0;\n}\n\n.para-head {\n  display: block;\n  margin: 30rpx 0 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A34A3E;\n}\n\n.para-head:first-child {\n  margin-top: 0;\n}\n\n.translation {\n  margin-top: 28rpx;\n  padding-top: 24rpx;\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\n}\n\n.trans-title {\n  display: block;\n  margin-bottom: 10rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #A9825E;\n}\n\n.trans-text {\n  display: block;\n  font-size: calc(22rpx * var(--fs, 1));\n  line-height: 1.85;\n  color: #5F5A52;\n}\n\n.facts {\n  margin-top: 22rpx;\n  padding: 26rpx 30rpx 20rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\n  border-radius: 28rpx;\n  background: #F3EFE6;\n}\n\n.facts-head {\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n  margin-bottom: 8rpx;\n}\n\n.facts-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #6B5A33;\n}\n\n.facts-count {\n  font-size: calc(16rpx * var(--fs, 1));\n  color: #A39A8E;\n}\n\n.fact-grid {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0 -8rpx;\n}\n\n.fact-item {\n  box-sizing: border-box;\n  width: 50%;\n  min-width: 0;\n  padding: 10rpx 8rpx;\n}\n\n.fact-item.wide {\n  width: 100%;\n}\n\n.fact-key {\n  display: block;\n  font-size: calc(16rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #A39A8E;\n}\n\n.fact-value {\n  display: block;\n  margin-top: 3rpx;\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.55;\n  color: #3A342C;\n}\n\n.source-line {\n  margin-top: 28rpx;\n  padding: 18rpx 22rpx;\n  border-radius: 20rpx;\n  background: rgba(243, 239, 230, 0.58);\n  font-size: calc(17rpx * var(--fs, 1));\n  line-height: 1.6;\n  letter-spacing: 0.03em;\n  color: #8C857A;\n}\n\n.state-card {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 12rpx;\n  margin-top: 24rpx;\n  padding: 70rpx 30rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  text-align: center;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.state-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  color: #5F5A52;\n}\n\n.state-desc {\n  font-size: calc(18rpx * var(--fs, 1));\n  line-height: 1.6;\n  color: #A39A8E;\n}\n\n.state-action {\n  margin-top: 4rpx;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #A34A3E;\n}\n"; });
 
 __register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n"; });
 })();
