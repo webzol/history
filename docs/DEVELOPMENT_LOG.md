@@ -1680,6 +1680,14 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 修复开发者工具报「module 'utils/artRemote.js' is not defined」
+
+- 现象：开发者工具（lib 3.17.4）启动即报 `module 'utils/artRemote.js' is not defined`，入口 `entries.js` → `eraImages.js:119` 的 `require('./artRemote.js')` 找不到模块，页面全挂。
+- 根因：`project.private.config.json` 开着 `"ignoreDevUnusedFiles": true`，且 `compileHotReLoad` 热重载下 IDE 的文件监听漏掉了 IDE 外脚本新生成的 `utils/artRemote.js`，依赖分析把它当未使用文件剔出了编译包（磁盘上文件存在，selftest 因此测不出来——它不走开发者工具编译）。
+- 处理：`ignoreDevUnusedFiles` 改为 `false`。该设置只在开发阶段生效、不影响上传包体；关闭后开发者工具会把全部 JS 打进编译包。
+- 用户侧操作：重启微信开发者工具（或菜单「工具 → 清除缓存 → 清除全部」后重新编译）。
+- 验证：`node tools/selftest.js` PASS 1636 / FAIL 0；待开发者工具重新编译确认。
+
 ## 2026-10-23 · 人物/事件专属图全量覆盖：162 张远端图（data/img + jsDelivr）
 
 - 上一步只给 5 位西汉人物配了本地专属图；本次把**全部 72 人物 + 100 事件**（除已本地化的 10 张外）补齐专属配图，共 162 张（实测 68 人物 480×360 q55 + 94 事件 280×280 q56，合计 2.8MB）。
