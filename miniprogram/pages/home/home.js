@@ -58,7 +58,7 @@ Page({
     });
   },
 
-  // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏
+  // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏；只展示前 3 条，总数留给「共 N 条」提示
   loadTih() {
     api.fetchTodayInHistory((err, items) => {
       if (err || !items) {
@@ -67,9 +67,9 @@ Page({
       }
       const now = new Date();
       this.setData({
-        tih: items.slice(0, 6),
+        tih: items.slice(0, 3),
         tihTotal: items.length,
-        tihMore: items.length > 6,
+        tihMore: items.length > 3,
         tihDate: `${now.getMonth() + 1}月${now.getDate()}日`
       });
     });

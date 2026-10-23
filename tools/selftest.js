@@ -1376,7 +1376,8 @@ console.log('== 今日接口 ==');
         { title: '事件甲', year: '1949', description: '开国大典', event_type: 'event', link: 'l1' },
         { title: '人物乙', year: '1881', description: '', event_type: 'birth' },
         { title: '无效项', year: '', description: 'x', event_type: 'event' },
-        { title: '事件乙', year: '1921', description: '一大召开', event_type: 'event' }
+        { title: '事件乙', year: '1921', description: '一大召开', event_type: 'event' },
+        { title: '事件丙', year: '1966', description: '展示上限校验项', event_type: 'event' }
       ]
     }
   };
@@ -1384,7 +1385,8 @@ console.log('== 今日接口 ==');
   p.onShow();
   eq(p.data.tih.length, 3, '今日接口归一化后出有效条目');
   eq(p.data.tih[0].yearText, '1881', '板块条目按年份升序');
-  eq(p.data.tihTotal, 3, '板块总数正确');
+  eq(p.data.tihTotal, 4, '板块总数为全量（展示只取前 3 条）');
+  eq(p.data.tih.length, 3, '板块只展示前 3 条');
   eq(p.data.tihDate, `${new Date().getMonth() + 1}月${new Date().getDate()}日`, '板块显示当日日期');
 
   p.onTihTap({ currentTarget: { dataset: { index: 0 } } });

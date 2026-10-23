@@ -1670,3 +1670,9 @@ miniprogram/data/history.js
 - 新增 `tools/compress_new_assets.py`（可复现压缩）；`ui/preview/era_refetch_sheet*.jpg` 目检临时总览图已加入 `.gitignore` 不入库。
 - 验证：`node tools/selftest.js` PASS 1604 / FAIL 0；`python tools/validate_miniprogram.py` 通过；包体积实测 1972KB < 2048KB。
 - 遗留：若后续继续补朝代图，压完先测包体积再提交。
+
+## 2026-10-23 · 首页「历史上的今天」只展示 3 条
+
+- 首页 60s 板块 `loadTih()` 展示上限 6 → 3（`miniprogram/pages/home/home.js`）；`tihTotal` 仍为全量，WXML「共 N 条 · 点击条目看详情」提示不变。
+- `tools/selftest.js`：mock 增至 4 条有效项，新增「展示 3 / 总数 4」断言。
+- 验证：`node tools/selftest.js` PASS 1605 / FAIL 0。
