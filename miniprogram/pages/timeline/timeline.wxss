@@ -100,10 +100,17 @@
   position: relative;
   z-index: 2;
   margin-top: 30rpx;
-  padding: 30rpx 34rpx;
+  padding: 28rpx 32rpx;
   border-radius: 36rpx;
   background: #FCFBF8;
   box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
+}
+
+.era-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
 }
 
 .era-title-row {
@@ -114,10 +121,19 @@
 
 .era-name {
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: calc(52rpx * var(--fs, 1));
+  font-size: calc(50rpx * var(--fs, 1));
   letter-spacing: 0.10em;
   line-height: 1.15;
   color: #1F1D19;
+}
+
+.era-count {
+  flex: 0 0 auto;
+  margin-top: 10rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(19rpx * var(--fs, 1));
+  letter-spacing: 0.08em;
+  color: #A38B63;
 }
 
 /* 北宋旁的小立印：同款印章图 */
@@ -129,12 +145,58 @@
 }
 
 .era-meta {
-  display: block;
-  margin-top: 14rpx;
+  margin-top: 16rpx;
+  padding-left: 16rpx;
+  border-left: 2rpx solid rgba(176, 142, 96, 0.38);
+}
+
+.era-meta-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.era-meta-row + .era-meta-row {
+  margin-top: 6rpx;
+}
+
+.era-meta-label {
+  flex: 0 0 50rpx;
+  font-family: "KaiTi", "STKaiti", "Songti SC", serif;
+  font-size: calc(19rpx * var(--fs, 1));
+  line-height: 1.7;
+  letter-spacing: 0.06em;
+  color: #A38B63;
+}
+
+.era-meta-value {
+  flex: 1;
+  min-width: 0;
   font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: calc(22rpx * var(--fs, 1));
-  letter-spacing: 0.04em;
-  color: #8C857A;
+  font-size: calc(20rpx * var(--fs, 1));
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: #6B6358;
+}
+
+.era-range {
+  color: #5F5A52;
+}
+
+.era-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.era-word {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.era-sep {
+  margin: 0 6rpx;
+  color: #B8A58C;
 }
 
 /* 沿竖线挂卡的事件列表 */

@@ -1629,3 +1629,25 @@ miniprogram/data/history.js
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
 - 已核对 `06-period-tang.png`、`12-person-sushi.png`、`22-archive-list.png`、`23-archive-detail.png` 的返回按钮；宽度已收窄，箭头/文字比例正常。
 - 仍需真机确认：楷体回退、微信原生胶囊间距、320px 窄屏下的顶栏三者避让。
+
+---
+
+## 2026-10-23 · 第三十六轮：时间轴朝代总览卡片排版
+
+**用户反馈**：时间轴顶部红圈里的「夏—清」数据挤在一段灰色文字里，纪年、朝代混排，阅读和版式都需要优化。
+
+**调整**
+
+- 把头卡拆成三层：标题印章行 / 纪年行 / 朝代行，标题右侧补「23 朝」计数。
+- 纪年与朝代各用固定宽度的小标签（楷体赭金），值用宋体墨色，左侧加一条赭金细线，形成清晰的键值层级。
+- 朝代不再用一整串文本，改为 `eraList` 动态渲染：每个朝代是独立词元，词元内部带分隔点，换行时不会出现行首孤立「·」。
+- 收紧头卡内边距、字号与行高；近现代只有 3 个时代时自动收成单行，不为古代列表留空。
+- `timeline.js` 的 `eraMeta` 拆成 `eraRange` / `eraList` / `eraCount`，并移除未使用的 `years` 变量。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1600 / FAIL 0**；时间轴断言改为校验 23 个朝代、纪年区间与首尾朝代序列。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
+- 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
+- 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。

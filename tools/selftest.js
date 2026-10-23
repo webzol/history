@@ -431,16 +431,17 @@ console.log('== 时间轴 ==');
     '古代时间轴首尾为夏建立/虎门销烟');
   eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
   eq(p.data.eraName, '夏—清', '时代带名来自数据推导');
-  ok(p.data.eraMeta.indexOf('公元前2070–1839') >= 0 && p.data.eraMeta.indexOf('夏 / 商 / 西周 / 春秋 / 战国 / 秦') >= 0 &&
-    p.data.eraMeta.indexOf('辽 / 北宋 / 西夏 / 金 / 南宋 / 元 / 明 / 清') >= 0,
-    '时代带meta含纪年区间与时代列表（含先秦/辽金西夏/元/明清）');
+  ok(p.data.eraCount === 23 && p.data.eraRange === '公元前2070—1839' &&
+    p.data.eraList.slice(0, 6).join(' · ') === '夏 · 商 · 西周 · 春秋 · 战国 · 秦' &&
+    p.data.eraList.slice(-8).join(' · ') === '辽 · 北宋 · 西夏 · 金 · 南宋 · 元 · 明 · 清',
+    '时代带含纪年区间与完整朝代脉络（含先秦/辽金西夏/元/明清）');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
   eq(p.data.events.length, 18, '近现代 18 条事件');
   eq(p.data.eraName, '晚清—新中国', '近现代时代带名推导');
-  ok(p.data.eraMeta.indexOf('1840–1978') >= 0 && p.data.eraMeta.indexOf('新中国') >= 0,
-    '近现代meta覆盖 1978 与新中国');
+  ok(p.data.eraCount === 3 && p.data.eraRange === '1840—1978' && p.data.eraList.indexOf('新中国') >= 0,
+    '近现代时代带覆盖 1978 与新中国');
 
   const before = JSON.stringify(p.data);
   tap(p, 'switchMode', { mode: 'modern' });

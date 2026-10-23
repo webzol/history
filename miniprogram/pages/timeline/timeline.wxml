@@ -16,11 +16,28 @@
     </view>
 
     <view class="era-band">
-      <view class="era-title-row">
-        <text class="era-name">{{eraName}}</text>
-        <image class="era-mini-seal" src="/assets/seal.png" mode="aspectFit"></image>
+      <view class="era-head">
+        <view class="era-title-row">
+          <text class="era-name">{{eraName}}</text>
+          <image class="era-mini-seal" src="/assets/seal.png" mode="aspectFit"></image>
+        </view>
+        <text class="era-count">{{eraCount}} 朝</text>
       </view>
-      <text class="era-meta">{{eraMeta}}</text>
+      <view class="era-meta">
+        <view class="era-meta-row">
+          <text class="era-meta-label">纪年</text>
+          <text class="era-meta-value era-range">{{eraRange}}</text>
+        </view>
+        <view class="era-meta-row">
+          <text class="era-meta-label">朝代</text>
+          <view class="era-meta-value era-list">
+            <view wx:for="{{eraList}}" wx:key="*this" class="era-word">
+              <text>{{item}}</text>
+              <text wx:if="{{index < eraList.length - 1}}" class="era-sep">·</text>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <view class="event-list">

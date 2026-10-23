@@ -6,7 +6,9 @@ Page({
   data: {
     mode: 'ancient',
     eraName: '',
-    eraMeta: '',
+    eraRange: '',
+    eraList: [],
+    eraCount: 0,
     events: [],
     fontClass: 'm'
   },
@@ -58,18 +60,19 @@ Page({
     events.forEach((event) => {
       if (eras.indexOf(event.era) < 0) eras.push(event.era);
     });
-    const years = events.map((event) => event.year);
     const eraName = eras.length > 1 ? `${eras[0]}—${eras[eras.length - 1]}` : eras[0] || '';
     const first = events[0];
     const last = events[events.length - 1];
     const fmt = (item) => (item.year < 0 ? `公元前${-item.year}` : item.year);
-    const eraMeta = `${first ? fmt(first) : ''}–${last ? fmt(last) : ''} · ${eras.join(' / ')}`;
+    const eraRange = first && last ? `${fmt(first)}—${fmt(last)}` : '';
 
     this.setData({
       mode,
       events,
       eraName,
-      eraMeta
+      eraRange,
+      eraList: eras,
+      eraCount: eras.length
     });
   },
 
