@@ -2,7 +2,7 @@ const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
-const personThumb = require('../../utils/eraImages.js').personThumb;
+const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 
 Page({
   data: {
@@ -41,7 +41,7 @@ Page({
       .persons.filter((person) =>
         (person.relatedEvents || []).indexOf(event.id) >= 0
       )
-      .map((person, index) => ({ ...person, img: personThumb(person.era, index) }));
+      .map((person, index) => ({ ...person, img: personImageThumb(person.id, person.era, index) }));
 
     this.setData({
       event,

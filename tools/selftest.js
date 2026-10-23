@@ -303,9 +303,13 @@ console.log('== 数据完整性 ==');
   goodImg('/assets/paintings/landscape.jpg');
   goodImg('/assets/paintings/dongjin.jpg');
   goodImg('/assets/paintings/nanbeichao.jpg');
-  ['chibi', 'qin-unify', 'zhenghe', 'dayunhe', 'humen'].forEach((id) =>
+  ['chibi', 'qin-unify', 'zhenghe', 'dayunhe', 'humen', 'han-wudi'].forEach((id) =>
     goodImg('/assets/eventart/' + id + '.jpg')
   );
+  ['wudi', 'wei-qing', 'zhang-qian', 'huo-qubing'].forEach((id) => {
+    goodImg('/assets/personart/' + id + '.jpg');
+    goodImg('/assets/thumbs/' + id + '.jpg');
+  });
 
   // 时代配图映射（事件头卡 / 人物缩略图共用）
   const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
@@ -329,6 +333,13 @@ console.log('== 数据完整性 ==');
   eq(eraImages.eventImage('chibi', '三国'), '/assets/eventart/chibi.jpg', '事件配图 · 赤壁之战用专属图');
   eq(eraImages.eventImage('qin-unify', '秦'), '/assets/eventart/qin-unify.jpg', '事件配图 · 秦统一用专属图');
   eq(eraImages.eventImage('no-such-id', '北宋'), '/assets/paintings/song.jpg', '事件配图 · 无专属图回退朝代级');
+  eq(eraImages.eventImage('han-wudi', '西汉'), '/assets/eventart/han-wudi.jpg', '事件配图 · 汉武帝即位用专属图');
+  eq(eraImages.personImage('zhang-qian', '西汉'), '/assets/personart/zhang-qian.jpg', '人物配图 · 张骞用专属图');
+  eq(eraImages.personImage('wei-qing', '西汉'), '/assets/personart/wei-qing.jpg', '人物配图 · 卫青用专属图');
+  eq(eraImages.personImage('huo-qubing', '西汉'), '/assets/personart/huo-qubing.jpg', '人物配图 · 霍去病用专属图');
+  eq(eraImages.personImage('han-wudi', '西汉'), '/assets/personart/wudi.jpg', '人物配图 · 汉武帝用专属图');
+  eq(eraImages.personImageThumb('zhang-qian', '西汉', 0), '/assets/thumbs/zhang-qian.jpg', '人物小图 · 专属 160px 细部优先');
+  eq(eraImages.personImageThumb('sima-qian', '西汉', 0), '/assets/thumbs/han-1.jpg', '人物小图 · 无专属回退朝代细部');
   let thumbCount = 0;
   ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
      'shanggu', 'xia', 'shang', 'zhou', 'chunqiu', 'zhanguo', 'qin', 'sanguo',
@@ -1036,8 +1047,8 @@ console.log('== 事件详情 ==');
 
   p.onLoad({ id: 'han-wudi' });
   eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing', 'sima-qian'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病/司马迁');
-  eq(p.data.headImg, '/assets/paintings/han.jpg', '事件头卡：西汉配长信宫灯');
-  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：同代人物 4 张缩略图轮换');
+  eq(p.data.headImg, '/assets/eventart/han-wudi.jpg', '事件头卡：汉武帝即位用专属事件图');
+  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 5, '其时其人：4 位专属 160px 细部 + 1 位朝代细部 = 5 张不同图');
 
   p.onLoad({ id: 'qidan-916' });
   eq(p.data.headImg, '/assets/paintings/liao.jpg', '事件头卡：辽代配专属绘画');

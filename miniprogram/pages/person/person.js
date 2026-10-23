@@ -1,7 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
-const eraImage = require('../../utils/eraImages.js').eraImage;
+const personImage = require('../../utils/eraImages.js').personImage;
 const personThumb = require('../../utils/eraImages.js').personThumb;
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
@@ -48,7 +48,7 @@ Page({
     this.setData({
       person,
       related,
-      headImg: eraImage(person.era),
+      headImg: personImage(person.id, person.era),
       accent: MODERN_ERAS.indexOf(person.era) >= 0 ? 'modern' : 'ancient',
       seal: person.name.charAt(0),
       collected: store.isFavorite('person', person.id)

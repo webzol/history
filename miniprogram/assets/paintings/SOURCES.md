@@ -45,3 +45,9 @@
 | `assets/eventart/dayunhe.jpg` | 隋·开凿大运河 | 事件页头卡装裱画片（事件级专属图） | 百度图片缩略（「隋朝 大运河 古画」） | 未确认授权 |
 | `assets/eventart/humen.jpg` | 林则徐虎门销烟 | 事件页头卡装裱画片（事件级专属图） | 百度图片缩略（「虎门销烟 历史」） | 未确认授权 |
 | `assets/eventart/*`（280×280 方图 q56） | 上述 5 张事件专属图 | 事件页头卡（`utils/eraImages.js` 的 `EVENT_ART` + `eventImage(id, era)`，无专属图回退朝代级 `eraImage`） | `tools/add_event_art.py` 生成（百图中心裁方） | 随原画授权状态 |
+| ssets/eventart/han-wudi.jpg | 汉武帝即位（朝服画像） | 事件页头卡装裱画片（事件级专属图） | 百度图片缩略（「汉武帝 登基 古画」） | 未确认授权 |
+| ssets/personart/wudi.jpg | 汉武帝（冕服画像） | 人物页头卡底纹 / 事件「其时其人」小图（人物级专属图） | 百度图片缩略（「汉武帝 画像 古画」） | 未确认授权；画像风格 |
+| ssets/personart/wei-qing.jpg | 卫青（将军重甲像） | 同上（人物级专属图） | 百度图片缩略（「卫青 画像 将军」） | 未确认授权 |
+| ssets/personart/zhang-qian.jpg | 张骞出使西域（沙漠驼队举旗） | 同上（人物级专属图） | 百度图片缩略（「张骞 出使西域 古画」） | 未确认授权；画面公有领域 |
+| ssets/personart/huo-qubing.jpg | 霍去病（将军画像） | 同上（人物级专属图） | 百度图片缩略（「霍去病 画像 将军」） | 未确认授权 |
+| ssets/personart/* + ssets/thumbs/<personid>.jpg | 上述 4 张人物图（480×360 q58）+ 同名 160×160 细部缩略（q60） | 人物页头卡（utils/eraImages.js 的 PERSON_ART + personImage / personImageThumb，无专属图回退朝代级） | 	ools/add_person_art.py 生成 | 随原画授权状态 |

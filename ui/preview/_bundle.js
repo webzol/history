@@ -3765,8 +3765,36 @@ const EVENT_ART = {
   'qin-unify': '/assets/eventart/qin-unify.jpg', // 秦始皇统一六国
   'zhenghe-1405': '/assets/eventart/zhenghe.jpg', // 郑和首下西洋（宝船队）
   'dayunhe': '/assets/eventart/dayunhe.jpg',     // 隋·开凿大运河
-  'humen-1839': '/assets/eventart/humen.jpg'     // 虎门销烟
+  'humen-1839': '/assets/eventart/humen.jpg',    // 虎门销烟
+  'han-wudi': '/assets/eventart/han-wudi.jpg'   // 汉武帝即位
 };
+
+// 人物级专属配图（assets/personart/<id>.jpg，480×360 q58）：
+// 标志性人物页头卡底纹与事件页「其时其人」行图优先用专属人物图；
+// 没有专属图的人物回退朝代级（eraImage / personThumb）。由 tools/add_person_art.py 下载。
+const PERSON_ART = {
+  'han-wudi': '/assets/personart/wudi.jpg',      // 汉武帝
+  'wei-qing': '/assets/personart/wei-qing.jpg',  // 卫青
+  'zhang-qian': '/assets/personart/zhang-qian.jpg', // 张骞（出使西域驼队）
+  'huo-qubing': '/assets/personart/huo-qubing.jpg'  // 霍去病
+};
+
+// 人物头卡底纹（人物页全幅 46% 透明垫底）：专属 480×360 人物图 > 朝代画
+function personImage(id, era) {
+  return PERSON_ART[id] || eraImage(era);
+}
+
+// 人物小图（事件页「其时其人」104rpx 行首）：专属 160×160 细部缩略 > 朝代细部轮换
+const PERSON_THUMB = {
+  'han-wudi': '/assets/thumbs/wudi.jpg',
+  'wei-qing': '/assets/thumbs/wei-qing.jpg',
+  'zhang-qian': '/assets/thumbs/zhang-qian.jpg',
+  'huo-qubing': '/assets/thumbs/huo-qubing.jpg'
+};
+
+function personImageThumb(id, era, index) {
+  return PERSON_THUMB[id] || personThumb(era, index);
+}
 
 function eventImage(id, era) {
   return EVENT_ART[id] || eraImage(era);
@@ -3774,7 +3802,7 @@ function eventImage(id, era) {
 
 module.exports = {
   ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK,
-  EVENT_ART, eraImage, personThumb, eventImage
+  EVENT_ART, PERSON_ART, PERSON_THUMB, eraImage, personThumb, eventImage, personImage, personImageThumb
 };
 
 });
@@ -4888,7 +4916,7 @@ const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
-const personThumb = require('../../utils/eraImages.js').personThumb;
+const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 
 Page('project://pages/event/event.js', {
   data: {
@@ -4927,7 +4955,7 @@ Page('project://pages/event/event.js', {
       .persons.filter((person) =>
         (person.relatedEvents || []).indexOf(event.id) >= 0
       )
-      .map((person, index) => ({ ...person, img: personThumb(person.era, index) }));
+      .map((person, index) => ({ ...person, img: personImageThumb(person.id, person.era, index) }));
 
     this.setData({
       event,
@@ -4980,7 +5008,7 @@ __register('/pages/person/person.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
-const eraImage = require('../../utils/eraImages.js').eraImage;
+const personImage = require('../../utils/eraImages.js').personImage;
 const personThumb = require('../../utils/eraImages.js').personThumb;
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
@@ -5027,7 +5055,7 @@ Page('project://pages/person/person.js', {
     this.setData({
       person,
       related,
-      headImg: eraImage(person.era),
+      headImg: personImage(person.id, person.era),
       accent: MODERN_ERAS.indexOf(person.era) >= 0 ? 'modern' : 'ancient',
       seal: person.name.charAt(0),
       collected: store.isFavorite('person', person.id)

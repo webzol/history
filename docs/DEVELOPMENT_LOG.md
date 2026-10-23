@@ -1680,6 +1680,15 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 西汉专属图补齐：汉武帝即位事件图 + 汉武帝/卫青/张骞/霍去病人物图
+
+- 「汉武帝即位」事件（`han-wudi`）原回退朝代级 `han.jpg`；四位西汉人物（汉武帝/卫青/张骞/霍去病）人物页头卡底纹与事件页「其时其人」小图也全回退朝代级。
+- 新增：`assets/eventart/han-wudi.jpg`（事件图，280×280 q56）+ `assets/personart/` 4 张人物图（480×360 q58：wudi/wei-qing/zhang-qian/huo-qubing）+ 4 张同名 160×160 细部缩略（q60）。
+- `miniprogram/utils/eraImages.js`：`EVENT_ART` 加 `han-wudi`；新增 `PERSON_ART`（480×360 人物图）+ `PERSON_THUMB`（160×160 人物细部）映射 + `personImage(id, era)`（人物页头卡底纹，专属>朝代画）+ `personImageThumb(id, era, index)`（「其时其人」小图，专属细部>朝代细部轮换）。
+- `miniprogram/pages/person/person.js` 头卡改走 `personImage`；`miniprogram/pages/event/event.js`「其时其人」改走 `personImageThumb`。
+- `tools/add_person_art.py`（可复现搜图管线：百图中心裁 4:3/方图 + 裁细部缩略）；selftest +10 条断言（文件存在 + 命中/回退）。
+- 主包：新增资产 ~99KB，主包 1867→1970KB（限额 2048，余量 78KB）。
+- 验证：`node tools/selftest.js` PASS / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 ## 2026-10-23 · 事件页专属配图（5 个标志性史事 + 主包腾余量）
 
 - 事件页头卡装裱画片原走朝代级 `eraImage(event.era)`（同朝代事件共用一张画，如 7 件唐事件都用 tang.jpg）。
