@@ -22,9 +22,12 @@
 
     <block wx:else>
       <view class="head-card">
-        <text class="head-kicker">{{kicker}}</text>
-        <text class="head-title">{{item.title}}</text>
-        <text wx:if="{{showMeta}}" class="head-meta">{{item.meta}}</text>
+        <image class="head-cover" src="{{cover}}" mode="aspectFill"></image>
+        <view class="head-body">
+          <text class="head-kicker">{{kicker}}</text>
+          <text class="head-title">{{item.title}}</text>
+          <text wx:if="{{showMeta}}" class="head-meta">{{item.meta}}</text>
+        </view>
       </view>
 
       <view wx:if="{{showBody || item.translation}}" class="body-card">

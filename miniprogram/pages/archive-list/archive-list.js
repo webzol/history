@@ -1,5 +1,6 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
+const archiveImages = require('../../utils/archiveImages.js');
 
 const PAGE_SIZE = 60;
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -17,6 +18,8 @@ function safeTitle(value, fallback) {
 Page({
   data: {
     pageTitle: '资料库',
+    cover: '/assets/palace.jpg',
+    coverMeta: '正在加载',
     kind: '',
     type: '',
     keyword: '',
@@ -40,7 +43,16 @@ Page({
     const searchPlaceholder = isPoem ? '搜索篇名 / 作者 / 朝代' : `在${title}中搜索`;
     this.limit = PAGE_SIZE;
     this.all = [];
-    this.setData({ kind, type, pageTitle: title, searchPlaceholder, loading: true, error: '' });
+    this.setData({
+      kind,
+      type,
+      pageTitle: title,
+      searchPlaceholder,
+      cover: archiveImages.cover(kind, type),
+      coverMeta: '正在加载',
+      loading: true,
+      error: ''
+    });
     this.fetch();
   },
 
@@ -59,14 +71,23 @@ Page({
   },
 
   fetch() {
-    this.setData({ loading: true, error: '', empty: false, shown: [], total: 0, totalText: '0' });
+    this.setData({
+      loading: true,
+      error: '',
+      empty: false,
+      shown: [],
+      total: 0,
+      totalText: '0',
+      coverMeta: '正在加载'
+    });
     apk.load(this.data.kind, this.data.type, (err, items) => {
       if (err) {
         this.all = [];
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
-          empty: false
+          empty: false,
+          coverMeta: '加载失败'
         });
         return;
       }
@@ -91,6 +112,7 @@ Page({
       shown: list.slice(0, this.limit),
       total: list.length,
       totalText: fmt(list.length),
+      coverMeta: `${fmt(list.length)} 条`,
       empty: list.length === 0
     });
   },

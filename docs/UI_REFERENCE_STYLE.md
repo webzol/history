@@ -1,6 +1,6 @@
 # 史页 · 当前视觉规范（参考图风格）
 
-**版本：v1.1｜2026-10-23**
+**版本：v1.2｜2026-10-23**
 
 > 这是当前开发使用的视觉基准。上一版 `ui/neo/` 与 `docs/UI设计说明.md` 已归档。
 > 视觉源文件：`ui/reference/home-v3.html`；截图：`ui/reference/home-final.png`。
@@ -69,7 +69,7 @@
 - 阴影：`0 20rpx 46rpx rgba(90,70,50,.06)`，不要重投影。
 - 顶部：自定义导航栏；首页只放品牌“史页”，**不放搜索/菜单**；时间轴/发现/我的保留并给微信胶囊留空间。详情/列表页为「返回胶囊 + 短页面名 + 小印」，小印 `right: 200rpx` 避让微信胶囊；`max-width: 360px` 时隐藏小印，避免标题与胶囊互撞。
 - 底部：自绘四栏，固定在底部，预留安全区。
-- 背景：`paper-bg.png` 以 `aspectFill` 铺满，不重复。
+- 背景：`paper-bg.jpg` 以 `aspectFill` 铺满，不重复。
 
 ---
 
@@ -96,10 +96,10 @@
 
 | 素材 | 文件 | 说明 |
 |---|---|---|
-| 宣纸背景 | `miniprogram/assets/paper-bg.png` | 750×1624，含噪点、竖排淡墨、细线；由 `tools/make_paper_bg.py` 生成 |
-| 宫殿 | `miniprogram/assets/palace.png` | 按用户要求从参考图裁切，含“史载”印章，背景 `#FCFAFB` |
+| 宣纸背景 | `miniprogram/assets/paper-bg.jpg` | 750×1624，含噪点、竖排淡墨、细线；由 `tools/make_paper_bg.py` 生成 |
+| 宫殿 | `miniprogram/assets/palace.jpg` | 按用户要求从参考图裁切，含“史载”印章，背景 `#FCFAFB` |
 | 盛唐背景 | `miniprogram/assets/tang-bg.jpg` | 用户新图按卡片比例 2048×756 裁切，整卡背景 |
-| 蓝灰卷轴 | `miniprogram/assets/scroll-accent.png` | 从参考图“盛唐气象”右侧裁切，作为卡片旁的装饰 |
+| 蓝灰卷轴 | `miniprogram/assets/scroll-accent.png` | 从参考图“盛唐气象”右侧裁切；现同时用于资料库“典籍辞条”分类题图 |
 | 近现代 | 白卡 + 蓝灰年份 | 与盛唐卡同圆角/阴影；右侧 1840/1949；不放印章，不使用手绘轮船 |
 | 图标 | `miniprogram/assets/icons/*.png` | 透明 PNG，48×48，1.4px 线宽 |
 | 旧版源 SVG | `ui/reference/assets/*.svg` | 早期原创稿，仅归档；当前首页不使用 |
@@ -110,6 +110,7 @@
 - 用户明确要求：不要自行手绘、不要去找图替代；按参考图 1:1 还原。
 - 插画 PNG 的背景色与卡片底色绑定；改卡片色必须重新裁切/导出。
 - 不要使用 AI 伪造历史照片；没有可靠图像时用参考图裁切或印章/剪影。
+- 资料库分类题图统一走 `utils/archiveImages.js`：首页分类组用 84rpx 方图，列表页用 168rpx 横幅，详情页头卡用 160rpx 横幅；图像仅作分类识别，不逐条对应 APK 条目。横幅上的白字必须叠深色渐变 + 轻文字阴影，避免压在浅色画面上看不清。
 
 ---
 

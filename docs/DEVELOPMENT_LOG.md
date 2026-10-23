@@ -1516,3 +1516,32 @@ miniprogram/data/history.js
 - `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**；`21-archive.png` 已更新为五组首屏，`28-archive-cards-open.png` 仍正常。
 - 仍需真机确认五组首屏高度、展开后的滚动位置和原生胶囊位置。
+
+---
+
+## 2026-10-23 · 第三十二轮：资料库分类题图
+
+**用户反馈**：继续优化，有图的位置需要补图。
+
+**调整**
+
+- 新增 `miniprogram/utils/archiveImages.js`，统一管理资料库分类题图，复用现有本地绘画/缩略图，不引入外部图片。
+- 资料库首页 5 个分类组各加 84rpx 方形题图：
+  - 典籍辞条：`scroll-accent.png`（卷轴山水）
+  - 人物：`thumbs/tang-1.jpg`
+  - 事件：`thumbs/ming-2.jpg`
+  - 文献：`thumbs/song-2.jpg`
+  - 诗文：`thumbs/republic-1.jpg`（青绿山水）
+- 资料库列表页增加 168rpx 分类题图横幅，标题与条数压在图上；左右渐变遮罩和文字阴影保证白字可读。
+- 资料详情页头卡顶部增加 160rpx 分类题图；标题、分类、资料卡仍保持原结构。
+- 列表/详情按 `kind` 与 `type` 取栏目题图：人物/帝王用唐画，事件/战争用明画，名句/文言用宋画，诗文用青绿山水，典籍辞条按 9 个分类分别取图，未知栏目回退 `palace.jpg`。
+- 不逐条配图：APK 资料没有图片字段，避免把同一张时代画错配给具体人物或事件；题图只承担分类识别与版面节奏。
+- `tools/build_preview.js` 补入 `utils/archiveImages.js`，修复预览 harness 因新模块未打包导致的 `SRC[full]` 报错。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1582 / FAIL 0**；新增分组题图、列表题图/条数、详情题图断言。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
+- 已核对 `21-archive.png`（五组题图）、`22-archive-list.png`（分类横幅 + 列表）、`23-archive-detail.png`（详情题图）、`24–27` 诗文/文言题图、`28-archive-cards-open.png`（展开态）。
+- 仍需真机确认：题图在 320px 窄屏的裁切、长分类名的省略、图片加载抖动与顶部胶囊位置。

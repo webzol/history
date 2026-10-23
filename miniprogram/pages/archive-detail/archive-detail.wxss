@@ -93,11 +93,23 @@
 
 .head-card {
   margin-top: 28rpx;
-  padding: 38rpx 34rpx 34rpx;
+  padding: 0;
   border-radius: 38rpx;
   background: #FCFBF8;
   border-top: 6rpx solid rgba(169, 130, 94, 0.55);
   box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
+  overflow: hidden;
+}
+
+.head-cover {
+  display: block;
+  width: 100%;
+  height: 160rpx;
+  background: #E8E2D6;
+}
+
+.head-body {
+  padding: 28rpx 34rpx 34rpx;
 }
 
 .head-kicker {

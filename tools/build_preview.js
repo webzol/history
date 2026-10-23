@@ -47,6 +47,7 @@ parts.push(wrapJs('utils/eraImages.js', read('utils/eraImages.js')));
 parts.push(wrapJs('utils/font.js', read('utils/font.js')));
 parts.push(wrapJs('utils/entries.js', read('utils/entries.js')));
 parts.push(wrapJs('utils/apkData.js', read('utils/apkData.js')));
+parts.push(wrapJs('utils/archiveImages.js', read('utils/archiveImages.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>

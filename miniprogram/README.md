@@ -26,9 +26,9 @@
 | 搜索 | 已实现 |
 | 收藏 | 已实现 |
 | 足迹 | 已实现 |
-| 资料库首页 | 已实现；39,067 条资料，5 个默认收起的分类组（典籍辞条 / 人物 / 事件 / 文献 / 诗文），展开后共 22 个入口 |
-| 资料库列表 | 已实现；搜索 + 60 条分页加载；诗文列表按体裁进入 |
-| 资料详情 | 已实现；正文分段/资料卡/译文/分享；诗文按分卷加载 |
+| 资料库首页 | 已实现；39,067 条资料，5 个默认收起的分类组（典籍辞条 / 人物 / 事件 / 文献 / 诗文），每组带本地分类题图，展开后共 22 个入口 |
+| 资料库列表 | 已实现；分类题图横幅 + 搜索 + 60 条分页加载；诗文列表按体裁进入 |
+| 资料详情 | 已实现；分类题图 / 正文分段 / 资料卡 / 译文 / 分享；诗文按分卷加载 |
 
 ## 真实数据
 
@@ -46,7 +46,7 @@ project.config.json
 data/history.js / history-extra.js
 data/archive-meta.js
 data/apk/*.json
-utils/historyData.js / apkData.js
+utils/historyData.js / apkData.js / archiveImages.js
 utils/store.js / font.js / entries.js
 pages/home|timeline|discover|profile
 pages/person|event|period|search|favorites|footprints

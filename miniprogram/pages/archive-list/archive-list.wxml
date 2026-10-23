@@ -23,9 +23,18 @@
       <text wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</text>
     </view>
 
-    <view class="list-head">
-      <text class="list-count">{{pageTitle}} · {{totalText}} 条</text>
-      <text wx:if="{{keyword}}" class="list-hint">匹配“{{keyword}}”</text>
+    <view class="cover-card">
+      <image class="cover-img" src="{{cover}}" mode="aspectFill"></image>
+      <view class="cover-mask"></view>
+      <view class="cover-copy">
+        <text class="cover-kicker">史页资料库 · 分类</text>
+        <text class="cover-title">{{pageTitle}}</text>
+        <text class="cover-meta">{{coverMeta}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{keyword}}" class="list-head">
+      <text class="list-hint">匹配“{{keyword}}”</text>
     </view>
 
     <view wx:if="{{loading}}" class="state-card">

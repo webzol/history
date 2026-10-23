@@ -133,11 +133,70 @@
   color: #8C857A;
 }
 
+.cover-card {
+  position: relative;
+  margin-top: 22rpx;
+  height: 168rpx;
+  border-radius: 28rpx;
+  background: #E8E2D6;
+  box-shadow: 0 12rpx 28rpx rgba(90, 70, 50, 0.06);
+  overflow: hidden;
+}
+
+.cover-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cover-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(26, 24, 20, 0.82) 0%, rgba(26, 24, 20, 0.52) 60%, rgba(26, 24, 20, 0.14) 100%);
+}
+
+.cover-copy {
+  position: absolute;
+  left: 28rpx;
+  right: 28rpx;
+  bottom: 22rpx;
+}
+
+.cover-kicker {
+  display: block;
+  font-size: calc(15rpx * var(--fs, 1));
+  letter-spacing: 0.14em;
+  color: rgba(252, 251, 248, 0.78);
+}
+
+.cover-title {
+  display: block;
+  margin-top: 5rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(30rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+  color: #FCFBF8;
+  text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.32);
+}
+
+.cover-meta {
+  display: block;
+  margin-top: 3rpx;
+  font-size: calc(16rpx * var(--fs, 1));
+  color: rgba(252, 251, 248, 0.76);
+}
+
 .list-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 26rpx 4rpx 14rpx;
+  margin: 22rpx 4rpx 12rpx;
 }
 
 .list-count {
@@ -156,6 +215,7 @@
 }
 
 .item-list {
+  margin-top: 18rpx;
   border-radius: 30rpx;
   background: #FCFBF8;
   box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);

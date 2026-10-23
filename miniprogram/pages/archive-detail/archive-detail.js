@@ -1,5 +1,6 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
+const archiveImages = require('../../utils/archiveImages.js');
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -32,6 +33,7 @@ function blocksOf(text) {
 Page({
   data: {
     kicker: '资料库',
+    cover: '/assets/palace.jpg',
     item: null,
     blocks: [],
     showLead: false,
@@ -50,6 +52,7 @@ Page({
     this.id = safeTitle(opts.id, '');
     this.setData({
       kicker: safeTitle(opts.title, this.fallbackTitle(this.kind, this.type)),
+      cover: archiveImages.cover(this.kind, this.type),
       loading: true,
       error: ''
     });

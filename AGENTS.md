@@ -12,7 +12,7 @@
 - 原生小程序（13 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
 - 「史页资料库」：APK 数据 39,067 条（辞条 13,287 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955 / 诗文全文 10,817），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存，单类 >1.5MB 只留内存）。诗文全文按诗/词/文/曲/赋拆分索引与分卷（每册 100–300 篇），列表只加载索引，详情按 `shard` 加载单册。原始 APK/DB 在 `import/`，不提交。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（1576 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（28 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（1582 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（28 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -48,9 +48,9 @@
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 头卡右侧装裱画片（按 era 取画，200rpx 白边小画）、大字年份、双色调色条、正文段落、"其时其人"人物卡（时代细部缩略图 + 姓名，跳人物详情）、收藏按钮、回时间轴按钮 |
 | 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；24 个朝代均有 PERIOD_META，西晋/秦/南宋等可直接查看 |
 | 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；顶部「史页资料库」入口（39,067 条）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
-| 资料库首页 | 已实现 | `miniprogram/pages/archive/` | 资料总量 + 5 个默认收起的分类组（典籍辞条 / 人物 / 事件 / 文献 / 诗文），点击展开 9+2+3+2+6 个入口；数据来自 `data/archive-meta.js` |
-| 资料库列表 | 已实现 | `miniprogram/pages/archive-list/` | 分类/人物/事件/名句/文言/诗文列表，搜索 + 60 条分页加载；数据走 `utils/apkData.js` |
-| 资料详情 | 已实现 | `miniprogram/pages/archive-detail/` | 标题/分类/资料卡/正文分段/译文/分享；不引用 APK 外部图片 |
+| 资料库首页 | 已实现 | `miniprogram/pages/archive/` | 资料总量 + 5 个默认收起的分类组（典籍辞条 / 人物 / 事件 / 文献 / 诗文），每组带本地分类题图，点击展开 9+2+3+2+6 个入口；数据来自 `data/archive-meta.js` |
+| 资料库列表 | 已实现 | `miniprogram/pages/archive-list/` | 分类题图横幅 + 分类/人物/事件/名句/文言/诗文列表，搜索 + 60 条分页加载；数据走 `utils/apkData.js` |
+| 资料详情 | 已实现 | `miniprogram/pages/archive-detail/` | 分类题图 / 标题 / 资料卡 / 正文分段 / 译文 / 分享；不引用 APK 外部图片，不逐条配图 |
 | 我的 | 已实现 | `miniprogram/pages/profile/` | 手绘史官头像（`assets/avatar-scholar.png`）、装裱画片横幅、收藏/足迹配图缩略图（各只展示前 3 条 + 查看全部入口）、阅读字号设置、本地数据统计、数据/素材/关于说明、清除缓存 |
 
 网页预览：
@@ -83,10 +83,11 @@ E:\AI\history\
 │  ├─ utils\entries.js              # 收藏/足迹条目解析、时间格式、分组与展平
 │  ├─ utils\historyData.js          # 数据中枢（本地种子 + jsDelivr 热更）
 │  ├─ utils\apkData.js              # 资料库按需加载 / 缓存 / 详情查找
+│  ├─ utils\archiveImages.js        # 资料库分类题图映射（人物/事件/文献/诗文）
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
 │  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints|archive|archive-list|archive-detail
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1576 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1582 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
 │  ├─ preview_shots.js              # 批量截图 28 张 → ui/preview/shots/
@@ -136,7 +137,7 @@ E:\AI\history\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 1576 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 1582 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
@@ -196,6 +197,7 @@ python tools/validate_miniprogram.py
 - 首页顶部只保留“史页”字标，不放搜索/菜单；朱砂印章保留在 Hero 插画内
 - 近现代内容必须在首页可见（当前用“百年中国”入口）
 - 事件详情头卡右侧是装裱画片（200rpx 白边小画，按 `event.era` 取画），不再用全宽横幅；「其时其人」缩略图取 `assets/thumbs/<时代>-1..4.jpg`（由 `assets/paintings/` 原画裁 4 个细部），按行序轮换避免整列重复；无专属绘画的时代（辽/西夏/金）回退 `assets/palace.jpg`。人物页头卡用同一时代画作 46% 透明度垫底 + 暖白渐隐，相关史事行加同源缩略图；民国/近现代统一用《千里江山图》作山河底色（不误配 1949 开国大典），新中国用《开国大典》。映射统一走 `utils/eraImages.js`（`eraImage` / `personThumb`），不要在页面里另写一份。
+- 资料库题图统一走 `utils/archiveImages.js`：首页 5 组用小方图，列表页用 168rpx 横幅，详情页头卡用 160rpx 横幅；人物/帝王取唐画，事件/战争取明画，名句/文言取宋画，诗文取青绿山水，典籍辞条按 9 类取图，未知栏目回退 `palace.jpg`。APK 条目没有图片字段，**不要逐条配图**，避免把时代画错配到具体条目。
 - 「我的」页头像用自己手绘的史官形象 `assets/avatar-scholar.png`（矢量稿 `tools/avatar-scholar.svg`，纸色底 + 幞头/圆领袍，不依赖外部素材）；横幅为装裱画片（画心 + 底部题签），收藏/足迹行用时代缩略图代替「人/事」色块；页内印章一律 `<image src="/assets/seal.png">`。
 
 ---

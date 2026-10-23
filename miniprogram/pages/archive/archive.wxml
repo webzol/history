@@ -42,6 +42,7 @@
           bindtap="onToggle"
         >
           <text class="group-index">{{item.index}}</text>
+          <image class="group-cover" src="{{item.cover}}" mode="aspectFill"></image>
           <view class="group-main">
             <view class="group-title-row">
               <text class="group-name">{{item.name}}</text>

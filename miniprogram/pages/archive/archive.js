@@ -1,5 +1,6 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
+const archiveImages = require('../../utils/archiveImages.js');
 
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -39,6 +40,7 @@ function buildRows(groups, openKey) {
       desc: group.desc,
       meta: group.meta,
       countText: group.countText,
+      cover: group.cover,
       open: group.key === openKey
     });
     if (group.key !== openKey) return;
@@ -107,6 +109,7 @@ Page({
         ...def,
         index: number < 10 ? `0${number}` : String(number),
         meta: `${items.length} 类`,
+        cover: archiveImages.groupCover(def.key),
         count,
         countText: fmt(count),
         items
