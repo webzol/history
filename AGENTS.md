@@ -1,6 +1,6 @@
 # 史页 · 开发交接说明（先读我）
 
-**最后更新：2026-10-22（Asia/Shanghai）**
+**最后更新：2026-10-23（Asia/Shanghai）**
 
 ## 0. 一句话
 
@@ -9,9 +9,9 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（10 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页；数据=本地真实历史种子 `miniprogram/data/history.js`（93 史事 / 48 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
+- 原生小程序（10 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（1271 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（1492 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -71,7 +71,7 @@ E:\hish\
 │  ├─ project.config.json
 │  ├─ sitemap.json
 │  ├─ data\history.js               # 本地真实历史数据种子（合并 history-extra.js）
-│  ├─ data\history-extra.js         # 夏商周—元及明清理科节点扩展（18 朝代/50+ 史事/25 人物）
+│  ├─ data\history-extra.js         # 历代扩展内容（与 history.js 合并；当前合计 24 朝代/100 史事/72 人物）
 │  ├─ utils\store.js                # 收藏 / 浏览足迹 / 阅读字号（本地存储）
 │  ├─ utils\font.js                 # 阅读字号选项、根节点类名、页面同步
 │  ├─ utils\entries.js              # 收藏/足迹条目解析、时间格式、分组与展平
@@ -79,7 +79,7 @@ E:\hish\
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
 │  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1271 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1492 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
 │  ├─ preview_shots.js              # 批量截图 20 张 → ui/preview/shots/
@@ -128,7 +128,7 @@ E:\hish\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 1271 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 1492 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
@@ -197,7 +197,7 @@ python tools/validate_miniprogram.py
 - 原生小程序，不引入 Taro/uni-app。
 - 页面结构：`pages/<name>/<name>.{js,json,wxml,wxss}`。
 - 使用 `rpx`；1px 细线可用 `px`（或 1rpx）。
-- 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情/列表页顶栏为「返回胶囊 + 页面名 + 小印」；返回胶囊按上传图复刻：`240×56rpx`（约 4.29:1，保持比例不变形）、长箭头 + 楷体「返回」、墨褐/赭金；标题 `left: 54%` 避让，六页统一（person/event/period/search/favorites/footprints）。
+- 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情/列表页顶栏为「返回胶囊 + 页面名 + 小印」；返回胶囊按上传图复刻：`240×56rpx`（约 4.29:1，保持比例不变形）、长箭头 + 楷体「返回」、墨褐/赭金；箭头用 `assets/back-arrow.png` + `mode="widthFix"`（高度 auto，绝不拉伸），文字占右侧独立区域（`left:76rpx; right:18rpx`）避免字体回退时压住箭头；标题 `left: 54%` 避让，六页统一（person/event/period/search/favorites/footprints）。预览 harness 已按 `mode` 实现 `object-fit`，截图不会再误判变形。
 - 底部导航：`app.json` 已启用 `tabBar.custom = true` + `custom-tab-bar/` 组件（2026-10-20）；tab 页间用 `wx.switchTab`，页面常驻（onShow 维持数据新鲜）；跨 tab 的 timeline 分段用 `utils/store.js` 的 pending mode 交接（`?mode=` 在 switchTab 下不可用）。
 - **未经微信开发者工具真机编译**：custom-tab-bar 的安全区 env() 与组件生命周期需真机确认，首次打开开发者工具时优先核对底部栏。
 - 图片全部本地 PNG/JPG；小程序 `<image>` 使用绝对路径 `/assets/...`；宣纸底为 `assets/paper-bg.jpg`（**不要再用 paper-bg.png，已删除**）。
@@ -228,7 +228,7 @@ python tools/validate_miniprogram.py
 1. 在微信开发者工具中跑通首页与时间轴，修胶囊/安全区/字体回退。
 2. ~~做独立的人物详情（苏轼 / 鲁迅）与事件详情（澶渊之盟 / 辛亥革命），替换当前 Modal。~~ ✅ 2026-10-19 已完成。
 3. ~~做搜索页~~ ✅ 2026-10-19 下午已完成（入口：我的页首行）；下轮可补人物条目（赵匡胤/王安石/林则徐等）让搜索结果更完整。~~ → ✅ 2026-10-19 晚已补 3 位。
-4. 内容扩展已完成第一轮（24 朝代 / 93 史事 / 48 人物）；下一步做史料审校、补近现代条目与专题。
+4. 内容扩展已完成第二轮（24 朝代 / 100 史事 / 72 人物），夏、商、西周、西晋、五代十国、辽、西夏、金均已有代表人物；下一步做史料审校、补近现代人物与专题（目标约 120 人物 / 400 史事 / 12 专题）。
 5. 接入后端 API / CMS；在此之前保持本地数据种子可替换。
 6. 做分享卡片与收藏。~~ → ✅ 2026-10-19 晚：收藏/足迹/分享已落地。
 

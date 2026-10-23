@@ -210,10 +210,10 @@ console.log('== 数据完整性 ==');
   const personIds = new Set(history.persons.map((p) => p.id));
   const periodIds = new Set(history.periods.map((p) => p.id));
 
-  eq(history.events.length, 93, '史事 93 条');
-  eq(history.persons.length, 48, '人物 48 位');
-  ok(new Set([...eventIds]).size === 93, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 48, '人物 id 唯一');
+  eq(history.events.length, 100, '史事 100 条');
+  eq(history.persons.length, 72, '人物 72 位');
+  ok(new Set([...eventIds]).size === 100, '史事 id 唯一');
+  ok(new Set([...personIds]).size === 72, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 24, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -248,6 +248,15 @@ console.log('== 数据完整性 ==');
     ok(eventIds.has(id), `新史事条目存在 ${id}`)
   );
   ['zhang-qian', 'chen-duxiu', 'deng-xiaoping', 'wei-qing', 'huo-qubing', 'mao-zedong', 'zheng-he', 'yu-qian', 'qi-jiguang', 'wang-shouren', 'cao-xueqin', 'hong-xiuquan', 'zeng-guofan', 'zuo-zongtang'].forEach((id) => ok(personIds.has(id), `新人物条目存在 ${id}`));
+  ['da-yu', 'cheng-tang', 'fu-hao', 'zhou-wuwang', 'zhou-gong', 'qu-yuan', 'guangwu', 'ban-chao', 'sima-yan', 'chen-shou', 'xiao-wendi', 'sui-yangdi', 'zhu-wen', 'li-yu', 'yelu-abaoji', 'xiao-chuo', 'li-yuanhao', 'wanyan-aguda', 'fan-zhongyan', 'guo-shoujing', 'zhang-juzheng', 'kangxi', 'qianlong', 'sun-zhongshan'].forEach((id) =>
+    ok(personIds.has(id), `补全人物条目存在 ${id}`)
+  );
+  ['fuhao-1200', 'ying-du-278', 'jin-unify-280', 'sanguozhi-290', 'nan-tang-975', 'qingli-1043', 'siku-1773'].forEach((id) =>
+    ok(eventIds.has(id), `补全史事条目存在 ${id}`)
+  );
+  ['夏', '商', '西周', '西晋', '五代十国', '辽', '西夏', '金'].forEach((era) =>
+    ok(history.persons.some((p) => p.era === era), `${era}已有代表人物`)
+  );
 
   // relatedEvents 反查闭环：王守仁/戚继光/林则徐 均已挂真实条目
   const reIds = (pid) => {
@@ -261,6 +270,11 @@ console.log('== 数据完整性 ==');
   ok(reIds('li-hongzhang').indexOf('yangwu-1861') >= 0, '李鸿章反查 洋务运动');
   ok(reIds('zeng-guofan').indexOf('taiping-1851') >= 0 && reIds('zuo-zongtang').indexOf('xinjiang-1878') >= 0,
     '曾国藩/左宗棠反查 太平天国/收复新疆');
+  ok(reIds('fu-hao').indexOf('fuhao-1200') >= 0, '妇好反查 妇好领兵征伐');
+  ok(reIds('li-yu').indexOf('nan-tang-975') >= 0, '李煜反查 宋灭南唐');
+  ok(reIds('sun-zhongshan').indexOf('xinhai-1911') >= 0, '孙中山反查 辛亥革命');
+  ok(reIds('wanyan-aguda').indexOf('jurchen-1115') >= 0 && reIds('wanyan-aguda').indexOf('jin-mie-liao') >= 0,
+    '完颜阿骨打反查 女真建国/金灭辽');
   // 全员反查闭环：每位人物的 relatedEvents 都指向真实条目且非空
   history.persons.forEach((p) =>
     ok((p.relatedEvents || []).length > 0 && (p.relatedEvents || []).every((id) => eventIds.has(id)),
@@ -331,7 +345,7 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'person' });
   ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 48, '弹层列出四十八位人物');
+  eq(p.data.sheet.list.length, 72, '弹层列出七十二位人物');
 
   const suIdx = p.data.sheet.list.findIndex((x) => x.id === 'su-shi');
   tap(p, 'onSheetItem', { index: suIdx });
@@ -398,7 +412,7 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 75, '古代 75 条事件');
+  eq(p.data.events.length, 82, '古代 82 条事件');
   ok(p.data.events.every((e, i, arr) => i === 0 || arr[i - 1].year <= e.year), '古代按纪年升序');
   ok(p.data.events[0].id === 'xia-establish' && p.data.events[p.data.events.length - 1].id === 'humen-1839',
     '古代时间轴首尾为夏建立/虎门销烟');
@@ -485,7 +499,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [24, 93, 48, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [24, 100, 72, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -627,7 +641,10 @@ console.log('== 收藏与足迹折叠 ==');
   // 返回键：胶囊「← 返回」，保持 240×56 比例
   ['person', 'event', 'period', 'search', 'footprints', 'favorites'].forEach((name) => {
     const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
+    const wxss = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxss'), 'utf8');
     ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0, `${name} 使用返回胶囊`);
+    ok(wxml.indexOf('class="back-arrow"') >= 0 && wxml.indexOf('mode="widthFix"') >= 0, `${name} 返回箭头按宽度等比`);
+    ok(/\.back-arrow\s*\{[^}]*height:\s*auto/.test(wxss), `${name} 返回箭头高度自适应`);
   });
 
   // 独立页清空：确认后清空并刷新
@@ -720,7 +737,7 @@ console.log('== 朝代详情 ==');
   eq(p.data.seal, '汉', '小印');
 
   p.onLoad({ id: 'song' });
-  eq(p.data.events.length, 4, '北宋收录四条史事');
+  eq(p.data.events.map((e) => e.id), ['chenqiao-960', 'chanyuan-1005', 'qingli-1043', 'wanganshi-1069', 'jingkang-1127'], '北宋收录五条史事（含庆历新政）');
   ok(p.data.span.length > 0, '时代脉络非空');
   ok(p.data.events[0].year <= p.data.events[p.data.events.length - 1].year, '北宋史事按纪年升序');
 
@@ -743,7 +760,7 @@ console.log('== 朝代详情 ==');
 
   p.onLoad({ id: 'qing' });
   eq(p.data.period.name, '清', '清代载入');
-  eq(p.data.events.map((e) => e.year), [1644, 1673, 1681, 1754, 1839, 1840, 1851, 1860, 1861, 1878, 1894, 1898], '清合并「清/晚清」史事（纪年升序）');
+  eq(p.data.events.map((e) => e.year), [1644, 1673, 1681, 1754, 1773, 1839, 1840, 1851, 1860, 1861, 1878, 1894, 1898], '清合并「清/晚清」史事（纪年升序，含四库全书）');
   ok(p.data.span.indexOf('1644') >= 0 && p.data.span.indexOf('1898') >= 0, '清 span 覆盖首尾纪年');
 
   p.onLoad({ id: 'modern' });
@@ -782,7 +799,7 @@ console.log('== 事件详情 ==');
 
   p.onLoad({ id: 'chanyuan-1005' });
   eq(p.data.event.title, '澶渊之盟', '澶渊之盟载入');
-  eq(p.data.relatedPersons.map((x) => x.id), ['wang-anshi', 'su-shi'], '其时其人：反查列出王安石与苏轼');
+  eq(p.data.relatedPersons.map((x) => x.id), ['xiao-chuo', 'wang-anshi', 'su-shi'], '其时其人：反查列出萧绰、王安石与苏轼');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
   eq(p.data.headImg, '/assets/paintings/song.jpg', '事件头卡：北宋配《清明上河图》');
   ok(p.data.relatedPersons.every((x) => x.img && fs.existsSync(path.join(ROOT, x.img))), '其时其人：每人有配图且文件存在');

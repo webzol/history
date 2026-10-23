@@ -425,6 +425,12 @@
         el.setAttribute('id', out);
       } else if (node.tag === 'image' && key === 'src') {
         el.setAttribute('src', out.replace(/^\/assets\//, '../../miniprogram/assets/'));
+      } else if (node.tag === 'image' && key === 'mode') {
+        // 与小程序 image mode 对齐，避免预览把图片强行填满容器造成“变形”误判
+        if (out === 'aspectFit') el.style.objectFit = 'contain';
+        else if (out === 'aspectFill') el.style.objectFit = 'cover';
+        else if (out === 'widthFix') el.style.height = 'auto';
+        else if (out === 'heightFix') el.style.width = 'auto';
       } else if (node.tag === 'input') {
         if (key === 'value') el.value = out;
         else if (key === 'placeholder') el.setAttribute('placeholder', out);
