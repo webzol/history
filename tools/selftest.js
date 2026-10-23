@@ -301,6 +301,8 @@ console.log('== 数据完整性 ==');
     goodImg('/assets/paintings/' + id + '.jpg')
   );
   goodImg('/assets/paintings/landscape.jpg');
+  goodImg('/assets/paintings/dongjin.jpg');
+  goodImg('/assets/paintings/nanbeichao.jpg');
 
   // 时代配图映射（事件头卡 / 人物缩略图共用）
   const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
@@ -310,6 +312,8 @@ console.log('== 数据完整性 ==');
   eq(eraImages.eraImage('近现代'), '/assets/paintings/landscape.jpg', '时代配图 · 近现代用千里江山图');
   eq(eraImages.eraImage('新中国'), '/assets/paintings/modern.jpg', '时代配图 · 新中国用开国大典');
   eq(eraImages.eraImage('辽'), '/assets/paintings/liao.jpg', '时代配图 · 辽代有专属绘画');
+  eq(eraImages.eraImage('东晋'), '/assets/paintings/dongjin.jpg', '时代配图 · 东晋用顾恺之洛神赋图');
+  eq(eraImages.eraImage('南北朝'), '/assets/paintings/nanbeichao.jpg', '时代配图 · 南北朝用云冈石窟');
   eq(eraImages.eraImage('秦'), '/assets/paintings/qin.jpg', '时代配图 · 秦代有专属绘画');
   eq(eraImages.eraImage('元'), '/assets/paintings/yuan.jpg', '时代配图 · 元代有专属绘画');
   eq(eraImages.personThumb('西汉', 0), '/assets/thumbs/han-1.jpg', '人物缩略图 · 西汉轮换起点');
@@ -317,15 +321,18 @@ console.log('== 数据完整性 ==');
   eq(eraImages.personThumb('民国', 0), '/assets/thumbs/republic-1.jpg', '人物缩略图 · 民国用山河细部');
   eq(eraImages.personThumb('辽', 0), '/assets/thumbs/liao-1.jpg', '人物缩略图 · 辽代有专属细部');
   eq(eraImages.personThumb('战国', 0), '/assets/thumbs/zhanguo-1.jpg', '人物缩略图 · 战国有专属细部');
+  eq(eraImages.personThumb('东晋', 0), '/assets/thumbs/dongjin-1.jpg', '人物缩略图 · 东晋有专属细部');
+  eq(eraImages.personThumb('南北朝', 0), '/assets/thumbs/nanbeichao-1.jpg', '人物缩略图 · 南北朝有专属细部');
   let thumbCount = 0;
   ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
      'shanggu', 'xia', 'shang', 'zhou', 'chunqiu', 'zhanguo', 'qin', 'sanguo',
-     'xijin', 'sui', 'wudai', 'yuan', 'liao', 'xixia', 'jin'].forEach((base) => {
+     'xijin', 'sui', 'wudai', 'yuan', 'liao', 'xixia', 'jin',
+     'dongjin', 'nanbeichao'].forEach((base) => {
     [1, 2, 3, 4].forEach((n) => {
       if (fs.existsSync(path.join(ROOT, `/assets/thumbs/${base}-${n}.jpg`))) thumbCount += 1;
     });
   });
-  eq(thumbCount, 88, '人物缩略图 22 组 × 4 张齐备');
+  eq(thumbCount, 96, '人物缩略图 24 组 × 4 张齐备');
 
   // 远端 data/history.json 应带 builtAt 版本戳
   try {
@@ -1383,14 +1390,14 @@ console.log('== 今日接口 ==');
   };
 
   p.onShow();
-  eq(p.data.tih.length, 3, '今日接口归一化后出有效条目');
-  eq(p.data.tih[0].yearText, '1881', '板块条目按年份升序');
-  eq(p.data.tihTotal, 4, '板块总数为全量（展示只取前 3 条）');
-  eq(p.data.tih.length, 3, '板块只展示前 3 条');
+  eq(p.data.tih.length, 1, '今日接口归一化后展示1条精选');
+  eq(p.data.tih[0].yearText, '1921', '板块精选优先取有描述的条目');
+  eq(p.data.tihTotal, 4, '板块总数为全量（展示只取1条精选）');
+  eq(p.data.tih.length, 1, '板块只展示1条精选');
   eq(p.data.tihDate, `${new Date().getMonth() + 1}月${new Date().getDate()}日`, '板块显示当日日期');
 
   p.onTihTap({ currentTarget: { dataset: { index: 0 } } });
-  ok(p.data.info.open && p.data.info.title.indexOf('1881') >= 0, '板块条目点击出信息弹层');
+  ok(p.data.info.open && p.data.info.title.indexOf('1921') >= 0, '板块条目点击出信息弹层');
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '信息弹层可关闭');
 

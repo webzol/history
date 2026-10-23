@@ -58,7 +58,8 @@ Page({
     });
   },
 
-  // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏；只展示前 3 条，总数留给「共 N 条」提示
+  // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏；
+  // 只展示 1 条精选（优先取有描述的条目，信息更丰富；无描述则取年份最早一条），总数留给「共 N 条」提示
   loadTih() {
     api.fetchTodayInHistory((err, items) => {
       if (err || !items) {
@@ -66,10 +67,11 @@ Page({
         return;
       }
       const now = new Date();
+      const featured = items.find((item) => item.desc) || items[0];
       this.setData({
-        tih: items.slice(0, 3),
+        tih: [featured],
         tihTotal: items.length,
-        tihMore: items.length > 3,
+        tihMore: items.length > 1,
         tihDate: `${now.getMonth() + 1}月${now.getDate()}日`
       });
     });

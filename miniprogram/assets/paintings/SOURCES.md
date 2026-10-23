@@ -36,3 +36,6 @@
 | `assets/thumbs/<上述各key>-1..4.jpg` | 上述 15 张新画各裁 4 个 160×160 细部（共 60 张） | 人物/事件"其时其人"缩略图（`tools/add_era_paintings.py` 生成） | 同源派生 | 随原画授权状态 |
 获取方式可复现：`tools/fetch_all.py`（按 `tools/fetch_plan.json` 批量搜图）；
 候选对比用 `tools/contact_sheet.py`；指定 URL 直下用 `tools/fetch_images.py download`。
+| dongjin.jpg | 顾恺之《洛神赋图》卷局部（东晋） | 人物/事件时代卡「东晋」 | 百度图片缩略（「顾恺之 洛神赋图 古画」） | 未确认授权；原图公有领域 |
+| nanbeichao.jpg | 云冈石窟北魏造像（南北朝） | 人物/事件时代卡「南北朝」 | 百度图片缩略（「云冈石窟 北魏 造像」） | 未确认授权；石窟造像公有领域 |
+| ssets/thumbs/dongjin-1..4.jpg + nanbeichao-1..4.jpg | 上述东晋/南北朝 2 张新画各裁 4 个 160×160 细部（共 8 张，2026-10-23 补齐） | 人物/事件「其时其人」缩略图 | 同源派生 | 随原画授权状态 |

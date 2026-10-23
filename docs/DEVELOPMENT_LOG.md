@@ -1671,11 +1671,23 @@ miniprogram/data/history.js
 - 验证：`node tools/selftest.js` PASS 1604 / FAIL 0；`python tools/validate_miniprogram.py` 通过；包体积实测 1972KB < 2048KB。
 - 遗留：若后续继续补朝代图，压完先测包体积再提交。
 
-## 2026-10-23 · 首页「历史上的今天」只展示 3 条
+## 2026-10-23 · 首页「历史上的今天」UI 重设计：3 条 → 单条精选
 
-- 首页 60s 板块 `loadTih()` 展示上限 6 → 3（`miniprogram/pages/home/home.js`）；`tihTotal` 仍为全量，WXML「共 N 条 · 点击条目看详情」提示不变。
-- `tools/selftest.js`：mock 增至 4 条有效项，新增「展示 3 / 总数 4」断言。
-- 验证：`node tools/selftest.js` PASS 1605 / FAIL 0。
+- 首页 60s 板块由「列表前 3 条」重做为「单条精选」卡（`miniprogram/pages/home/home.js` + `home.wxml` + `home.wxss`）。
+  - `loadTih()`：`tih` 数组只保留 1 条精选——优先取「有描述」的条目（信息更丰富），无描述时回退年份最早一条；`tihTotal` 仍为全量，`tihMore = items.length > 1`。
+  - WXML：`.tih` 内 `wx:for` 列表 → 单一 `.tih-featured` 卡片（`.tih-featured-top` 年份+类型标签 / 大标题 / 三行截断描述），点击整卡出信息弹层；脚注「共 N 条 · 点击查看」。
+  - WXSS：移除旧 `.tih-item`/`.tih-main`（横向 flex 列表）；新增 `.tih-featured` 单卡版式——年份放大为 `34rpx` 醒目行、标题 `29rpx` 宋体、描述三行 `line-clamp`；按压反馈 `.tih-item:active` → `.tih-featured:active`；进场/减动效动画同步换类名。
+- `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
+- 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+
+## 2026-10-23 · 补齐东晋 / 南北朝专属朝代画（东晋→顾恺之洛神赋图 · 南北朝→云冈石窟/敦煌壁画）
+
+- 上轮「补全 14 个无专属绘画朝代」跳过了**东晋**与**南北朝**，两者仍回退 generic 千里江山图（`landscape.jpg`）与 `republic` 缩略图。
+- 本次补全：`tools/add_era_paintings.py` 新增 2 条搜索条目（东晋·洛神赋图 / 南北朝·云冈石窟）；`miniprogram/assets/paintings/dongjin.jpg` + `nanbeichao.jpg` 各配 4 张 160×160 缩略图（`dongjin-1..4` / `nanbeichao-1..4`）。
+- `miniprogram/utils/eraImages.js`：ERA_IMAGES 东晋→`dongjin.jpg`、南北朝→`nanbeichao.jpg`；THUMB_BASE 东晋→`dongjin`、南北朝→`nanbeichao`。
+- `tools/selftest.js`：thumbCount 88→96（24 组×4）；新增东晋/南北朝 eraImage + personThumb 断言 + goodImg 文件存在校验。
+- 压缩：paintings 384px/q63 + thumbs 160px/q56（受 2MB 主包限额约束，比上一轮 480px/q70 更紧凑，主包回到 2045KB < 2048 限内）。
+- 验证：`node tools/selftest.js` PASS 1611 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
 ## 2026-10-23 · 首页进场动效（宣纸晕染 + 区块浮入 + 卡片按压）
 

@@ -39,21 +39,15 @@
         <text class="tih-title">历史上的今天</text>
         <text class="tih-sub">{{tihDate}}</text>
       </view>
-      <view
-        class="tih-item"
-        wx:for="{{tih}}"
-        wx:key="index"
-        data-index="{{index}}"
-        bindtap="onTihTap"
-      >
-        <text class="tih-year">{{item.yearText}}</text>
-        <text class="tih-tag {{item.type === '出生' ? 'tag-b' : item.type === '逝世' ? 'tag-d' : 'tag-e'}}">{{item.type}}</text>
-        <view class="tih-main">
-          <text class="tih-name">{{item.title}}</text>
-          <text class="tih-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
+      <view class="tih-featured" bindtap="onTihTap" data-index="0">
+        <view class="tih-featured-top">
+          <text class="tih-year">{{tih[0].yearText}}</text>
+          <text class="tih-tag {{tih[0].type === '出生' ? 'tag-b' : tih[0].type === '逝世' ? 'tag-d' : 'tag-e'}}">{{tih[0].type}}</text>
         </view>
+        <text class="tih-name">{{tih[0].title}}</text>
+        <text class="tih-desc" wx:if="{{tih[0].desc}}">{{tih[0].desc}}</text>
       </view>
-      <view class="tih-foot" wx:if="{{tihMore}}">共 {{tihTotal}} 条 · 点击条目看详情</view>
+      <view class="tih-foot" wx:if="{{tihMore}}">共 {{tihTotal}} 条 · 点击查看</view>
     </view>
 
     <view class="section-head">
