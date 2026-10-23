@@ -69,6 +69,13 @@
   min-width: 0;
 }
 
+.nick-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
 .nick {
   display: block;
   font-family: "Songti SC", "STSong", "SimSun", serif;
@@ -86,8 +93,7 @@
 }
 
 .nick-refresh {
-  display: inline-block;
-  margin-top: 8rpx;
+  flex-shrink: 0;
   font-size: calc(20rpx * var(--fs, 1));
   color: #A34A3E;
   opacity: 0.78;
