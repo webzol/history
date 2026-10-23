@@ -50,7 +50,17 @@
         data-id="{{item.id}}"
         bindtap="goPerson"
       >
-        <image class="p-thumb" src="{{item.img}}" mode="aspectFill"></image>
+        <view class="p-thumb-wrap">
+          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFill"></image>
+          <image
+            wx:if="{{item.img !== item.fallback}}"
+            class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}"
+            src="{{item.img}}"
+            mode="aspectFill"
+            bindload="onThumbLoad"
+            data-id="{{item.id}}"
+          ></image>
+        </view>
         <view class="p-info">
           <text class="p-name">{{item.name}}</text>
           <text class="p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>

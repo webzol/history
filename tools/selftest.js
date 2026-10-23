@@ -1064,6 +1064,11 @@ console.log('== 事件详情 ==');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
   eq(p.data.headImg, remoteEventImg('chanyuan-1005') || '/assets/paintings/song.jpg', '事件头卡：澶渊之盟优先专属图，否则清明上河图');
   ok(p.data.relatedPersons.every((x) => x.img && imgOk(x.img)), '其时其人：每人有配图且文件存在');
+  ok(p.data.relatedPersons.every((x) => x.fallback && imgOk(x.fallback) && x.fallback.indexOf('https://') !== 0), '其时其人：每人有本地默认垫底图');
+  eq(p.data.thumbLoaded, {}, '其时其人：初始未标记加载完成');
+  const thumbP = p.data.relatedPersons[0];
+  p.onThumbLoad({ currentTarget: { dataset: { id: thumbP.id } } });
+  eq(p.data.thumbLoaded[thumbP.id], true, '其时其人：图片 load 后标记淡入');
 
   p.onLoad({ id: 'han-wudi' });
   eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing', 'sima-qian'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病/司马迁');

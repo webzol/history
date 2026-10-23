@@ -3,6 +3,7 @@ const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
+const personThumb = require('../../utils/eraImages.js').personThumb;
 
 Page({
   data: {
@@ -10,6 +11,7 @@ Page({
     seal: '',
     headImg: '',
     relatedPersons: [],
+    thumbLoaded: {},
     collected: false,
     fontClass: 'm'
   },
@@ -35,23 +37,36 @@ Page({
       return;
     }
 
-    // 反查人物列表：人物详情里登记过 relatedEvents 的人，即与该事件相关
+    // 反查人物列表：人物详情里登记过 relatedEvents 的人，即与该事件相关。
+    // fallback 恒为本地时代细部图：远端专属图加载中/失败时垫底，秒出且不闪破图。
     const relatedPersons = hd
       .get()
       .persons.filter((person) =>
         (person.relatedEvents || []).indexOf(event.id) >= 0
       )
-      .map((person, index) => ({ ...person, img: personImageThumb(person.id, person.era, index) }));
+      .map((person, index) => ({
+        ...person,
+        img: personImageThumb(person.id, person.era, index),
+        fallback: personThumb(person.era, index)
+      }));
 
     this.setData({
       event,
       headImg: eventImage(event.id, event.era),
       relatedPersons,
+      thumbLoaded: {},
       seal: event.title.charAt(0),
       collected: store.isFavorite('event', event.id)
     });
 
     store.addFootprint('event', event.id);
+  },
+
+  onThumbLoad(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id && !this.data.thumbLoaded[id]) {
+      this.setData({ ['thumbLoaded.' + id]: true });
+    }
   },
 
   toggleCollect() {

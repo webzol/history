@@ -283,16 +283,38 @@
   box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);
 }
 
-.p-thumb {
+.p-thumb-wrap {
+  position: relative;
   width: 104rpx;
   height: 104rpx;
   flex: 0 0 104rpx;
-  display: block;
   border-radius: 20rpx;
+  overflow: hidden;
   background: #F3EFE6;
   border: 4rpx solid #FFFDF8;
   box-shadow: 0 6rpx 16rpx rgba(90, 70, 50, 0.10);
+}
+
+/* 底层默认图（本地时代细部，秒出）；上层远端专属图加载完淡入。
+   aspectFill：任意比例远端图等比缩放铺满裁切，不拉伸变形。 */
+.p-thumb-bg,
+.p-thumb-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   filter: saturate(0.86) brightness(1.02);
+}
+
+.p-thumb-img {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.p-thumb-img.on {
+  opacity: 1;
 }
 
 .p-info {
