@@ -29,6 +29,10 @@ function getMeta() {
 
 function fileFor(kind, type) {
   if (kind === 'cards') return type ? `cards/${type}.json` : '';
+  if (kind.indexOf('poems-') === 0) {
+    const genre = kind.slice(6);
+    return type ? `poems/${genre}/${type}.json` : `poems/${genre}/index.json`;
+  }
   return FILES[kind] || '';
 }
 
@@ -81,7 +85,7 @@ function parsePayload(data) {
   return null;
 }
 
-// kind: cards | figures | events | wars | emperors | dynasty | quotes | wenyan | poemquotes
+// kind: cards | figures | events | wars | emperors | dynasty | quotes | wenyan | poemquotes | poems-<genre>
 // type: cards 的分类 key（如 5）
 function load(kind, type, cb) {
   const file = fileFor(kind, type);

@@ -15,7 +15,7 @@
       <input
         class="search-input"
         value="{{keyword}}"
-        placeholder="在{{pageTitle}}中搜索"
+        placeholder="{{searchPlaceholder}}"
         placeholder-class="ph"
         confirm-type="search"
         bindinput="onInput"
@@ -50,6 +50,7 @@
           wx:key="id"
           class="item"
           data-id="{{item.id}}"
+          data-shard="{{item.shard}}"
           bindtap="onItem"
         >
           <view class="item-main">

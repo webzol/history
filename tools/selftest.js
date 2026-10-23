@@ -689,15 +689,16 @@ console.log('== 资料库 ==');
   resetWifiStack();
   const discover = pages.discover;
   discover.onLoad();
-  eq(discover.data.archive.totalText, '28,248', '发现页资料库总数文案');
+  eq(discover.data.archive.totalText, '39,067', '发现页资料库总数文案');
   tap(discover, 'goArchive');
   eq(last('navigateTo').url, '/pages/archive/archive', '发现页进入资料库');
 
   const archive = pages.archive;
   archive.onLoad();
-  eq(archive.data.stats.total, 28248, '资料库总数');
+  eq(archive.data.stats.total, 39067, '资料库总数');
+  eq(archive.data.stats.poemWorks, 10817, '诗文全文总数');
   eq(archive.data.categories.length, 9, '资料库九个辞条分类');
-  eq(archive.data.sections.length, 8, '资料库八个人物/事件/文献入口');
+  eq(archive.data.sections.length, 13, '资料库十三个人物/事件/文献入口');
   eq(archive.data.categories[0].name, '职官辞典', '资料库分类按数量排序');
 
   resetWifiStack();
@@ -773,6 +774,23 @@ console.log('== 资料库 ==');
   eq(detail.data.loading, false, '诗文名句详情加载完成');
   ok(detail.data.item.facts.length > 0, '诗文名句详情保留出处信息');
   ok(detail.data.showLead === false, '诗文名句不重复摘要');
+
+  list.onLoad({ kind: 'poems-shi', title: '诗文全文 · 诗' });
+  eq(list.data.total, 2938, '诗文全文·诗 列表总数');
+  eq(list.data.searchPlaceholder, '搜索篇名 / 作者 / 朝代', '诗文列表搜索提示');
+  eq(list.data.shown.length, 60, '诗文全文首屏 60 条');
+  const poem = list.data.shown[0];
+  ok(poem.shard && poem.title && poem.meta, '诗文索引带分卷与作者');
+  detail.onLoad({
+    kind: 'poems-shi',
+    type: poem.shard,
+    title: '诗文全文 · 诗',
+    id: poem.id
+  });
+  eq(detail.data.loading, false, '诗文全文详情加载完成');
+  ok(detail.data.item.text.indexOf('### 原文') >= 0, '诗文全文含原文分段');
+  ok(detail.data.showLead === false, '诗文全文不重复摘要');
+  ok(detail.data.blocks.length > 1, '诗文全文详情多段渲染');
 })();
 
 // ---------------------------------------------------------------------------

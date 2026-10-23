@@ -7,6 +7,7 @@
   miniprogram/data/apk/catalog.json
   miniprogram/data/apk/cards/<type>.json
   miniprogram/data/apk/{figures,events,wars,emperors,dynasty-events,quotes,wenyanwen,poem-quotes}.json
+  miniprogram/data/apk/poems/<shi|ci|wen|qu|fu>/{index,00,01...}.json
   miniprogram/data/archive-meta.js
 
 用法：
@@ -15,6 +16,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -177,6 +179,33 @@ def build_cards():
             "source": name,
             "type": key,
         })
+
+    # official_data.db 与「职官辞典」几乎完全重复，只补缺失的少量条目。
+    group = by_type.get("5")
+    if group:
+        existing = {item["title"] for item in group["items"]}
+        for name, encoded in q_plain("official_data.db", "SELECT name, content FROM official"):
+            name = clean(name)
+            if not name or name in existing:
+                continue
+            try:
+                content = base64.b64decode(encoded).decode("utf-8")
+            except Exception:
+                content = clean(encoded)
+            text = clean(content)
+            if not text:
+                continue
+            group["items"].append({
+                "id": f"hc-5-{len(group['items']) + 1:05d}",
+                "title": name,
+                "meta": group["name"],
+                "summary": cut(text, 96),
+                "text": text,
+                "facts": [],
+                "source": group["name"],
+                "type": "5",
+            })
+            existing.add(name)
 
     categories = []
     for key, group in sorted(by_type.items(), key=lambda kv: -len(kv[1]["items"])):
@@ -439,6 +468,96 @@ def build_poem_quotes(skip=None):
     return items
 
 
+POEM_GENRES = [
+    ("shi", "诗"),
+    ("ci", "词"),
+    ("wen", "文"),
+    ("qu", "曲"),
+    ("fu", "赋"),
+]
+POEM_SHARD_SIZE = {"shi": 300, "ci": 300, "wen": 100, "qu": 300, "fu": 300}
+
+
+def build_poem_works():
+    """诗文全文：按体裁拆分索引与分卷，详情页只加载一册。"""
+    rows = q_plain(
+        "poem2.db",
+        "SELECT id, title, author, dynasty, kind, kind_cn, foreword, content, intro, "
+        "annotation, translation, appreciation, master_comment, quotes_count "
+        "FROM works ORDER BY kind, id",
+    )
+    groups = {}
+    for row in rows:
+        (rid, title, author, dynasty, kind, kind_cn, foreword, content, intro,
+         annotation, translation, appreciation, master_comment, quotes_count) = row
+        genre = clean(kind) or "wen"
+        label = clean(kind_cn) or dict(POEM_GENRES).get(genre, "文")
+        group = groups.setdefault(genre, {"label": label, "index": [], "shards": {}})
+        title = clean(title)
+        author = clean(author)
+        dynasty = clean(dynasty)
+        sections = []
+        for heading, value in [
+            ("题解", intro), ("原文", content), ("注释", annotation),
+            ("译文", translation), ("赏析", appreciation),
+            ("名家点评", master_comment), ("前言", foreword),
+        ]:
+            value = clean(value)
+            if value:
+                sections.append(f"### {heading}\n{value}")
+        text = "\n\n".join(sections)
+        if not text:
+            continue
+        facts = []
+        for fact_label, value in [
+            ("朝代", dynasty), ("作者", author), ("体裁", label),
+        ]:
+            if value:
+                facts.append(f"{fact_label}：{value}")
+        if quotes_count:
+            facts.append(f"名句：{int(quotes_count)} 条")
+        idx = len(group["index"])
+        size = POEM_SHARD_SIZE.get(genre, 300)
+        shard = f"{idx // size:02d}"
+        item = {
+            "id": f"hpw-{clean(rid)}",
+            "title": title,
+            "meta": " · ".join(x for x in [dynasty, author, label] if x),
+            "summary": cut(clean(intro) or clean(content), 96),
+            "text": text,
+            "translation": "",
+            "facts": facts,
+            "source": "诗文全文",
+            "era": era_of(dynasty),
+            "shard": shard,
+        }
+        group["index"].append({
+            key: item[key]
+            for key in ("id", "title", "meta", "summary", "era", "source", "shard")
+        })
+        group["shards"].setdefault(shard, []).append(item)
+
+    sections = []
+    total = 0
+    for genre, label in POEM_GENRES:
+        group = groups.get(genre)
+        if not group:
+            continue
+        write_json(f"poems/{genre}/index.json", group["index"])
+        for shard, items in sorted(group["shards"].items()):
+            write_json(f"poems/{genre}/{shard}.json", items)
+        count = len(group["index"])
+        total += count
+        sections.append({
+            "key": f"poems-{genre}",
+            "name": f"诗文全文 · {label}",
+            "count": count,
+            "file": f"poems/{genre}/index.json",
+            "desc": f"{label}：原文、注释、译文与赏析",
+        })
+    return sections, total
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     categories, card_count = build_cards()
@@ -450,6 +569,7 @@ def main():
     quotes = build_quotes()
     wenyan = build_wenyan()
     poem_quotes = build_poem_quotes({norm(x.get("text", "")) for x in quotes})
+    poem_sections, poem_count = build_poem_works()
 
     for name, items in [
         ("figures.json", figures), ("events.json", events), ("wars.json", wars),
@@ -468,7 +588,7 @@ def main():
         {"key": "quotes", "name": "名句赏析", "count": len(quotes), "file": "quotes.json", "desc": "原文、出处与白话译文"},
         {"key": "wenyan", "name": "文言辞条", "count": len(wenyan), "file": "wenyanwen.json", "desc": "古文常见字词的读音、释义与例句"},
         {"key": "poemquotes", "name": "诗文名句", "count": len(poem_quotes), "file": "poem-quotes.json", "desc": "历代诗词名句，按朝代与作者浏览"},
-    ]
+    ] + poem_sections
     stats = {
         "cards": card_count,
         "figures": len(figures),
@@ -479,8 +599,9 @@ def main():
         "quotes": len(quotes),
         "wenyan": len(wenyan),
         "poemQuotes": len(poem_quotes),
+        "poemWorks": poem_count,
         "categories": len(categories),
-        "total": card_count + len(figures) + len(events) + len(emperors) + len(wars) + len(dynasty_events) + len(quotes) + len(wenyan) + len(poem_quotes),
+        "total": card_count + len(figures) + len(events) + len(emperors) + len(wars) + len(dynasty_events) + len(quotes) + len(wenyan) + len(poem_quotes) + poem_count,
     }
     catalog = {
         "generatedAt": "2026-10-23",

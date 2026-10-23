@@ -10,9 +10,9 @@
 
 - 高保真网页首页：`ui/reference/home-v3.html`
 - 原生小程序（13 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
-- 「史页资料库」：APK 数据 28,248 条（辞条 13,285 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存，单类 >1.5MB 只留内存）。原始 APK/DB 在 `import/`，不提交。
+- 「史页资料库」：APK 数据 39,067 条（辞条 13,287 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955 / 诗文全文 10,817），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存，单类 >1.5MB 只留内存）。诗文全文按诗/词/文/曲/赋拆分索引与分卷（每册 100–300 篇），列表只加载索引，详情按 `shard` 加载单册。原始 APK/DB 在 `import/`，不提交。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（1544 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（25 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（1553 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（27 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -47,8 +47,8 @@
 | 人物详情 | 已实现 | `miniprogram/pages/person/` | 大字人名 + 时代配画底纹头卡、楷体引文、正文段落、相关史事列表（配画缩略图，跳事件详情）；支持古代/近现代双色调 |
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 头卡右侧装裱画片（按 era 取画，200rpx 白边小画）、大字年份、双色调色条、正文段落、"其时其人"人物卡（时代细部缩略图 + 姓名，跳人物详情）、收藏按钮、回时间轴按钮 |
 | 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；24 个朝代均有 PERIOD_META，西晋/秦/南宋等可直接查看 |
-| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；顶部「史页资料库」入口（28,248 条）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
-| 资料库首页 | 已实现 | `miniprogram/pages/archive/` | 资料总量、9 个辞条分类、8 个人物/事件/文献入口；数据来自 `data/archive-meta.js` |
+| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；顶部「史页资料库」入口（39,067 条）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
+| 资料库首页 | 已实现 | `miniprogram/pages/archive/` | 资料总量、9 个辞条分类、13 个人物/事件/文献/诗文入口；数据来自 `data/archive-meta.js` |
 | 资料库列表 | 已实现 | `miniprogram/pages/archive-list/` | 分类/人物/事件/名句/文言/诗文列表，搜索 + 60 条分页加载；数据走 `utils/apkData.js` |
 | 资料详情 | 已实现 | `miniprogram/pages/archive-detail/` | 标题/分类/资料卡/正文分段/译文/分享；不引用 APK 外部图片 |
 | 我的 | 已实现 | `miniprogram/pages/profile/` | 手绘史官头像（`assets/avatar-scholar.png`）、装裱画片横幅、收藏/足迹配图缩略图（各只展示前 3 条 + 查看全部入口）、阅读字号设置、本地数据统计、数据/素材/关于说明、清除缓存 |
@@ -77,7 +77,7 @@ E:\AI\history\
 │  ├─ data\history.js               # 本地真实历史数据种子（合并 history-extra.js）
 │  ├─ data\history-extra.js         # 历代扩展内容（与 history.js 合并；当前合计 24 朝代/100 史事/72 人物）
 │  ├─ data\archive-meta.js          # 资料库统计/分类/入口元数据（由导入脚本生成）
-│  ├─ data\apk\                     # 28,248 条资料 JSON（主包排除，jsDelivr 远端加载）
+│  ├─ data\apk\                     # 39,067 条资料 JSON（主包排除，jsDelivr 远端加载）
 │  ├─ utils\store.js                # 收藏 / 浏览足迹 / 阅读字号（本地存储）
 │  ├─ utils\font.js                 # 阅读字号选项、根节点类名、页面同步
 │  ├─ utils\entries.js              # 收藏/足迹条目解析、时间格式、分组与展平
@@ -86,10 +86,10 @@ E:\AI\history\
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
 │  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints|archive|archive-list|archive-detail
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1544 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1553 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
-│  ├─ preview_shots.js              # 批量截图 25 张 → ui/preview/shots/
+│  ├─ preview_shots.js              # 批量截图 27 张 → ui/preview/shots/
 │  ├─ import_apk_data.py            # APK SQLCipher/明文 SQLite → data/apk/*.json
 │  ├─ validate_miniprogram.py       # JS/JSON/WXML/资源静态校验
 │  ├─ content_audit.py              # 数据完整性审计（缺 details/source 等）
@@ -136,13 +136,13 @@ E:\AI\history\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 1544 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 1553 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
 node tools/preview_server.js
 
-# 小程序源码改动后需重建 bundle，再批量截图核对 ui/preview/shots/（25 张）
+# 小程序源码改动后需重建 bundle，再批量截图核对 ui/preview/shots/（27 张）
 node tools/build_preview.js
 node tools/preview_shots.js
 ```
@@ -228,7 +228,7 @@ python tools/validate_miniprogram.py
 8. 四个主页面顶部均为纯字标；时间轴靠页内"古代/近现代"分段切换，无需菜单。
 9. ~~首页"今日史事"日期匹配未完成~~ → 2026-10-19 晚：已按公历「月-日」日期库匹配（8 组），无匹配日回退编辑精选；农历事件暂未列入，正式发布前仍需历史审校。
 10. 旧版 `ui/neo/` 和 `docs/UI设计说明.md` 容易误用；除非用户明确要求，否则不要用旧版风格覆盖当前实现。
-11. 资料库数据来自 APK 迁移，尚未逐条史实/授权审校；`poem2.db` 的 10,817 篇诗文全文与 `official_data.db` 未纳入（后者与职官辞典高度重复），后续按需追加。
+11. 资料库数据来自 APK 迁移，尚未逐条史实/授权审校；诗文全文已按体裁/分卷纳入（诗 2,938 / 词 4,523 / 文 2,991 / 曲 338 / 赋 27），列表搜索只覆盖索引字段（篇名/作者/朝代/题解），不做全文检索。
 12. 资料库条目暂未接入收藏/足迹；接入前需扩展 `utils/entries.js` 与「我的」页分组，避免破坏现有收藏解析。
 
 ---
@@ -241,7 +241,7 @@ python tools/validate_miniprogram.py
 4. 内容扩展已完成第二轮（24 朝代 / 100 史事 / 72 人物），夏、商、西周、西晋、五代十国、辽、西夏、金均已有代表人物；下一步做史料审校、补近现代人物与专题（目标约 120 人物 / 400 史事 / 12 专题）。
 5. 接入后端 API / CMS；在此之前保持本地数据种子可替换。
 6. 做分享卡片与收藏。~~ → ✅ 2026-10-19 晚：收藏/足迹/分享已落地。
-7. 资料库：真机验证加载与返回胶囊；决定是否接入收藏/足迹；按需追加诗文全文/增量数据。
+7. 资料库：真机验证首屏/分卷加载与返回胶囊；决定是否接入收藏/足迹；全文检索如需要，另建轻量全文索引或后端搜索。
 
 ---
 

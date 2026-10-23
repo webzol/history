@@ -20,6 +20,7 @@ Page({
     kind: '',
     type: '',
     keyword: '',
+    searchPlaceholder: '搜索资料',
     shown: [],
     total: 0,
     totalText: '0',
@@ -35,9 +36,11 @@ Page({
     const kind = opts.kind || 'figures';
     const type = opts.type || '';
     const title = safeTitle(opts.title, this.fallbackTitle(kind, type));
+    const isPoem = kind.indexOf('poems-') === 0;
+    const searchPlaceholder = isPoem ? '搜索篇名 / 作者 / 朝代' : `在${title}中搜索`;
     this.limit = PAGE_SIZE;
     this.all = [];
-    this.setData({ kind, type, pageTitle: title, loading: true, error: '' });
+    this.setData({ kind, type, pageTitle: title, searchPlaceholder, loading: true, error: '' });
     this.fetch();
   },
 
@@ -115,8 +118,10 @@ Page({
 
   onItem(e) {
     const id = e.currentTarget.dataset.id;
+    const shard = e.currentTarget.dataset.shard || '';
+    const type = this.data.kind.indexOf('poems-') === 0 ? shard : this.data.type;
     wx.navigateTo({
-      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(this.data.type)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
+      url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
     });
   },
 

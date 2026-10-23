@@ -90,6 +90,7 @@ Page({
           this.kind !== 'quotes' &&
           this.kind !== 'poemquotes' &&
           this.kind !== 'wenyan' &&
+          this.kind.indexOf('poems-') !== 0 &&
           !!item.summary &&
           item.summary !== item.text,
         showMeta: !!item.meta && item.meta !== kicker
