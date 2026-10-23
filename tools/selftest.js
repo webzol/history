@@ -651,13 +651,13 @@ console.log('== 收藏与足迹折叠 ==');
   eq(p.data.favCount, 2, '取消后收藏两条');
   eq(p.data.favHasMore, false, '两条收藏不显示查看全部');
 
-  // 返回键：胶囊「← 返回」，保持 240×56 比例
+  // 返回键：纸捻胶囊 + CSS 笔锋，固定 156×56，不依赖位图比例
   ['person', 'event', 'period', 'search', 'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'].forEach((name) => {
     const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
     const wxss = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxss'), 'utf8');
-    ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0, `${name} 使用返回胶囊`);
-    ok(wxml.indexOf('class="back-arrow"') >= 0 && wxml.indexOf('mode="widthFix"') >= 0, `${name} 返回箭头按宽度等比`);
-    ok(/\.back-arrow\s*\{[^}]*height:\s*auto/.test(wxss), `${name} 返回箭头高度自适应`);
+    ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0 && wxml.indexOf('hover-class="back-pressed"') >= 0, `${name} 使用返回胶囊`);
+    ok(wxml.indexOf('back-chevron') >= 0 && wxml.indexOf('back-shaft') >= 0 && wxml.indexOf('back-arrow') < 0, `${name} 返回箭头由 CSS 绘制`);
+    ok(/\.back\s*\{[^}]*display:\s*flex[^}]*width:\s*156rpx[^}]*height:\s*56rpx/.test(wxss) && /\.back-pressed\s*\{[^}]*scale\(0\.97\)/.test(wxss), `${name} 返回胶囊固定 156×56`);
   });
 
   // 独立页清空：确认后清空并刷新

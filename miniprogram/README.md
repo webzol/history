@@ -53,7 +53,7 @@ pages/home|timeline|discover|profile
 pages/person|event|period|search|favorites|footprints
 pages/archive|archive-list|archive-detail
 assets/paper-bg.jpg
-assets/back-arrow.png
+assets/back-arrow.png（旧版，已无引用）
 assets/paintings/（原型搜图素材，见 SOURCES.md）
 ```
 

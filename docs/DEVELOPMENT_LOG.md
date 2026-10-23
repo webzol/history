@@ -1605,3 +1605,27 @@ miniprogram/data/history.js
 - `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
 - 已核对 `22-archive-list.png`（摘要干净、分页正常）、`23-archive-detail.png`、`24-archive-wenyan.png`、`25-archive-poemquote.png`、`26-archive-poems.png`、`27-archive-poem-detail.png`。
 - 仍需真机确认：jsDelivr 冷启动/缓存命中下的索引首屏耗时、分卷切换、5MB 缓存预算与返回栈表现。
+
+---
+
+## 2026-10-23 · 第三十五轮：返回按钮改为窄纸捻胶囊 + CSS 笔锋
+
+**用户反馈**：左上角返回按钮看起来变形，而且太宽；按现有纸感/墨色风格重新设计，并要求更窄。
+
+**调整**
+
+- 九个详情/列表页（person/event/period/search/favorites/footprints/archive/archive-list/archive-detail）统一重做返回按钮，保留 `bindtap="goBack"` 与原有返回栈行为。
+- 不再使用 `assets/back-arrow.png` + `mode="widthFix"`：位图在容器/预览中容易被拉长，是“变形”的根源。箭头改为纯 CSS：
+  - `back-icon` + `back-chevron`（12×12rpx，左上/下边框旋转 45°）+ `back-shaft`（22×2rpx 渐变横线）。
+  - 中间 1rpx 赭金细分隔线；右侧楷体「返回」。
+- 胶囊从 240×56rpx 缩到 **156×56rpx**（约 2.79:1），减少顶部占用，避免与页面名/小印互撞；暖纸渐变 + 赭金细边 + 内高光，按下态 `back-pressed` 轻微缩放。
+- 使用 flex 居中排布，去掉原先箭头的绝对定位和文字独立区域；字体回退/不同字号下不会再压住箭头。
+- 更新 `tools/selftest.js` 的九页返回按钮断言：CSS 箭头、`back-pressed`、156×56 胶囊。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1600 / FAIL 0**。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js` 成功；`node tools/preview_shots.js` **28 张截图全部成功**。
+- 已核对 `06-period-tang.png`、`12-person-sushi.png`、`22-archive-list.png`、`23-archive-detail.png` 的返回按钮；宽度已收窄，箭头/文字比例正常。
+- 仍需真机确认：楷体回退、微信原生胶囊间距、320px 窄屏下的顶栏三者避让。

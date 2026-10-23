@@ -2,8 +2,12 @@
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen" wx:if="{{person}}">
     <view class="topbar">
-      <view class="back" bindtap="goBack">
-        <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
+      <view class="back" bindtap="goBack" hover-class="back-pressed" hover-stay-time="80">
+        <view class="back-icon">
+          <view class="back-chevron"></view>
+          <view class="back-shaft"></view>
+        </view>
+        <view class="back-divider"></view>
         <text class="back-label">返回</text>
       </view>
       <text class="top-title">人物</text>
