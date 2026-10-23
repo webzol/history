@@ -6,12 +6,13 @@
     </view>
 
     <view class="head-card">
-      <view class="avatar-wrap">
-        <image class="avatar" src="/assets/avatar-scholar.png" mode="aspectFill"></image>
+      <view class="avatar-wrap" bindtap="onRerollIdentity">
+        <image class="avatar" src="{{identity.avatar}}" mode="aspectFill"></image>
       </view>
       <view class="head-info">
-        <text class="nick">史页客</text>
-        <text class="tagline">以千年为卷轴，读万古事</text>
+        <text class="nick">{{identity.nick}}</text>
+        <text class="tagline">{{identity.motto}}</text>
+        <text class="nick-refresh" bindtap="onRerollIdentity">换一位史客</text>
       </view>
       <image class="head-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>

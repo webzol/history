@@ -15,3 +15,4 @@ import/
 
 # 目检临时总览图（不入仓）
 ui/preview/era_refetch_sheet*.jpg
+tools/_avatar_build/

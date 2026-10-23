@@ -1680,6 +1680,17 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 我的页随机身份：20 张历史风格头像变体 + 字号式随机昵称
+
+- 原「我的」页头卡是固定史官头像 + 写死昵称「史页客」；本次改为**随机身份**：
+  - **头像**：`tools/gen_avatars.py` 基于 `tools/avatar-scholar.svg` 参数化出 20 张变体（`assets/avatars/avatar-01..20.jpg`）——4 种冠巾（幞头/东坡巾/乌纱帽/纶巾）× 10 种朝代袍色（竹青/黛青/绛红/赭黄/玄墨/藕荷/月白/秋香/豆绿/驼灰）× 胡须（无/短髭/长髯）× 4 种纸底微调，headless Chrome 光栅化后压 120×120 JPEG q60（约 2KB/张，共 38KB，主包余量内；展示 112rpx≈56px，2.1x 密度）。
+  - **昵称**：`utils/identity.js` 字号式组名——20 前字（听松/卧云/观澜/抱朴/锄月/青简…）× 10 号尾（居士/山人/主人/先生/散人/道人/行者/书生/叟/翁）共 200 组，另配 6 条座右铭词库（原「以千年为卷轴」保留首位）。
+  - **交互**：身份存 `shige_identity`（首次进入随机分配并持久化，不闪变）；点头像或「换一位史客」重掷（昵称+头像+座右铭一起换，不与当前重复）。
+- `pages/profile/{js,wxml,wxss}`：head-card 走 `identity.get()`，`onRerollIdentity` 走 `identity.reroll()`；朱砂小字「换一位史客」+ 按压反馈。`assets/avatar-scholar.png` 保留为 data 默认兜底。
+- `tools/selftest.js`：+10 断言（20 张变体齐备、头像走变体池、昵称带字号尾、读取稳定、写入存储、重掷生效、onLoad 装配、换一位可点）。
+- 验证：`node tools/selftest.js` PASS 1646 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+- 遗留：如需更多变体，`python tools/gen_avatars.py N` 可再生（固定种子 20261023，N≤20 时组合已去重采样；扩展冠巾/袍色在脚本顶部词表）。
+
 ## 2026-10-23 · 修复开发者工具报「module 'utils/artRemote.js' is not defined」
 
 - 现象：开发者工具（lib 3.17.4）启动即报 `module 'utils/artRemote.js' is not defined`，入口 `entries.js` → `eraImages.js:119` 的 `require('./artRemote.js')` 找不到模块，页面全挂。

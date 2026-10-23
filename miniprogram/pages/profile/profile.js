@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const identity = require('../../utils/identity.js');
 const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
 
 Page({
@@ -23,11 +24,17 @@ Page({
     updating: false,
     fontOptions: font.OPTIONS,
     fontKey: 'm',
-    fontClass: 'm'
+    fontClass: 'm',
+    identity: { avatar: '/assets/avatar-scholar.png', nick: '史页客', motto: '以千年为卷轴，读万古事' }
   },
 
   onLoad() {
     this.doStats();
+    this.setData({ identity: identity.get() });
+  },
+
+  onRerollIdentity() {
+    this.setData({ identity: identity.reroll() });
   },
 
   onShow() {

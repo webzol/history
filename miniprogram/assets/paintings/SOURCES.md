@@ -15,6 +15,7 @@
 | ~~person-ink.jpg~~ | 已移除（2026-10-19，用户觉得展示效果奇怪） | — | 曾用于时间轴右上角；已从引用与资产中删除 | — |
 | `assets/thumbs/*-1..4.jpg` | 上述 han/tang/song/ming/qing/modern/landscape 原画各裁 4 个 160×160 细部 | 事件页「其时其人」缩略图、人物页相关史事缩略图、我的页收藏/足迹缩略图 | 同源派生（原画裁切，未新增外部素材） | 随原画授权状态 |
 | avatar-scholar.png | 手绘史官形象（幞头 + 圆领袍），216×216 | 「我的」页头像 | 自绘：`tools/avatar-scholar.svg`（矢量）→ Chrome 光栅化 | 自有素材 |
+| assets/avatars/avatar-01..20.jpg（120×120 q60，约 2KB/张） | 手绘史官随机变体（幞头/东坡巾/乌纱帽/纶巾 × 朝代袍色 × 胡须 × 纸底） | 「我的」页随机身份头像（utils/identity.js 词库 + tools/gen_avatars.py 生成） | 自有素材（自绘 SVG 参数化变体） |
 | seal.png | "史载"朱砂印章（首页 hero 同款印）**透明背景 RGBA** | 时间轴标题旁小印、朝代头卡小印（替代手写 CSS 印） | `tools/crop_seal.py`：palace.jpg 红色像素检测裁切 → 3x LANCZOS 放大 → "红度"alpha 抠图（背景全透明，任何卡片底无缝） | 与首页同源；上线前随 palace 一起确认授权 |
 
 

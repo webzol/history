@@ -1523,6 +1523,41 @@ console.log('== 阅读字号 ==');
 })();
 
 // ---------------------------------------------------------------------------
+// 我的 · 随机身份（头像变体 + 历史风格昵称）
+// ---------------------------------------------------------------------------
+
+(function () {
+  const identity = require(path.join(ROOT, 'utils', 'identity.js'));
+  let avatarFiles = 0;
+  for (let i = 1; i <= identity.AVATAR_COUNT; i += 1) {
+    if (fs.existsSync(path.join(ROOT, identity.avatarPath(i)))) avatarFiles += 1;
+  }
+  eq(avatarFiles, identity.AVATAR_COUNT, `随机头像变体 ${identity.AVATAR_COUNT} 张齐备`);
+
+  delete storage[identity.KEY];
+  const a = identity.get();
+  ok(a.avatar.indexOf('/assets/avatars/avatar-') === 0, '身份头像走本地变体池');
+  ok(identity.NICK_B.some((b) => a.nick.slice(-b.length) === b), '昵称带历史字号尾');
+  ok(identity.MOTTOS.indexOf(a.motto) >= 0, '座右铭出自词库');
+  eq(identity.get().nick, a.nick, '身份读取稳定（不闪变）');
+  eq(storage[identity.KEY].nick, a.nick, '身份写入本地存储');
+
+  let differs = false;
+  for (let i = 0; i < 10 && !differs; i += 1) {
+    const b = identity.reroll();
+    differs = b.nick !== a.nick || b.avatar !== a.avatar;
+  }
+  ok(differs, '「换一位史客」产生新身份');
+  eq(storage[identity.KEY].nick, identity.get().nick, '换身份后读取一致');
+
+  const p = pages.profile;
+  p.onLoad();
+  ok(p.data.identity && p.data.identity.avatar, '我的页 onLoad 装配随机身份');
+  p.onRerollIdentity();
+  ok(p.data.identity && p.data.identity.nick, '点「换一位史客」可重掷身份');
+})();
+
+// ---------------------------------------------------------------------------
 // 汇总
 // ---------------------------------------------------------------------------
 
