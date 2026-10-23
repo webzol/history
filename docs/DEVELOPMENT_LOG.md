@@ -1342,3 +1342,56 @@ miniprogram/data/history.js
 - 返回胶囊在极窄屏（<320px）与真机缺楷体环境仍需开发者工具/真机再看一眼；当前以 390px 为基准。
 - 近现代人物仍只有鲁迅，下一步优先补孙中山之外的思想家、文学家、科学家与改革开放人物。
 - 内容仍为单人轻量版：距开发大纲约 120 人物 / 400 史事 / 12 专题还有距离，继续按批次扩充并做史料审校。
+
+---
+
+## 2026-10-23 · 第二十七轮：APK 资料库接入（28,248 条）
+
+**用户需求**：分析用户提供的 `org.raphets.history` APK，把其中的历史、文献数据导入现有「史页」小程序，并继续确认返回按钮等比展示。
+
+**数据导入**
+
+- 原始 APK 解包与解密只在本地 `import/apk-assets/` 进行，`import/` 已加入 `.gitignore`，不进入仓库；不修改 APK 原文件。
+- 新增 `tools/import_apk_data.py`，从 SQLCipher 库读取 `history_card_v2`、`history_event_v17`、`figure_list_v4`、`emperor_v7`、`war_v4`、`dynasty_event_v2`、`quotation_v3`；另读取明文 SQLite `poem2.db`、`wenyanwen.db`、`official_data.db`。
+- 资料统一为 `id/title/meta/summary/text/facts/source/era` 结构；辞条额外带 `type`，名句额外带 `translation`。
+- 已导入 **28,248 条**：
+  - 典籍辞条 13,285（9 类：职官辞典、典故小词典、历史文化常识、成语故事、历代诗词名句鉴赏、历史典故、历史年表、诸子百家名句赏析、二十五史名句赏析）
+  - 历代人物 4,869
+  - 历史事件 705
+  - 历代帝王 373
+  - 历代战争 466
+  - 三国纪事 29
+  - 名句赏析 677
+  - 文言辞条 3,889（`wenyanwen.db`）
+  - 诗文名句 3,955（`poem2.db` 的 `quotes`，已与名句赏析去重）
+- `official_data.db` 的 3,721 条与「职官辞典」重复 3,717 条，未单独导入；`poem2.db` 的 10,817 篇诗文全文因单类体积与列表承载限制暂未导入，后续如需全文，应做分卷或后端分页。
+- 生成文件：`miniprogram/data/apk/catalog.json`、`cards/*.json`、`figures/events/emperors/wars/dynasty-events/quotes/wenyanwen/poem-quotes.json`，以及 `miniprogram/data/archive-meta.js`；JSON 合计约 23.0MB，最大单文件 `cards/6.json` 约 3.63MB。
+- 资料 ID 全量校验唯一；修复帝王表重复 `figure_id` 导致的 ID 冲突，帝王 ID 改为 `hem-{序号}-{figure_id}`。
+
+**小程序接入**
+
+- 新增三页：`pages/archive/`（资料库首页）、`pages/archive-list/`（分类/搜索/加载更多）、`pages/archive-detail/`（正文分段、资料卡、译文、分享）。
+- 发现页新增「史页资料库」入口与总量、辞条数展示，入口跳 `/pages/archive/archive`。
+- 数据走远端按需加载：`utils/apkData.js` 以 jsDelivr 为基址，内存缓存 + 7 天本地缓存 + 并发请求合并；单类 UTF-8 超过 1.5MB 只保留内存缓存，避免挤占小程序 10MB 本地存储。
+- `miniprogram/project.config.json` 增加 `data/apk` 的 `packOptions.ignore`，资料 JSON 不进入主包；主包仍保持 2MB 以内。
+- 资料库详情页不引用 APK 内百度/搜史外部图片，避免小程序域名白名单问题；正文按 `\n` 分段，`###` 行渲染为小标题。
+- 资料库条目暂未接入收藏/足迹，避免改动现有 `utils/entries.js` 的解析逻辑。
+
+**返回按钮**
+
+- 返回胶囊保持 `240×56rpx`；箭头仍用 `assets/back-arrow.png`（原始 128×56）+ `mode="widthFix"` + `height:auto`，文字在右侧独立区域。
+- 预览 harness 已支持 `mode` 与 `wx:elif`，并修复资料库条件渲染；21–25 号截图核对箭头头尾完整、箭头/文字间距正常。
+- 本轮未在微信开发者工具/真机实际编译，胶囊避让、底部安全区仍需真机确认。
+
+**校验**
+
+- `node tools/selftest.js`：**PASS 1544 / FAIL 0**；新增资料库入口、分类/人物/名句/文言/诗文列表、详情分段、分享参数、返回胶囊断言，页面总数 13。
+- `python tools/validate_miniprogram.py`：`OK: 13 pages, JSON/assets/WXML checks passed.`
+- `node tools/build_preview.js`：13 页打包成功；`node tools/preview_shots.js`：25 张截图全部成功，新增 `21-archive`、`22-archive-list`、`23-archive-detail`、`24-archive-wenyan`、`25-archive-poemquote`。
+- `miniprogram/data/history.json` 未改数据，仅按流程重建后还原，避免无关 `builtAt` diff。
+
+**遗留 / 下一步**
+
+- 真机核对资料库首次加载耗时、缓存占用、返回胶囊、底部安全区。
+- 资料库数据仍需逐条史实/授权审校；`poem2.db` 诗文全文、`official_data.db` 去重后增量可按需追加。
+- 是否把资料库条目接入收藏/足迹，需先扩展 `entries.js` 与「我的」页分组。

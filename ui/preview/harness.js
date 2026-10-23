@@ -101,6 +101,20 @@
         });
         return;
       }
+      if (o && o.url && o.url.indexOf('/data/apk/') >= 0) {
+        var rel = o.url.split('/data/apk/')[1];
+        if (rel) {
+          fetch('/miniprogram/data/apk/' + rel).then(function (res) {
+            if (!res.ok) throw new Error('archive ' + res.status);
+            return res.json();
+          }).then(function (data) {
+            if (o.success) o.success({ data: data, statusCode: 200 });
+          }).catch(function (err) {
+            if (o.fail) o.fail(err);
+          });
+          return;
+        }
+      }
       if (o && o.fail) o.fail(new Error('offline'));
     },
     navigateTo: function (o) {
@@ -390,6 +404,14 @@
         var cond = !!evalExpr(pickExpr(a['wx:if']), scope);
         elseState = cond ? 'skip' : 'render';
         if (cond) renderNode(child, parent, scope, inst);
+      } else if (a['wx:elif'] !== undefined) {
+        if (elseState === 'render') {
+          var elifCond = !!evalExpr(pickExpr(a['wx:elif']), scope);
+          if (elifCond) {
+            renderNode(child, parent, scope, inst);
+            elseState = 'skip';
+          }
+        }
       } else if (a['wx:else'] !== undefined) {
         if (elseState === 'render') {
           renderNode(child, parent, scope, inst);
@@ -408,7 +430,7 @@
     var dataset = {};
 
     Object.keys(attrs).forEach(function (key) {
-      if (key === 'wx:for' || key === 'wx:key' || key === 'wx:if' || key === 'wx:else') return;
+      if (key === 'wx:for' || key === 'wx:key' || key === 'wx:if' || key === 'wx:elif' || key === 'wx:else') return;
       if (/^bind/.test(key)) return;
 
       var val = attrs[key];

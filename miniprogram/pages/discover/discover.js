@@ -1,6 +1,9 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const apk = require('../../utils/apkData.js');
+
+const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 // 朝代卡配图（搜图素材，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -18,6 +21,7 @@ Page({
     era: {},
     modern: {},
     picks: [],
+    archive: {},
     fontClass: 'm'
   },
 
@@ -36,6 +40,13 @@ Page({
 
   build() {
     const history = hd.get();
+    const meta = apk.getMeta();
+    const archive = {
+      totalText: fmt(meta.stats.total),
+      cardsText: fmt(meta.stats.cards),
+      figuresText: fmt(meta.stats.figures),
+      eventsText: fmt(meta.stats.events)
+    };
     const periods = history.periods
       .filter((item) => PERIOD_META[item.id])
       .map((item) => ({
@@ -48,7 +59,8 @@ Page({
       periods,
       era: history.topics.find((item) => item.id === 'tang'),
       modern: history.topics.find((item) => item.id === 'modern-china'),
-      picks: history.events.slice(-6).reverse()
+      picks: history.events.slice(-6).reverse(),
+      archive
     });
   },
 
@@ -80,6 +92,10 @@ Page({
     wx.navigateTo({
       url: `/pages/event/event?id=${e.currentTarget.dataset.id}`
     });
+  },
+
+  goArchive() {
+    wx.navigateTo({ url: '/pages/archive/archive' });
   },
 
   onShareAppMessage() {

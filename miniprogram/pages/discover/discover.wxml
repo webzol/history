@@ -7,6 +7,19 @@
 
     <view class="intro">朝代在文物里，专题在长卷里。</view>
 
+    <view class="archive-entry" bindtap="goArchive">
+      <view class="archive-entry-copy">
+        <text class="archive-entry-kicker">史页资料库</text>
+        <text class="archive-entry-title">{{archive.totalText}} 条资料，按类翻阅</text>
+        <text class="archive-entry-desc">{{archive.cardsText}} 条典籍辞条 · {{archive.figuresText}} 位人物 · {{archive.eventsText}} 条史事</text>
+      </view>
+      <view class="archive-entry-badge">
+        <text class="archive-entry-num">13k+</text>
+        <text class="archive-entry-unit">辞条</text>
+      </view>
+      <text class="archive-entry-arrow">›</text>
+    </view>
+
     <view class="section-head">
       <text class="section-title">朝代一览</text>
       <text class="section-link">点开看简介</text>

@@ -9,3 +9,6 @@ Thumbs.db
 # Dependencies
 node_modules/
 tools/__pycache__/
+
+# 原始 APK / 解密数据库（仅本地分析，不提交）
+import/

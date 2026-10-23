@@ -75,6 +75,16 @@ const wx = {
   hideLoading() { route('hideLoading', '', {}); },
   request(opts) {
     route('request', opts.url);
+    if (opts.url.indexOf('/data/apk/') >= 0) {
+      const rel = opts.url.split('/data/apk/')[1];
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'apk', rel), 'utf8'));
+        if (opts.success) opts.success({ data, statusCode: 200 });
+      } catch (e) {
+        if (opts.fail) opts.fail(e);
+      }
+      return;
+    }
     const hook = opts.url.indexOf('today_in_history') >= 0 ? mockRequest.today : mockRequest.payload;
     if (hook) opts.success({ data: hook });
     else if (opts.fail) opts.fail(new Error('offline'));
@@ -182,7 +192,10 @@ function loadAll() {
   require(path.join(ROOT, 'app.js'));
   require(path.join(ROOT, 'data', 'history.js'));
 
-  const names = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search', 'footprints', 'favorites'];
+  const names = [
+    'home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search',
+    'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'
+  ];
   names.forEach((name) => {
     currentFile = name;
     global.__CUR = name;
@@ -639,7 +652,7 @@ console.log('== 收藏与足迹折叠 ==');
   eq(p.data.favHasMore, false, '两条收藏不显示查看全部');
 
   // 返回键：胶囊「← 返回」，保持 240×56 比例
-  ['person', 'event', 'period', 'search', 'footprints', 'favorites'].forEach((name) => {
+  ['person', 'event', 'period', 'search', 'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'].forEach((name) => {
     const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
     const wxss = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxss'), 'utf8');
     ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0, `${name} 使用返回胶囊`);
@@ -664,6 +677,102 @@ console.log('== 收藏与足迹折叠 ==');
   confirmModal(true);
   eq(footPage.data.footCount, 0, '确认后足迹页清空');
   eq(store.listFootprints().length, 0, '足迹存储清空');
+})();
+
+// ---------------------------------------------------------------------------
+// 7. 资料库
+// ---------------------------------------------------------------------------
+
+console.log('== 资料库 ==');
+
+(function () {
+  resetWifiStack();
+  const discover = pages.discover;
+  discover.onLoad();
+  eq(discover.data.archive.totalText, '28,248', '发现页资料库总数文案');
+  tap(discover, 'goArchive');
+  eq(last('navigateTo').url, '/pages/archive/archive', '发现页进入资料库');
+
+  const archive = pages.archive;
+  archive.onLoad();
+  eq(archive.data.stats.total, 28248, '资料库总数');
+  eq(archive.data.categories.length, 9, '资料库九个辞条分类');
+  eq(archive.data.sections.length, 8, '资料库八个人物/事件/文献入口');
+  eq(archive.data.categories[0].name, '职官辞典', '资料库分类按数量排序');
+
+  resetWifiStack();
+  tap(archive, 'onCategory', { key: '12', name: '诸子百家名句赏析' });
+  ok(
+    last('navigateTo').url.indexOf('/pages/archive-list/archive-list?kind=cards&type=12') === 0,
+    '资料库分类进列表页'
+  );
+  resetWifiStack();
+  tap(archive, 'onSection', { key: 'figures', name: '历代人物' });
+  eq(
+    last('navigateTo').url,
+    '/pages/archive-list/archive-list?kind=figures&title=%E5%8E%86%E4%BB%A3%E4%BA%BA%E7%89%A9',
+    '资料库人物入口进列表页'
+  );
+
+  const list = pages['archive-list'];
+  list.onLoad({ kind: 'cards', type: '12', title: '诸子百家名句赏析' });
+  eq(list.data.loading, false, '资料库列表加载完成');
+  eq(list.data.total, 246, '资料库列表总数');
+  eq(list.data.shown.length, 60, '资料库列表首屏 60 条');
+  list.onMore();
+  eq(list.data.shown.length, 120, '资料库列表加载更多');
+  const first = list.data.shown[0];
+  list.onInput({ detail: { value: first.title.slice(0, 2) } });
+  ok(list.data.total > 0, '资料库列表可搜索');
+  list.clearKeyword();
+  eq(list.data.total, 246, '清空搜索恢复全量');
+
+  const detail = pages['archive-detail'];
+  detail.onLoad({
+    kind: 'cards',
+    type: '12',
+    title: '诸子百家名句赏析',
+    id: first.id
+  });
+  eq(detail.data.loading, false, '资料库详情加载完成');
+  eq(detail.data.item.id, first.id, '资料库详情命中条目');
+  ok(detail.data.blocks.length > 0, '资料库详情正文分段');
+  ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
+  ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
+
+  list.onLoad({ kind: 'figures', title: '历代人物' });
+  eq(list.data.total, 4869, '人物资料列表总数');
+  eq(list.data.shown.length, 60, '人物资料首屏 60 条');
+  const figure = list.data.shown[0];
+  ok(figure.title && figure.meta, '人物资料含姓名与朝代身份');
+  detail.onLoad({ kind: 'figures', title: '历代人物', id: figure.id });
+  eq(detail.data.loading, false, '人物资料详情加载完成');
+  ok(detail.data.blocks.length > 0, '人物资料详情有正文');
+  ok(detail.data.showLead === false, '人物小传不重复摘要');
+
+  list.onLoad({ kind: 'quotes', title: '名句赏析' });
+  eq(list.data.total, 677, '名句资料列表总数');
+  const quote = list.data.shown[0];
+  detail.onLoad({ kind: 'quotes', title: '名句赏析', id: quote.id });
+  eq(detail.data.loading, false, '名句资料详情加载完成');
+  ok(detail.data.item.translation, '名句资料带译文');
+
+  list.onLoad({ kind: 'wenyan', title: '文言辞条' });
+  eq(list.data.total, 3889, '文言辞条列表总数');
+  const wenyan = list.data.shown[0];
+  ok(wenyan.title && wenyan.meta, '文言辞条含字头与读音');
+  detail.onLoad({ kind: 'wenyan', title: '文言辞条', id: wenyan.id });
+  eq(detail.data.loading, false, '文言辞条详情加载完成');
+  ok(detail.data.blocks.length > 0, '文言辞条详情有正文');
+
+  list.onLoad({ kind: 'poemquotes', title: '诗文名句' });
+  eq(list.data.total, 3955, '诗文名句列表总数');
+  const poemQuote = list.data.shown[0];
+  ok(poemQuote.title && poemQuote.meta, '诗文名句含原文与作者');
+  detail.onLoad({ kind: 'poemquotes', title: '诗文名句', id: poemQuote.id });
+  eq(detail.data.loading, false, '诗文名句详情加载完成');
+  ok(detail.data.item.facts.length > 0, '诗文名句详情保留出处信息');
+  ok(detail.data.showLead === false, '诗文名句不重复摘要');
 })();
 
 // ---------------------------------------------------------------------------
@@ -1010,7 +1119,7 @@ console.log('== 路由完整 ==');
     .filter((r) => ['navigateTo', 'redirectTo'].indexOf(r.kind) >= 0)
     .map((r) => urlTarget(r.url));
   targets.forEach((t) => ok(pages[t], `跳转目标页存在 ${t}`));
-  ok(Object.keys(pages).length === 10, '十个页面全部注册');
+  ok(Object.keys(pages).length === 13, '十三个页面全部注册');
 })();
 
 // ---------------------------------------------------------------------------
@@ -1221,7 +1330,10 @@ console.log('== 阅读字号 ==');
   eq(store.getFontKey(), 'm', '非法字号不落库');
 
   // 详情页与主页面根节点都挂 fs-*
-  const names = ['home', 'timeline', 'discover', 'profile', 'person', 'event', 'period', 'search', 'footprints', 'favorites'];
+  const names = [
+    'home', 'timeline', 'discover', 'profile', 'person', 'event', 'period', 'search',
+    'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'
+  ];
   names.forEach((name) => {
     const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
     ok(wxml.indexOf('class="page fs-{{fontClass}}"') >= 0, `${name} 根节点挂字号类`);

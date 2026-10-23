@@ -1,0 +1,56 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
+        <text class="back-label">返回</text>
+      </view>
+      <text class="top-title">史页 · 资料</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+
+    <view wx:if="{{loading}}" class="state-card">
+      <text class="state-title">正在打开资料</text>
+      <text class="state-desc">首次加载需要片刻。</text>
+    </view>
+
+    <view wx:elif="{{error}}" class="state-card error" bindtap="retry">
+      <text class="state-title">{{error}}</text>
+      <text class="state-action">点此重试</text>
+    </view>
+
+    <block wx:else>
+      <view class="head-card">
+        <text class="head-kicker">{{kicker}}</text>
+        <text class="head-title">{{item.title}}</text>
+        <text wx:if="{{showMeta}}" class="head-meta">{{item.meta}}</text>
+      </view>
+
+      <view wx:if="{{showBody || item.translation}}" class="body-card">
+        <view wx:if="{{showLead}}" class="lead">
+          <text>{{item.summary}}</text>
+        </view>
+        <block wx:if="{{showBody}}">
+          <block wx:for="{{blocks}}" wx:key="id">
+            <text wx:if="{{item.kind === 'heading'}}" class="para-head">{{item.text}}</text>
+            <view wx:else class="para">
+              <text>{{item.text}}</text>
+            </view>
+          </block>
+        </block>
+        <view wx:if="{{item.translation}}" class="translation">
+          <text class="trans-title">译文</text>
+          <text class="trans-text">{{item.translation}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.facts.length}}" class="facts">
+        <text class="facts-title">资料卡</text>
+        <text wx:for="{{item.facts}}" wx:key="*this" class="fact">{{item}}</text>
+      </view>
+
+      <view class="source-line">来源：{{item.source}} · 史页资料库</view>
+    </block>
+  </view>
+</view>

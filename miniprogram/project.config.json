@@ -5,6 +5,10 @@
       {
         "value": "data/history.json",
         "type": "file"
+      },
+      {
+        "value": "data/apk",
+        "type": "folder"
       }
     ],
     "include": []

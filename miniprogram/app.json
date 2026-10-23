@@ -9,7 +9,10 @@
     "pages/period/period",
     "pages/search/search",
     "pages/footprints/footprints",
-    "pages/favorites/favorites"
+    "pages/favorites/favorites",
+    "pages/archive/archive",
+    "pages/archive-list/archive-list",
+    "pages/archive-detail/archive-detail"
   ],
   "window": {
     "navigationStyle": "custom",

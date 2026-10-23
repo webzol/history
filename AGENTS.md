@@ -9,9 +9,10 @@
 当前已有：
 
 - 高保真网页首页：`ui/reference/home-v3.html`
-- 原生小程序（10 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
+- 原生小程序（13 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
+- 「史页资料库」：APK 数据 28,248 条（辞条 13,285 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存，单类 >1.5MB 只留内存）。原始 APK/DB 在 `import/`，不提交。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（1492 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（20 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 质量链路：`node tools/selftest.js`（1544 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（25 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -46,7 +47,10 @@
 | 人物详情 | 已实现 | `miniprogram/pages/person/` | 大字人名 + 时代配画底纹头卡、楷体引文、正文段落、相关史事列表（配画缩略图，跳事件详情）；支持古代/近现代双色调 |
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 头卡右侧装裱画片（按 era 取画，200rpx 白边小画）、大字年份、双色调色条、正文段落、"其时其人"人物卡（时代细部缩略图 + 姓名，跳人物详情）、收藏按钮、回时间轴按钮 |
 | 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；24 个朝代均有 PERIOD_META，西晋/秦/南宋等可直接查看 |
-| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
+| 发现 | 已实现（占位说明保留在页尾） | `miniprogram/pages/discover/` | 精选 6 张朝代配画卡（西汉/唐/北宋/明/清/近现代）；顶部「史页资料库」入口（28,248 条）；其余 18 个朝代从首页「朝代」弹层/搜索进入，避免发现页被同质配图淹没；专题长卷、精选史事列表 |
+| 资料库首页 | 已实现 | `miniprogram/pages/archive/` | 资料总量、9 个辞条分类、8 个人物/事件/文献入口；数据来自 `data/archive-meta.js` |
+| 资料库列表 | 已实现 | `miniprogram/pages/archive-list/` | 分类/人物/事件/名句/文言/诗文列表，搜索 + 60 条分页加载；数据走 `utils/apkData.js` |
+| 资料详情 | 已实现 | `miniprogram/pages/archive-detail/` | 标题/分类/资料卡/正文分段/译文/分享；不引用 APK 外部图片 |
 | 我的 | 已实现 | `miniprogram/pages/profile/` | 手绘史官头像（`assets/avatar-scholar.png`）、装裱画片横幅、收藏/足迹配图缩略图（各只展示前 3 条 + 查看全部入口）、阅读字号设置、本地数据统计、数据/素材/关于说明、清除缓存 |
 
 网页预览：
@@ -59,7 +63,7 @@
 ## 3. 目录结构
 
 ```text
-E:\hish\
+E:\AI\history\
 ├─ AGENTS.md                         # 本文件，先读
 ├─ docs\
 │  ├─ DEVELOPMENT_LOG.md             # 开发日志 / 交接
@@ -72,17 +76,21 @@ E:\hish\
 │  ├─ sitemap.json
 │  ├─ data\history.js               # 本地真实历史数据种子（合并 history-extra.js）
 │  ├─ data\history-extra.js         # 历代扩展内容（与 history.js 合并；当前合计 24 朝代/100 史事/72 人物）
+│  ├─ data\archive-meta.js          # 资料库统计/分类/入口元数据（由导入脚本生成）
+│  ├─ data\apk\                     # 28,248 条资料 JSON（主包排除，jsDelivr 远端加载）
 │  ├─ utils\store.js                # 收藏 / 浏览足迹 / 阅读字号（本地存储）
 │  ├─ utils\font.js                 # 阅读字号选项、根节点类名、页面同步
 │  ├─ utils\entries.js              # 收藏/足迹条目解析、时间格式、分组与展平
 │  ├─ utils\historyData.js          # 数据中枢（本地种子 + jsDelivr 热更）
+│  ├─ utils\apkData.js              # 资料库按需加载 / 缓存 / 详情查找
 │  ├─ assets\                        # 参考图裁切插画、宣纸背景、paintings 搜图素材(SOURCES.md)、图标 PNG
-│  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints
+│  └─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints|archive|archive-list|archive-detail
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1492 / FAIL 0）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 1544 / FAIL 0）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
-│  ├─ preview_shots.js              # 批量截图 20 张 → ui/preview/shots/
+│  ├─ preview_shots.js              # 批量截图 25 张 → ui/preview/shots/
+│  ├─ import_apk_data.py            # APK SQLCipher/明文 SQLite → data/apk/*.json
 │  ├─ validate_miniprogram.py       # JS/JSON/WXML/资源静态校验
 │  ├─ content_audit.py              # 数据完整性审计（缺 details/source 等）
 │  ├─ compress_assets.py / make_paper_bg.py / crop_seal.py 等   # 素材复现链路
@@ -104,7 +112,7 @@ E:\hish\
 直接用浏览器打开：
 
 ```text
-E:\hish\ui\reference\home-v3.html
+E:\AI\history\ui\reference\home-v3.html
 ```
 
 重新截图（Windows + Chrome）：
@@ -114,27 +122,27 @@ E:\hish\ui\reference\home-v3.html
   --headless=new --disable-gpu --no-sandbox --hide-scrollbars `
   --force-device-scale-factor=2 --window-size=390,844 `
   --virtual-time-budget=2500 `
-  --screenshot='E:\hish\ui\reference\home-final.png' `
+  --screenshot='E:\AI\history\ui\reference\home-final.png' `
   'file:///E:/hish/ui/reference/home-v3.html'
 ```
 
 ### 微信小程序
 
 1. 打开微信开发者工具。
-2. 导入 `E:\hish\miniprogram`。
-3. AppID 可先使用测试号 / `touristappid`。
+2. 导入 `E:\AI\history\miniprogram`。
+3. AppID 已配置为 `wxe61b785946958cc7`（正式发布前确认归属）。
 4. 基础库建议 3.x，编译预览。
 
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 1492 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 1544 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
 node tools/preview_server.js
 
-# 小程序源码改动后需重建 bundle，再批量截图核对 ui/preview/shots/（20 张）
+# 小程序源码改动后需重建 bundle，再批量截图核对 ui/preview/shots/（25 张）
 node tools/build_preview.js
 node tools/preview_shots.js
 ```
@@ -172,7 +180,7 @@ python tools/validate_miniprogram.py
 阅读字号：
 
 - 四档：小 `s`（--fs 0.9）/ 标准 `m`（1）/ 大 `l`（1.14）/ 特大 `xl`（1.28），默认标准；设置存 `shige_font_key`。
-- 10 个页面根节点统一 `class="page fs-{{fontClass}}"`，页面 `onLoad/onShow` 调 `utils/font.js` 的 `apply(this)` 重读设置。
+- 13 个页面根节点统一 `class="page fs-{{fontClass}}"`，页面 `onLoad/onShow` 调 `utils/font.js` 的 `apply(this)` 重读设置。
 - 页面 WXSS 的字号/定值行高一律写 `calc(Nrpx * var(--fs, 1))`；**不要在页面里写死 `font-size: Nrpx`**，否则该元素不随设置缩放。图标/箭头/引号/印章等符号保持固定尺寸。
 - 新增页面必须同时挂根类名与 `font.apply`，否则用户改字号后该页不生效。
 
@@ -197,7 +205,7 @@ python tools/validate_miniprogram.py
 - 原生小程序，不引入 Taro/uni-app。
 - 页面结构：`pages/<name>/<name>.{js,json,wxml,wxss}`。
 - 使用 `rpx`；1px 细线可用 `px`（或 1rpx）。
-- 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情/列表页顶栏为「返回胶囊 + 页面名 + 小印」；返回胶囊按上传图复刻：`240×56rpx`（约 4.29:1，保持比例不变形）、长箭头 + 楷体「返回」、墨褐/赭金；箭头用 `assets/back-arrow.png` + `mode="widthFix"`（高度 auto，绝不拉伸），文字占右侧独立区域（`left:76rpx; right:18rpx`）避免字体回退时压住箭头；标题 `left: 54%` 避让，六页统一（person/event/period/search/favorites/footprints）。预览 harness 已按 `mode` 实现 `object-fit`，截图不会再误判变形。
+- 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情/列表页顶栏为「返回胶囊 + 页面名 + 小印」；返回胶囊按上传图复刻：`240×56rpx`（约 4.29:1，保持比例不变形）、长箭头 + 楷体「返回」、墨褐/赭金；箭头用 `assets/back-arrow.png` + `mode="widthFix"`（高度 auto，绝不拉伸），文字占右侧独立区域（`left:76rpx; right:18rpx`）避免字体回退时压住箭头；标题 `left: 54%` 避让，九页统一（person/event/period/search/favorites/footprints/archive/archive-list/archive-detail）。预览 harness 已按 `mode` 实现 `object-fit`，截图不会再误判变形。
 - 底部导航：`app.json` 已启用 `tabBar.custom = true` + `custom-tab-bar/` 组件（2026-10-20）；tab 页间用 `wx.switchTab`，页面常驻（onShow 维持数据新鲜）；跨 tab 的 timeline 分段用 `utils/store.js` 的 pending mode 交接（`?mode=` 在 switchTab 下不可用）。
 - **未经微信开发者工具真机编译**：custom-tab-bar 的安全区 env() 与组件生命周期需真机确认，首次打开开发者工具时优先核对底部栏。
 - 图片全部本地 PNG/JPG；小程序 `<image>` 使用绝对路径 `/assets/...`；宣纸底为 `assets/paper-bg.jpg`（**不要再用 paper-bg.png，已删除**）。
@@ -210,27 +218,30 @@ python tools/validate_miniprogram.py
 
 ## 7. 已知问题 / 风险
 
-1. **未在微信开发者工具中编译验证**。WXML/JS/JSON 结构已通过静态检查（10 页），但真机样式、胶囊避让、安全区需要实际看。
+1. **未在微信开发者工具中编译验证**。WXML/JS/JSON 结构已通过静态检查（13 页），但真机样式、胶囊避让、安全区需要实际看；资料库还需实测首屏加载耗时与缓存占用。
 2. **hero 插画、盛唐背景从用户参考图/新图裁切**，属于原型素材；正式上线前必须确认授权或替换。
 3. ~~事件/人物详情独立成页；朝代 Modal~~ → 2026-10-19 晚：朝代详情页 `pages/period/` 已落地，全站仅剩专题（盛唐气象/百年中国）走时间轴，无 Modal 残留。
 4. ~~收藏、浏览足迹占位~~ → 2026-10-19 晚：已落地（`utils/store.js` 本地存储；详情页收藏按钮、「我的」页列表、清缓存联动）。
 5. 搜索已完成（2026-10-19 下午，入口在「我的」页）；全部 12 条事件已补 details 正文；数据仍在本地 `data/history.js` 种子，后端/CMS 尚未启动。
-6. `project.config.json` 使用 `touristappid`，正式开发需替换。
+6. `project.config.json` 已配置 AppID `wxe61b785946958cc7`；正式发布前确认归属与权限。
 7. ~~paper-bg.png 约 871KB~~ → 已解决：全部图片转优化 JPG（paper-bg.jpg 25KB 等），包体 550KB；`tools/compress_assets.py` 可复现。
 8. 四个主页面顶部均为纯字标；时间轴靠页内"古代/近现代"分段切换，无需菜单。
 9. ~~首页"今日史事"日期匹配未完成~~ → 2026-10-19 晚：已按公历「月-日」日期库匹配（8 组），无匹配日回退编辑精选；农历事件暂未列入，正式发布前仍需历史审校。
 10. 旧版 `ui/neo/` 和 `docs/UI设计说明.md` 容易误用；除非用户明确要求，否则不要用旧版风格覆盖当前实现。
+11. 资料库数据来自 APK 迁移，尚未逐条史实/授权审校；`poem2.db` 的 10,817 篇诗文全文与 `official_data.db` 未纳入（后者与职官辞典高度重复），后续按需追加。
+12. 资料库条目暂未接入收藏/足迹；接入前需扩展 `utils/entries.js` 与「我的」页分组，避免破坏现有收藏解析。
 
 ---
 
 ## 8. 下一步优先级
 
-1. 在微信开发者工具中跑通首页与时间轴，修胶囊/安全区/字体回退。
+1. 在微信开发者工具中跑通首页、时间轴与资料库，修胶囊/安全区/字体回退，实测 jsDelivr 首屏加载与缓存占用。
 2. ~~做独立的人物详情（苏轼 / 鲁迅）与事件详情（澶渊之盟 / 辛亥革命），替换当前 Modal。~~ ✅ 2026-10-19 已完成。
 3. ~~做搜索页~~ ✅ 2026-10-19 下午已完成（入口：我的页首行）；下轮可补人物条目（赵匡胤/王安石/林则徐等）让搜索结果更完整。~~ → ✅ 2026-10-19 晚已补 3 位。
 4. 内容扩展已完成第二轮（24 朝代 / 100 史事 / 72 人物），夏、商、西周、西晋、五代十国、辽、西夏、金均已有代表人物；下一步做史料审校、补近现代人物与专题（目标约 120 人物 / 400 史事 / 12 专题）。
 5. 接入后端 API / CMS；在此之前保持本地数据种子可替换。
 6. 做分享卡片与收藏。~~ → ✅ 2026-10-19 晚：收藏/足迹/分享已落地。
+7. 资料库：真机验证加载与返回胶囊；决定是否接入收藏/足迹；按需追加诗文全文/增量数据。
 
 ---
 

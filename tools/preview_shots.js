@@ -34,7 +34,12 @@ const targets = [
   ['17-period-modern', 'period?shot=1&id=modern'],
   ['18-person-collect', `person?shot=1&id=su-shi&s=${esc('click:.ghost-btn')}`],
   ['19-event-zhenghe', 'event?shot=1&id=zhenghe-1405'],
-  ['20-person-yuqian', 'person?shot=1&id=yu-qian']
+  ['20-person-yuqian', 'person?shot=1&id=yu-qian'],
+  ['21-archive', 'archive?shot=1'],
+  ['22-archive-list', `archive-list?shot=1&kind=cards&type=12&title=${esc('诸子百家名句赏析')}`],
+  ['23-archive-detail', `archive-detail?shot=1&kind=cards&type=12&title=${esc('诸子百家名句赏析')}&id=hc-12-00001`],
+  ['24-archive-wenyan', `archive-list?shot=1&kind=wenyan&title=${esc('文言辞条')}`],
+  ['25-archive-poemquote', `archive-detail?shot=1&kind=poemquotes&title=${esc('诗文名句')}&id=hpq-1`]
 ];
 
 let miss = 0;

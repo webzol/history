@@ -10,7 +10,10 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', 'miniprogram');
 const OUT = path.join(__dirname, '..', 'ui', 'preview');
 
-const PAGES = ['home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search', 'footprints', 'favorites'];
+const PAGES = [
+  'home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search',
+  'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'
+];
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
   function wrapJs(modPath, source) {
@@ -35,6 +38,7 @@ parts.push('');
 parts.push(wrapJs('app.js', read('app.js')));
 parts.push(wrapJs('data/history-extra.js', read('data/history-extra.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
+parts.push(wrapJs('data/archive-meta.js', read('data/archive-meta.js')));
 parts.push(wrapJs('utils/store.js', read('utils/store.js')));
 parts.push(wrapJs('utils/historyData.js', read('utils/historyData.js')));
 parts.push(wrapJs('utils/remote.js', read('utils/remote.js')));
@@ -42,6 +46,7 @@ parts.push(wrapJs('utils/api.js', read('utils/api.js')));
 parts.push(wrapJs('utils/eraImages.js', read('utils/eraImages.js')));
 parts.push(wrapJs('utils/font.js', read('utils/font.js')));
 parts.push(wrapJs('utils/entries.js', read('utils/entries.js')));
+parts.push(wrapJs('utils/apkData.js', read('utils/apkData.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>

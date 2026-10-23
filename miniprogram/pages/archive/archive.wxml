@@ -1,0 +1,76 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back" bindtap="goBack">
+        <image class="back-arrow" src="/assets/back-arrow.png" mode="widthFix"></image>
+        <text class="back-label">返回</text>
+      </view>
+      <text class="top-title">史页 · 资料库</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+
+    <view class="hero">
+      <text class="hero-kicker">从辞条到人物 · 按类翻阅</text>
+      <text class="hero-title">史页资料库</text>
+      <text class="hero-desc">从历史资料中整理，共 {{stats.totalText}} 条。首次打开某类时按需加载，常读内容会缓存在本机。</text>
+      <view class="hero-stats">
+        <view class="hstat">
+          <text class="hnum">{{stats.cardsText}}</text>
+          <text class="hlab">典籍辞条</text>
+        </view>
+        <view class="hstat">
+          <text class="hnum">{{stats.figuresText}}</text>
+          <text class="hlab">历代人物</text>
+        </view>
+        <view class="hstat">
+          <text class="hnum">{{stats.eventsText}}</text>
+          <text class="hlab">历史事件</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">典籍辞条</text>
+      <text class="section-link">{{stats.categories}} 类</text>
+    </view>
+    <view class="cat-grid">
+      <view
+        wx:for="{{categories}}"
+        wx:key="key"
+        class="cat-card"
+        data-key="{{item.key}}"
+        data-name="{{item.name}}"
+        bindtap="onCategory"
+      >
+        <text class="cat-name">{{item.name}}</text>
+        <text class="cat-count">{{item.countText}} 条</text>
+        <text class="cat-sample">{{item.sample}}</text>
+      </view>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">人物 · 事件 · 文献</text>
+      <text class="section-link">按需加载</text>
+    </view>
+    <view class="sec-list">
+      <view
+        wx:for="{{sections}}"
+        wx:key="key"
+        class="sec-row"
+        data-key="{{item.key}}"
+        data-name="{{item.name}}"
+        bindtap="onSection"
+      >
+        <view class="sec-main">
+          <text class="sec-name">{{item.name}}</text>
+          <text class="sec-desc">{{item.desc}}</text>
+        </view>
+        <text class="sec-count">{{item.countText}}</text>
+        <text class="sec-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="note">资料为原型整理内容，仅作阅读与内容迁移；正式发布前请逐条核对史实与授权。</view>
+  </view>
+</view>

@@ -46,6 +46,77 @@
   color: #5F5A52;
 }
 
+.archive-entry {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-top: 26rpx;
+  padding: 26rpx 28rpx;
+  border-radius: 30rpx;
+  background: #FCFBF8;
+  border-left: 6rpx solid rgba(169, 130, 94, 0.55);
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.05);
+}
+
+.archive-entry-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.archive-entry-kicker {
+  display: block;
+  font-size: calc(16rpx * var(--fs, 1));
+  letter-spacing: 0.12em;
+  color: #A9825E;
+}
+
+.archive-entry-title {
+  display: block;
+  margin-top: 7rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(27rpx * var(--fs, 1));
+  letter-spacing: 0.03em;
+  color: #1F1D19;
+}
+
+.archive-entry-desc {
+  display: block;
+  margin-top: 7rpx;
+  font-size: calc(17rpx * var(--fs, 1));
+  line-height: 1.5;
+  color: #8C857A;
+}
+
+.archive-entry-badge {
+  flex: 0 0 auto;
+  padding: 12rpx 16rpx;
+  border-radius: 18rpx;
+  background: #F3EFE6;
+  text-align: center;
+}
+
+.archive-entry-num {
+  display: block;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(24rpx * var(--fs, 1));
+  color: #A34A3E;
+}
+
+.archive-entry-unit {
+  display: block;
+  margin-top: 2rpx;
+  font-size: calc(15rpx * var(--fs, 1));
+  color: #A39A8E;
+}
+
+.archive-entry-arrow {
+  flex: 0 0 auto;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 32rpx;
+  color: #C0B6A8;
+}
+
 .section-head {
   margin-top: 38rpx;
   display: flex;
