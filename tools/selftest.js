@@ -303,6 +303,9 @@ console.log('== 数据完整性 ==');
   goodImg('/assets/paintings/landscape.jpg');
   goodImg('/assets/paintings/dongjin.jpg');
   goodImg('/assets/paintings/nanbeichao.jpg');
+  ['chibi', 'qin-unify', 'zhenghe', 'dayunhe', 'humen'].forEach((id) =>
+    goodImg('/assets/eventart/' + id + '.jpg')
+  );
 
   // 时代配图映射（事件头卡 / 人物缩略图共用）
   const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
@@ -323,6 +326,9 @@ console.log('== 数据完整性 ==');
   eq(eraImages.personThumb('战国', 0), '/assets/thumbs/zhanguo-1.jpg', '人物缩略图 · 战国有专属细部');
   eq(eraImages.personThumb('东晋', 0), '/assets/thumbs/dongjin-1.jpg', '人物缩略图 · 东晋有专属细部');
   eq(eraImages.personThumb('南北朝', 0), '/assets/thumbs/nanbeichao-1.jpg', '人物缩略图 · 南北朝有专属细部');
+  eq(eraImages.eventImage('chibi', '三国'), '/assets/eventart/chibi.jpg', '事件配图 · 赤壁之战用专属图');
+  eq(eraImages.eventImage('qin-unify', '秦'), '/assets/eventart/qin-unify.jpg', '事件配图 · 秦统一用专属图');
+  eq(eraImages.eventImage('no-such-id', '北宋'), '/assets/paintings/song.jpg', '事件配图 · 无专属图回退朝代级');
   let thumbCount = 0;
   ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
      'shanggu', 'xia', 'shang', 'zhou', 'chunqiu', 'zhanguo', 'qin', 'sanguo',

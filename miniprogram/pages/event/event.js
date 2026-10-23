@@ -1,7 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
-const eraImage = require('../../utils/eraImages.js').eraImage;
+const eventImage = require('../../utils/eraImages.js').eventImage;
 const personThumb = require('../../utils/eraImages.js').personThumb;
 
 Page({
@@ -45,7 +45,7 @@ Page({
 
     this.setData({
       event,
-      headImg: eraImage(event.era),
+      headImg: eventImage(event.id, event.era),
       relatedPersons,
       seal: event.title.charAt(0),
       collected: store.isFavorite('event', event.id)

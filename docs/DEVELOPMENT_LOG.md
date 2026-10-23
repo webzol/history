@@ -1680,6 +1680,16 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 事件页专属配图（5 个标志性史事 + 主包腾余量）
+
+- 事件页头卡装裱画片原走朝代级 `eraImage(event.era)`（同朝代事件共用一张画，如 7 件唐事件都用 tang.jpg）。
+- 本次为 5 个标志性事件加事件级专属图（`miniprogram/assets/eventart/`，280×280 q56）：
+  赤壁之战（火攻名场面）/ 秦始皇统一六国 / 郑和下西洋（宝船队）/ 隋·开凿大运河 / 虎门销烟。
+- `miniprogram/utils/eraImages.js` 新增 `EVENT_ART` 映射 + `eventImage(id, era)`（无专属图回退朝代级）；`miniprogram/pages/event/event.js` 头卡改走 `eventImage`。
+- 主包腾余量：9 张偏大旧朝代画（modern/ming/qing/tang/landscape/xixia/liao/han/zhou）重压（460–720px / q56–60，省 249KB），主包 2045 → 1796KB；放 5 张事件图（+71KB）后 1867KB < 2048 限额（余量 181KB）。
+- `tools/add_event_art.py`（可复现搜图管线，百图中心裁方 280×280）；`tools/selftest.js` 新增 eventart 文件存在 + eventImage 命中/回退断言。
+- 素材授权同「只搜图，不画图」约定，见 `miniprogram/assets/paintings/SOURCES.md`。
+- 验证：`node tools/selftest.js` PASS / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 ## 2026-10-23 · 补齐东晋 / 南北朝专属朝代画（东晋→顾恺之洛神赋图 · 南北朝→云冈石窟/敦煌壁画）
 
 - 上轮「补全 14 个无专属绘画朝代」跳过了**东晋**与**南北朝**，两者仍回退 generic 千里江山图（`landscape.jpg`）与 `republic` 缩略图。

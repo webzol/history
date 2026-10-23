@@ -1,5 +1,5 @@
 // 时代配图：按事件/人物所属时代取画画局部（与发现页朝代卡同源，见 assets/paintings/SOURCES.md）
-// 无对应绘制的时代回退到首页同款水墨宫阙 palace.jpg（2026-10-23 补全 15 张朝代画后，已知时代不再回退）
+// 无对应绘制的时代回退到首页同款水墨宫阙 palace.jpg（2026-10-23 补全 15+2 张朝代画后，已知时代不再回退）；标志性事件另有事件级专属图（eventImage，assets/eventart/）
 const ERA_IMAGES = {
   上古: '/assets/paintings/shanggu.jpg',
   夏: '/assets/paintings/xia.jpg',
@@ -81,4 +81,22 @@ function personThumb(era, index) {
   return `/assets/thumbs/${base}-${n}.jpg`;
 }
 
-module.exports = { ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK, eraImage, personThumb };
+// 事件级专属配图（assets/eventart/<id>.jpg，280×280 方图）：
+// 标志性史事优先用自己的名场面/古画，没有专属图的事件回退朝代级 eraImage(era)。
+// 由 tools/add_event_art.py 下载（「只搜图，不画图」约定，授权见 paintings/SOURCES.md）。
+const EVENT_ART = {
+  'chibi': '/assets/eventart/chibi.jpg',         // 赤壁之战（火攻名场面）
+  'qin-unify': '/assets/eventart/qin-unify.jpg', // 秦始皇统一六国
+  'zhenghe-1405': '/assets/eventart/zhenghe.jpg', // 郑和首下西洋（宝船队）
+  'dayunhe': '/assets/eventart/dayunhe.jpg',     // 隋·开凿大运河
+  'humen-1839': '/assets/eventart/humen.jpg'     // 虎门销烟
+};
+
+function eventImage(id, era) {
+  return EVENT_ART[id] || eraImage(era);
+}
+
+module.exports = {
+  ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK,
+  EVENT_ART, eraImage, personThumb, eventImage
+};
