@@ -1680,6 +1680,18 @@ miniprogram/data/history.js
 - `tools/selftest.js`：断言「展示 3 / 总数 4」→「展示 1 条精选 / 总数 4」，精选命中「有描述的 1921 条目」；点击弹层断言由 1881 改 1921。
 - 验证：`node tools/selftest.js` PASS 1605 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 
+## 2026-10-23 · 人物/事件专属图全量覆盖：162 张远端图（data/img + jsDelivr）
+
+- 上一步只给 5 位西汉人物配了本地专属图；本次把**全部 72 人物 + 100 事件**（除已本地化的 10 张外）补齐专属配图，共 162 张（实测 68 人物 480×360 q55 + 94 事件 280×280 q56，合计 2.8MB）。
+- **主包放不下** → 图放 `miniprogram/data/img/{persons,events}/`，`project.config.json` 的 `packOptions.ignore` 加 `data/img` 排除出主包，运行时经 jsDelivr 提供：`https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/...`（git push 即生效，jsDelivr 有缓存、必要时 purge）。
+- `tools/add_all_art.py`（搜图管线：百度图搜 flip 接口批量下载 + 中心裁切 + 压缩，并生成 id 清单）；`miniprogram/utils/artRemote.js` 为脚本生成的可用 id 清单（勿手改）。
+- `miniprogram/utils/eraImages.js`：取图优先级改为 **本地专属（assets/personart|eventart）> 远端专属（artRemote 命中拼 jsDelivr URL）> 朝代级回退**；新增 `remotePerson` / `remoteEvent`。
+- 接线：`pages/person/person.js` 相关史事行图由朝代缩略图改走 `eventImage`（专属事件图）；`utils/entries.js` 收藏/足迹行图人物走 `personImageThumb`、事件走 `eventImage`。
+- `tools/selftest.js`：新增远端命中/回退断言；修复一处过期样例——「无专属回退朝代细部」原用 `sima-qian`，全量覆盖后司马迁已有远端图，改用不存在 id 测回退，另加 sima-qian 命中远端 URL 断言。
+- `SOURCES.md` 登记 162 张远端图（未确认授权，近现代事件多为历史照片/油画，上线前需重点审校）；`AGENTS.md §5` 增补取图优先级与 downloadFile 域名提醒（小程序后台需把 `cdn.jsdelivr.net` 同时加入 **downloadFile** 合法域名）。
+- 验证：`node tools/selftest.js` PASS 1636 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`data/img` 已排除，主包体积不变。
+- 遗留：162 张图授权未逐张确认；真机需实测 jsDelivr 图片加载（downloadFile 域名白名单）。
+
 ## 2026-10-23 · 西汉专属图补齐：汉武帝即位事件图 + 汉武帝/卫青/张骞/霍去病人物图
 
 - 「汉武帝即位」事件（`han-wudi`）原回退朝代级 `han.jpg`；四位西汉人物（汉武帝/卫青/张骞/霍去病）人物页头卡底纹与事件页「其时其人」小图也全回退朝代级。

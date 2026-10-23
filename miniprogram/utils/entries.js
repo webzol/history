@@ -1,6 +1,7 @@
 // 收藏 / 足迹条目解析：type+id → 展示条目（人物/事件）
 const hd = require('./historyData.js');
-const personThumb = require('./eraImages.js').personThumb;
+const personImageThumb = require('./eraImages.js').personImageThumb;
+const eventImage = require('./eraImages.js').eventImage;
 
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 
@@ -13,7 +14,7 @@ function resolveEntry(x, index) {
       id: p.id,
       title: p.name,
       sub: `${p.era} · ${p.roles}`,
-      img: personThumb(p.era, index),
+      img: personImageThumb(p.id, p.era, index),
       modern: MODERN_ERAS.indexOf(p.era) >= 0
     };
   }
@@ -25,7 +26,7 @@ function resolveEntry(x, index) {
       id: ev.id,
       title: ev.title,
       sub: `${ev.yearText} · ${ev.era}`,
-      img: personThumb(ev.era, index),
+      img: eventImage(ev.id, ev.era),
       modern: ev.mode === 'modern'
     };
   }

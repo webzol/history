@@ -104,10 +104,6 @@ const PERSON_ART = {
 };
 
 // 人物头卡底纹（人物页全幅 46% 透明垫底）：专属 480×360 人物图 > 朝代画
-function personImage(id, era) {
-  return PERSON_ART[id] || eraImage(era);
-}
-
 // 人物小图（事件页「其时其人」104rpx 行首）：专属 160×160 细部缩略 > 朝代细部轮换
 const PERSON_THUMB = {
   'han-wudi': '/assets/thumbs/wudi.jpg',
@@ -116,12 +112,30 @@ const PERSON_THUMB = {
   'huo-qubing': '/assets/thumbs/huo-qubing.jpg'
 };
 
+// 全量专属图（2026-10-23）：本地表之外的 id 走 GitHub 远端
+// miniprogram/data/img/{persons,events}/<id>.jpg（packOptions 排除出主包，jsDelivr 直出，
+// 清单由 tools/add_all_art.py 生成）。取图优先级：本地专属 > 远端专属 > 朝代级。
+const IMG_BASE = 'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img';
+const REMOTE_ART = require('./artRemote.js');
+
+function remotePerson(id) {
+  return REMOTE_ART.persons.indexOf(id) >= 0 ? IMG_BASE + '/persons/' + id + '.jpg' : '';
+}
+
+function remoteEvent(id) {
+  return REMOTE_ART.events.indexOf(id) >= 0 ? IMG_BASE + '/events/' + id + '.jpg' : '';
+}
+
+function personImage(id, era) {
+  return PERSON_ART[id] || remotePerson(id) || eraImage(era);
+}
+
 function personImageThumb(id, era, index) {
-  return PERSON_THUMB[id] || personThumb(era, index);
+  return PERSON_THUMB[id] || remotePerson(id) || personThumb(era, index);
 }
 
 function eventImage(id, era) {
-  return EVENT_ART[id] || eraImage(era);
+  return EVENT_ART[id] || remoteEvent(id) || eraImage(era);
 }
 
 module.exports = {

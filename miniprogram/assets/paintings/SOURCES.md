@@ -51,3 +51,6 @@
 | ssets/personart/zhang-qian.jpg | 张骞出使西域（沙漠驼队举旗） | 同上（人物级专属图） | 百度图片缩略（「张骞 出使西域 古画」） | 未确认授权；画面公有领域 |
 | ssets/personart/huo-qubing.jpg | 霍去病（将军画像） | 同上（人物级专属图） | 百度图片缩略（「霍去病 画像 将军」） | 未确认授权 |
 | ssets/personart/* + ssets/thumbs/<personid>.jpg | 上述 4 张人物图（480×360 q58）+ 同名 160×160 细部缩略（q60） | 人物页头卡（utils/eraImages.js 的 PERSON_ART + personImage / personImageThumb，无专属图回退朝代级） | 	ools/add_person_art.py 生成 | 随原画授权状态 |
+| `miniprogram/data/img/persons/<id>.jpg`（68 张，480×360 q55） | 全部人物专属画像/肖像（孔子、李白、岳飞、康熙……孙中山、毛泽东等） | 人物页头卡底纹、事件页「其时其人」行首、收藏/足迹人物行图 | `tools/add_all_art.py`（百度图搜 flip 接口批量下载，2026-10-23） | 未确认授权；原型用，上线前逐张审校；主包外经 jsDelivr 提供 |
+| `miniprogram/data/img/events/<id>.jpg`（94 张，280×280 q56） | 全部事件专属配图（武王伐纣、兰亭雅集、郑和宝船、开国大典油画……） | 事件页头卡装裱画片、人物页相关史事行图、收藏/足迹史事行图 | 同上 | 未确认授权；近现代事件多为历史照片/油画，需重点审校；主包外经 jsDelivr 提供 |
+| `miniprogram/utils/artRemote.js` | 上述远端图可用 id 清单（脚本生成，勿手改） | `utils/eraImages.js` 据此拼 `https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/...` URL | `tools/add_all_art.py` 生成 | — |

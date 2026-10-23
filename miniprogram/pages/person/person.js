@@ -2,7 +2,7 @@ const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const personImage = require('../../utils/eraImages.js').personImage;
-const personThumb = require('../../utils/eraImages.js').personThumb;
+const eventImage = require('../../utils/eraImages.js').eventImage;
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -43,7 +43,7 @@ Page({
     const related = (person.relatedEvents || [])
       .map((id) => history.events.find((event) => event.id === id))
       .filter(Boolean)
-      .map((event, index) => ({ ...event, img: personThumb(event.era, index) }));
+      .map((event) => ({ ...event, img: eventImage(event.id, event.era) }));
 
     this.setData({
       person,

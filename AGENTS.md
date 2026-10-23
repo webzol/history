@@ -196,7 +196,8 @@ python tools/validate_miniprogram.py
 - 印章一律用 `assets/seal.png`（首页 hero 裁切的"史载"印图片，`tools/crop_seal.py` 可复现）；不要用 CSS/文字手绘印章
 - 首页顶部只保留“史页”字标，不放搜索/菜单；朱砂印章保留在 Hero 插画内
 - 近现代内容必须在首页可见（当前用“百年中国”入口）
-- 事件详情头卡右侧是装裱画片（200rpx 白边小画，按 `event.era` 取画），不再用全宽横幅；「其时其人」缩略图取 `assets/thumbs/<时代>-1..4.jpg`（由 `assets/paintings/` 原画裁 4 个细部），按行序轮换避免整列重复；有专属绘画的时代不再回退（2026-10-23 补全 15 张：shanggu/xia/shang/zhou/chunqiu/zhanguo/qin/sanguo/xijin/sui/wudai/yuan/liao/xixia/jin，其余未知朝代仍回退 `assets/palace.jpg`）。人物页头卡用同一时代画作 46% 透明度垫底 + 暖白渐隐，相关史事行加同源缩略图；民国/近现代统一用《千里江山图》作山河底色（不误配 1949 开国大典），新中国用《开国大典》。映射统一走 `utils/eraImages.js`（`eraImage` / `personThumb`），不要在页面里另写一份。
+- 事件详情头卡右侧是装裱画片（200rpx 白边小画），不再用全宽横幅；「其时其人」缩略图取 `assets/thumbs/<时代>-1..4.jpg`（由 `assets/paintings/` 原画裁 4 个细部），按行序轮换避免整列重复；有专属绘画的时代不再回退（2026-10-23 补全 15 张：shanggu/xia/shang/zhou/chunqiu/zhanguo/qin/sanguo/xijin/sui/wudai/yuan/liao/xixia/jin，其余未知朝代仍回退 `assets/palace.jpg`）。人物页头卡用时代画作 46% 透明度垫底 + 暖白渐隐；民国/近现代统一用《千里江山图》作山河底色（不误配 1949 开国大典），新中国用《开国大典》。映射统一走 `utils/eraImages.js`（`eraImage` / `personThumb`），不要在页面里另写一份。
+- **人物/事件专属图（2026-10-23 全量覆盖）**：全部 72 人物 + 100 事件均有专属配图。取图优先级：本地专属（`assets/personart|eventart/`，10 张）> 远端专属（`data/img/persons|events/<id>.jpg`，162 张，`packOptions.ignore` 排除出主包，经 jsDelivr `https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/...` 提供）> 朝代级回退。可用 id 清单在 `utils/artRemote.js`（`tools/add_all_art.py` 生成，勿手改）。人物页相关史事行图、收藏/足迹行图也走专属图（`eventImage` / `personImageThumb`）。注意：小程序后台需把 `cdn.jsdelivr.net` 加入 **downloadFile** 合法域名（request 已有），真机才能显示远端图；图片更新走 git push（jsDelivr 有缓存，必要时 purge）。
 - 资料库题图统一走 `utils/archiveImages.js`：首页 5 组用小方图，列表页用 168rpx 横幅，详情页头卡用 160rpx 横幅；人物/帝王取唐画，事件/战争取明画，名句/文言取宋画，诗文取青绿山水，典籍辞条按 9 类取图，未知栏目回退 `palace.jpg`。APK 条目没有图片字段，**不要逐条配图**，避免把时代画错配到具体条目。
 - 「我的」页头像用自己手绘的史官形象 `assets/avatar-scholar.png`（矢量稿 `tools/avatar-scholar.svg`，纸色底 + 幞头/圆领袍，不依赖外部素材）；横幅为装裱画片（画心 + 底部题签），收藏/足迹行用时代缩略图代替「人/事」色块；页内印章一律 `<image src="/assets/seal.png">`。
 

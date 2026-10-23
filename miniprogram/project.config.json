@@ -9,6 +9,10 @@
       {
         "value": "data/apk",
         "type": "folder"
+      },
+      {
+        "value": "data/img",
+        "type": "folder"
       }
     ],
     "include": []
