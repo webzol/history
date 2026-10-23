@@ -1662,3 +1662,11 @@ miniprogram/data/history.js
 - 文档：`SOURCES.md` 登记 15 张新画与 60 张派生缩略图（均为未确认授权，上线前需审校）；`AGENTS.md §5` 回退说明更新。
 - 验证：`node tools/selftest.js` PASS / FAIL 0；`python tools/validate_miniprogram.py` 通过。
 - 遗留：15 张新画未逐张确认授权（标注"未确认授权"）；`ui/preview/era_refetch_sheet*.jpg` 为目检临时产物，不提交。
+
+## 2026-10-23 · 修复主包超限（新增朝代图压缩）
+
+- 背景：上一步新增 15 张朝代画 + 60 张缩略图（合计约 1.1MB 主包增量）使源码包 2217KB 超出微信 2MB 限制，开发者工具预览报错 `source size exceed max limit`。
+- 处理：新 15 张朝代画压至 480px / JPEG q70（824→517KB），60 张新缩略图从压缩后的原画重裁 160×160 / q62（270→252KB）；旧 7 张朝代画与 28 张旧缩略图不动。主包从 2465KB 降到约 1972KB，回到限制内。
+- 新增 `tools/compress_new_assets.py`（可复现压缩）；`ui/preview/era_refetch_sheet*.jpg` 目检临时总览图已加入 `.gitignore` 不入库。
+- 验证：`node tools/selftest.js` PASS 1604 / FAIL 0；`python tools/validate_miniprogram.py` 通过；包体积实测 1972KB < 2048KB。
+- 遗留：若后续继续补朝代图，压完先测包体积再提交。

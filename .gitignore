@@ -12,3 +12,6 @@ tools/__pycache__/
 
 # 鍘熷 APK / 瑙ｅ瘑鏁版嵁搴擄紙浠呮湰鍦板垎鏋愶紝涓嶆彁浜わ級
 import/
+
+# 目检临时总览图（不入仓）
+ui/preview/era_refetch_sheet*.jpg
