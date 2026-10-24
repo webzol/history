@@ -41,9 +41,16 @@
       <text class="list-hint">匹配“{{keyword}}”</text>
     </view>
 
-    <view wx:if="{{loading}}" class="state-card">
+    <view wx:if="{{loading}}" class="state-card loading-card">
+      <view class="ink-spin"></view>
       <text class="state-title">正在打开资料库</text>
       <text class="state-desc">首次加载需要片刻，之后会缓存在本机。</text>
+      <view class="skel-list">
+        <view class="skel-item" wx:for="{{[0, 1, 2]}}" wx:key="*this">
+          <view class="skel-line w72"></view>
+          <view class="skel-line w46"></view>
+        </view>
+      </view>
     </view>
 
     <view wx:elif="{{error}}" class="state-card error" bindtap="retry">
@@ -75,8 +82,11 @@
         </view>
       </view>
 
-      <view wx:if="{{shown.length < total}}" class="more" bindtap="onMore">
-        加载更多（{{shown.length}} / {{total}}）
+      <view wx:if="{{shown.length < total}}" class="more-wrap">
+        <view class="more" bindtap="onMore">
+          加载更多（{{shown.length}} / {{total}}）
+        </view>
+        <text class="more-hint">滑到底部也会自动加载</text>
       </view>
       <view wx:else class="end">已到末尾</view>
     </block>

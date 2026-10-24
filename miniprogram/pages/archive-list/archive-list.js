@@ -135,6 +135,13 @@ Page({
     this.setData({ shown: (this.filtered || []).slice(0, this.limit) });
   },
 
+  // 滚到底自动追加下一批（本地切片，瞬时完成）；加载中/出错/已到底不触发
+  onReachBottom() {
+    if (this.data.loading || this.data.error) return;
+    if (!this.data.total || this.data.shown.length >= this.data.total) return;
+    this.onMore();
+  },
+
   retry() {
     this.fetch();
   },

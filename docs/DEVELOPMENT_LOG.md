@@ -1652,6 +1652,15 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 资料库列表页：骨架屏 loading + 滚动自动分页
+
+- `pages/archive-list/` 首屏加载体验优化（数据侧本就是「索引全量 + 首屏 60 条分页」，本轮补齐加载提示与自动分页）：
+  - **loading 态重做**：原「正在打开资料库」纯文字卡改为淡墨环形 spinner（`#E8E0D2` 底环 + `#8C857A` 旋转弧）+ 宋体标题 + 3 行宣纸色骨架屏（`linear-gradient` 扫光动画），风格与全站宣纸卡片一致；`prefers-reduced-motion` 下停用动画。
+  - **滚动到底自动加载**：新增 `onReachBottom()`——非加载中/非出错且还有剩余时自动 `onMore()` 追加下一批 60 条（本地切片瞬时完成）；「加载更多」按钮保留为手动入口，下方加「滑到底部也会自动加载」提示。
+  - 错误重试、搜索过滤、空态逻辑未动。
+- `tools/selftest.js` +2 断言：`onReachBottom` 自动追加 60 条、已到末尾不再追加；**PASS 1654 / FAIL 0**。`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；`preview_shots` 28 张全过。loading 卡另做临时 HTML 目检（spinner + 骨架条观感确认，临时文件未入库）。
+- 遗留：harness 内 apk 请求即时返回截不到 loading 态，真机首次打开（无缓存、索引 ~500KB）时骨架屏实际观感待确认。
+
 ## 2026-10-24 · 修复远端专属图真机全挂（jsDelivr 图片 301）+ 搜索相关性排序
 
 - **远端图域名修复（关键）**：抽查发现 `cdn.jsdelivr.net` 已改为对**图片二进制一律 301 跳 `raw.githubusercontent.com`**（JS/JSON 文本仍直出）——raw 域名国内真机不可达也不在白名单，162 张远端专属图（68 人物 + 94 事件）会全部加载失败，只剩垫底图。

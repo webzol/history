@@ -337,8 +337,17 @@
   color: #A34A3E;
 }
 
-.more {
+.more-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
   margin-top: 20rpx;
+}
+
+.more {
+  width: 100%;
+  box-sizing: border-box;
   padding: 22rpx;
   border-radius: 24rpx;
   background: #F3EFE6;
@@ -348,10 +357,86 @@
   color: #6B5A33;
 }
 
+.more-hint {
+  font-size: calc(17rpx * var(--fs, 1));
+  letter-spacing: 0.05em;
+  color: #B4AA9C;
+}
+
 .end {
   margin-top: 24rpx;
   text-align: center;
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.08em;
   color: #B4AA9C;
+}
+
+/* 首屏加载：淡墨环形 spinner + 列表骨架屏 */
+.loading-card {
+  gap: 16rpx;
+}
+
+.ink-spin {
+  width: 58rpx;
+  height: 58rpx;
+  margin-bottom: 4rpx;
+  border-radius: 50%;
+  border: 5rpx solid #E8E0D2;
+  border-top-color: #8C857A;
+  animation: ink-rotate 0.9s linear infinite;
+}
+
+.skel-list {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 18rpx;
+  padding: 6rpx 14rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 26rpx;
+}
+
+.skel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.skel-line {
+  height: 24rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #EFEAE1 25%, #E3DCCE 50%, #EFEAE1 75%);
+  background-size: 400% 100%;
+  animation: skel-sweep 1.3s ease infinite;
+}
+
+.skel-line.w72 {
+  width: 72%;
+}
+
+.skel-line.w46 {
+  width: 46%;
+  height: 19rpx;
+}
+
+@keyframes ink-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes skel-sweep {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-spin,
+  .skel-line {
+    animation: none;
+  }
 }

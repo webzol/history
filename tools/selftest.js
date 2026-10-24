@@ -831,6 +831,12 @@ console.log('== 资料库 ==');
   eq(list.data.shown.length, 60, '资料库列表首屏 60 条');
   list.onMore();
   eq(list.data.shown.length, 120, '资料库列表加载更多');
+  list.onReachBottom();
+  eq(list.data.shown.length, 180, '滚动到底自动加载下一批');
+  list.limit = list.data.total + 60; // 模拟已到末尾
+  list.setData({ shown: list.filtered.slice(0, list.limit) });
+  list.onReachBottom();
+  ok(list.data.shown.length <= list.data.total, '已到末尾不再追加');
   const first = list.data.shown[0];
   ok(first.shard, '列表索引带详情分卷 key');
   ok(!first.text, '列表索引不携带正文');
