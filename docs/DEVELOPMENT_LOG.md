@@ -1652,6 +1652,16 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 资料详情页条目画片：主站图匹配 + 缺图自动搜图（并修复 part 行未规范化重大 bug）
+
+- 需求：资料详情页（archive-detail）展示对应人物/事件图片；缺图的自动上网找。
+- **条目画片接线**：`utils/archiveArt.js` 取图优先级——主站人物/事件专属图标题匹配 > 资料库自抓图 > 无图（辞条/名句/诗文类不配图）。详情页头卡改为「标题行 + 右侧 164rpx 装裱画片」，`binderror` 用 `altArt` 换备用域名重试一次、仍失败隐藏画片。build_preview 登记 `archiveArt/archiveArtMatch/archiveArtRemote` 三模块。
+- **主站图匹配（零下载）**：`tools/match_archive_art.js` 按标题（含庙号/别名表）把资料库条目匹配到主站 172 张专属图，生成 `utils/archiveArtMatch.js`——命中 131 条（figures 60 / emperors 15 / events 40 / wars 16）。
+- **缺图搜图管线**：`tools/add_archive_art.py`（复用 add_all_art 的百度 flip 抓取，断点可续跑、每 50 条重建清单），自动查询词：人物类「<名> 画像/古画 画像」、事件类「<名> 古画/历史 场景」；输出 `data/img/archive/<栏目>/<id>.jpg`（360×360 q55）。后台全量跑：帝王 373 张完成 0 失败，事件/战争/人物随后；SOURCES.md 已登记（未确认授权，上线前审校）。
+- **⚠️ 顺带修复重大 bug**：`apkData.fetchParts` 把 head 的规范化对象行与 part 的**原始数组行**直接拼接——200 条以后所有条目没有 `.id/.title`，**搜索、翻页、按 id 找详情在 200 条之后全部失效**（列表页因 total 取自 head、首屏 60 条取自 head 区段，此前测试全部没暴露）。修复为 part 行入列前 `normalizeIndex`；selftest 加「完整索引全量对象行 + part 区段条目可找到」回归断言。此 bug 影响上一轮 head/part 提交后的线上行为，务必随本次一并发布。
+- 自检：`node tools/selftest.js` **PASS 1674 / FAIL 0**（新增条目配图 8 条断言）；`validate_miniprogram.py` 通过；`build_preview` 重打包；28 张截图全过；harness 实测苏轼（主站匹配图）与曹丕（自抓图）详情页画片。
+- 遗留：figures 4,813 张自抓图仍在后台跑（约 2–3h），完成后重建 `archiveArtRemote.js` 清单再提交；自抓图质量未逐张目检，正式上线前需审校；push 后 jsDelivr 需几分钟生效新文件。
+
 ## 2026-10-24 · 修复开发者工具 part-22.json 403（jsDelivr 限流）：分块请求限流 + 失败重试
 
 - 现象：开发者工具报 `GET .../apk/figures/part-22.json 403`——40 个 part 请求瞬间并发打向 jsDelivr 触发限流（403），失败的块被静默丢弃，列表停在 partial 状态。
