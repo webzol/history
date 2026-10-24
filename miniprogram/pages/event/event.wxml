@@ -28,7 +28,7 @@
         </view>
       </view>
       <view class="e-fig" wx:if="{{headImg}}">
-        <image class="e-fig-img" src="{{headImg}}" mode="aspectFit"></image>
+        <image class="e-fig-img" src="{{headImg}}" mode="aspectFit" binderror="onHeadImgErr"></image>
       </view>
     </view>
 
@@ -60,6 +60,7 @@
             src="{{item.img}}"
             mode="aspectFill"
             bindload="onThumbLoad"
+            binderror="onThumbErr"
             data-id="{{item.id}}"
           ></image>
         </view>

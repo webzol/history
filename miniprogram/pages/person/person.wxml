@@ -15,7 +15,7 @@
     </view>
 
     <view class="head-card">
-      <image class="p-bg" wx:if="{{headImg}}" src="{{headImg}}" mode="aspectFit"></image>
+      <image class="p-bg" wx:if="{{headImg}}" src="{{headImg}}" mode="aspectFit" binderror="onHeadImgErr"></image>
       <view class="p-veil"></view>
       <view class="p-copy">
         <text class="p-name">{{person.name}}</text>
@@ -57,7 +57,7 @@
           <text class="rel-title">{{item.title}}</text>
           <text class="rel-desc">{{item.desc}}</text>
         </view>
-        <image class="rel-thumb" wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill"></image>
+        <image class="rel-thumb" wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill" binderror="onRelImgErr" data-id="{{item.id}}"></image>
         <text class="rel-arrow">›</text>
       </view>
     </view>

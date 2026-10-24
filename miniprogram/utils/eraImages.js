@@ -115,7 +115,12 @@ const PERSON_THUMB = {
 // 全量专属图（2026-10-23）：本地表之外的 id 走 GitHub 远端
 // miniprogram/data/img/{persons,events}/<id>.jpg（packOptions 排除出主包，jsDelivr 直出，
 // 清单由 tools/add_all_art.py 生成）。取图优先级：本地专属 > 远端专属 > 朝代级。
-const IMG_BASE = 'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img';
+// 2026-10-24：cdn.jsdelivr.net 对图片二进制一律 301 跳 raw.githubusercontent.com（国内不可达），
+// 改走 gcore.jsdelivr.net 直出；altArt 供 <image binderror> 换 testingcf 备用域名重试一次。
+const IMG_HOST = 'https://gcore.jsdelivr.net';
+const IMG_ALT_HOST = 'https://testingcf.jsdelivr.net';
+const IMG_PATH = '/gh/webzol/history@main/miniprogram/data/img';
+const IMG_BASE = IMG_HOST + IMG_PATH;
 const REMOTE_ART = require('./artRemote.js');
 
 function remotePerson(id) {
@@ -124,6 +129,12 @@ function remotePerson(id) {
 
 function remoteEvent(id) {
   return REMOTE_ART.events.indexOf(id) >= 0 ? IMG_BASE + '/events/' + id + '.jpg' : '';
+}
+
+// 远端图加载失败时换备用 jsDelivr 域名重试；非远端图或已重试过则返回 ''（放弃，露出垫底图）
+function altArt(src) {
+  if (typeof src !== 'string' || src.indexOf(IMG_HOST + IMG_PATH) !== 0) return '';
+  return IMG_ALT_HOST + src.slice(IMG_HOST.length);
 }
 
 function personImage(id, era) {
@@ -142,5 +153,5 @@ function eventImage(id, era) {
 
 module.exports = {
   ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK,
-  EVENT_ART, PERSON_ART, PERSON_THUMB, eraImage, personThumb, eventImage, personImage, personImageThumb
+  EVENT_ART, PERSON_ART, PERSON_THUMB, IMG_BASE, eraImage, personThumb, eventImage, personImage, personImageThumb, altArt
 };

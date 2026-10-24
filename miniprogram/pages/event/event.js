@@ -4,6 +4,7 @@ const font = require('../../utils/font.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 const personThumb = require('../../utils/eraImages.js').personThumb;
+const altArt = require('../../utils/eraImages.js').altArt;
 
 Page({
   data: {
@@ -67,6 +68,21 @@ Page({
     if (id && !this.data.thumbLoaded[id]) {
       this.setData({ ['thumbLoaded.' + id]: true });
     }
+  },
+
+  // 远端专属图加载失败 → 换备用 jsDelivr 域名重试一次；再失败则露出垫底时代图
+  onHeadImgErr() {
+    const alt = altArt(this.data.headImg);
+    if (alt) this.setData({ headImg: alt });
+  },
+
+  onThumbErr(e) {
+    const id = e.currentTarget.dataset.id;
+    const index = this.data.relatedPersons.findIndex((p) => p.id === id);
+    if (index < 0) return;
+    const item = this.data.relatedPersons[index];
+    // 换备用 jsDelivr 域名重试一次；仍失败则置回垫底图（img === fallback 时上层隐藏）
+    this.setData({ ['relatedPersons[' + index + '].img']: altArt(item.img) || item.fallback });
   },
 
   toggleCollect() {

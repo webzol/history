@@ -1,5 +1,6 @@
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const altArt = require('../../utils/eraImages.js').altArt;
 const { resolveEntry, groupByType, flattenGroups } = require('../../utils/entries.js');
 
 Page({
@@ -39,6 +40,15 @@ Page({
     const { type, id } = e.currentTarget.dataset;
     const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
     wx.navigateTo({ url });
+  },
+
+  // 远端专属图加载失败 → 换备用 jsDelivr 域名重试一次
+  onRowImgErr(e) {
+    const { type, id } = e.currentTarget.dataset;
+    const index = this.data.rows.findIndex((r) => r.kind === 'item' && r.id === id && r.type === type);
+    if (index < 0) return;
+    const alt = altArt(this.data.rows[index].img);
+    if (alt) this.setData({ ['rows[' + index + '].img']: alt });
   },
 
   onClear() {

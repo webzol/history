@@ -3,6 +3,7 @@ const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const identity = require('../../utils/identity.js');
 const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
+const altArt = require('../../utils/eraImages.js').altArt;
 
 Page({
   data: {
@@ -144,6 +145,17 @@ Page({
     const exist = hd.get()[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
     if (!exist) return;
     wx.navigateTo({ url });
+  },
+
+  // 收藏/足迹行远端专属图加载失败 → 换备用 jsDelivr 域名重试一次
+  onRowImgErr(e) {
+    const { list, type, id } = e.currentTarget.dataset;
+    const rows = this.data[list];
+    if (!rows) return;
+    const index = rows.findIndex((r) => r.id === id && r.type === type);
+    if (index < 0) return;
+    const alt = altArt(rows[index].img);
+    if (alt) this.setData({ [list + '[' + index + '].img']: alt });
   },
 
   onFavLongPress(e) {

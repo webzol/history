@@ -1652,6 +1652,17 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 修复远端专属图真机全挂（jsDelivr 图片 301）+ 搜索相关性排序
+
+- **远端图域名修复（关键）**：抽查发现 `cdn.jsdelivr.net` 已改为对**图片二进制一律 301 跳 `raw.githubusercontent.com`**（JS/JSON 文本仍直出）——raw 域名国内真机不可达也不在白名单，162 张远端专属图（68 人物 + 94 事件）会全部加载失败，只剩垫底图。
+  - 实测 162 张图在 `gcore.jsdelivr.net` 全部 200 直出（个别 403 为本机连续请求触发限流，退避后恢复）；`testingcf.jsdelivr.net` 也可直出。
+  - `utils/eraImages.js`：`IMG_BASE` 切到 `https://gcore.jsdelivr.net/gh/webzol/history@main/...`；新增 `altArt(src)`——远端图 URL 换算成 `testingcf.jsdelivr.net` 备用域名，非远端图或已重试过返回 `''`。
+  - **五页远端图槽位接 `<image binderror>` 兜底**：事件页（头卡装裱画片 + 其时其人行图）、人物页（头卡垫底 + 相关史事行图）、收藏/足迹/我的（行图）。失败先换备用域名重试一次；其时其人行图最终落回本地时代垫底图（`img === fallback` 时上层自动隐藏），其余隐藏图露出槽底。
+  - 数据/资料库 JSON 留在 `cdn.jsdelivr.net` 不动（实测 `data/history.json`、`apk/*/index.json`、分卷均 200 直出）。
+- **搜索相关性排序**：搜「汉武帝」时孔子（正文提及）排在汉武帝本人之前。`pages/search/search.js` 人物/事件结果按**标题（姓名/事件名）直接命中排前**稳定排序，正文命中靠后。
+- 自检：`tools/selftest.js` 更新远端 URL 前缀断言 + 新增 3 条（司马迁 gcore 命中、altArt 换域、本地图不二次兜底）+ 搜索排序 2 条（汉武帝本人/同名事件排第一）；**PASS 1652 / FAIL 0**。`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；`preview_shots` 28 张全过（14/15/19 等差异为远端图真实加载 + 当日日期/随机身份所致）。
+- 遗留：gcore 在国内部分地区的可达性需真机确认（备用 testingcf 已接）；8 个详情页顶栏「居中标题 + seal.png」统一仍待定。
+
 ## 2026-10-23 · 补全 14 个无专属绘画时代的朝代配画（人物/事件"有事件但缺图"清零回退）
 
 - 背景：72 位有 `relatedEvents` 的人物中 47 位时代有专属绘画，25 位（夏/商/西周/春秋/战国/秦/三国/西晋/隋/五代十国/元/辽/西夏/金）时代无绘画、人物页头卡与相关史事缩略图全部回退 `palace.jpg`。

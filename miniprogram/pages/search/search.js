@@ -37,14 +37,17 @@ Page({
     const modern = (era) => (era || '').indexOf('近现') >= 0 || (era || '').indexOf('民国') >= 0;
     const history = hd.get();
 
+    // 标题/姓名直接命中的排前面，正文命中靠后（搜「汉武帝」时汉武帝本人排孔子等正文提及者之前）
     const persons = history.persons
       .filter((p) => hit([p.name, p.era, p.roles, p.summary, p.dates].concat(p.details || [])))
       .map((p) => ({
         id: p.id,
         title: p.name,
         sub: `${p.era} · ${p.roles}`,
-        modern: modern(p.era)
-      }));
+        modern: modern(p.era),
+        rank: lower(p.name).indexOf(kw) >= 0 ? 0 : 1
+      }))
+      .sort((a, b) => a.rank - b.rank);
 
     const events = history.events
       .filter((e) => hit([e.title, e.era, e.tags, e.desc, e.yearText].concat(e.details || [])))
@@ -52,8 +55,10 @@ Page({
         id: e.id,
         title: e.title,
         sub: `${e.yearText} · ${e.era}`,
-        modern: e.mode === 'modern'
-      }));
+        modern: e.mode === 'modern',
+        rank: lower(e.title).indexOf(kw) >= 0 ? 0 : 1
+      }))
+      .sort((a, b) => a.rank - b.rank);
 
     const panels = []
       .concat(

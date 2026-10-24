@@ -11,7 +11,8 @@ const util = require('util');
 const ROOT = path.join(__dirname, '..', 'miniprogram');
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
-const IMG_CDN_PREFIX = 'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram';
+// 2026-10-24：cdn.jsdelivr.net 对图片一律 301 跳 raw.githubusercontent.com，图片基址已切 gcore
+const IMG_CDN_PREFIX = 'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram';
 function imgOk(img) {
   if (!img) return false;
   if (img.indexOf(IMG_CDN_PREFIX) === 0) {
@@ -357,7 +358,9 @@ console.log('== 数据完整性 ==');
   eq(eraImages.personImage('huo-qubing', '西汉'), '/assets/personart/huo-qubing.jpg', '人物配图 · 霍去病用专属图');
   eq(eraImages.personImage('han-wudi', '西汉'), '/assets/personart/wudi.jpg', '人物配图 · 汉武帝用专属图');
   eq(eraImages.personImageThumb('zhang-qian', '西汉', 0), '/assets/personart/zhang-qian.jpg', '人物小图 · 人物整幅画优先于细部裁切');
-  eq(eraImages.personImageThumb('sima-qian', '西汉', 0), 'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg', '人物小图 · 司马迁命中远端专属图');
+  eq(eraImages.personImageThumb('sima-qian', '西汉', 0), 'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg', '人物小图 · 司马迁命中远端专属图');
+  ok(eraImages.altArt('https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg') === 'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg', '远端图兜底 · altArt 换备用域名');
+  ok(eraImages.altArt('/assets/personart/zhang-qian.jpg') === '' && eraImages.altArt('https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg') === '', '远端图兜底 · 本地图与已重试图不二次兜底');
   eq(eraImages.personImageThumb('no-such-person', '西汉', 0), '/assets/thumbs/han-1.jpg', '人物小图 · 无专属回退朝代细部');
   let thumbCount = 0;
   ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
@@ -1143,8 +1146,9 @@ console.log('== 搜索 ==');
   p.setData({ keyword: '汉武帝' });
   p.onSearch();
   ok(p.data.results.persons.some((x) => x.id === 'han-wudi'), '命中汉武帝人物');
+  eq(p.data.results.persons[0].id, 'han-wudi', '姓名直接命中排正文命中之前（汉武帝第一）');
   ok(p.data.results.persons.some((x) => x.id === 'zhang-qian'), '汉武帝关联人物张骞命中（details 全文）');
-  ok(p.data.results.events.some((e) => e.id === 'han-wudi'), '命中同名事件');
+  eq(p.data.results.events[0].id, 'han-wudi', '同名事件标题命中排第一');
   ok(!p.data.empty, '非空结果');
 
   p.setData({ keyword: '盛唐' });
