@@ -627,7 +627,13 @@ console.log('== 我的 ==' );
   eq(p.data.info.open, false, '数据说明弹层可关闭');
 
   tap(p, 'onAssetNote');
-  ok(p.data.info.open && p.data.info.paragraphs.join('').indexOf('SOURCES.md') >= 0, '素材说明指向来源表');
+  ok(
+    p.data.info.open &&
+      p.data.info.paragraphs.length === 1 &&
+      p.data.info.paragraphs[0].indexOf('公开网络') >= 0 &&
+      p.data.info.paragraphs[0].indexOf('删除') >= 0,
+    '素材说明为一句话来源声明'
+  );
   tap(p, 'closeInfo');
 
   tap(p, 'onAboutBanner');

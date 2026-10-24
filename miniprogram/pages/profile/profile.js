@@ -193,10 +193,7 @@ Page({
       info: {
         open: true,
         title: '素材与授权说明',
-        paragraphs: [
-          '插画与文物图片来自公开网络搜索与参考图裁切，仅用于原型演示；正式上线前将替换为有授权的来源。',
-          '明细见工程 assets/paintings/SOURCES.md。'
-        ]
+        paragraphs: ['本应用素材来源于公开网络，如有侵权请联系我们删除。']
       }
     });
   },
