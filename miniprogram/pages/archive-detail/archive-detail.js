@@ -1,6 +1,8 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
+const archiveArt = require('../../utils/archiveArt.js');
+const altArt = require('../../utils/eraImages.js').altArt;
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -105,6 +107,7 @@ Page({
   data: {
     kicker: '资料库',
     cover: '/assets/palace.jpg',
+    art: '',
     item: null,
     blocks: [],
     sections: [],
@@ -155,6 +158,7 @@ Page({
       loading: true,
       error: '',
       item: null,
+      art: '',
       blocks: [],
       sections: [],
       factRows: [],
@@ -180,6 +184,7 @@ Page({
         loading: false,
         error: '',
         item,
+        art: archiveArt.entryImage(this.kind, item.id),
         blocks,
         sections,
         factRows,
@@ -201,6 +206,11 @@ Page({
 
   retry() {
     this.fetch();
+  },
+
+  // 条目画片（远端图）加载失败 → 换备用 jsDelivr 域名重试一次；再失败置空隐藏画片（露出纯文字版式）
+  onArtErr() {
+    this.setData({ art: altArt(this.data.art) });
   },
 
   goBack() {

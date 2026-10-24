@@ -394,8 +394,10 @@ function fetchParts(kind, type, head, done) {
     const n = nextPart;
     nextPart += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
+      // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
+      // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
       if (err || !Array.isArray(data)) failed += 1;
-      else rows[n - 1] = data;
+      else rows[n - 1] = normalizeIndex(data) || [];
       pending -= 1;
       if (!pending) finish();
       else worker();

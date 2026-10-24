@@ -153,5 +153,5 @@ function eventImage(id, era) {
 
 module.exports = {
   ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK,
-  EVENT_ART, PERSON_ART, PERSON_THUMB, IMG_BASE, eraImage, personThumb, eventImage, personImage, personImageThumb, altArt
+  EVENT_ART, PERSON_ART, PERSON_THUMB, IMG_BASE, eraImage, personThumb, eventImage, personImage, personImageThumb, altArt, remotePerson, remoteEvent
 };

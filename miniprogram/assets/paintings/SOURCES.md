@@ -55,3 +55,13 @@
 | `miniprogram/data/img/persons/<id>.jpg`（68 张，480×360 q55） | 全部人物专属画像/肖像（孔子、李白、岳飞、康熙……孙中山、毛泽东等） | 人物页头卡底纹、事件页「其时其人」行首、收藏/足迹人物行图 | `tools/add_all_art.py`（百度图搜 flip 接口批量下载，2026-10-23） | 未确认授权；原型用，上线前逐张审校；主包外经 jsDelivr 提供 |
 | `miniprogram/data/img/events/<id>.jpg`（94 张，280×280 q56） | 全部事件专属配图（武王伐纣、兰亭雅集、郑和宝船、开国大典油画……） | 事件页头卡装裱画片、人物页相关史事行图、收藏/足迹史事行图 | 同上 | 未确认授权；近现代事件多为历史照片/油画，需重点审校；主包外经 jsDelivr 提供 |
 | `miniprogram/utils/artRemote.js` | 上述远端图可用 id 清单（脚本生成，勿手改） | `utils/eraImages.js` 据此拼 `https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/...` URL | `tools/add_all_art.py` 生成 | — |
+
+## data/img/archive · 资料库条目配图（2026-10-24）
+
+| 目录 | 内容 | 用途 | 来源 | 状态 |
+|---|---|---|---|---|
+| data/img/archive/emperors/*.jpg（373 张，360×360 q55） | 历代帝王画像/文物 | 资料库详情页条目画片（emperors） | 百度图搜 flip 接口（关键词「<帝号> 画像 / 古画 画像」，tools/add_archive_art.py 自动抓取） | 未确认授权，上线前需审校 |
+| data/img/archive/events/*.jpg | 历史事件古画/场景 | 资料库详情页条目画片（events） | 同上（关键词「<事件> 古画 / 历史 场景」） | 未确认授权，上线前需审校 |
+| data/img/archive/wars/*.jpg | 战争古画/场景 | 资料库详情页条目画片（wars） | 同上 | 未确认授权，上线前需审校 |
+| data/img/archive/figures/*.jpg | 历史人物画像 | 资料库详情页条目画片（figures） | 同上 | 未确认授权，上线前需审校 |
+| utils/archiveArtMatch.js | 资料库条目 → 主站 172 张专属图的标题匹配表（131 条命中） | 详情页优先复用主站图，零新增素材 | tools/match_archive_art.js 自动生成 | 随主站图授权状态 |

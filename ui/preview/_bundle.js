@@ -3829,7 +3829,7 @@ function eventImage(id, era) {
 
 module.exports = {
   ERA_IMAGES, FALLBACK, THUMB_BASE, THUMB_FALLBACK,
-  EVENT_ART, PERSON_ART, PERSON_THUMB, IMG_BASE, eraImage, personThumb, eventImage, personImage, personImageThumb, altArt
+  EVENT_ART, PERSON_ART, PERSON_THUMB, IMG_BASE, eraImage, personThumb, eventImage, personImage, personImageThumb, altArt, remotePerson, remoteEvent
 };
 
 });
@@ -4322,8 +4322,10 @@ function fetchParts(kind, type, head, done) {
     const n = nextPart;
     nextPart += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
+      // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
+      // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
       if (err || !Array.isArray(data)) failed += 1;
-      else rows[n - 1] = data;
+      else rows[n - 1] = normalizeIndex(data) || [];
       pending -= 1;
       if (!pending) finish();
       else worker();
@@ -4529,6 +4531,197 @@ __register('/utils/artRemote.js', function (require, module, exports) {
 module.exports = {
   persons: ['ban-chao', 'cai-lun', 'cao-cao', 'cao-xueqin', 'chen-duxiu', 'chen-shou', 'cheng-jisihan', 'cheng-tang', 'da-yu', 'deng-xiaoping', 'du-fu', 'fan-zhongyan', 'fu-hao', 'guangwu', 'guo-shoujing', 'hong-xiuquan', 'kangxi', 'kongzi', 'kublai', 'laozi', 'li-bai', 'li-hongzhang', 'li-shizhen', 'li-yu', 'li-yuanhao', 'lin-zexu', 'lu-xun', 'mao-zedong', 'qi-jiguang', 'qianlong', 'qin-shihuang', 'qu-yuan', 'shang-yang', 'sima-qian', 'sima-yan', 'song-yingxing', 'su-shi', 'sui-wendi', 'sui-yangdi', 'sun-zhongshan', 'tang-taizong', 'tao-yuanming', 'wang-anshi', 'wang-shouren', 'wang-xizhi', 'wanyan-aguda', 'wu-zetian', 'xiao-chuo', 'xiao-wendi', 'xu-guangqi', 'xuanzang', 'yelu-abaoji', 'yu-qian', 'yue-fei', 'zeng-guofan', 'zhang-heng', 'zhang-juzheng', 'zhao-kuangyin', 'zheng-he', 'zhou-gong', 'zhou-wuwang', 'zhu-di', 'zhu-wen', 'zhu-xi', 'zhu-yuanzhang', 'zhuge-liang', 'zu-chongzhi', 'zuo-zongtang'],
   events: ['anshi-755', 'babwang-291', 'banchao', 'beifa-1926', 'bencao', 'cailun', 'caopi', 'chairong', 'changping', 'chanyuan-1005', 'chenqiao-960', 'chensheng', 'chuhan', 'feishui', 'fen-shu', 'fuhao-1200', 'guandu', 'guangwu', 'guo-shoujing', 'hongjin', 'hongloumeng-1754', 'huangchao', 'huangjin', 'jiawu-1894', 'jin-mie-liao', 'jin-unify-280', 'jinggangshan-1927', 'jingkang-1127', 'jurchen-1115', 'kaiyuan-713', 'kangxi-1681', 'kangzhan-1945', 'keju', 'kongzi-sheng', 'lanting', 'longmarch-1934', 'mayfourth-1919', 'ming-establish', 'ming-wang-1644', 'mobei-119', 'mongol-1206', 'mukden-1931', 'nan-tang-975', 'newculture-1915', 'ningwang-1519', 'nongzheng', 'opium-war-1840', 'prc-1949', 'qi-huan-gong', 'qidan-916', 'qing-ruguan', 'qingli-1043', 'reform-1978', 'sanfan', 'sanguozhi-290', 'shang-tang', 'shang-yang-bianfa', 'shaoxing', 'siku-1773', 'simaqian-shiji', 'sui-unify', 'taiping-1851', 'taizhou-1561', 'tiangong', 'tumu-1449', 'wanganshi-1069', 'wuxu-1898', 'wuzetian', 'wuzhangyuan', 'xia-establish', 'xiaowen', 'xinhai-1911', 'xinjiang-1878', 'xixia-1038', 'xuanwumen-626', 'xuanzang', 'yangwu-1861', 'yashan', 'ying-du-278', 'yongjia-316', 'yongle-beijing', 'yuan-establish', 'yuanmingyuan-1860', 'yuefei', 'zhangheng', 'zhangjuzheng-1581', 'zhangqian-138', 'zhenguan-627', 'zhou-wuwang', 'zhougong-lizhi', 'zhuwen', 'zhuxi-ehu', 'zuchongzhi', 'zunyi-1935']
+};
+
+});
+__register('/utils/archiveArt.js', function (require, module, exports) {
+// 资料库条目配图（2026-10-24）：detail 页头卡画片按条目取图。
+// 优先级：主站人物/事件专属图（archiveArtMatch.js 标题匹配，零下载）>
+// 资料库自抓图（archiveArtRemote.js 清单，data/img/archive/<栏目>/<id>.jpg，jsDelivr）>
+// ''（无图，详情页只保留分类题图）。仅 figures/emperors/events/wars 四类有图。
+// 远端图加载失败时用 eraImages.altArt 换备用域名重试一次。
+const eraImages = require('./eraImages.js');
+const MATCH = require('./archiveArtMatch.js');
+const REMOTE = require('./archiveArtRemote.js');
+
+const ARCHIVE_BASE = eraImages.IMG_BASE + '/archive';
+
+function matchedImage(kind, id) {
+  const hit = MATCH[kind] && MATCH[kind][id];
+  if (!hit) return '';
+  if (hit[0] === 'p') {
+    return eraImages.PERSON_ART[hit[1]] || eraImages.remotePerson(hit[1]) || '';
+  }
+  return eraImages.EVENT_ART[hit[1]] || eraImages.remoteEvent(hit[1]) || '';
+}
+
+function remoteImage(kind, id) {
+  const ids = REMOTE[kind];
+  return ids && ids.indexOf(id) >= 0 ? ARCHIVE_BASE + '/' + kind + '/' + id + '.jpg' : '';
+}
+
+function entryImage(kind, id) {
+  return matchedImage(kind, id) || remoteImage(kind, id);
+}
+
+module.exports = { entryImage, matchedImage, remoteImage };
+
+});
+__register('/utils/archiveArtMatch.js', function (require, module, exports) {
+// 自动生成：tools/match_archive_art.js —— 资料库条目 → 主站人物/事件专属图匹配表（勿手改）
+// 值为 ["p"|"e", 主站 id]；取图优先级见 utils/archiveArt.js，未命中的条目走 add_archive_art.py 自抓图
+module.exports = {
+  figures: {
+    'hf-chun1qiu1zhan4guo2_gong1sun1yang1': ['p', 'shang-yang'],
+    'hf-chun1qiu1zhan4guo2_kong3zi': ['p', 'kongzi'],
+    'hf-chun1qiu1zhan4guo2_lao3zi': ['p', 'laozi'],
+    'hf-chun1qiu1zhan4guo2_qu1yuan2': ['p', 'qu-yuan'],
+    'hf-chun1qiu1zhan4guo2_shang1yang1': ['p', 'shang-yang'],
+    'hf-han4chao2_ban1chao1': ['p', 'ban-chao'],
+    'hf-han4chao2_cai4lun2': ['p', 'cai-lun'],
+    'hf-han4chao2_huo4qu4bing4': ['p', 'huo-qubing'],
+    'hf-han4chao2_liu2che4': ['p', 'han-wudi'],
+    'hf-han4chao2_liu2xiu4': ['p', 'guangwu'],
+    'hf-han4chao2_si1ma3qian1': ['p', 'sima-qian'],
+    'hf-han4chao2_wei4qing1': ['p', 'wei-qing'],
+    'hf-han4chao2_zhang1heng2': ['p', 'zhang-heng'],
+    'hf-han4chao2_zhang1qian1': ['p', 'zhang-qian'],
+    'hf-jin4chao2_si1ma3yan2': ['p', 'sima-yan'],
+    'hf-jin4chao2_tao2yuan1ming2': ['p', 'tao-yuanming'],
+    'hf-jin4chao2_wang2xi1zhi1': ['p', 'wang-xizhi'],
+    'hf-liao2chao2_xiao1chuo4': ['p', 'xiao-chuo'],
+    'hf-liao2chao2_ye2lv4a1bao3ji1': ['p', 'yelu-abaoji'],
+    'hf-ming2chao2_li3shi2zhen1': ['p', 'li-shizhen'],
+    'hf-ming2chao2_qi1ji4guang1': ['p', 'qi-jiguang'],
+    'hf-ming2chao2_song4ying1xing1': ['p', 'song-yingxing'],
+    'hf-ming2chao2_wang2shou3ren2': ['p', 'wang-shouren'],
+    'hf-ming2chao2_xu2guang1qi3': ['p', 'xu-guangqi'],
+    'hf-ming2chao2_yu2qian1': ['p', 'yu-qian'],
+    'hf-ming2chao2_zhang1ju1zheng4': ['p', 'zhang-juzheng'],
+    'hf-ming2chao2_zheng4he2': ['p', 'zheng-he'],
+    'hf-ming2chao2_zhu1di4': ['p', 'zhu-di'],
+    'hf-ming2chao2_zhu1yuan2zhang1': ['p', 'zhu-yuanzhang'],
+    'hf-nan2bei3chao2_zu3chong1zhi1': ['p', 'zu-chongzhi'],
+    'hf-qing1chao2_ai4xin1jue2luo2hong2li4': ['p', 'qianlong'],
+    'hf-qing1chao2_ai4xin1jue2luo2xuan2ye4': ['p', 'kangxi'],
+    'hf-qing1chao2_cao2xue3qin2': ['p', 'cao-xueqin'],
+    'hf-qing1chao2_ceng2guo2fan1': ['p', 'zeng-guofan'],
+    'hf-qing1chao2_hong2xiu4quan2': ['p', 'hong-xiuquan'],
+    'hf-qing1chao2_li3hong2zhang1': ['p', 'li-hongzhang'],
+    'hf-qing1chao2_lin2ze2xu2': ['p', 'lin-zexu'],
+    'hf-qing1chao2_zuo3zong1tang2': ['p', 'zuo-zongtang'],
+    'hf-san1guo2_cao2cao1': ['p', 'cao-cao'],
+    'hf-san1guo2_zhu1ge3liang4': ['p', 'zhuge-liang'],
+    'hf-shang1chao2_fu4hao3': ['p', 'fu-hao'],
+    'hf-shang1chao2_shang1tang1': ['p', 'cheng-tang'],
+    'hf-song4chao2_fan4zhong4yan1': ['p', 'fan-zhongyan'],
+    'hf-song4chao2_li3yuan2hao4': ['p', 'li-yuanhao'],
+    'hf-song4chao2_su1shi4': ['p', 'su-shi'],
+    'hf-song4chao2_wan2yan2a1gu3da3': ['p', 'wanyan-aguda'],
+    'hf-song4chao2_wang2an1shi2': ['p', 'wang-anshi'],
+    'hf-song4chao2_yue4fei1': ['p', 'yue-fei'],
+    'hf-song4chao2_zhao4kuang1yin4': ['p', 'zhao-kuangyin'],
+    'hf-song4chao2_zhu1xi1': ['p', 'zhu-xi'],
+    'hf-tang2chao2_du4fu3': ['p', 'du-fu'],
+    'hf-tang2chao2_li3bai2': ['p', 'li-bai'],
+    'hf-tang2chao2_li3shi4min2': ['p', 'tang-taizong'],
+    'hf-tang2chao2_wu3ze2tian1': ['p', 'wu-zetian'],
+    'hf-tang2chao2_xuan2zang4': ['p', 'xuanzang'],
+    'hf-wu3dai4shi2guo2_li3yu4': ['p', 'li-yu'],
+    'hf-wu3dai4shi2guo2_zhu1wen1': ['p', 'zhu-wen'],
+    'hf-xia4chao2_da4yu3': ['p', 'da-yu'],
+    'hf-yuan2chao2_guo1shou3jing4': ['p', 'guo-shoujing'],
+    'hf-zhong1hua2min2guo2_sun1zhong1shan1': ['p', 'sun-zhongshan']
+  },
+  emperors: {
+    'hem-0012-wu3dai4shi2guo2_zhu1wen1': ['p', 'zhu-wen'],
+    'hem-0026-wu3dai4shi2guo2_li3yu4': ['p', 'li-yu'],
+    'hem-0186-tang2chao2_li3shi4min2': ['p', 'tang-taizong'],
+    'hem-0207-shang1chao2_shang1tang1': ['p', 'cheng-tang'],
+    'hem-0237-xia4chao2_da4yu3': ['p', 'da-yu'],
+    'hem-0255-song4chao2_zhao4kuang1yin4': ['p', 'zhao-kuangyin'],
+    'hem-0273-ming2chao2_zhu1yuan2zhang1': ['p', 'zhu-yuanzhang'],
+    'hem-0275-ming2chao2_zhu1di4': ['p', 'zhu-di'],
+    'hem-0289-jin4chao2_si1ma3yan2': ['p', 'sima-yan'],
+    'hem-0311-han4chao2_liu2che4': ['p', 'han-wudi'],
+    'hem-0321-han4chao2_liu2xiu4': ['p', 'guangwu'],
+    'hem-0338-qing1chao2_ai4xin1jue2luo2xuan2ye4': ['p', 'kangxi'],
+    'hem-0340-qing1chao2_ai4xin1jue2luo2hong2li4': ['p', 'qianlong'],
+    'hem-0350-liao2chao2_ye2lv4a1bao3ji1': ['p', 'yelu-abaoji'],
+    'hem-0359-song4chao2_wan2yan2a1gu3da3': ['p', 'wanyan-aguda']
+  },
+  events: {
+    'he-119': ['e', 'chibi'],
+    'he-138': ['e', 'babwang-291'],
+    'he-141': ['e', 'feishui'],
+    'he-156': ['e', 'xuanwumen-626'],
+    'he-167': ['e', 'anshi-755'],
+    'he-17': ['e', 'zhenguan-627'],
+    'he-18': ['e', 'kaiyuan-713'],
+    'he-180': ['e', 'huangchao'],
+    'he-187': ['e', 'chenqiao-960'],
+    'he-195': ['e', 'chanyuan-1005'],
+    'he-198': ['e', 'qingli-1043'],
+    'he-199': ['e', 'wanganshi-1069'],
+    'he-2': ['e', 'shang-yang-bianfa'],
+    'he-200': ['e', 'jingkang-1127'],
+    'he-210': ['e', 'shaoxing'],
+    'he-222': ['e', 'yashan'],
+    'he-273': ['e', 'tumu-1449'],
+    'he-276': ['e', 'zhangjuzheng-1581'],
+    'he-28': ['e', 'mukden-1931'],
+    'he-316': ['e', 'sanfan'],
+    'he-317': ['e', 'qing-ruguan'],
+    'he-353': ['e', 'humen-1839'],
+    'he-354': ['e', 'opium-war-1840'],
+    'he-356': ['e', 'taiping-1851'],
+    'he-360': ['e', 'wuxu-1898'],
+    'he-363': ['e', 'yangwu-1861'],
+    'he-369': ['e', 'xinhai-1911'],
+    'he-396': ['e', 'mayfourth-1919'],
+    'he-4': ['e', 'fen-shu'],
+    'he-403': ['e', 'newculture-1915'],
+    'he-424': ['e', 'prc-1949'],
+    'he-44': ['e', 'huangjin'],
+    'he-45': ['e', 'guandu'],
+    'he-55': ['e', 'guangwu'],
+    'he-645': ['e', 'zunyi-1935'],
+    'he-65': ['e', 'zhou-wuwang'],
+    'he-67': ['e', 'qi-huan-gong'],
+    'he-82': ['e', 'changping'],
+    'he-91': ['e', 'zhangqian-138'],
+    'he-93': ['e', 'mobei-119']
+  },
+  wars: {
+    'hw-w1706679220655F7': ['e', 'changping'],
+    'hw-w17066792502D136': ['e', 'mobei-119'],
+    'hw-w1706679259D500A': ['e', 'huangjin'],
+    'hw-w170667926872329': ['e', 'guandu'],
+    'hw-w17066792697D6B4': ['e', 'chibi'],
+    'hw-w1706679289EDE85': ['e', 'babwang-291'],
+    'hw-w1706679292618CB': ['e', 'feishui'],
+    'hw-w170667932230FA3': ['e', 'anshi-755'],
+    'hw-w17066793557150B': ['e', 'yashan'],
+    'hw-w1706679356B1308': ['e', 'hongjin'],
+    'hw-w170667937714773': ['e', 'sanfan'],
+    'hw-w17066794044AEA4': ['e', 'taiping-1851'],
+    'hw-w1706679440CFDA0': ['e', 'jiawu-1894'],
+    'hw-w17066794680AC02': ['e', 'xinhai-1911'],
+    'hw-w17066794837AA3C': ['e', 'beifa-1926'],
+    'hw-w1706679508D5EFD': ['e', 'mukden-1931']
+  }
+};
+
+});
+__register('/utils/archiveArtRemote.js', function (require, module, exports) {
+// 自动生成：tools/add_archive_art.py —— 资料库条目自抓图可用清单（勿手改）
+// 图片在 miniprogram/data/img/archive/<栏目>/<id>.jpg，主包外，经 jsDelivr 提供
+// utils/archiveArt.js 据此拼远端 URL；与 archiveArtMatch.js（主站图匹配）互为补充
+module.exports = {
+  emperors: ['hem-0001-san1guo2_cao2pi1', 'hem-0002-san1guo2_cao2rui4', 'hem-0003-san1guo2_cao2fang1', 'hem-0004-san1guo2_cao2mao2', 'hem-0005-san1guo2_cao2huan4', 'hem-0006-san1guo2_liu2bei4', 'hem-0007-san1guo2_liu2chan2', 'hem-0008-san1guo2_sun1quan2', 'hem-0009-san1guo2_sun1liang4', 'hem-0010-san1guo2_sun1xiu1', 'hem-0011-san1guo2_sun1hao4', 'hem-0012-wu3dai4shi2guo2_zhu1wen1', 'hem-0013-wu3dai4shi2guo2_zhu1you3gui1', 'hem-0014-wu3dai4shi2guo2_zhu1you3zhen1', 'hem-0015-wu3dai4shi2guo2_li3cun2xu4', 'hem-0016-wu3dai4shi2guo2_li3cong2ke1', 'hem-0017-wu3dai4shi2guo2_shi2jing4tang2', 'hem-0018-wu3dai4shi2guo2_shi2zhong4gui4', 'hem-0019-wu3dai4shi2guo2_liu2zhi1yuan3', 'hem-0020-wu3dai4shi2guo2_liu2cheng2you4', 'hem-0021-wu3dai4shi2guo2_guo1wei1', 'hem-0022-wu3dai4shi2guo2_chai2zong1xun4', 'hem-0023-wu3dai4shi2guo2_yang2xing2mi4', 'hem-0024-wu3dai4shi2guo2_nan2wu2yang2pu3', 'hem-0025-wu3dai4shi2guo2_li3bian4', 'hem-0026-wu3dai4shi2guo2_li3yu4', 'hem-0027-wu3dai4shi2guo2_wang2jian4', 'hem-0028-wu3dai4shi2guo2_wang2yan3', 'hem-0029-wu3dai4shi2guo2_meng4zhi1xiang2', 'hem-0030-wu3dai4shi2guo2_meng4chang3', 'hem-0031-wu3dai4shi2guo2_wang2shen3zhi1', 'hem-0032-wu3dai4shi2guo2_wang2yan2zheng4', 'hem-0033-wu3dai4shi2guo2_ma3yin1', 'hem-0034-wu3dai4shi2guo2_ma3xi1chong2', 'hem-0035-wu3dai4shi2guo2_liu2yan3', 'hem-0036-wu3dai4shi2guo2_liu2chang3', 'hem-0037-wu3dai4shi2guo2_gao1ji4xing1', 'hem-0038-wu3dai4shi2guo2_gao1ji4chong1', 'hem-0039-wu3dai4shi2guo2_qian2liu2', 'hem-0040-wu3dai4shi2guo2_qian2chu4', 'hem-0041-wu3dai4shi2guo2_liu2min2', 'hem-0042-wu3dai4shi2guo2_liu2ji4yuan2', 'hem-0043-wu3dai4shi2guo2_li3si4yuan2', 'hem-0044-wu3dai4shi2guo2_chai2rong2', 'hem-0045-wu3dai4shi2guo2_yang2wo4', 'hem-0046-wu3dai4shi2guo2_li3jing3', 'hem-0047-wu3dai4shi2guo2_wang2yan2han4', 'hem-0048-wu3dai4shi2guo2_ma3xi1sheng1', 'hem-0049-wu3dai4shi2guo2_liu2bin1', 'hem-0050-wu3dai4shi2guo2_gao1cong2hui4', 'hem-0051-wu3dai4shi2guo2_qian2yuan2guan4', 'hem-0052-wu3dai4shi2guo2_liu2jun1', 'hem-0053-wu3dai4shi2guo2_li3cong2hou4', 'hem-0054-wu3dai4shi2guo2_yang2long2yan3', 'hem-0055-wu3dai4shi2guo2_wang2yan2jun1', 'hem-0056-wu3dai4shi2guo2_ma3xi1fan4', 'hem-0057-wu3dai4shi2guo2_liu2cheng2', 'hem-0058-wu3dai4shi2guo2_gao1bao3rong2', 'hem-0059-wu3dai4shi2guo2_qian2zuo3', 'hem-0060-wu3dai4shi2guo2_liu2ji4en1', 'hem-0061-wu3dai4shi2guo2_wang2ji4peng2', 'hem-0062-wu3dai4shi2guo2_ma3xi1guang3', 'hem-0063-wu3dai4shi2guo2_gao1bao3xu4', 'hem-0064-wu3dai4shi2guo2_qian2zong1', 'hem-0065-wu3dai4shi2guo2_wang2yan2xi1', 'hem-0066-wu3dai4shi2guo2_ma3xi1e4', 'hem-0067-yuan2chao2_hu1bi4lie4', 'hem-0068-yuan2chao2_yuan2cheng2zong1', 'hem-0069-yuan2chao2_yuan2wu3zong1', 'hem-0070-yuan2chao2_ai4yu4li2ba2li4ba1da2', 'hem-0071-yuan2chao2_shuo4de2ba1la2', 'hem-0072-yuan2chao2_tai4ding4di4', 'hem-0073-yuan2chao2_a1su4ji2ba1', 'hem-0074-yuan2chao2_tu2tie1mu4er3', 'hem-0075-yuan2chao2_yuan2ming2zong1', 'hem-0076-yuan2chao2_yuan2ning2zong1', 'hem-0077-yuan2chao2_tuo3huan1tie1mu4er3', 'hem-0078-nan2bei3chao2_liu2yu4', 'hem-0079-nan2bei3chao2_xiao1dao4cheng2', 'hem-0080-nan2bei3chao2_xiao1zhao1wen2', 'hem-0081-nan2bei3chao2_xiao1yan3', 'hem-0082-nan2bei3chao2_xiao1zheng4de2', 'hem-0083-nan2bei3chao2_xiao1tong3', 'hem-0084-nan2bei3chao2_chen2ba4xian1', 'hem-0085-nan2bei3chao2_xiao1cha2', 'hem-0086-nan2bei3chao2_hou2jing3', 'hem-0087-nan2bei3chao2_tuo4ba2gui1', 'hem-0088-nan2bei3chao2_yuan2shi4', 'hem-0089-nan2bei3chao2_yuan2shan4jian4', 'hem-0090-nan2bei3chao2_yuan2bao3ju4', 'hem-0091-nan2bei3chao2_gao1yang2', 'hem-0092-nan2bei3chao2_yu3wen2gong1', 'hem-0093-nan2bei3chao2_liu2yi4fu2', 'hem-0094-nan2bei3chao2_xiao1ze2', 'hem-0095-nan2bei3chao2_xiao1gang1', 'hem-0096-nan2bei3chao2_chen2qian4', 'hem-0097-nan2bei3chao2_xiao1kui1', 'hem-0098-nan2bei3chao2_tuo4ba2si4', 'hem-0099-nan2bei3chao2_yuan2qin1', 'hem-0100-nan2bei3chao2_gao1yin1', 'hem-0101-nan2bei3chao2_yu3wen2yu4', 'hem-0102-nan2bei3chao2_liu2yi4long2', 'hem-0103-nan2bei3chao2_xiao1zhao1ye4', 'hem-0104-nan2bei3chao2_xiao1dong4', 'hem-0105-nan2bei3chao2_chen2bo2zong1', 'hem-0106-nan2bei3chao2_xiao1cong2', 'hem-0107-nan2bei3chao2_tuo4ba2dao4', 'hem-0108-nan2bei3chao2_tuo4ba2kuo4', 'hem-0109-nan2bei3chao2_gao1yan3', 'hem-0110-nan2bei3chao2_yu3wen2yong1', 'hem-0111-nan2bei3chao2_liu2shao4', 'hem-0112-nan2bei3chao2_xiao1luan2', 'hem-0113-nan2bei3chao2_xiao1yi4', 'hem-0114-nan2bei3chao2_chen2xu1', 'hem-0115-nan2bei3chao2_tuo4ba2yu2', 'hem-0116-nan2bei3chao2_gao1zhan4', 'hem-0117-nan2bei3chao2_yu3wen2yun1', 'hem-0118-nan2bei3chao2_liu2jun4', 'hem-0119-nan2bei3chao2_xiao1bao3juan3', 'hem-0120-nan2bei3chao2_xiao1ji4', 'hem-0121-nan2bei3chao2_chen2shu1bao3', 'hem-0122-nan2bei3chao2_tuo4ba2jun4', 'hem-0123-nan2bei3chao2_gao1wei3', 'hem-0124-nan2bei3chao2_yu3wen2chan3', 'hem-0125-nan2bei3chao2_liu2ziye4', 'hem-0126-nan2bei3chao2_xiao1bao3rong2', 'hem-0127-nan2bei3chao2_xiao1yuan1ming2', 'hem-0128-nan2bei3chao2_tuo4ba2hong2', 'hem-0129-nan2bei3chao2_gao1yan3', 'hem-0130-nan2bei3chao2_liu2yu4', 'hem-0131-nan2bei3chao2_xiao1fang1zhi4', 'hem-0132-nan2bei3chao2_tuo4ba2hong2_1', 'hem-0133-nan2bei3chao2_gao1yan2zong1', 'hem-0134-nan2bei3chao2_liu2yu4', 'hem-0135-nan2bei3chao2_xiao1zhuang1', 'hem-0136-nan2bei3chao2_yuan2ke4', 'hem-0137-nan2bei3chao2_gao1heng2', 'hem-0138-nan2bei3chao2_liu2zhun3', 'hem-0139-nan2bei3chao2_yuan2xu3', 'hem-0140-nan2bei3chao2_gao1jie1', 'hem-0141-nan2bei3chao2_yuan2zhao1', 'hem-0142-nan2bei3chao2_gao1shao4yi4', 'hem-0143-nan2bei3chao2_yuan2ziyou1', 'hem-0144-nan2bei3chao2_yuan2ye4', 'hem-0145-nan2bei3chao2_yuan2gong1', 'hem-0146-nan2bei3chao2_yuan2lang3', 'hem-0147-nan2bei3chao2_yuan2xiu1', 'hem-0148-zhou1chao2_ji1fa1', 'hem-0149-zhou1chao2_ji1song4', 'hem-0150-zhou1chao2_ji1zhao1', 'hem-0151-zhou1chao2_ji1xia2', 'hem-0152-zhou1chao2_ji1man3', 'hem-0153-zhou1chao2_ji1yi1hu4', 'hem-0154-zhou1chao2_ji1jian1', 'hem-0155-zhou1chao2_ji1pi4fang1', 'hem-0156-zhou1chao2_ji1xie4', 'hem-0157-zhou1chao2_ji1hu2', 'hem-0158-zhou1chao2_ji1jing4', 'hem-0159-zhou1chao2_ji1gong1sheng1', 'hem-0160-zhou1chao2_ji1yi2jiu4', 'hem-0161-zhou1chao2_ji1lin2', 'hem-0162-zhou1chao2_ji1tuo2', 'hem-0163-zhou1chao2_ji1hu2qi2', 'hem-0164-zhou1chao2_ji1lang2', 'hem-0165-zhou1chao2_ji1zheng4', 'hem-0166-zhou1chao2_ji1ren2chen2', 'hem-0167-zhou1chao2_ji1ban1', 'hem-0168-zhou1chao2_ji1yu2', 'hem-0169-zhou1chao2_ji1yi2', 'hem-0170-zhou1chao2_ji1xie4xin1', 'hem-0171-zhou1chao2_ji1gui4', 'hem-0172-zhou1chao2_ji1meng3', 'hem-0173-zhou1chao2_ji1gai4', 'hem-0174-zhou1chao2_ji1ren2', 'hem-0175-zhou1chao2_ji1jie4', 'hem-0176-zhou1chao2_ji1qu4ji2', 'hem-0177-zhou1chao2_ji1shu1', 'hem-0178-zhou1chao2_ji1wei2', 'hem-0179-zhou1chao2_ji1wu3_1', 'hem-0180-zhou1chao2_ji1jiao1', 'hem-0181-zhou1chao2_ji1xi3', 'hem-0182-zhou1chao2_ji1bian3', 'hem-0183-zhou1chao2_ji1ding4', 'hem-0184-chun1qiu1zhan4guo2_ji1yan2', 'hem-0185-tang2chao2_li3yuan1', 'hem-0186-tang2chao2_li3shi4min2', 'hem-0187-tang2chao2_li3zhi4', 'hem-0188-tang2chao2_li3xian3', 'hem-0189-tang2chao2_li3dan4', 'hem-0190-tang2chao2_wu3zhao4', 'hem-0191-tang2chao2_li3zhong4mao4', 'hem-0192-tang2chao2_li3long2ji1', 'hem-0193-tang2chao2_li3heng1', 'hem-0194-tang2chao2_li3yu4', 'hem-0195-tang2chao2_tang2de2zong1', 'hem-0196-tang2chao2_tang2shun4zong1', 'hem-0197-tang2chao2_tang2xian4zong1', 'hem-0198-tang2chao2_tang2mu4zong1', 'hem-0199-tang2chao2_tang2jing4zong1', 'hem-0200-tang2chao2_tang2wen2zong1', 'hem-0201-tang2chao2_tang2wu3zong1', 'hem-0202-tang2chao2_li3chen2', 'hem-0203-tang2chao2_tang2yi4zong1', 'hem-0204-tang2chao2_tang2xi1zong1', 'hem-0205-tang2chao2_li3ye4', 'hem-0206-tang2chao2_li3chu4', 'hem-0207-shang1chao2_shang1tang1', 'hem-0208-shang1chao2_wai4bing3', 'hem-0209-shang1chao2_zhong4ren2', 'hem-0210-shang1chao2_tai4jia3', 'hem-0211-shang1chao2_wo4ding1', 'hem-0212-shang1chao2_tai4geng1', 'hem-0213-shang1chao2_xiao3jia3', 'hem-0214-shang1chao2_yong1ji3', 'hem-0215-shang1chao2_tai4wu4', 'hem-0216-shang1chao2_zhong4ding1', 'hem-0217-shang1chao2_wai4ren2', 'hem-0218-shang1chao2_he2dan3jia3', 'hem-0219-shang1chao2_zu3yi3', 'hem-0220-shang1chao2_zu3xin1', 'hem-0221-shang1chao2_wo4jia3', 'hem-0222-shang1chao2_zu3ding1', 'hem-0223-shang1chao2_nan2geng1', 'hem-0224-shang1chao2_yang2jia3', 'hem-0225-shang1chao2_pan2geng1', 'hem-0226-shang1chao2_xiao3xin1', 'hem-0227-shang1chao2_xiao3yi3', 'hem-0228-shang1chao2_wu3ding1', 'hem-0229-shang1chao2_zu3geng1', 'hem-0230-shang1chao2_zu3jia3', 'hem-0231-shang1chao2_lin3xin1', 'hem-0232-shang1chao2_geng1ding1', 'hem-0233-shang1chao2_wu3yi3', 'hem-0234-shang1chao2_tai4ding1', 'hem-0235-shang1chao2_di4yi3', 'hem-0236-shang1chao2_di4xin1', 'hem-0237-xia4chao2_da4yu3', 'hem-0238-xia4chao2_xia4qi3', 'hem-0239-xia4chao2_tai4kang1', 'hem-0240-xia4chao2_si4zhong1kang1', 'hem-0241-xia4chao2_si4xiang1', 'hem-0242-xia4chao2_han2zhuo2', 'hem-0243-xia4chao2_si4shao3kang1', 'hem-0244-xia4chao2_si4zhu4', 'hem-0245-xia4chao2_si4huai2', 'hem-0246-xia4chao2_si4mang2', 'hem-0247-xia4chao2_si4xie4', 'hem-0248-xia4chao2_si4bu4jiang4', 'hem-0249-xia4chao2_si4jiong1', 'hem-0250-xia4chao2_si4jin3', 'hem-0251-xia4chao2_kong3jia3', 'hem-0252-xia4chao2_si4gao1', 'hem-0253-xia4chao2_si4fa1', 'hem-0254-xia4chao2_xia4jie2', 'hem-0255-song4chao2_zhao4kuang1yin4', 'hem-0256-song4chao2_zhao4guang1yi4', 'hem-0257-song4chao2_zhao4heng2', 'hem-0258-song4chao2_zhao4zhen1', 'hem-0259-song4chao2_zhao4shu3', 'hem-0260-song4chao2_zhao4xu1', 'hem-0261-song4chao2_zhao4xu4', 'hem-0262-song4chao2_zhao4ji2', 'hem-0263-song4chao2_zhao4huan2', 'hem-0264-song4chao2_zhao4gou4', 'hem-0265-song4chao2_zhao4shen4', 'hem-0266-song4chao2_zhao4dun1', 'hem-0267-song4chao2_zhao4kuo4', 'hem-0268-song4chao2_zhao4yun2', 'hem-0269-song4chao2_zhao4qi2', 'hem-0270-song4chao2_zhao4xian3', 'hem-0271-song4chao2_zhao4shi4', 'hem-0272-song4chao2_zhao4bing3', 'hem-0273-ming2chao2_zhu1yuan2zhang1', 'hem-0274-ming2chao2_zhu1yun3wen2', 'hem-0275-ming2chao2_zhu1di4', 'hem-0276-ming2chao2_zhu1gao1chi4', 'hem-0277-ming2chao2_zhu1zhan1ji1', 'hem-0278-ming2chao2_zhu1qi2zhen4', 'hem-0279-ming2chao2_zhu1qi2yu4', 'hem-0280-ming2chao2_zhu1jian4shen1', 'hem-0281-ming2chao2_zhu1you4tang2', 'hem-0282-ming2chao2_zhu1hou4zhao4', 'hem-0283-ming2chao2_zhu1hou4cong1', 'hem-0284-ming2chao2_zhu1zai4hou4', 'hem-0285-ming2chao2_zhu1yi4jun1', 'hem-0286-ming2chao2_zhu1chang2luo4', 'hem-0287-ming2chao2_zhu1you2xiao4', 'hem-0288-ming2chao2_zhu1you2jian3', 'hem-0289-jin4chao2_si1ma3yan2', 'hem-0290-jin4chao2_si1ma3zhong1', 'hem-0291-jin4chao2_si1ma3lun2', 'hem-0292-jin4chao2_si1ma3chi4', 'hem-0293-jin4chao2_si1ma3ye4', 'hem-0294-jin4chao2_si1ma3rui4', 'hem-0295-jin4chao2_si1ma3shao4', 'hem-0296-jin4chao2_si1ma3yan3', 'hem-0297-jin4chao2_si1ma3yue4', 'hem-0298-jin4chao2_si1ma3dan1', 'hem-0299-jin4chao2_si1ma3pi1', 'hem-0300-jin4chao2_si1ma3yi4', 'hem-0301-jin4chao2_si1ma3yu4', 'hem-0302-jin4chao2_si1ma3yao4', 'hem-0303-jin4chao2_si1ma3de2zong1'],
+  events: [],
+  wars: [],
+  figures: [],
 };
 
 });
@@ -6281,6 +6474,8 @@ __register('/pages/archive-detail/archive-detail.js', function (require, module,
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
+const archiveArt = require('../../utils/archiveArt.js');
+const altArt = require('../../utils/eraImages.js').altArt;
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -6385,6 +6580,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
   data: {
     kicker: '资料库',
     cover: '/assets/palace.jpg',
+    art: '',
     item: null,
     blocks: [],
     sections: [],
@@ -6435,6 +6631,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
       loading: true,
       error: '',
       item: null,
+      art: '',
       blocks: [],
       sections: [],
       factRows: [],
@@ -6460,6 +6657,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
         loading: false,
         error: '',
         item,
+        art: archiveArt.entryImage(this.kind, item.id),
         blocks,
         sections,
         factRows,
@@ -6483,6 +6681,12 @@ Page('project://pages/archive-detail/archive-detail.js', {
     this.fetch();
   },
 
+  // 条目画片（远端图）加载失败 → 换备用 jsDelivr 域名重试一次；再失败隐藏画片
+  onArtErr() {
+    const alt = altArt(this.data.art);
+    if (alt) this.setData({ art: alt });
+  },
+
   goBack() {
     wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/archive/archive' }) });
   },
@@ -6497,8 +6701,8 @@ Page('project://pages/archive-detail/archive-detail.js', {
 });
 
 });
-__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">资料库</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\r\n      <text class=\"state-title\">正在打开资料</text>\r\n      <text class=\"state-desc\">首次加载需要片刻。</text>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\r\n      <text class=\"state-title\">{{error}}</text>\r\n      <text class=\"state-action\">点此重试</text>\r\n    </view>\r\n\r\n    <block wx:else>\r\n      <view class=\"head-card\">\r\n        <view class=\"head-cover-wrap\">\r\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\r\n          <view class=\"head-cover-fade\"></view>\r\n        </view>\r\n        <view class=\"head-body\">\r\n          <text class=\"head-kicker\">{{kicker}}</text>\r\n          <text class=\"head-title\">{{item.title}}</text>\r\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\r\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\r\n          <text>{{item.summary}}</text>\r\n        </view>\r\n\r\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\r\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\r\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\r\n              <text class=\"section-label\">{{item.label}}</text>\r\n              <text class=\"section-rule\"></text>\r\n            </view>\r\n            <text\r\n              wx:for=\"{{item.paras}}\"\r\n              wx:key=\"id\"\r\n              class=\"section-para\"\r\n            >{{item.text}}</text>\r\n          </view>\r\n        </view>\r\n\r\n        <block wx:elif=\"{{showBody}}\">\r\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\r\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\r\n            <view wx:else class=\"para\">\r\n              <text>{{item.text}}</text>\r\n            </view>\r\n          </block>\r\n        </block>\r\n\r\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\r\n          <text class=\"trans-title\">译文</text>\r\n          <text class=\"trans-text\">{{item.translation}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\r\n        <view class=\"facts-head\">\r\n          <text class=\"facts-title\">资料卡</text>\r\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\r\n        </view>\r\n        <view class=\"fact-grid\">\r\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\r\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\r\n            <text class=\"fact-value\">{{item.value}}</text>\r\n          </view>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 史页资料库</view>\r\n    </block>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 28rpx;\r\n  padding: 0;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover-wrap {\r\n  position: relative;\r\n  height: 160rpx;\r\n  background: #E8E2D6;\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.head-cover-fade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  height: 54rpx;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\r\n}\r\n\r\n.head-body {\r\n  padding: 28rpx 34rpx 32rpx;\r\n}\r\n\r\n.head-kicker {\r\n  display: inline-block;\r\n  padding: 5rpx 13rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\r\n  border-radius: 999rpx;\r\n  background: #F7F2E9;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C6A45;\r\n}\r\n\r\n.head-title {\r\n  display: block;\r\n  margin-top: 16rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(40rpx * var(--fs, 1));\r\n  line-height: 1.42;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.head-meta {\r\n  display: block;\r\n  margin-top: 18rpx;\r\n  padding-top: 16rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.5;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 20rpx;\r\n  padding: 32rpx 32rpx 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.sections {\r\n  display: block;\r\n}\r\n\r\n.section {\r\n  margin-bottom: 30rpx;\r\n}\r\n\r\n.section:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section-head {\r\n  display: flex;\r\n  align-items: center;\r\n  margin-bottom: 14rpx;\r\n}\r\n\r\n.section-label {\r\n  flex: none;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.12em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.section-rule {\r\n  display: block;\r\n  flex: 1;\r\n  height: 1rpx;\r\n  margin-left: 14rpx;\r\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\r\n}\r\n\r\n.section-para {\r\n  display: block;\r\n  margin-bottom: 16rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.section-para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section.verse .section-para {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section.note .section-para {\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.82;\r\n  color: #5F5A52;\r\n}\r\n\r\n.lead {\r\n  margin-bottom: 26rpx;\r\n  padding: 20rpx 22rpx;\r\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\r\n  border-radius: 0 18rpx 18rpx 0;\r\n  background: #F7F2E9;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.75;\r\n  color: #5F5A52;\r\n}\r\n\r\n.para {\r\n  margin-bottom: 22rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.para-head {\r\n  display: block;\r\n  margin: 30rpx 0 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.para-head:first-child {\r\n  margin-top: 0;\r\n}\r\n\r\n.translation {\r\n  margin-top: 28rpx;\r\n  padding-top: 24rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.trans-title {\r\n  display: block;\r\n  margin-bottom: 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #A9825E;\r\n}\r\n\r\n.trans-text {\r\n  display: block;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  color: #5F5A52;\r\n}\r\n\r\n.facts {\r\n  margin-top: 22rpx;\r\n  padding: 26rpx 30rpx 20rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\r\n  border-radius: 28rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.facts-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.facts-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.facts-count {\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-grid {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  margin: 0 -8rpx;\r\n}\r\n\r\n.fact-item {\r\n  box-sizing: border-box;\r\n  width: 50%;\r\n  min-width: 0;\r\n  padding: 10rpx 8rpx;\r\n}\r\n\r\n.fact-item.wide {\r\n  width: 100%;\r\n}\r\n\r\n.fact-key {\r\n  display: block;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-value {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #3A342C;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 28rpx;\r\n  padding: 18rpx 22rpx;\r\n  border-radius: 20rpx;\r\n  background: rgba(243, 239, 230, 0.58);\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n"; });
+__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">资料库</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\r\n      <text class=\"state-title\">正在打开资料</text>\r\n      <text class=\"state-desc\">首次加载需要片刻。</text>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\r\n      <text class=\"state-title\">{{error}}</text>\r\n      <text class=\"state-action\">点此重试</text>\r\n    </view>\r\n\r\n    <block wx:else>\r\n      <view class=\"head-card\">\r\n        <view class=\"head-cover-wrap\">\r\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\r\n          <view class=\"head-cover-fade\"></view>\r\n        </view>\r\n        <view class=\"head-body\">\r\n          <view class=\"head-row\">\r\n            <view class=\"head-copy\">\r\n              <text class=\"head-kicker\">{{kicker}}</text>\r\n              <text class=\"head-title\">{{item.title}}</text>\r\n            </view>\r\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\r\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\r\n            </view>\r\n          </view>\r\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\r\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\r\n          <text>{{item.summary}}</text>\r\n        </view>\r\n\r\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\r\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\r\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\r\n              <text class=\"section-label\">{{item.label}}</text>\r\n              <text class=\"section-rule\"></text>\r\n            </view>\r\n            <text\r\n              wx:for=\"{{item.paras}}\"\r\n              wx:key=\"id\"\r\n              class=\"section-para\"\r\n            >{{item.text}}</text>\r\n          </view>\r\n        </view>\r\n\r\n        <block wx:elif=\"{{showBody}}\">\r\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\r\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\r\n            <view wx:else class=\"para\">\r\n              <text>{{item.text}}</text>\r\n            </view>\r\n          </block>\r\n        </block>\r\n\r\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\r\n          <text class=\"trans-title\">译文</text>\r\n          <text class=\"trans-text\">{{item.translation}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\r\n        <view class=\"facts-head\">\r\n          <text class=\"facts-title\">资料卡</text>\r\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\r\n        </view>\r\n        <view class=\"fact-grid\">\r\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\r\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\r\n            <text class=\"fact-value\">{{item.value}}</text>\r\n          </view>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 史页资料库</view>\r\n    </block>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 28rpx;\r\n  padding: 0;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover-wrap {\r\n  position: relative;\r\n  height: 160rpx;\r\n  background: #E8E2D6;\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.head-cover-fade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  height: 54rpx;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\r\n}\r\n\r\n.head-body {\r\n  padding: 28rpx 34rpx 32rpx;\r\n}\r\n\r\n/* 条目画片：右侧装裱小画（匹配主站专属图或资料库自抓图），无图时整行退化为纯文字 */\r\n.head-row {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  justify-content: space-between;\r\n  gap: 22rpx;\r\n}\r\n\r\n.head-copy {\r\n  flex: 1 1 auto;\r\n  min-width: 0;\r\n}\r\n\r\n.head-fig {\r\n  flex: 0 0 auto;\r\n  width: 164rpx;\r\n  height: 164rpx;\r\n  padding: 10rpx;\r\n  box-sizing: border-box;\r\n  border-radius: 12rpx;\r\n  background: #FFFFFF;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.28);\r\n  box-shadow: 0 10rpx 22rpx rgba(90, 70, 50, 0.08);\r\n}\r\n\r\n.head-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 6rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.head-kicker {\r\n  display: inline-block;\r\n  padding: 5rpx 13rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\r\n  border-radius: 999rpx;\r\n  background: #F7F2E9;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C6A45;\r\n}\r\n\r\n.head-title {\r\n  display: block;\r\n  margin-top: 16rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(40rpx * var(--fs, 1));\r\n  line-height: 1.42;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.head-meta {\r\n  display: block;\r\n  margin-top: 18rpx;\r\n  padding-top: 16rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.5;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 20rpx;\r\n  padding: 32rpx 32rpx 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.sections {\r\n  display: block;\r\n}\r\n\r\n.section {\r\n  margin-bottom: 30rpx;\r\n}\r\n\r\n.section:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section-head {\r\n  display: flex;\r\n  align-items: center;\r\n  margin-bottom: 14rpx;\r\n}\r\n\r\n.section-label {\r\n  flex: none;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.12em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.section-rule {\r\n  display: block;\r\n  flex: 1;\r\n  height: 1rpx;\r\n  margin-left: 14rpx;\r\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\r\n}\r\n\r\n.section-para {\r\n  display: block;\r\n  margin-bottom: 16rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.section-para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section.verse .section-para {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section.note .section-para {\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.82;\r\n  color: #5F5A52;\r\n}\r\n\r\n.lead {\r\n  margin-bottom: 26rpx;\r\n  padding: 20rpx 22rpx;\r\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\r\n  border-radius: 0 18rpx 18rpx 0;\r\n  background: #F7F2E9;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.75;\r\n  color: #5F5A52;\r\n}\r\n\r\n.para {\r\n  margin-bottom: 22rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.para-head {\r\n  display: block;\r\n  margin: 30rpx 0 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.para-head:first-child {\r\n  margin-top: 0;\r\n}\r\n\r\n.translation {\r\n  margin-top: 28rpx;\r\n  padding-top: 24rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.trans-title {\r\n  display: block;\r\n  margin-bottom: 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #A9825E;\r\n}\r\n\r\n.trans-text {\r\n  display: block;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  color: #5F5A52;\r\n}\r\n\r\n.facts {\r\n  margin-top: 22rpx;\r\n  padding: 26rpx 30rpx 20rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\r\n  border-radius: 28rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.facts-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.facts-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.facts-count {\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-grid {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  margin: 0 -8rpx;\r\n}\r\n\r\n.fact-item {\r\n  box-sizing: border-box;\r\n  width: 50%;\r\n  min-width: 0;\r\n  padding: 10rpx 8rpx;\r\n}\r\n\r\n.fact-item.wide {\r\n  width: 100%;\r\n}\r\n\r\n.fact-key {\r\n  display: block;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-value {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #3A342C;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 28rpx;\r\n  padding: 18rpx 22rpx;\r\n  border-radius: 20rpx;\r\n  background: rgba(243, 239, 230, 0.58);\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n"; });
 
 __register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n"; });
 })();

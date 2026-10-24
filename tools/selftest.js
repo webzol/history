@@ -969,6 +969,30 @@ console.log('== 资料库 ==');
   ok(detail.data.blocks.length > 1, '诗文全文详情多段渲染');
   ok(detail.data.sections.some((section) => section.label === '原文'), '诗文详情拆出原文段');
 
+  // 条目配图（2026-10-24）：主站图匹配 > 资料库自抓图 > 无图
+  const archiveArt = require(path.join(ROOT, 'utils', 'archiveArt.js'));
+  ok(archiveArt.entryImage('figures', 'hf-song4chao2_su1shi4') === remotePersonImg('su-shi'),
+    '资料详情配图 · 苏轼条目匹配主站人物图');
+  ok(archiveArt.entryImage('emperors', 'hem-0186-tang2chao2_li3shi4min2') === remotePersonImg('tang-taizong'),
+    '资料详情配图 · 唐太宗条目匹配主站人物图');
+  ok(archiveArt.entryImage('events', 'he-195') === remoteEventImg('chanyuan-1005'),
+    '资料详情配图 · 澶渊之盟条目匹配主站事件图');
+  ok(archiveArt.entryImage('wars', 'hw-w17066792697D6B4') === '/assets/eventart/chibi.jpg',
+    '资料详情配图 · 赤壁之战条目命中本地专属图');
+  ok(archiveArt.entryImage('figures', 'no-such-id') === '', '资料详情配图 · 未命中且未自抓返回空');
+  ok(archiveArt.entryImage('cards', '12') === '' && archiveArt.entryImage('quotes', 'x') === '',
+    '资料详情配图 · 辞条/名句类不配图');
+  const matchCount = ['figures', 'emperors', 'events', 'wars']
+    .reduce((sum, kind) => sum + Object.keys(require(path.join(ROOT, 'utils', 'archiveArtMatch.js'))[kind]).length, 0);
+  ok(matchCount >= 120, `主站图标题匹配覆盖 ${matchCount} 条（>=120）`);
+  // 完整索引拼接后必须全为对象行（part 行已规范化），part 区段条目可按 id 找到
+  apkMod.loadIndex('figures', '', (e, items) => {
+    ok(items.length === 4869 && items.every((x) => x && x.id && x.title), '完整索引全量对象行（part 行已规范化）');
+    ok(items.some((x) => x.id === 'hf-song4chao2_su1shi4'), 'part 区段条目（苏轼）在完整索引中');
+  });
+  detail.onLoad({ kind: 'figures', id: 'hf-song4chao2_su1shi4', title: '历代人物' });
+  ok(detail.data.art === remotePersonImg('su-shi'), '详情页 onLoad 装配条目画片');
+
   // head 空闲预取：覆盖全部 22 个栏目入口（9 cards + 13 section）；已缓存栏目不重复请求
   const entryCount = (archive.groups || []).reduce((sum, group) => sum + (group.items || []).length, 0);
   eq(entryCount, 22, '资料库共 22 个栏目入口');

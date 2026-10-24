@@ -49,6 +49,9 @@ parts.push(wrapJs('utils/entries.js', read('utils/entries.js')));
 parts.push(wrapJs('utils/apkData.js', read('utils/apkData.js')));
 parts.push(wrapJs('utils/archiveImages.js', read('utils/archiveImages.js')));
 parts.push(wrapJs('utils/artRemote.js', read('utils/artRemote.js')));
+parts.push(wrapJs('utils/archiveArt.js', read('utils/archiveArt.js')));
+parts.push(wrapJs('utils/archiveArtMatch.js', read('utils/archiveArtMatch.js')));
+parts.push(wrapJs('utils/archiveArtRemote.js', read('utils/archiveArtRemote.js')));
 parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
 parts.push('');
 

@@ -31,8 +31,15 @@
           <view class="head-cover-fade"></view>
         </view>
         <view class="head-body">
-          <text class="head-kicker">{{kicker}}</text>
-          <text class="head-title">{{item.title}}</text>
+          <view class="head-row">
+            <view class="head-copy">
+              <text class="head-kicker">{{kicker}}</text>
+              <text class="head-title">{{item.title}}</text>
+            </view>
+            <view wx:if="{{art}}" class="head-fig">
+              <image class="head-fig-img" src="{{art}}" mode="aspectFit" binderror="onArtErr"></image>
+            </view>
+          </view>
           <text wx:if="{{showMeta}}" class="head-meta">{{item.meta}}</text>
         </view>
       </view>
