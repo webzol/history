@@ -59,7 +59,8 @@ Page({
       periods,
       era: history.topics.find((item) => item.id === 'tang'),
       modern: history.topics.find((item) => item.id === 'modern-china'),
-      picks: history.events.slice(-6).reverse(),
+      // 精选史事只展示一条（最新史事），与「今日史事」单条精选版式呼应
+      picks: [history.events[history.events.length - 1]],
       archive
     });
   },

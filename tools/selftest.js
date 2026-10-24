@@ -524,8 +524,8 @@ console.log('== 发现 ==');
   p.data.periods.forEach((item) =>
     ok(item.img && fs.existsSync(path.join(ROOT, item.img)), `朝代卡有图 ${item.id}`)
   );
-  eq(p.data.picks.length, 6, '精选史事六条');
-  eq(p.data.picks[0].id, 'yuanmingyuan-1860', '精选首条为最新史事');
+  eq(p.data.picks.length, 1, '精选史事只展示一条');
+  eq(p.data.picks[0].id, 'yuanmingyuan-1860', '精选条为最新史事');
   eq(p.data.era.title, '盛唐气象', '盛唐长卷');
   eq(p.data.modern.shortTitle, '百年中国', '百年中国长卷');
 
