@@ -209,6 +209,7 @@ python tools/validate_miniprogram.py
 - 原生小程序，不引入 Taro/uni-app。
 - 页面结构：`pages/<name>/<name>.{js,json,wxml,wxss}`。
 - 使用 `rpx`；1px 细线可用 `px`（或 1rpx）。
+- **列表图片一律加 `lazy-load`**（收藏/足迹/我的行图、人物相关史事行图、发现页朝代卡、资料库分类题图等）；新增列表图不写会被首屏并发拖慢。`app.js` onLaunch 3s 后静默预热远端热更 JSON（`hd.refresh`），首屏渲染只依赖本地种子。
 - 自定义导航栏：`navigationStyle: "custom"`；**四个主页面（首页/时间轴/发现/我的）顶部都只保留"史页"类字标，不放搜索/菜单图标**（2026-10-19 用户要求移除时间轴、发现页的搜索/菜单）。详情/列表页顶栏为「返回胶囊 + 短页面名 + 小印」；页面名只写「人物 / 事件 / 朝代 / 搜索 / 收藏 / 足迹 / 资料库」，不再带「史页 · 」前缀，避免和右侧小印挤字。返回胶囊改为 `156×56rpx`（约 2.79:1）的窄纸捻胶囊：暖纸渐变 + 赭金细边 + 内高光，左侧纯 CSS 笔锋箭头（`back-icon` + `back-chevron` + `back-shaft`），中间 1rpx 细分隔线，右侧楷体「返回」；按下 `back-pressed` 轻微缩放。**不再使用 `assets/back-arrow.png` / `mode="widthFix"`**，避免位图比例导致拉伸；箭头与文字用 flex 排布，不依赖绝对定位。小印 `right: 200rpx` 绝对定位，避让微信原生胶囊；标题 `left: 54%`，九页统一（person/event/period/search/favorites/footprints/archive/archive-list/archive-detail）。**例外：事件页（2026-10-23）标题真正居中、右侧紧跟 `assets/seal.png` 小印（`.top-center` 组合），不再用 CSS 字印。**`app.wxss` 在 `max-width: 360px` 下隐藏 `.page .top-seal`，并把 `.page .top-title` 略移到 `left: 56%`，避免小屏上标题、小印和胶囊三者互撞。预览 harness 已按 `mode` 实现 `object-fit`，截图不会再误判变形。
 - 底部导航：`app.json` 已启用 `tabBar.custom = true` + `custom-tab-bar/` 组件（2026-10-20）；tab 页间用 `wx.switchTab`，页面常驻（onShow 维持数据新鲜）；跨 tab 的 timeline 分段用 `utils/store.js` 的 pending mode 交接（`?mode=` 在 switchTab 下不可用）。
 - **未经微信开发者工具真机编译**：custom-tab-bar 的安全区 env() 与组件生命周期需真机确认，首次打开开发者工具时优先核对底部栏。

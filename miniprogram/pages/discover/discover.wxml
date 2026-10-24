@@ -32,7 +32,7 @@
         data-id="{{item.id}}"
         bindtap="onPeriod"
       >
-        <image class="dyn-bg" src="{{item.img}}" mode="aspectFill"></image>
+        <image class="dyn-bg" src="{{item.img}}" mode="aspectFill" lazy-load></image>
         <view class="dyn-shade"></view>
         <view class="dyn-copy">
           <text class="dyn-name">{{item.name}}</text>

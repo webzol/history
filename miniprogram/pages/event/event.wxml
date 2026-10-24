@@ -56,7 +56,7 @@
           <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit"></image>
           <image
             wx:if="{{item.img !== item.fallback}}"
-            class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}"
+            class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}" lazy-load
             src="{{item.img}}"
             mode="aspectFill"
             bindload="onThumbLoad"

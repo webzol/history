@@ -61,7 +61,7 @@
         bindtap="onEntry"
         bindlongpress="onFavLongPress"
       >
-        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFit" binderror="onRowImgErr" data-list="favsShow" data-type="{{item.type}}" data-id="{{item.id}}"></image>
+        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFit" lazy-load binderror="onRowImgErr" data-list="favsShow" data-type="{{item.type}}" data-id="{{item.id}}"></image>
         <view class="row-main">
           <text class="row-title">{{item.title}}</text>
           <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
@@ -91,7 +91,7 @@
         data-id="{{item.id}}"
         bindtap="onEntry"
       >
-        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFit" binderror="onRowImgErr" data-list="footsShow" data-type="{{item.type}}" data-id="{{item.id}}"></image>
+        <image class="row-thumb {{item.modern ? 'row-thumb-modern' : ''}}" src="{{item.img}}" mode="aspectFit" lazy-load binderror="onRowImgErr" data-list="footsShow" data-type="{{item.type}}" data-id="{{item.id}}"></image>
         <view class="row-main">
           <text class="row-title">{{item.title}}</text>
           <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>

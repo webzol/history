@@ -57,7 +57,7 @@
           <text class="rel-title">{{item.title}}</text>
           <text class="rel-desc">{{item.desc}}</text>
         </view>
-        <image class="rel-thumb" wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill" binderror="onRelImgErr" data-id="{{item.id}}"></image>
+        <image class="rel-thumb" wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill" lazy-load binderror="onRelImgErr" data-id="{{item.id}}"></image>
         <text class="rel-arrow">›</text>
       </view>
     </view>
