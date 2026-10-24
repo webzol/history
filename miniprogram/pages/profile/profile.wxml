@@ -44,16 +44,6 @@
       <text class="pref-preview">一页一页，读千年史事。</text>
     </view>
 
-    <view class="plate-card" bindtap="onAboutBanner">
-      <view class="plate-frame">
-        <image class="plate-img" src="/assets/paintings/landscape.jpg" mode="aspectFill"></image>
-      </view>
-      <view class="plate-cap">
-        <text class="plate-title">千古长卷</text>
-        <text class="plate-sub">王希孟《千里江山图》卷 · 故宫博物院藏</text>
-      </view>
-    </view>
-
     <view class="list-card hint-card" wx:if="{{!favs.length}}">
       <text class="hint-text">还没有收藏。在人物、史事详情页点「收藏」，就会出现在这里。</text>
     </view>
@@ -122,14 +112,6 @@
       </view>
       <view class="menu-row" bindtap="onCheckUpdate">
         <text class="menu-label">检查内容更新</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-row" bindtap="onDataNote">
-        <text class="menu-label">数据与史料说明</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-row" bindtap="onAssetNote">
-        <text class="menu-label">素材与授权说明</text>
         <text class="menu-arrow">›</text>
       </view>
       <view class="menu-row" bindtap="onAbout">

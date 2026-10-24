@@ -620,29 +620,14 @@ console.log('== 我的 ==' );
   eq(last('showToast').title, '暂无网络，稍后再试', '检查更新离线提示');
   eq(p.data.updating, false, '检查更新失败后状态复位');
 
-  tap(p, 'onDataNote');
-  ok(p.data.info.open && p.data.info.title === '数据与史料说明', '数据说明：自绘弹层打开');
-  ok(p.data.info.paragraphs.join('').indexOf('朝代 24 条') >= 0, '数据说明含统计');
-  tap(p, 'closeInfo');
-  eq(p.data.info.open, false, '数据说明弹层可关闭');
-
-  tap(p, 'onAssetNote');
-  ok(
-    p.data.info.open &&
-      p.data.info.paragraphs.length === 1 &&
-      p.data.info.paragraphs[0].indexOf('公开网络') >= 0 &&
-      p.data.info.paragraphs[0].indexOf('删除') >= 0,
-    '素材说明为一句话来源声明'
-  );
-  tap(p, 'closeInfo');
-
-  tap(p, 'onAboutBanner');
-  ok(p.data.info.open && p.data.info.paragraphs.join('').indexOf('千里江山图') >= 0, '横幅 → 关于千里江山图');
-  tap(p, 'closeInfo');
-
+  // 关于史页（数据/素材/关于三合一）
   tap(p, 'onAbout');
-  ok(p.data.info.open && p.data.info.title === '史页', '关于史页弹层');
+  ok(p.data.info.open && p.data.info.title === '关于史页', '关于史页弹层');
+  const aboutText = p.data.info.paragraphs.join('');
+  ok(aboutText.indexOf('史事 100') >= 0, '关于弹层含数据统计');
+  ok(aboutText.indexOf('公开网络') >= 0 && aboutText.indexOf('删除') >= 0, '关于弹层含素材来源一句话声明');
   tap(p, 'closeInfo');
+  eq(p.data.info.open, false, '关于弹层可关闭');
 
   tap(p, 'onClearCache');
   const clearedBefore = storageCleared;

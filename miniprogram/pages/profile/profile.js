@@ -174,46 +174,17 @@ Page({
     });
   },
 
-  onDataNote() {
-    this.setData({
-      info: {
-        open: true,
-        title: '数据与史料说明',
-        paragraphs: [
-          '当前内容为本地真实史料种子：',
-          `朝代 ${this.data.stats[0].value} 条、史事 ${this.data.stats[1].value} 条、人物 ${this.data.stats[2].value} 条、专题 ${this.data.stats[3].value} 条。`,
-          '每条均附史料出处索引；正式发布前会逐条完成历史审校。'
-        ]
-      }
-    });
-  },
-
-  onAssetNote() {
-    this.setData({
-      info: {
-        open: true,
-        title: '素材与授权说明',
-        paragraphs: ['本应用素材来源于公开网络，如有侵权请联系我们删除。']
-      }
-    });
-  },
-
+  // 数据说明 / 素材授权 / 关于 三合一，减少菜单项（2026-10-24 用户要求精简）
   onAbout() {
     this.setData({
       info: {
         open: true,
-        title: '史页',
-        paragraphs: ['一页一页读历史。古代史与近现代史并列，史料可追溯。']
-      }
-    });
-  },
-
-  onAboutBanner() {
-    this.setData({
-      info: {
-        open: true,
-        title: '千古长卷',
-        paragraphs: ['王希孟《千里江山图》卷（局部），现藏故宫博物院。十八岁完成此卷，青绿千年不褪。']
+        title: '关于史页',
+        paragraphs: [
+          '一页一页读历史。古代史与近现代史并列，史料可追溯。',
+          `收录朝代 ${this.data.stats[0].value} · 史事 ${this.data.stats[1].value} · 人物 ${this.data.stats[2].value} · 专题 ${this.data.stats[3].value}。`,
+          '素材来源于公开网络，如有侵权请联系我们删除。'
+        ]
       }
     });
   },
