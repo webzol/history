@@ -29,6 +29,7 @@ Page({
     totalText: '0',
     loading: true,
     partial: false,
+    stalled: false,
     error: '',
     empty: false,
     fontClass: 'm'
@@ -78,6 +79,7 @@ Page({
       error: '',
       empty: false,
       partial: false,
+      stalled: false,
       shown: [],
       total: 0,
       totalText: '0',
@@ -88,18 +90,25 @@ Page({
     apk.load(this.data.kind, this.data.type, (err, items, info) => {
       if (err || !items || !items.length) {
         this.all = [];
+        this._gotPartial = false;
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
           empty: false,
           partial: false,
+          stalled: false,
           coverMeta: '加载失败'
         });
         return;
       }
       this.all = items;
       this.totalAll = (info && info.total) || items.length;
-      this.setData({ loading: false, error: '', partial: !!(info && info.partial) });
+      const partial = !!(info && info.partial);
+      // 首屏 partial 属正常进行中；二次回调仍 partial 说明有分块拉取失败（限流/断网）
+      const stalled = partial && this._gotPartial;
+      if (partial) this._gotPartial = true;
+      else this._gotPartial = false;
+      this.setData({ loading: false, error: '', partial, stalled });
       this.applyFilter();
     });
   },

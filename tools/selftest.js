@@ -829,8 +829,8 @@ console.log('== 资料库 ==');
     .map((entry) => entry.url);
   ok(listUrls.some((url) => /\/cards\/12\/head\.json$/.test(url)), '首屏只拉 head 轻量包（~12KB）');
   ok(
-    listUrls.filter((url) => /\/cards\/12\/part-\d+\.json$/.test(url)).length === 2,
-    '后台并行补齐全部分块'
+    listUrls.filter((url) => /\/cards\/12\/part-\d+\.json$/.test(url)).length === 1,
+    '后台限流补齐全部分块'
   );
   ok(!listUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '不再整份拉 index.json');
   ok(!listUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '列表首屏不拉详情分卷');
@@ -853,8 +853,8 @@ console.log('== 资料库 ==');
   ok(fs.existsSync(path.join(ROOT, 'data', 'apk', 'cards', '12', 'index.json')), '分类列表索引文件存在');
   ok(!fs.existsSync(path.join(ROOT, 'data', 'apk', 'cards', '12.json')), '旧整类 JSON 已移除');
   ok(
-    storage['shige_apk_v2_cards_12_index_json'] &&
-      storage['shige_apk_v2_cards_12_index_json'].items.length === 246,
+    storage['shige_apk_v3_cards_12_index_json'] &&
+      storage['shige_apk_v3_cards_12_index_json'].items.length === 246,
     '列表索引写入本地缓存'
   );
   list.onInput({ detail: { value: first.title.slice(0, 2) } });
@@ -877,7 +877,7 @@ console.log('== 资料库 ==');
     .map((entry) => entry.url);
   ok(detailUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '详情直接请求单卷');
   ok(!detailUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '详情不再重复拉列表索引');
-  ok(storage['shige_apk_v2_cards_12_00_json'], '详情分卷写入本地缓存');
+  ok(storage['shige_apk_v3_cards_12_00_json'], '详情分卷写入本地缓存');
   eq(detail.data.loading, false, '资料库详情加载完成');
   eq(detail.data.item.id, first.id, '资料库详情命中条目');
   eq(detail.data.cover, '/assets/paintings/tang.jpg', '资料详情分类题图');
@@ -898,7 +898,7 @@ console.log('== 资料库 ==');
   );
   ok(last('navigateTo').url.indexOf('/pages/archive-detail/archive-detail') === 0, '点击条目进详情页');
 
-  // head 分批加载契约：首次回调 head 120 条（partial + 全量 total），后台补齐后再回调全量
+  // head 分批加载契约：首次回调 head 200 条（partial + 全量 total），后台补齐后再回调全量
   const apkMod = require(path.join(ROOT, 'utils', 'apkData.js'));
   const headCalls = [];
   apkMod.load('wars', '', (err, items, info) => {
@@ -910,8 +910,8 @@ console.log('== 资料库 ==');
     });
   });
   eq(headCalls.length, 2, '分批加载回调两次（head + 补齐）');
-  ok(headCalls[0].partial === true && headCalls[0].n === 120 && headCalls[0].total === 466,
-    '首屏回调 head 120 条且带全量 total');
+  ok(headCalls[0].partial === true && headCalls[0].n === 200 && headCalls[0].total === 466,
+    '首屏回调 head 200 条且带全量 total');
   ok(headCalls[1].partial === false && headCalls[1].n === 466, '完整目录后台补齐后二次回调');
 
   list.onLoad({ kind: 'figures', title: '历代人物' });

@@ -82,9 +82,9 @@
         </view>
       </view>
 
-      <view wx:if="{{partial}}" class="loading-more">
+      <view wx:if="{{partial}}" class="loading-more {{stalled ? 'stalled' : ''}}" bindtap="fetch">
         <view class="mini-spin"></view>
-        <text class="loading-more-text">正在载入完整目录…</text>
+        <text class="loading-more-text">{{stalled ? '部分分卷载入失败 · 点按重试' : '正在载入完整目录…'}}</text>
       </view>
       <block wx:else>
         <view wx:if="{{shown.length < total}}" class="more-wrap">

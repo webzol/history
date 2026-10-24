@@ -5,8 +5,8 @@ const meta = require('../data/archive-meta.js');
 
 const BASE =
   'https://cdn.jsdelivr.net/gh/webzol/history@main/miniprogram/data/apk/';
-// v2：数据结构从“整类 JSON”改为“索引 + 分卷”，旧缓存需整体失效。
-const CACHE_PREFIX = 'shige_apk_v2_';
+// v3：索引拆为 head + part 分块（2026-10-24），part 布局与旧缓存不兼容，需整体失效。
+const CACHE_PREFIX = 'shige_apk_v3_';
 const LEGACY_CACHE_PREFIX = 'shige_apk_';
 const CACHE_META_KEY = CACHE_PREFIX + 'meta';
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -226,22 +226,44 @@ function loadFile(file, cb) {
     done(new Error('request unavailable'));
     return;
   }
-  wx.request({
-    url: BASE + file,
-    method: 'GET',
-    timeout: 15000,
-    success: (res) => {
-      const items = parsePayload(res && res.data);
-      if (!items) {
-        done(new Error('bad payload'));
-        return;
+  // jsDelivr 对短时突发请求会限流（403）；失败自动重试一次，避开限流窗口
+  const attempt = (left) => {
+    wx.request({
+      url: BASE + file,
+      method: 'GET',
+      timeout: 15000,
+      success: (res) => {
+        if (res && res.statusCode >= 400) {
+          if (left > 0) {
+            setTimeout(() => attempt(left - 1), 600);
+            return;
+          }
+          done(new Error('http ' + res.statusCode));
+          return;
+        }
+        const items = parsePayload(res && res.data);
+        if (!items) {
+          if (left > 0) {
+            setTimeout(() => attempt(left - 1), 600);
+            return;
+          }
+          done(new Error('bad payload'));
+          return;
+        }
+        memory[file] = items;
+        writeCache(file, items);
+        done(null, items);
+      },
+      fail: () => {
+        if (left > 0) {
+          setTimeout(() => attempt(left - 1), 600);
+          return;
+        }
+        done(new Error('request fail'));
       }
-      memory[file] = items;
-      writeCache(file, items);
-      done(null, items);
-    },
-    fail: () => done(new Error('request fail'))
-  });
+    });
+  };
+  attempt(1);
 }
 
 function loadIndex(kind, type, cb) {
@@ -293,37 +315,60 @@ function loadHead(kind, type, cb) {
     done(new Error('request unavailable'));
     return;
   }
-  wx.request({
-    url: BASE + file,
-    method: 'GET',
-    timeout: 15000,
-    success: (res) => {
-      const data = res && res.data;
-      const raw =
-        data && typeof data === 'object' && !Array.isArray(data)
-          ? data
-          : null;
-      const items = raw ? normalizeIndex(raw.items) : null;
-      if (!raw || !items || !Array.isArray(raw.items) || !raw.items.length) {
-        done(new Error('bad head'));
-        return;
+  const attempt = (left) => {
+    wx.request({
+      url: BASE + file,
+      method: 'GET',
+      timeout: 15000,
+      success: (res) => {
+        if (res && res.statusCode >= 400) {
+          if (left > 0) {
+            setTimeout(() => attempt(left - 1), 600);
+            return;
+          }
+          done(new Error('http ' + res.statusCode));
+          return;
+        }
+        const data = res && res.data;
+        const raw =
+          data && typeof data === 'object' && !Array.isArray(data)
+            ? data
+            : null;
+        const items = raw ? normalizeIndex(raw.items) : null;
+        if (!raw || !items || !Array.isArray(raw.items) || !raw.items.length) {
+          if (left > 0) {
+            setTimeout(() => attempt(left - 1), 600);
+            return;
+          }
+          done(new Error('bad head'));
+          return;
+        }
+        const head = {
+          total: raw.total || items.length,
+          step: raw.step || 200,
+          parts: raw.parts || 0,
+          items
+        };
+        memory[file] = head;
+        writeCache(file, head.items);
+        done(null, head);
+      },
+      fail: () => {
+        if (left > 0) {
+          setTimeout(() => attempt(left - 1), 600);
+          return;
+        }
+        done(new Error('request fail'));
       }
-      const head = {
-        total: raw.total || items.length,
-        step: raw.step || 120,
-        parts: raw.parts || 0,
-        items
-      };
-      memory[file] = head;
-      writeCache(file, head.items);
-      done(null, head);
-    },
-    fail: () => done(new Error('request fail'))
-  });
+    });
+  };
+  attempt(1);
 }
 
-// head 首屏回调后，后台并行补齐剩余分块并合并成完整索引（写入 index.json 的内存与缓存）。
+// head 首屏回调后，后台补齐剩余分块并合并成完整索引（写入 index.json 的内存与缓存）。
+// 限流并发（jsDelivr 对突发请求会 403），按块序号归位保证顺序。
 const assembling = {};
+const PART_CONCURRENCY = 4;
 
 function fetchParts(kind, type, head, done) {
   const file = indexFileFor(kind, type);
@@ -332,25 +377,31 @@ function fetchParts(kind, type, head, done) {
     return;
   }
   assembling[file] = [done];
+  const rows = new Array(head.parts);
+  let nextPart = 1;
   let pending = head.parts;
   let failed = 0;
-  const rows = [];
   const finish = () => {
     const list = assembling[file] || [];
     delete assembling[file];
-    const full = normalizeIndex(head.items.concat(rows));
+    const full = normalizeIndex(head.items.concat(...rows.filter(Boolean)));
     memory[file] = full;
     writeCache(file, full);
     list.forEach((fn) => fn(failed));
   };
-  for (let n = 1; n <= head.parts; n += 1) {
+  const worker = () => {
+    if (nextPart > head.parts) return;
+    const n = nextPart;
+    nextPart += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
       if (err || !Array.isArray(data)) failed += 1;
-      else rows.push(...data);
+      else rows[n - 1] = data;
       pending -= 1;
       if (!pending) finish();
+      else worker();
     });
-  }
+  };
+  for (let i = 0; i < Math.min(PART_CONCURRENCY, head.parts); i += 1) worker();
 }
 
 function loadShard(kind, type, shard, cb) {

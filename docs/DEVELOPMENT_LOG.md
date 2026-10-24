@@ -1652,6 +1652,18 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 修复开发者工具 part-22.json 403（jsDelivr 限流）：分块请求限流 + 失败重试
+
+- 现象：开发者工具报 `GET .../apk/figures/part-22.json 403`——40 个 part 请求瞬间并发打向 jsDelivr 触发限流（403），失败的块被静默丢弃，列表停在 partial 状态。
+- 处理：
+  - **分块加大**：`tools/split_apk_index.js` STEP 120→200 并清理多余旧块（figures 40→24 块，poems/shi 15→14，wenyan 32→19 等，总请求数近减半）；重跑生成。
+  - **限流抓取**：`apkData.fetchParts` 改 4 并发 worker 池（按块序号归位保证顺序），不再一次性全发。
+  - **失败重试**：`loadFile` / `loadHead` 请求失败、HTTP ≥400（含 403）或载荷异常时自动延迟 600ms 重试一次；`loadHead` 同样补上 statusCode 检查。
+  - **可重试 UI**：列表页 partial 分「进行中」（spinner「正在载入完整目录…」）与「部分分卷载入失败 · 点按重试」（朱砂字、点按整条重新 fetch）两态——以二次回调仍为 partial 识别失败。
+  - **缓存版本 v2→v3**：分块布局变更，旧缓存整体失效（`cleanupLegacyCache` 启动时清 v2 key）。
+- 自检：断言更新为 v3 key、head 200 条、cards/12 补齐 1 块；**PASS 1664 / FAIL 0**。`validate_miniprogram.py` 通过；`build_preview` 重打包；28 张截图全过。
+- 遗留：数据仍走 `cdn.jsdelivr.net`（JSON 文本直出正常，未换域名避免 request 白名单变更）；若真机仍偶发 403，可把 `apkData.js` 的 `BASE` 一行切到 `gcore.jsdelivr.net` 并把该域名加入小程序后台 request 合法域名。
+
 ## 2026-10-24 · 资料库点击进列表仍慢：预取前移（首页空闲预取 head + 点击即发请求 + 条目预取分卷）
 
 - 用户反馈：从资料库首页点进列表仍慢——head 虽只 ~12KB，但点击后才发起请求，首字节延迟（DNS/TLS/RTT）省不掉。本轮把请求**整体前移到点击之前**：

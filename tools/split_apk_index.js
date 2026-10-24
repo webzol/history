@@ -1,14 +1,14 @@
 // 把 data/apk/**/index.json 拆成 head.json + part-N.json：
-// - head.json：{ total, step, parts, items } —— 前 step(120) 条，列表页首屏只拉这一份（~12–25KB）
-// - part-N.json：剩余条目按 step 切块的行数组，列表页首屏渲染后后台补齐
-// index.json 保留不动（拆分工具的输入与旧版本兼容回退）。可重复执行，幂等。
-// 用法：node tools/split_apk_index.js
+// - head.json：{ total, step, parts, items } —— 前 step(200) 条，列表页首屏只拉这一份（~12–25KB）
+// - part-N.json：剩余条目按 step 切块的行数组，列表页首屏渲染后后台限流补齐
+// index.json 保留不动（拆分工具的输入与旧版本兼容回退）。可重复执行，幂等
+// （会清掉 step 调整后多余的旧 part-N.json）。用法：node tools/split_apk_index.js
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const APK = path.join(ROOT, 'miniprogram', 'data', 'apk');
-const STEP = 120;
+const STEP = 200;
 
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach((ent) => {
@@ -35,6 +35,13 @@ files.forEach((file) => {
   const parts = Math.max(0, Math.ceil((total - STEP) / STEP));
   const head = { total, step: STEP, parts, items: rows.slice(0, STEP) };
   fs.writeFileSync(path.join(dir, 'head.json'), JSON.stringify(head));
+  // 清掉 step 调整后多余的旧分块，避免残留文件被无谓请求
+  fs.readdirSync(dir)
+    .map((name) => /^part-(\d+)\.json$/.exec(name))
+    .filter(Boolean)
+    .forEach((match) => {
+      if (Number(match[1]) > parts) fs.unlinkSync(path.join(dir, match[0]));
+    });
   for (let i = 0; i < parts; i += 1) {
     const from = STEP + i * STEP;
     fs.writeFileSync(

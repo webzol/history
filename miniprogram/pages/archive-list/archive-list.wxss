@@ -395,6 +395,10 @@
   color: #A39A8E;
 }
 
+.loading-more.stalled .loading-more-text {
+  color: #A34A3E;
+}
+
 /* 首屏加载：淡墨环形 spinner + 列表骨架屏 */
 .loading-card {
   gap: 16rpx;
