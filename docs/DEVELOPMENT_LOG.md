@@ -1652,6 +1652,15 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 资料库首屏真分批：head.json 轻量包秒开 + 后台补齐分块
+
+- **数据拆分**：新增 `tools/split_apk_index.js`（幂等），把 22 个栏目的 `index.json` 拆成 `head.json`（`{total, step:120, parts, items}`，前 120 条固定列，实测 ~12KB/栏目）+ `part-N.json`（剩余条目每 120 条一块）。`index.json` 保留作拆分输入与旧版回退，共新增 22 份 head + 266 份 part。
+  - 收益：figures 索引 493KB、poems/shi 562KB → 首屏只拉 ~12KB（约 1/40），弱网/首次打开首屏等待大幅缩短。
+- **`utils/apkData.js` 加载流程重做**：`load()` 改为三段——①完整索引已在内存/7 天缓存 → 一次回调全量；②否则先拉 `head.json` 回调首屏（`info.partial=true`、`info.total` 为全量条数），随即后台**并行**拉全部 `part-N.json` 合并成完整索引，写回 index.json 的内存与缓存后二次回调（`partial=false`）；个别分块失败保持 partial（列表可用）；③head 不可用（旧数据/请求失败）回退整份 `index.json`。新增 `loadHead`/`fetchParts`/`assembling` 去重守卫；head items 也单独缓存，完整索引被 5MB 预算淘汰后二次打开仍能秒出首屏。
+- **`pages/archive-list/` 接双段回调**：partial 阶段渲染首屏 60 条、题图/总数直接显示 head 带来的全量 total（如「246 条」不等补齐）；底部显示「迷你 spinner + 正在载入完整目录…」；补齐完成后自动重跑筛选（保留当前关键词与翻页进度）。搜索在 partial 阶段先覆盖已载入部分，全量到位后自动刷新结果。`onReachBottom` 在 partial 期间不触发。
+- 自检：`tools/selftest.js` 更新请求断言（拉 `head.json` + 2 个 part、不再拉整份 index.json）+ 新增分批契约 3 条（wars 栏目：两次回调、首屏 120 条带全量 total 466、补齐后 466）；**PASS 1659 / FAIL 0**。`validate_miniprogram.py` 通过；`build_preview` 重打包；28 张截图全过（列表页 head-first 流程实测正常）。
+- 遗留：真机实测首屏 head 加载耗时与 jsDelivr 并发 40 个 part 请求的表现（微信 request 有并发上限，内部排队）；poems-* 分块同样生效但未单独截图核对。
+
 ## 2026-10-24 · 资料库列表页：骨架屏 loading + 滚动自动分页
 
 - `pages/archive-list/` 首屏加载体验优化（数据侧本就是「索引全量 + 首屏 60 条分页」，本轮补齐加载提示与自动分页）：

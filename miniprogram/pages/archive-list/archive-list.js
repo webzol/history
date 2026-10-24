@@ -28,6 +28,7 @@ Page({
     total: 0,
     totalText: '0',
     loading: true,
+    partial: false,
     error: '',
     empty: false,
     fontClass: 'm'
@@ -71,29 +72,34 @@ Page({
   },
 
   fetch() {
+    this.totalAll = 0;
     this.setData({
       loading: true,
       error: '',
       empty: false,
+      partial: false,
       shown: [],
       total: 0,
       totalText: '0',
       coverMeta: '正在加载'
     });
-    apk.load(this.data.kind, this.data.type, (err, items) => {
-      if (err) {
+    // apk.load 会回调两次：先 head 轻量包（partial）渲染首屏，
+    // 后台分块补齐后带全量再回调一次（partial=false）。
+    apk.load(this.data.kind, this.data.type, (err, items, info) => {
+      if (err || !items || !items.length) {
         this.all = [];
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
           empty: false,
+          partial: false,
           coverMeta: '加载失败'
         });
         return;
       }
       this.all = items;
-      this.limit = PAGE_SIZE;
-      this.setData({ loading: false, error: '' });
+      this.totalAll = (info && info.total) || items.length;
+      this.setData({ loading: false, error: '', partial: !!(info && info.partial) });
       this.applyFilter();
     });
   },
@@ -109,12 +115,14 @@ Page({
         )
       : this.all;
     this.filtered = list;
+    // 目录总数用 head 包的全量 total；partial 时底部提示完整目录载入中
+    const total = this.totalAll || list.length;
     this.setData({
       shown: list.slice(0, this.limit),
-      total: list.length,
-      totalText: fmt(list.length),
-      coverMeta: `${fmt(list.length)} 条`,
-      empty: list.length === 0
+      total,
+      totalText: fmt(total),
+      coverMeta: `${fmt(total)} 条`,
+      empty: list.length === 0 && !this.data.partial
     });
   },
 
@@ -135,9 +143,9 @@ Page({
     this.setData({ shown: (this.filtered || []).slice(0, this.limit) });
   },
 
-  // 滚到底自动追加下一批（本地切片，瞬时完成）；加载中/出错/已到底不触发
+  // 滚到底自动追加下一批（本地切片，瞬时完成）；加载中/出错/完整目录载入中/已到底不触发
   onReachBottom() {
-    if (this.data.loading || this.data.error) return;
+    if (this.data.loading || this.data.error || this.data.partial) return;
     if (!this.data.total || this.data.shown.length >= this.data.total) return;
     this.onMore();
   },

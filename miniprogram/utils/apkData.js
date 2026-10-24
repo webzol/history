@@ -69,6 +69,16 @@ function indexFileFor(kind, type) {
   return dir ? `${dir}/index.json` : '';
 }
 
+function headFileFor(kind, type) {
+  const dir = dirFor(kind, type);
+  return dir ? `${dir}/head.json` : '';
+}
+
+function partFileFor(kind, type, n) {
+  const dir = dirFor(kind, type);
+  return dir ? `${dir}/part-${n}.json` : '';
+}
+
 function shardFileFor(kind, type, shard) {
   const dir = dirFor(kind, type);
   return dir && shard ? `${dir}/${shard}.json` : '';
@@ -250,6 +260,99 @@ function loadIndex(kind, type, cb) {
   });
 }
 
+// 首屏轻量包：head.json = { total, step, parts, items }（items 与 index.json 同构的固定列数组）。
+// 只在内存/缓存里存 normalize 后的 head 对象。
+function loadHead(kind, type, cb) {
+  const file = headFileFor(kind, type);
+  if (!file) {
+    if (typeof cb === 'function') cb(new Error('unknown dir'));
+    return;
+  }
+  const hit = memory[file] || (() => {
+    const cached = readCache(file);
+    if (cached) memory[file] = cached;
+    return cached;
+  })();
+  if (hit) {
+    if (typeof cb === 'function') cb(null, hit);
+    return;
+  }
+  if (inflight[file]) {
+    inflight[file].push(cb);
+    return;
+  }
+  inflight[file] = [cb];
+  const done = (err, head) => {
+    const list = inflight[file] || [];
+    delete inflight[file];
+    list.forEach((fn) => {
+      if (typeof fn === 'function') fn(err, head);
+    });
+  };
+  if (typeof wx.request !== 'function') {
+    done(new Error('request unavailable'));
+    return;
+  }
+  wx.request({
+    url: BASE + file,
+    method: 'GET',
+    timeout: 15000,
+    success: (res) => {
+      const data = res && res.data;
+      const raw =
+        data && typeof data === 'object' && !Array.isArray(data)
+          ? data
+          : null;
+      const items = raw ? normalizeIndex(raw.items) : null;
+      if (!raw || !items || !Array.isArray(raw.items) || !raw.items.length) {
+        done(new Error('bad head'));
+        return;
+      }
+      const head = {
+        total: raw.total || items.length,
+        step: raw.step || 120,
+        parts: raw.parts || 0,
+        items
+      };
+      memory[file] = head;
+      writeCache(file, head.items);
+      done(null, head);
+    },
+    fail: () => done(new Error('request fail'))
+  });
+}
+
+// head 首屏回调后，后台并行补齐剩余分块并合并成完整索引（写入 index.json 的内存与缓存）。
+const assembling = {};
+
+function fetchParts(kind, type, head, done) {
+  const file = indexFileFor(kind, type);
+  if (assembling[file]) {
+    assembling[file].push(done);
+    return;
+  }
+  assembling[file] = [done];
+  let pending = head.parts;
+  let failed = 0;
+  const rows = [];
+  const finish = () => {
+    const list = assembling[file] || [];
+    delete assembling[file];
+    const full = normalizeIndex(head.items.concat(rows));
+    memory[file] = full;
+    writeCache(file, full);
+    list.forEach((fn) => fn(failed));
+  };
+  for (let n = 1; n <= head.parts; n += 1) {
+    loadFile(partFileFor(kind, type, n), (err, data) => {
+      if (err || !Array.isArray(data)) failed += 1;
+      else rows.push(...data);
+      pending -= 1;
+      if (!pending) finish();
+    });
+  }
+}
+
 function loadShard(kind, type, shard, cb) {
   const file = shardFileFor(kind, type, shard);
   loadFile(file, cb);
@@ -312,9 +415,45 @@ function find(kind, type, id, shard, cb) {
   });
 }
 
-// 列表加载：只取 index.json，不再拉整类正文。
+// 列表加载（2026-10-24 首屏提速）：
+// 1) 完整索引已在内存/缓存 → 一次回调全量；
+// 2) 否则先拉 head.json（~12KB）回调首屏（info.partial=true, info.total=全量条数），
+//    后台并行拉 part-N.json 合并成完整索引后再次回调（partial=false）。
+//    个别分块失败时保持 partial=true（列表可用，搜索范围提示受限）。
+// 3) head.json 不可用（旧数据未拆分/请求失败）→ 回退拉整份 index.json。
 function load(kind, type, cb) {
-  loadIndex(kind, type, cb);
+  const file = indexFileFor(kind, type);
+  if (memory[file]) {
+    if (typeof cb === 'function') cb(null, memory[file], { partial: false });
+    return;
+  }
+  const cached = readCache(file);
+  if (cached) {
+    memory[file] = cached;
+    if (typeof cb === 'function') cb(null, cached, { partial: false });
+    return;
+  }
+  loadHead(kind, type, (err, head) => {
+    if (err || !head || !head.items || !head.items.length) {
+      loadIndex(kind, type, (err2, items) => {
+        if (typeof cb === 'function') cb(err2 || err || new Error('bad index'), items, { partial: false });
+      });
+      return;
+    }
+    if (typeof cb === 'function') {
+      cb(null, head.items, { partial: head.parts > 0, total: head.total });
+    }
+    if (!head.parts) {
+      memory[file] = head.items;
+      writeCache(file, head.items);
+      return;
+    }
+    fetchParts(kind, type, head, (failed) => {
+      if (typeof cb === 'function') {
+        cb(null, memory[file], { partial: failed > 0, total: head.total });
+      }
+    });
+  });
 }
 
 module.exports = {

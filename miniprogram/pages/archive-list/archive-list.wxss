@@ -371,6 +371,30 @@
   color: #B4AA9C;
 }
 
+/* 完整目录后台载入提示（head 首屏已渲染、分块补齐中） */
+.loading-more {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.mini-spin {
+  width: 26rpx;
+  height: 26rpx;
+  border-radius: 50%;
+  border: 3rpx solid #E8E0D2;
+  border-top-color: #8C857A;
+  animation: ink-rotate 0.9s linear infinite;
+}
+
+.loading-more-text {
+  font-size: calc(18rpx * var(--fs, 1));
+  letter-spacing: 0.05em;
+  color: #A39A8E;
+}
+
 /* 首屏加载：淡墨环形 spinner + 列表骨架屏 */
 .loading-card {
   gap: 16rpx;
@@ -436,6 +460,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ink-spin,
+  .mini-spin,
   .skel-line {
     animation: none;
   }

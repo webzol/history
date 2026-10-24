@@ -822,7 +822,12 @@ console.log('== 资料库 ==');
     .slice(listBefore)
     .filter((entry) => entry.kind === 'request')
     .map((entry) => entry.url);
-  ok(listUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '列表首屏只拉轻量索引');
+  ok(listUrls.some((url) => /\/cards\/12\/head\.json$/.test(url)), '首屏只拉 head 轻量包（~12KB）');
+  ok(
+    listUrls.filter((url) => /\/cards\/12\/part-\d+\.json$/.test(url)).length === 2,
+    '后台并行补齐全部分块'
+  );
+  ok(!listUrls.some((url) => /\/cards\/12\/index\.json$/.test(url)), '不再整份拉 index.json');
   ok(!listUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '列表首屏不拉详情分卷');
   eq(list.data.loading, false, '资料库列表加载完成');
   eq(list.data.total, 246, '资料库列表总数');
@@ -878,6 +883,22 @@ console.log('== 资料库 ==');
   ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
   ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
   ok(detail.onShareAppMessage().path.indexOf('shard=' + first.shard) >= 0, '资料库详情分享带分卷');
+
+  // head 分批加载契约：首次回调 head 120 条（partial + 全量 total），后台补齐后再回调全量
+  const apkMod = require(path.join(ROOT, 'utils', 'apkData.js'));
+  const headCalls = [];
+  apkMod.load('wars', '', (err, items, info) => {
+    headCalls.push({
+      err,
+      n: items ? items.length : 0,
+      partial: !!(info && info.partial),
+      total: (info && info.total) || 0
+    });
+  });
+  eq(headCalls.length, 2, '分批加载回调两次（head + 补齐）');
+  ok(headCalls[0].partial === true && headCalls[0].n === 120 && headCalls[0].total === 466,
+    '首屏回调 head 120 条且带全量 total');
+  ok(headCalls[1].partial === false && headCalls[1].n === 466, '完整目录后台补齐后二次回调');
 
   list.onLoad({ kind: 'figures', title: '历代人物' });
   eq(list.data.total, 4869, '人物资料列表总数');

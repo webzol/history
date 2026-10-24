@@ -82,13 +82,19 @@
         </view>
       </view>
 
-      <view wx:if="{{shown.length < total}}" class="more-wrap">
-        <view class="more" bindtap="onMore">
-          加载更多（{{shown.length}} / {{total}}）
-        </view>
-        <text class="more-hint">滑到底部也会自动加载</text>
+      <view wx:if="{{partial}}" class="loading-more">
+        <view class="mini-spin"></view>
+        <text class="loading-more-text">正在载入完整目录…</text>
       </view>
-      <view wx:else class="end">已到末尾</view>
+      <block wx:else>
+        <view wx:if="{{shown.length < total}}" class="more-wrap">
+          <view class="more" bindtap="onMore">
+            加载更多（{{shown.length}} / {{total}}）
+          </view>
+          <text class="more-hint">滑到底部也会自动加载</text>
+        </view>
+        <view wx:else class="end">已到末尾</view>
+      </block>
     </block>
   </view>
 </view>
