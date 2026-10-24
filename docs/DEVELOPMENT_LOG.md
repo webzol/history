@@ -1652,6 +1652,14 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 资料库条目配图全量抓取完成（6,406 张，仅 7 失败）
+
+- `tools/add_archive_art.py` 后台全量跑完：figures 4,868 / emperors 373 / events 700 / wars 465（360×360 q55，合计约 101MB，仓库 `data/img/archive/`，主包不受影响，jsDelivr 提供）。失败仅 7 条（多为生僻事件词无可用图，如「马日事变」「《国内和平协定》」），已记录在日志不再重试。
+- 抽验 60 张 PIL 校验全部有效；`archiveArtRemote.js` 清单由脚本自动重建。
+- 加上主站图匹配的 131 条，资料详情页 figures/emperors/events/wars 四类条目**基本全覆盖配图**（未命中的 7 条只显示分类题图）。
+- 回归：selftest **PASS 1672 / FAIL 0**；validate 通过；build_preview 重打包。授权状态：全部未确认，上线前需审校（见 paintings/SOURCES.md）。
+- 遗留：7 条失败条目如需补图需手选搜索词重跑 `python tools/add_archive_art.py events`（已存在的自动跳过）；自抓图质量未逐张目检。
+
 ## 2026-10-24 · 主包超限修复（2062→1969KB）+「我的」页精简 + 全页面交互自测
 
 - **主包超限（2062KB > 2048KB 限额，开发者工具将无法预览/上传）**：无单一大文件，属累积漂移。处理：
