@@ -4,6 +4,10 @@ const archiveImages = require('../../utils/archiveImages.js');
 
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+// head 预取一轮后会话内不再重复（每栏目 ~12KB，共 22 栏目 ≈ 264KB，缓存 7 天）
+let headPrefetched = false;
+const PREFETCH_DELAY = 800;
+
 function safeTitle(value, fallback) {
   if (!value) return fallback;
   try {
@@ -134,6 +138,26 @@ Page({
 
   onShow() {
     font.apply(this);
+    this.scheduleHeadPrefetch();
+  },
+
+  // 空闲预取全部栏目 head：用户还在浏览首页时就把列表首屏数据拉好，
+  // 点击进入列表页时 apk.load 命中内存/缓存，首屏零等待
+  scheduleHeadPrefetch() {
+    if (headPrefetched) return;
+    headPrefetched = true;
+    setTimeout(() => this.prefetchHeads(), PREFETCH_DELAY);
+  },
+
+  prefetchHeads() {
+    const entries = [];
+    (this.groups || []).forEach((group) => {
+      (group.items || []).forEach((item) => {
+        entries.push({ kind: item.kind, type: item.type });
+      });
+    });
+    // wx.request 内部有并发上限会自行排队，这里全部发出即可
+    entries.forEach((entry) => apk.prefetchHead(entry.kind, entry.type));
   },
 
   goBack() {
@@ -161,6 +185,7 @@ Page({
   onCategory(e) {
     const key = e.currentTarget.dataset.key;
     const name = safeTitle(e.currentTarget.dataset.name, '典籍辞条');
+    apk.prefetchHead('cards', key);
     wx.navigateTo({
       url: `/pages/archive-list/archive-list?kind=cards&type=${encodeURIComponent(key)}&title=${encodeURIComponent(name)}`
     });
@@ -169,6 +194,7 @@ Page({
   onSection(e) {
     const key = e.currentTarget.dataset.key;
     const name = safeTitle(e.currentTarget.dataset.name, '资料库');
+    apk.prefetchHead(key, '');
     wx.navigateTo({
       url: `/pages/archive-list/archive-list?kind=${encodeURIComponent(key)}&title=${encodeURIComponent(name)}`
     });

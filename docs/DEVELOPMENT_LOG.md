@@ -1652,6 +1652,16 @@ miniprogram/data/history.js
 - 已核对 `03-timeline-ancient.png`、`04-timeline-modern.png`：古代 23 朝完整展示且无行首分隔点，近现代 3 朝单行。
 - 仍需真机确认：320px 窄屏下「晚清—新中国」标题与小印/计数的避让，以及楷体回退后的行宽。
 
+## 2026-10-24 · 资料库点击进列表仍慢：预取前移（首页空闲预取 head + 点击即发请求 + 条目预取分卷）
+
+- 用户反馈：从资料库首页点进列表仍慢——head 虽只 ~12KB，但点击后才发起请求，首字节延迟（DNS/TLS/RTT）省不掉。本轮把请求**整体前移到点击之前**：
+  - **`utils/apkData.js` 新增 `prefetchHead(kind, type)` / `prefetchShard(kind, type, shard)`**：静默预取进内存 + 7 天缓存，失败忽略；真正的加载走同一套缓存，命中即零等待。
+  - **资料库首页空闲预取**：`onShow` 后 800ms 预取全部 22 个栏目入口的 head（一次会话只做一轮，约 264KB；已缓存栏目自动跳过）。用户在首页浏览折叠分组的时间里，数据已悄悄拉好。
+  - **点击入口即发请求**：`onCategory` / `onSection` 在 `navigateTo` 前先 `prefetchHead`——即使首页预取还没跑到该栏目，转场动画（~300ms）期间请求也已在路上。
+  - **列表点条目预取详情分卷**：`onItem` 在跳转前 `prefetchShard`（~50–320KB），详情页命中缓存秒开。
+- `tools/selftest.js` +3 断言（点击分类的请求窗口覆盖 tap 预取的 head、onItem 预取 01 分卷、prefetchHeads 覆盖未缓存栏目 emperors）；`prefetchHeads` 改为同步循环（并发交给 wx.request 内部队列，链式 setTimeout 在同步自测中不可测）；**PASS 1664 / FAIL 0**。`validate_miniprogram.py` 通过；`build_preview` 重打包；28 张截图全过。
+- 遗留：预取约 264KB（7 天一次）在蜂窝网络下的流量消耗可接受但可再讨论（如只在 WiFi 预取）；真机验证预取后进列表是否体感秒开。
+
 ## 2026-10-24 · 资料库首屏真分批：head.json 轻量包秒开 + 后台补齐分块
 
 - **数据拆分**：新增 `tools/split_apk_index.js`（幂等），把 22 个栏目的 `index.json` 拆成 `head.json`（`{total, step:120, parts, items}`，前 120 条固定列，实测 ~12KB/栏目）+ `part-N.json`（剩余条目每 120 条一块）。`index.json` 保留作拆分输入与旧版回退，共新增 22 份 head + 266 份 part。

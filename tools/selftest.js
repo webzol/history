@@ -802,6 +802,7 @@ console.log('== 资料库 ==');
   );
 
   resetWifiStack();
+  const catBefore = wxLog.length;
   tap(archive, 'onCategory', { key: '12', name: '诸子百家名句赏析' });
   ok(
     last('navigateTo').url.indexOf('/pages/archive-list/archive-list?kind=cards&type=12') === 0,
@@ -809,6 +810,10 @@ console.log('== 资料库 ==');
   );
   resetWifiStack();
   tap(archive, 'onSection', { key: 'figures', name: '历代人物' });
+  ok(
+    wxLog.slice(-3).some((entry) => entry.kind === 'request' && /figures\/head\.json$/.test(entry.url)),
+    '点击入口即预取栏目 head（转场期间请求已在路上）'
+  );
   eq(
     last('navigateTo').url,
     '/pages/archive-list/archive-list?kind=figures&title=%E5%8E%86%E4%BB%A3%E4%BA%BA%E7%89%A9',
@@ -819,7 +824,7 @@ console.log('== 资料库 ==');
   const listBefore = wxLog.length;
   list.onLoad({ kind: 'cards', type: '12', title: '诸子百家名句赏析' });
   const listUrls = wxLog
-    .slice(listBefore)
+    .slice(catBefore)
     .filter((entry) => entry.kind === 'request')
     .map((entry) => entry.url);
   ok(listUrls.some((url) => /\/cards\/12\/head\.json$/.test(url)), '首屏只拉 head 轻量包（~12KB）');
@@ -883,6 +888,15 @@ console.log('== 资料库 ==');
   ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
   ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
   ok(detail.onShareAppMessage().path.indexOf('shard=' + first.shard) >= 0, '资料库详情分享带分卷');
+
+  // 列表点击条目 → 转场期间预取详情分卷
+  resetWifiStack();
+  list.onItem({ currentTarget: { dataset: { id: first.id, shard: '01' } } });
+  ok(
+    wxLog.slice(-2).some((entry) => entry.kind === 'request' && /\/cards\/12\/01\.json$/.test(entry.url)),
+    '点击条目即预取详情分卷'
+  );
+  ok(last('navigateTo').url.indexOf('/pages/archive-detail/archive-detail') === 0, '点击条目进详情页');
 
   // head 分批加载契约：首次回调 head 120 条（partial + 全量 total），后台补齐后再回调全量
   const apkMod = require(path.join(ROOT, 'utils', 'apkData.js'));
@@ -954,6 +968,16 @@ console.log('== 资料库 ==');
   ok(detail.data.showLead === false, '诗文全文不重复摘要');
   ok(detail.data.blocks.length > 1, '诗文全文详情多段渲染');
   ok(detail.data.sections.some((section) => section.label === '原文'), '诗文详情拆出原文段');
+
+  // head 空闲预取：覆盖全部 22 个栏目入口（9 cards + 13 section）；已缓存栏目不重复请求
+  const entryCount = (archive.groups || []).reduce((sum, group) => sum + (group.items || []).length, 0);
+  eq(entryCount, 22, '资料库共 22 个栏目入口');
+  const beforePrefetch = wxLog.length;
+  archive.prefetchHeads();
+  ok(
+    wxLog.slice(beforePrefetch).some((entry) => entry.kind === 'request' && /emperors\/head\.json$/.test(entry.url)),
+    '空闲预取覆盖未缓存栏目 head'
+  );
 })();
 
 // ---------------------------------------------------------------------------

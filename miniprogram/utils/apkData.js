@@ -456,15 +456,33 @@ function load(kind, type, cb) {
   });
 }
 
+// 预取：只为提前写入内存与本地缓存，失败静默（列表/详情真正加载时会走同一套缓存）。
+// 首屏提速关键在「点击之前」就发请求——资料库首页空闲预取各栏目 head，
+// 点击入口时再触发一次（已缓存则瞬间返回），转场动画期间请求已在路上。
+function prefetchHead(kind, type) {
+  loadHead(kind, type, () => {});
+}
+
+function prefetchShard(kind, type, shard) {
+  const file = shardFileFor(kind, type, shard);
+  if (!file) return;
+  if (memory[file] || readCache(file)) return;
+  loadFile(file, () => {});
+}
+
 module.exports = {
   BASE,
   getMeta,
   dirFor,
   indexFileFor,
+  headFileFor,
   shardFileFor,
   fileFor,
   load,
   loadIndex,
+  loadHead,
   loadShard,
-  find
+  find,
+  prefetchHead,
+  prefetchShard
 };

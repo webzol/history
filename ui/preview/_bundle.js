@@ -4384,17 +4384,35 @@ function load(kind, type, cb) {
   });
 }
 
+// 预取：只为提前写入内存与本地缓存，失败静默（列表/详情真正加载时会走同一套缓存）。
+// 首屏提速关键在「点击之前」就发请求——资料库首页空闲预取各栏目 head，
+// 点击入口时再触发一次（已缓存则瞬间返回），转场动画期间请求已在路上。
+function prefetchHead(kind, type) {
+  loadHead(kind, type, () => {});
+}
+
+function prefetchShard(kind, type, shard) {
+  const file = shardFileFor(kind, type, shard);
+  if (!file) return;
+  if (memory[file] || readCache(file)) return;
+  loadFile(file, () => {});
+}
+
 module.exports = {
   BASE,
   getMeta,
   dirFor,
   indexFileFor,
+  headFileFor,
   shardFileFor,
   fileFor,
   load,
   loadIndex,
+  loadHead,
   loadShard,
-  find
+  find,
+  prefetchHead,
+  prefetchShard
 };
 
 });
@@ -5812,6 +5830,10 @@ const archiveImages = require('../../utils/archiveImages.js');
 
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+// head 预取一轮后会话内不再重复（每栏目 ~12KB，共 22 栏目 ≈ 264KB，缓存 7 天）
+let headPrefetched = false;
+const PREFETCH_DELAY = 800;
+
 function safeTitle(value, fallback) {
   if (!value) return fallback;
   try {
@@ -5942,6 +5964,26 @@ Page('project://pages/archive/archive.js', {
 
   onShow() {
     font.apply(this);
+    this.scheduleHeadPrefetch();
+  },
+
+  // 空闲预取全部栏目 head：用户还在浏览首页时就把列表首屏数据拉好，
+  // 点击进入列表页时 apk.load 命中内存/缓存，首屏零等待
+  scheduleHeadPrefetch() {
+    if (headPrefetched) return;
+    headPrefetched = true;
+    setTimeout(() => this.prefetchHeads(), PREFETCH_DELAY);
+  },
+
+  prefetchHeads() {
+    const entries = [];
+    (this.groups || []).forEach((group) => {
+      (group.items || []).forEach((item) => {
+        entries.push({ kind: item.kind, type: item.type });
+      });
+    });
+    // wx.request 内部有并发上限会自行排队，这里全部发出即可
+    entries.forEach((entry) => apk.prefetchHead(entry.kind, entry.type));
   },
 
   goBack() {
@@ -5969,6 +6011,7 @@ Page('project://pages/archive/archive.js', {
   onCategory(e) {
     const key = e.currentTarget.dataset.key;
     const name = safeTitle(e.currentTarget.dataset.name, '典籍辞条');
+    apk.prefetchHead('cards', key);
     wx.navigateTo({
       url: `/pages/archive-list/archive-list?kind=cards&type=${encodeURIComponent(key)}&title=${encodeURIComponent(name)}`
     });
@@ -5977,6 +6020,7 @@ Page('project://pages/archive/archive.js', {
   onSection(e) {
     const key = e.currentTarget.dataset.key;
     const name = safeTitle(e.currentTarget.dataset.name, '资料库');
+    apk.prefetchHead(key, '');
     wx.navigateTo({
       url: `/pages/archive-list/archive-list?kind=${encodeURIComponent(key)}&title=${encodeURIComponent(name)}`
     });
@@ -6151,6 +6195,8 @@ Page('project://pages/archive-list/archive-list.js', {
     const id = e.currentTarget.dataset.id;
     const shard = e.currentTarget.dataset.shard || '';
     const type = this.data.kind.indexOf('poems-') === 0 ? shard : this.data.type;
+    // 转场期间提前拉详情分卷（~50–320KB），详情页命中缓存秒开
+    apk.prefetchShard(this.data.kind, this.data.type, shard);
     wx.navigateTo({
       url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&shard=${encodeURIComponent(shard)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
     });

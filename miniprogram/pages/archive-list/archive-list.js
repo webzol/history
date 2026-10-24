@@ -158,6 +158,8 @@ Page({
     const id = e.currentTarget.dataset.id;
     const shard = e.currentTarget.dataset.shard || '';
     const type = this.data.kind.indexOf('poems-') === 0 ? shard : this.data.type;
+    // 转场期间提前拉详情分卷（~50–320KB），详情页命中缓存秒开
+    apk.prefetchShard(this.data.kind, this.data.type, shard);
     wx.navigateTo({
       url: `/pages/archive-detail/archive-detail?kind=${this.data.kind}&type=${encodeURIComponent(type)}&shard=${encodeURIComponent(shard)}&title=${encodeURIComponent(this.data.pageTitle)}&id=${encodeURIComponent(id)}`
     });
