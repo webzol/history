@@ -1748,6 +1748,20 @@ miniprogram/data/history.js
 - 自检：`tools/selftest.js` 更新远端 URL 前缀断言 + 新增 3 条（司马迁 gcore 命中、altArt 换域、本地图不二次兜底）+ 搜索排序 2 条（汉武帝本人/同名事件排第一）；**PASS 1652 / FAIL 0**。`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；`preview_shots` 28 张全过（14/15/19 等差异为远端图真实加载 + 当日日期/随机身份所致）。
 - 遗留：gcore 在国内部分地区的可达性需真机确认（备用 testingcf 已接）；8 个详情页顶栏「居中标题 + seal.png」统一仍待定。
 
+## 2026-10-25 · 资料库条目接入收藏/足迹（39,067 条资料可收藏、浏览留痕）
+
+- **背景**：AGENTS §7.12 遗留——资料库是主要浏览场景却不能收藏、不留足迹，收藏体系不完整。难点：资料条目在远端 39,067 条数据里，收藏/足迹页若回查详情分卷代价太高 → **收藏/足迹时存展示快照**。
+- **数据层**：`utils/store.js` 的 `toggleFavorite(type, id, extra)` / `addFootprint(type, id, extra)` 新增第三参 `extra`，`Object.assign` 并入存储条目（人物/事件旧调用不传参、存储形状不变）。
+- **解析层**：`utils/entries.js`：
+  - `archiveKey(kind, aType, rawId)` → 唯一键 `kind|type|rawId`（各部分均 ASCII，'|' 分隔无歧义）；
+  - `resolveEntry` 新增 `archive` 分支：用条目内 `info` 快照（`{kind, aType, shard, rawId, cat, meta, title}`）渲染标题/副标题/行图（`archiveArt.entryImage` 条目配图 > `archiveImages.cover` 分类题图，永不空图）；无快照的残缺条目返回 null 不渲染（兼容防御）；
+  - 所有类型的 `resolveEntry` 返回值统一带 `nav`（完整跳转链接），人物/事件/资料三页跳转收敛到一处；`groupByType` 新增「资料」组（人物/史事/资料顺序）。
+- **详情页**：`pages/archive-detail/` 头卡与正文之间新增「收藏此资料」ghost 按钮（朱砂已收藏态 + 按压反馈）；`fetch` 成功即 `addFootprint('archive', key, {info})`（重访问自动置顶去重，受 FOOT_MAX=20 约束）；`toggleCollect` 带快照写入；`onShow` 同步收藏态（从收藏页移出后返回详情即刷新）。快照的 `cat` 存分类名（kicker），跳转链接据此还原 `title` 参数，分享链接参数结构与既有约定一致。
+- **列表三页**：`favorites` / `footprints` / `profile` 的 `onEntry` 改优先用行数据 `nav` 跳转（dataset 仍传 type/id，长按移出 `onFavLongPress` 对资料条目天然可用）；空态引导文案补「资料」来源。
+- **⚠️ 顺带修复 preview_shots 漏报**：`tools/preview_shots.js` 原判断「截图文件存在且 >10KB 即 OK」——预览服务没起时 Chrome 不写文件，**昨天会话的 28 张旧图全部被误报 OK**（本次实测踩中）。修复：起跑前 curl 探测 `127.0.0.1:8137` 未就绪即退出码 2；每张截图要求 mtime 前进 + Chrome 退出码 0。
+- 自检：`tools/selftest.js` 新增「资料收藏与足迹」段 22 条断言（足迹快照字段、收藏切换/重进保持、我的页快照渲染与 nav 跳转、长按移出、收藏/足迹页「资料」分组与行图、残缺快照不渲染）；**PASS 1694 / FAIL 0**。`validate_miniprogram.py` 通过；`build_preview` 重打包；`preview_shots` 28 张**真**全过（含详情页「收藏此资料」按钮截图核对 + 点击后「✓ 已收藏」朱砂态目检）。
+- 遗留：收藏/足迹页资料行图为远端条目配图，jsDelivr 不可达时由 `binderror`→`altArt` 换备用域名，仍失败则回退分类题图（本地，必显示）——此兜底链路未在 harness 单测（与人物/事件行图同源，真机一并确认）。
+
 ## 2026-10-23 · 补全 14 个无专属绘画时代的朝代配画（人物/事件"有事件但缺图"清零回退）
 
 - 背景：72 位有 `relatedEvents` 的人物中 47 位时代有专属绘画，25 位（夏/商/西周/春秋/战国/秦/三国/西晋/隋/五代十国/元/辽/西夏/金）时代无绘画、人物页头卡与相关史事缩略图全部回退 `palace.jpg`。

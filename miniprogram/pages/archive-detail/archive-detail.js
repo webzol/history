@@ -3,6 +3,8 @@ const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
 const archiveArt = require('../../utils/archiveArt.js');
 const altArt = require('../../utils/eraImages.js').altArt;
+const store = require('../../utils/store.js');
+const entries = require('../../utils/entries.js');
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -119,6 +121,7 @@ Page({
     showTranslation: false,
     loading: true,
     error: '',
+    collected: false,
     fontClass: 'm'
   },
 
@@ -141,6 +144,10 @@ Page({
 
   onShow() {
     font.apply(this);
+    // 从收藏/足迹页返回时同步收藏态
+    if (this.data.item) {
+      this.setData({ collected: store.isFavorite('archive', this.entryKey()) });
+    }
   },
 
   fallbackTitle(kind, type) {
@@ -175,6 +182,19 @@ Page({
       }
       this.shard = item.shard || this.shard;
       const kicker = this.data.kicker;
+      const key = entries.archiveKey(this.kind, this.type, item.id);
+      // 浏览足迹：带展示快照（标题/朝代身份/分类名/分卷），收藏与足迹页据此渲染，不回查远端数据
+      store.addFootprint('archive', key, {
+        info: {
+          kind: this.kind,
+          aType: this.type,
+          shard: this.shard,
+          rawId: item.id,
+          cat: kicker,
+          meta: item.meta || '',
+          title: item.title
+        }
+      });
       const blocks = blocksOf(item.text);
       const sections = sectionsOf(item.text);
       const factRows = factRowsOf(item.facts);
@@ -184,6 +204,7 @@ Page({
         loading: false,
         error: '',
         item,
+        collected: store.isFavorite('archive', key),
         art: archiveArt.entryImage(this.kind, item.id),
         blocks,
         sections,
@@ -206,6 +227,29 @@ Page({
 
   retry() {
     this.fetch();
+  },
+
+  // 收藏/足迹用的唯一键：kind|type|条目id（条目 id 各栏目内唯一）
+  entryKey() {
+    return entries.archiveKey(this.kind, this.type, this.data.item && this.data.item.id);
+  },
+
+  toggleCollect() {
+    const key = this.entryKey();
+    if (!key) return;
+    const on = store.toggleFavorite('archive', key, {
+      info: {
+        kind: this.kind,
+        aType: this.type,
+        shard: this.shard,
+        rawId: this.data.item.id,
+        cat: this.data.kicker,
+        meta: this.data.item.meta || '',
+        title: this.data.item.title
+      }
+    });
+    this.setData({ collected: on });
+    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   // 条目画片（远端图）加载失败 → 换备用 jsDelivr 域名重试一次；再失败置空隐藏画片（露出纯文字版式）

@@ -1,6 +1,6 @@
 # 史页 · 开发交接说明（先读我）
 
-**最后更新：2026-10-23（Asia/Shanghai）**
+**最后更新：2026-10-25（Asia/Shanghai）**
 
 ## 0. 一句话
 
@@ -11,8 +11,8 @@
 - 高保真网页首页：`ui/reference/home-v3.html`
 - 原生小程序（13 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 72 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
 - 「史页资料库」：APK 数据 39,067 条（辞条 13,287 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955 / 诗文全文 10,817），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存；单文件 ≤1.5MB，资料库总预算 5MB，超预算先淘汰旧分卷）。**首屏提速（2026-10-24）**：每个栏目索引拆成 `head.json`（`{total, step:200, parts, items}`，前 200 条，~15–30KB，列表页首屏只拉这一份）+ `part-N.json`（剩余条目每 200 条一块，首屏渲染后后台 **4 并发限流**补齐并合并写回 index.json 缓存；请求失败/403 自动重试一次——jsDelivr 对突发请求会 403 限流）；`index.json` 保留作拆分输入与旧版回退。本地缓存 key 为 `shige_apk_v3_*`（分块布局变更时须升版本号整体失效）。全部栏目统一为「列表索引 + 详情分卷」：索引固定列 `[id,title,meta,summary,shard]`（摘要 44 字），`00.json`… 为详情分卷（非诗文 ≤180 条 / ≤320KB，诗文 ≤120 条 / ≤320KB）；列表只加载索引，详情按 `shard` 只加载一册。拆分工具 `tools/split_apk_index.js`（幂等，改索引数据后重跑）。原始 APK/DB 在 `import/`，不提交。
-- 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。
-- 质量链路：`node tools/selftest.js`（1600 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（28 张标准截图核对）+ `python tools/validate_miniprogram.py` 静态校验。
+- 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。**资料库条目已接入（2026-10-25）**：资料详情页有「收藏此资料」按钮、浏览即留足迹；资料条目在存储里带 `info` 展示快照（kind/aType/shard/rawId/cat/meta/title，唯一键 `kind|type|rawId`），收藏/足迹页据此渲染并跳详情，不回查远端数据；收藏/足迹/我的页跳转统一走 `entries.resolveEntry` 给出的 `nav` 链接；收藏页新增「资料」分组（人物/史事/资料）。
+- 质量链路：`node tools/selftest.js`（约 1700 断言交互自测）+ `ui/preview/` 浏览器渲染 harness（28 张标准截图核对，`preview_shots.js` 起跑前自检预览服务在线、要求截图文件 mtime 前进，防旧图假 OK）+ `python tools/validate_miniprogram.py` 静态校验。
 - 尚无后端。
 
 > 重要：`ui/neo/` 与 `docs/UI设计说明.md` 是上一版“极简新中式”探索，**已归档，不是当前视觉基准**。当前基准是这份说明、`docs/DEVELOPMENT_LOG.md` 和 `ui/reference/home-v3.html`。
@@ -42,8 +42,8 @@
 | 首页 | 已实现，数据驱动 | `miniprogram/pages/home/` | 宣纸背景、今日史事、四磁贴、盛唐气象、近现代入口、底部四栏；数据来自 `data/history.js` |
 | 时间轴 | 已接入真实数据，按 2026-10-19 上传参考图重构 | `miniprogram/pages/timeline/` | 宣纸统一底（无线框）；顶部字标 + 首页同款印章图（assets/seal.png）；红/青圆点竖线轴；事件纪年挂轴排列，点击进事件详情页；无大时代印、无水墨人物图（用户已取消） |
 | 搜索 | 已实现（入口在「我的」页首行） | `miniprogram/pages/search/` | 热门检索标签 + 三组结果（人物/史事/朝代与专题）；近现代蓝灰副标题；点击进对应详情页或时间轴 |
-| 收藏 | 已实现 | `miniprogram/pages/favorites/` | 按人物 / 史事分组、组内条数；点击进详情；右上「清空」原生确认后清空存储；数据来自 `utils/entries.js` |
-| 足迹 | 已实现 | `miniprogram/pages/footprints/` | 同收藏页，额外显示浏览时间「10月22日 16:41」；清空后空态提示 |
+| 收藏 | 已实现 | `miniprogram/pages/favorites/` | 按人物 / 史事 / 资料分组、组内条数；点击进详情（含资料详情）；右上「清空」原生确认后清空存储；数据来自 `utils/entries.js` |
+| 足迹 | 已实现 | `miniprogram/pages/footprints/` | 同收藏页，额外显示浏览时间「10月22日 16:41」；资料详情浏览即留痕；清空后空态提示 |
 | 人物详情 | 已实现 | `miniprogram/pages/person/` | 大字人名 + 时代配画底纹头卡、楷体引文、正文段落、相关史事列表（配画缩略图，跳事件详情）；支持古代/近现代双色调 |
 | 事件详情 | 已实现 | `miniprogram/pages/event/` | 头卡右侧装裱画片（按 era 取画，200rpx 白边小画）、大字年份、双色调色条、正文段落、"其时其人"人物卡（时代细部缩略图 + 姓名，跳人物详情）、收藏按钮、回时间轴按钮 |
 | 朝代详情 | 已实现 | `miniprogram/pages/period/` | 配画头卡、时代脉络段、收录史事列表（纪年升序）；home 磁贴/发现页朝代卡均跳此页；24 个朝代均有 PERIOD_META，西晋/秦/南宋等可直接查看 |
@@ -234,7 +234,7 @@ python tools/validate_miniprogram.py
 9. ~~首页"今日史事"日期匹配未完成~~ → 2026-10-19 晚：已按公历「月-日」日期库匹配（8 组），无匹配日回退编辑精选；农历事件暂未列入，正式发布前仍需历史审校。
 10. 旧版 `ui/neo/` 和 `docs/UI设计说明.md` 容易误用；除非用户明确要求，否则不要用旧版风格覆盖当前实现。
 11. 资料库数据来自 APK 迁移，尚未逐条史实/授权审校；诗文全文已按体裁/分卷纳入（诗 2,938 / 词 4,523 / 文 2,991 / 曲 338 / 赋 27）。列表搜索只覆盖轻量索引字段（标题/分类/摘要；诗词为篇名/作者/朝代/摘要），不做全文检索；详情正文只在打开条目时按 `shard` 拉取。
-12. 资料库条目暂未接入收藏/足迹；接入前需扩展 `utils/entries.js` 与「我的」页分组，避免破坏现有收藏解析。
+12. ~~资料库条目暂未接入收藏/足迹~~ → 2026-10-25 已接入：`utils/store.js` 的 `toggleFavorite/addFootprint` 支持第三参 `extra`（展示快照），资料条目用 `entries.archiveKey(kind, type, rawId)` 作唯一键、详情页带 `info` 快照写入；收藏/足迹/我的三页跳转统一走 `resolveEntry` 的 `nav`。残缺快照（无 `info.title`）解析为 null 不渲染，老数据不受影响。
 
 ---
 

@@ -451,3 +451,32 @@
   font-size: calc(20rpx * var(--fs, 1));
   color: #A34A3E;
 }
+
+/* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */
+.fav-row {
+  margin-top: 20rpx;
+}
+
+.fav-btn {
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid rgba(70, 58, 45, 0.14);
+  border-radius: 36rpx;
+  background: rgba(252, 251, 248, 0.6);
+  font-size: calc(23rpx * var(--fs, 1));
+  letter-spacing: 0.05em;
+  color: #5F5A52;
+  transition: transform 0.18s ease;
+}
+
+.fav-btn.on {
+  border-color: rgba(163, 74, 62, 0.45);
+  background: rgba(163, 74, 62, 0.06);
+  color: #A34A3E;
+}
+
+.fav-pressed {
+  transform: scale(0.98);
+}

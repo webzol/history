@@ -26,7 +26,8 @@ function isFavorite(type, id) {
 }
 
 // 返回切换后的状态：true=已收藏，false=已取消
-function toggleFavorite(type, id) {
+// extra：展示快照（如资料条目的 kind/shard/标题等），随条目一并存储，避免收藏页回查远端数据
+function toggleFavorite(type, id, extra) {
   const list = listFavorites();
   const idx = list.findIndex((x) => x.type === type && x.id === id);
   if (idx >= 0) {
@@ -34,14 +35,14 @@ function toggleFavorite(type, id) {
     save(KEY_FAV, list);
     return false;
   }
-  list.unshift({ type, id, ts: Date.now() });
+  list.unshift(Object.assign({ type, id, ts: Date.now() }, extra || {}));
   save(KEY_FAV, list);
   return true;
 }
 
-function addFootprint(type, id) {
+function addFootprint(type, id, extra) {
   let list = load(KEY_FOOT).filter((x) => !(x.type === type && x.id === id));
-  list.unshift({ type, id, ts: Date.now() });
+  list.unshift(Object.assign({ type, id, ts: Date.now() }, extra || {}));
   list = list.slice(0, FOOT_MAX);
   save(KEY_FOOT, list);
 }

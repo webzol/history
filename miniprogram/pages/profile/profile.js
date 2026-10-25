@@ -141,6 +141,14 @@ Page({
 
   onEntry(e) {
     const { type, id } = e.currentTarget.dataset;
+    // 资料条目（及统一解析后的人物/史事）直接用 entries 给出的跳转链接
+    const entry = this.data.favsShow
+      .concat(this.data.footsShow)
+      .find((r) => r.type === type && r.id === id);
+    if (entry && entry.nav) {
+      wx.navigateTo({ url: entry.nav });
+      return;
+    }
     const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
     const exist = hd.get()[type === 'person' ? 'persons' : 'events'].find((item) => item.id === id);
     if (!exist) return;

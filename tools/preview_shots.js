@@ -46,8 +46,24 @@ const targets = [
 ];
 
 let miss = 0;
+
+// 起跑前先确认预览服务在线：服务没起时 Chrome 不写文件，
+// 旧图存在会让「文件存在即 OK」的判断全绿（漏报），必须先探测。
+try {
+  const probe = spawnSync('curl', ['-s', '-o', 'nul', '-w', '%{http_code}', '--max-time', '3', BASE.replace('#', '')]);
+  const code = String((probe.stdout || '').toString().trim());
+  if (code !== '200') {
+    console.error(`预览服务未就绪（${BASE.replace('#', '')} 返回 ${code || '无响应'}）。请先运行：node tools/preview_server.js`);
+    process.exit(2);
+  }
+} catch (e) {
+  console.error('无法探测预览服务：', e.message);
+  process.exit(2);
+}
+
 for (const [name, hash] of targets) {
   const out = path.join(OUT_DIR, `${name}.png`);
+  const mtimeBefore = fs.existsSync(out) ? fs.statSync(out).mtimeMs : 0;
   const res = spawnSync(
     CHROME,
     [
@@ -59,7 +75,9 @@ for (const [name, hash] of targets) {
     ],
     { stdio: 'ignore', timeout: 45000 }
   );
-  const ok = fs.existsSync(out) && fs.statSync(out).size > 10240 && !res.error;
+  // 必须确认本次真的写出了新文件（mtime 前进），防止旧图顶替新渲染
+  const wrote = fs.existsSync(out) && fs.statSync(out).mtimeMs > mtimeBefore + 1;
+  const ok = wrote && fs.statSync(out).size > 10240 && !res.error && res.status === 0;
   console.log((ok ? 'OK   ' : 'MISS ') + name);
   if (!ok) miss += 1;
 }

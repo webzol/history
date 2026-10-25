@@ -38,8 +38,12 @@ Page({
 
   onEntry(e) {
     const { type, id } = e.currentTarget.dataset;
-    const url = type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`;
-    wx.navigateTo({ url });
+    const row = this.data.rows.find((r) => r.kind === 'item' && r.id === id && r.type === type);
+    // 跳转链接由 entries.resolveEntry 统一给出（人物/史事/资料详情）
+    wx.navigateTo({
+      url: (row && row.nav) ||
+        (type === 'person' ? `/pages/person/person?id=${id}` : `/pages/event/event?id=${id}`)
+    });
   },
 
   // 远端专属图加载失败 → 换备用 jsDelivr 域名重试一次

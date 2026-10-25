@@ -996,6 +996,103 @@ console.log('== 资料库 ==');
 })();
 
 // ---------------------------------------------------------------------------
+// 6.5 资料库条目收藏与足迹
+// ---------------------------------------------------------------------------
+
+console.log('== 资料收藏与足迹 ==');
+
+(function () {
+  resetWifiStack();
+  store.clearFavorites();
+  store.clearFootprints();
+  const detail = pages['archive-detail'];
+  const p = pages.profile;
+  const favPage = pages.favorites;
+  const footPage = pages.footprints;
+  const key = 'figures||hf-song4chao2_su1shi4';
+
+  // 浏览即留足迹，快照含标题/栏目/条目id/分卷/分类名
+  detail.onLoad({ kind: 'figures', id: 'hf-song4chao2_su1shi4', title: '历代人物' });
+  eq(detail.data.loading, false, '资料详情加载完成（收藏链路）');
+  const foot = store.listFootprints().find((x) => x.type === 'archive' && x.id === key);
+  ok(!!foot, '浏览资料详情留下足迹');
+  ok(
+    !!foot &&
+      foot.info.title === '苏轼' &&
+      foot.info.kind === 'figures' &&
+      foot.info.aType === '' &&
+      foot.info.rawId === 'hf-song4chao2_su1shi4' &&
+      foot.info.shard === '18' &&
+      foot.info.cat === '历代人物',
+    '足迹快照含标题/栏目/条目id/分卷/分类名'
+  );
+
+  // 收藏切换：详情页按钮 → 存储 → 重进保持
+  eq(detail.data.collected, false, '资料初始未收藏');
+  tap(detail, 'toggleCollect');
+  eq(detail.data.collected, true, '资料收藏生效');
+  ok(store.isFavorite('archive', key), '资料收藏写入存储');
+  detail.onLoad({ kind: 'figures', id: 'hf-song4chao2_su1shi4', title: '历代人物' });
+  eq(detail.data.collected, true, '重进资料详情保持已收藏');
+
+  // 我的页：解析快照出展示行（不回查远端数据）
+  p.onShow();
+  const fav = p.data.favs.find((x) => x.type === 'archive');
+  ok(!!fav && fav.title === '苏轼', '我的页收藏含资料条目');
+  ok(!!fav && fav.sub === '宋朝 · 文学家、词人、书法家', '资料收藏行副标题取条目 meta');
+  ok(!!fav && imgOk(fav.img), '资料收藏行图有效（主站匹配/自抓图/分类题图）');
+  ok(
+    !!fav &&
+      fav.nav.indexOf('/pages/archive-detail/archive-detail?kind=figures') === 0 &&
+      fav.nav.indexOf('id=hf-song4chao2_su1shi4') >= 0 &&
+      fav.nav.indexOf('shard=18') >= 0,
+    '资料收藏跳转链接完整（kind/shard/id）'
+  );
+  tap(p, 'onEntry', { type: 'archive', id: key });
+  ok(last('navigateTo').url.indexOf('/pages/archive-detail/archive-detail') === 0, '我的页资料收藏可跳转');
+
+  // 长按移出（与人物/史事同一交互）
+  tap(p, 'onFavLongPress', { type: 'archive', id: key });
+  eq(last('showModal').title, '移出收藏', '资料收藏长按弹移出确认');
+  confirmModal(true);
+  ok(store.listFavorites().length === 0, '资料收藏可移出');
+
+  // 收藏页「资料」分组与跳转
+  store.toggleFavorite('archive', key, { info: foot.info });
+  store.toggleFavorite('person', 'su-shi');
+  favPage.onShow();
+  ok(
+    favPage.data.groups.some((g) => g.key === 'archive' && g.label === '资料'),
+    '收藏页出现「资料」分组'
+  );
+  ok(
+    favPage.data.rows.filter((r) => r.kind === 'header').map((r) => r.label).join('/') === '人物/资料',
+    '收藏页分组顺序人物在前资料在后'
+  );
+  const row = favPage.data.rows.find((r) => r.kind === 'item' && r.type === 'archive');
+  ok(!!row && imgOk(row.img), '收藏页资料行带有效行图');
+  favPage.onEntry({ currentTarget: { dataset: { type: 'archive', id: key } } });
+  ok(last('navigateTo').url.indexOf('kind=figures') >= 0, '收藏页资料行跳资料详情');
+
+  // 足迹页：资料分组 + 浏览时间
+  footPage.onShow();
+  ok(footPage.data.groups.some((g) => g.key === 'archive'), '足迹页出现「资料」分组');
+  ok(footPage.data.foots.every((x) => x.when && x.when.length > 0), '资料足迹带浏览时间');
+  footPage.onEntry({ currentTarget: { dataset: { type: 'archive', id: key } } });
+  ok(last('navigateTo').url.indexOf('/pages/archive-detail/archive-detail') === 0, '足迹页资料行跳资料详情');
+
+  // 无快照的残缺条目解析为 null，不进收藏页
+  store.clearFavorites();
+  store.toggleFavorite('archive', 'figures||bad-id');
+  favPage.onShow();
+  ok(!favPage.data.rows.some((r) => r.kind === 'item' && r.type === 'archive'), '残缺资料收藏不渲染');
+
+  // 清理，不影响后续分段
+  store.clearFavorites();
+  store.clearFootprints();
+})();
+
+// ---------------------------------------------------------------------------
 // 7. person
 // ---------------------------------------------------------------------------
 

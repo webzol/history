@@ -44,6 +44,12 @@
         </view>
       </view>
 
+      <view class="fav-row">
+        <view class="fav-btn {{collected ? 'on' : ''}}" bindtap="toggleCollect" hover-class="fav-pressed" hover-stay-time="80">
+          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{showLead || showSections || showBody || showTranslation}}" class="body-card">
         <view wx:if="{{showLead}}" class="lead">
           <text>{{item.summary}}</text>
