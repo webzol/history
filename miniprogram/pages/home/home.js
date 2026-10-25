@@ -41,8 +41,12 @@ Page({
     const month = now.getMonth() + 1;
     const day = now.getDate();
 
-    // 今日史事：按「月-日」匹配日期库；无匹配时回退编辑精选
-    const daily = history.daily.find((item) => item.month === month && item.day === day) || history.dailyFallback;
+    // 今日史事：日期库匹配日（真实历史今天）按库显示；其余日子「每日随机」——
+    // api.pickDaily 以公历月日为种子从全部史事确定性抽一条，同一天所有用户看到同一条、隔天自动换，
+    // 不再固定回退一条（随机抽取异常时仍回退 dailyFallback 兜底）
+    const matched = history.daily.find((item) => item.month === month && item.day === day);
+    const picked = matched ? null : api.pickDaily(history.events);
+    const daily = matched || (picked ? { eventId: picked.id } : history.dailyFallback);
     const dailyEvent = history.events.find((item) => item.id === daily.eventId);
     const hero = dailyEvent
       ? { eventId: dailyEvent.id, title: '今日史事', desc: `${dailyEvent.yearText}，${dailyEvent.desc}` }
@@ -59,7 +63,8 @@ Page({
   },
 
   // 「历史上的今天」板块：真数据来自 60s API（天级缓存 6h），失败直接隐藏；
-  // 只展示 1 条精选（优先取有描述的条目，信息更丰富；无描述则取年份最早一条），总数留给「共 N 条」提示
+  // 精选 1 条走「每日随机」——api.pickDaily 以日期为种子确定性抽取，
+  // 同一天所有用户看到同一条、隔天自动换（优先有描述的条目）；总数留给「共 N 条」提示
   loadTih() {
     api.fetchTodayInHistory((err, items) => {
       if (err || !items) {
@@ -67,7 +72,7 @@ Page({
         return;
       }
       const now = new Date();
-      const featured = items.find((item) => item.desc) || items[0];
+      const featured = api.pickDaily(items) || items[0];
       this.setData({
         tih: [featured],
         tihTotal: items.length,
@@ -151,8 +156,9 @@ Page({
     });
   },
 
-  onTihTap(e) {
-    const item = this.data.tih[e.currentTarget.dataset.index];
+  // 点击卡片：弹出当前每日精选的详情（内容随日期轮换，点击本身不重随机）
+  onTihTap() {
+    const item = this.data.tih[0];
     if (!item) return;
     this.setData({
       info: {

@@ -397,10 +397,14 @@ console.log('== 首页 ==');
   ok(history.events.some((e) => e.id === p.data.hero.eventId), 'hero 连到真实史事事件');
   eq(p.data.hero.title, '今日史事', 'hero 标题');
   ok(p.data.hero.desc && p.data.hero.desc.length > 0, 'hero 描述非空');
-  // 今日匹配应与日期库一致（同一天的公历月日）
+  // 今日史事：纪念日按日期库；无匹配日「每日随机」（api.pickDaily 以公历月日为种子，同一天稳定、隔天换）
+  const apiHome = require(path.join(ROOT, 'utils', 'api.js'));
   const today = (() => { const d = new Date(); return d.getMonth() + 1 + '-' + d.getDate(); })();
-  const todayId = (history.daily.find((d) => `${d.month}-${d.day}` === today) || history.dailyFallback).eventId;
-  eq(p.data.hero.eventId, todayId, `今日(${today}) hero 与日期库一致`);
+  const matched = history.daily.find((d) => `${d.month}-${d.day}` === today);
+  const expectedId = matched ? matched.eventId : apiHome.pickDaily(history.events).id;
+  eq(p.data.hero.eventId, expectedId, `今日(${today}) hero：纪念日按日期库，其余每日随机`);
+  p.apply();
+  eq(p.data.hero.eventId, expectedId, '同一天重复 apply 精选不变（确定性）');
   eq(p.data.era.title, '盛唐气象', 'era 来自 topics');
   eq(p.data.modern.shortTitle, '百年中国', 'modern 来自 topics');
 
@@ -1556,6 +1560,23 @@ console.log('== 数据中枢 ==');
   eq(api.normalizeToday(null).length, 0, '空载荷归零');
   eq(api.dateKey(new Date(2026, 9, 20)), '10-20', 'dateKey 月-日无补零');
 
+  // pickDaily：日期种子确定性抽取（每日随机精选的底层）
+  const daily = [
+    { title: '事件甲', year: 1949, desc: 'd1' },
+    { title: '事件乙', year: 1921, desc: '' },
+    { title: '事件丙', year: 1966, desc: 'd2' },
+    { title: '事件丁', year: 1978, desc: 'd3' }
+  ];
+  eq(api.pickDaily(daily, '10-25').title, api.pickDaily(daily, '10-25').title, 'pickDaily 同种子结果一致');
+  ok(['事件甲', '事件丙', '事件丁'].indexOf(api.pickDaily(daily, '10-25').title) >= 0, 'pickDaily 只在有描述池内取');
+  eq(api.pickDaily([], 'x'), null, 'pickDaily 空数据返回 null');
+  eq(api.pickDaily([{ title: '事件甲', year: 1, desc: '' }], 'x').title, '事件甲', 'pickDaily 无描述回退全量');
+  eq(api.pickDaily(null, 'x'), null, 'pickDaily 空入参返回 null');
+  const seedDist = new Set(
+    Array.from({ length: 24 }, (_, i) => api.pickDaily(daily, `${(i % 12) + 1}-${(i % 28) + 1}`).title)
+  );
+  ok(seedDist.size >= 2, `不同日期种子出现不同精选（实测 ${seedDist.size} 种）`);
+
   // api.js：请求 + 天级缓存（60s URL 用 mockRequest.today）
   mockRequest.today = fix;
   let tih = null;
@@ -1600,15 +1621,28 @@ console.log('== 今日接口 ==');
 
   p.onShow();
   eq(p.data.tih.length, 1, '今日接口归一化后展示1条精选');
-  eq(p.data.tih[0].yearText, '1921', '板块精选优先取有描述的条目');
+  ok(!!p.data.tih[0].desc, '每日精选优先取有描述的条目');
   eq(p.data.tihTotal, 4, '板块总数为全量（展示只取1条精选）');
   eq(p.data.tih.length, 1, '板块只展示1条精选');
   eq(p.data.tihDate, `${new Date().getMonth() + 1}月${new Date().getDate()}日`, '板块显示当日日期');
 
+  // 每日随机精选：同一天两次载入结果一致（确定性），点击弹层展示当前精选（点击不重随机）
+  const featuredYear = p.data.tih[0].yearText;
+  p.setData({ tih: [], tihTotal: 0, tihDate: '' });
+  p.onShow();
+  eq(p.data.tih[0].yearText, featuredYear, '同一天两次载入精选一致（按日期确定性）');
+
   p.onTihTap({ currentTarget: { dataset: { index: 0 } } });
-  ok(p.data.info.open && p.data.info.title.indexOf('1921') >= 0, '板块条目点击出信息弹层');
+  ok(
+    p.data.info.open && p.data.info.title.indexOf(featuredYear) >= 0,
+    '点击弹层展示当前每日精选（点击不重随机）'
+  );
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '信息弹层可关闭');
+  ok(
+    fs.readFileSync(path.join(ROOT, 'pages', 'home', 'home.wxml'), 'utf8').indexOf('每日随机精选') >= 0,
+    '卡片脚注提示每日随机精选'
+  );
 
   // 断网：板块清空隐藏，页面其余内容不受影响；失败进入冷却期不再连续发请求
   mockRequest.today = null;

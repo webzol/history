@@ -18,6 +18,21 @@ function dateKey(date) {
   return `${d.getMonth() + 1}-${d.getDate()}`;
 }
 
+// 每日随机精选：以日期字符串为种子的确定性抽取——
+// 同一天所有用户看到同一条，隔天自动换；优先取有描述的条目（信息更丰富），无描述回退全量
+function pickDaily(items, seed) {
+  const src = items || [];
+  const pool = src.filter((x) => x.desc);
+  const list = pool.length ? pool : src;
+  if (!list.length) return null;
+  const key = String(seed == null ? dateKey() : seed);
+  let h = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  return list[h % list.length];
+}
+
 // 归一化：剔除脏项 → 字段统一 → 按年份升序
 function normalizeToday(payload) {
   const data = payload && payload.data;
@@ -101,6 +116,7 @@ function fetchTodayInHistory(cb) {
 module.exports = {
   SOURCE,
   dateKey,
+  pickDaily,
   normalizeToday,
   fetchTodayInHistory
 };
