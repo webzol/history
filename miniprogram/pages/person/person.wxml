@@ -11,7 +11,9 @@
         <text class="back-label">返回</text>
       </view>
       <text class="top-title">人物</text>
-      <text class="top-seal {{accent === 'modern' ? 'seal-modern' : ''}}">{{seal}}</text>
+      <view class="top-seal">
+        <text class="seal-char">{{seal}}</text>
+      </view>
     </view>
 
     <view class="head-card">

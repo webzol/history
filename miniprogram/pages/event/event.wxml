@@ -12,7 +12,9 @@
       </view>
       <view class="top-center">
         <text class="top-title">事件</text>
-        <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+        <view class="top-seal">
+          <text class="seal-char">{{seal}}</text>
+        </view>
       </view>
     </view>
 

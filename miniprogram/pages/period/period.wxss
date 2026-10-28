@@ -108,6 +108,7 @@
   color: #8C857A;
 }
 
+/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */
 .top-seal {
   position: absolute;
   right: 200rpx;
@@ -115,19 +116,38 @@
   bottom: 0;
   margin: auto 0;
   width: 44rpx;
-  height: 50rpx;
-  background: #A34A3E;
-  color: #FFF8EF;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
-  font-size: 20rpx;
+  height: 48rpx;
+  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */
+  border: 2rpx solid #8B4513;
+  border-radius: 6rpx 10rpx 8rpx 12rpx;
+  /* 透明底色，让宣纸透出 */
+  background: transparent;
+  /* 轻微旋转，模拟手工盖印的不规则 */
+  transform: rotate(-3deg);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(2deg);
+  /* 外发光模拟印泥洇散 */
+  box-shadow:
+    0 0 4rpx rgba(139, 69, 19, 0.12),
+    0 0 10rpx rgba(139, 69, 19, 0.06);
 }
 
-.top-seal.seal-modern {
-  background: #7E9A9A;
+.seal-char {
+  font-family: "KaiTi", "STKaiti", "FangSong", "SimSun", serif;
+  font-size: 22rpx;
+  font-weight: bold;
+  /* 朱砂印泥色（同「史载」印章） */
+  color: #8B4513;
+  /* 篆书效果：紧凑字距 */
+  letter-spacing: 0.02em;
+  /* 文字描边增强篆刻感 */
+  text-shadow:
+    0 0 1rpx #8B4513,
+    0 0 2rpx rgba(139, 69, 19, 0.25);
+  line-height: 1;
+  /* 轻微压缩，模拟篆书方正感 */
+  transform: scaleX(0.92);
 }
 
 .head-card {
