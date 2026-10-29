@@ -268,6 +268,47 @@ python tools/validate_miniprogram.py
 
 ---
 
+## 10.5 数据热更机制（已上线，改数据不用改前端）
+
+小程序已上线，采用 **jsDelivr 远端热更** 架构。改数据**不需要修改前端代码、不需要重新发版**。
+
+**数据流：**
+
+```
+miniprogram/data/history.js   ← 本地种子（打包在小程序里，离线兜底）
+           ↓
+node tools/build_data_json.js  ← 生成远端热更 JSON
+           ↓
+miniprogram/data/history.json  ← 提交到 GitHub
+           ↓
+jsDelivr CDN (cdn.jsdelivr.net) ← 自动同步，最长缓存 12h
+           ↓
+小程序「我的」→「检查内容更新」→ purge jsDelivr 缓存 → 即时拉取新数据
+```
+
+**改数据步骤：**
+
+1. 修改 `miniprogram/data/history.js`（本地种子）
+2. 运行 `node tools/build_data_json.js` 重建 `history.json`
+3. `git add -A` → `git commit` → `git push origin main`
+4. 小程序用户端：「我的」→「检查内容更新」即可即时生效；或等 12h CDN 缓存自动过期
+
+**能改什么：**
+
+| 数据 | 文件 | 生效方式 |
+|------|------|---------|
+| 史事/人物/朝代/专题 | `data/history.js` | 重建 history.json → push |
+| 资料库 39,067 条 | `data/apk/` | 直接改 JSON → push |
+| 今日史事日期库 | `history.js` 的 `daily` | 同上 |
+| 每日随机池 | 全部 100 条史事 | 同上 |
+
+**注意：**
+- jsDelivr CDN 缓存最长 12h，但「检查内容更新」可 purge 缓存即时生效
+- 本地种子 `history.js` 必须同步改（离线兜底）
+- 改完必须跑 `node tools/build_data_json.js` 重建 `history.json`
+
+---
+
 ## 11. 给下一次模型的一句话
 
 **日期**：每次动手前先 `git pull`，收工前 commit + push（见 §9）。
