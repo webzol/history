@@ -1899,3 +1899,16 @@ miniprogram/data/history.js
 - 新增 14 位人物暂无专属配图，按 `eraImages` 回退链走朝代画/缩略图（实测：项羽→qin.jpg、蒋介石→landscape.jpg，无空图）；后续可用 `tools/add_person_art.py` 管线补专属图。
 - 验证：`node tools/selftest.js` PASS 1780 / FAIL 0；`python tools/validate_miniprogram.py` 通过（13 页）。
 - 遗留：59 条事件 details 仅 3 段（起因/经过/结局完整但偏短，与 4–5 段条目不齐），后续可统一补第 4 段「影响/评价」；新增人物配图未补；全部新增内容仍需正式发布前历史审校。
+
+## 2026-10-31 · 搜索提速与空结果提示：实时检索 + 万级索引预构建（8x）
+
+- **搜索页（pages/search）**：
+  - 输入即搜：`onInput` 150ms 防抖后自动检索，不必点「搜索」；清空输入同步回热门页；`flushSearch()` 供键盘确认/热词/自测立即执行；`onHide/onUnload` 清理定时器。
+  - 预建检索索引：模块级 `ensureIndex(history)` 一次性拼串 + 小写化（随数据中枢热替换整库重建），检索时对预生成串 `indexOf`，零拼串零分配。
+  - 后端式返回提示：结果顶部新增 `.search-meta` 汇总行「已检索 100 史事 · 86 人物 · 26 朝代专题 · 命中 M 条」；空结果空态卡同样显示该汇总（`metaText`）。
+- **资料库列表（pages/archive-list）**：
+  - `buildIndex(items)` 在 head/全量回调时预生成每条的小写 haystack（标题+分类+摘要）；`applyFilter` 改为对索引做 `indexOf` + 循环收集，消除每按键 13,287 次拼串 + toLowerCase 的分配压力。微基准：每键过滤 12.6ms → 1.5ms（8x，真机差距更大）。
+  - 空结果提示改为「已在 {{totalText}} 条资料中检索完毕，无匹配内容；换个关键词试试。」
+- selftest +8 断言：检索汇总带库规模与命中数、空态命中 0 条、输入即排队（防抖）+ `flushSearch` 实时命中苏轼、资料库 haystack 预构建、检索无结果进空态、清空恢复全量。
+- 说明：当前无真实后端，提示为前端模拟的「返回汇总」；`utils/remote.js` 注释已预留 09B NestJS 接入点，届时可替换为真实接口返回。
+- 验证：`node tools/selftest.js` PASS 1788 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。

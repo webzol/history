@@ -160,6 +160,14 @@
   letter-spacing: 0.08em;
 }
 
+/* 检索汇总（后端式返回提示） */
+.search-meta {
+  margin-top: 20rpx;
+  font-size: calc(20rpx * var(--fs, 1));
+  letter-spacing: 0.04em;
+  color: #B9B2A6;
+}
+
 /* 分组标题 */
 .section-head {
   margin-top: 40rpx;

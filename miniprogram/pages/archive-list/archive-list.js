@@ -74,6 +74,7 @@ Page({
 
   fetch() {
     this.totalAll = 0;
+    this.haystack = null;
     this.setData({
       loading: true,
       error: '',
@@ -102,6 +103,7 @@ Page({
         return;
       }
       this.all = items;
+      this.buildIndex(items);
       this.totalAll = (info && info.total) || items.length;
       const partial = !!(info && info.partial);
       // 首屏 partial 属正常进行中；二次回调仍 partial 说明有分块拉取失败（限流/断网）
@@ -113,16 +115,27 @@ Page({
     });
   },
 
+  // 预生成小写检索串：按键过滤零拼串零分配，万级条目（13,287 辞条）也不卡输入
+  buildIndex(items) {
+    this.haystack = items.map((item) =>
+      `${item.title || ''} ${item.meta || ''} ${item.summary || ''}`.toLowerCase()
+    );
+  },
+
   applyFilter() {
     const kw = (this.data.keyword || '').trim().toLowerCase();
     // 列表索引只保留标题/分类/摘要；全文不再下载，避免首屏拉整类正文。
-    const list = kw
-      ? this.all.filter((item) =>
-          `${item.title || ''} ${item.meta || ''} ${item.summary || ''}`
-            .toLowerCase()
-            .indexOf(kw) >= 0
-        )
-      : this.all;
+    let list;
+    if (!kw) {
+      list = this.all;
+    } else {
+      const hay = this.haystack || [];
+      const src = this.all;
+      list = [];
+      for (let i = 0; i < src.length; i++) {
+        if ((hay[i] || '').indexOf(kw) >= 0) list.push(src[i]);
+      }
+    }
     this.filtered = list;
     // 目录总数用 head 包的全量 total；partial 时底部提示完整目录载入中
     const total = this.totalAll || list.length;

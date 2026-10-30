@@ -30,6 +30,10 @@
       <text class="search-btn" bindtap="onSearch">搜索</text>
     </view>
 
+    <view class="search-meta" wx:if="{{results}}">
+      <text>{{metaText}}</text>
+    </view>
+
     <block wx:if="{{!results}}">
       <view class="section-head">
         <text class="section-title">热门检索</text>
@@ -118,6 +122,7 @@
 
       <view class="empty" wx:if="{{empty}}">
         <text class="empty-line">未找到"{{keyword}}"相关内容</text>
+        <text class="empty-sub">{{metaText}}</text>
         <text class="empty-sub">换个说法试试，比如"汉武帝""北宋""辛亥"</text>
       </view>
     </block>

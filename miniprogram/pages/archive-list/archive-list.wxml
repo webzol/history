@@ -60,7 +60,7 @@
 
     <view wx:elif="{{empty}}" class="state-card">
       <text class="state-title">没有找到相关资料</text>
-      <text class="state-desc">换一个关键词试试。</text>
+      <text class="state-desc">已在 {{totalText}} 条资料中检索完毕，无匹配内容；换个关键词试试。</text>
     </view>
 
     <block wx:else>

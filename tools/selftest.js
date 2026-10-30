@@ -856,6 +856,11 @@ console.log('== 资料库 ==');
   ok(list.data.total > 0, '资料库列表可搜索');
   list.clearKeyword();
   eq(list.data.total, 246, '清空搜索恢复全量');
+  ok(list.haystack && list.haystack.length === 246, '检索索引预构建（万级条目零分配过滤）');
+  list.onInput({ detail: { value: 'zzz绝无仅有' } });
+  ok(list.data.empty, '资料库检索无结果进空态');
+  list.clearKeyword();
+  eq(list.data.total, 246, '清空后再次恢复全量');
 
   const detail = pages['archive-detail'];
   const detailBefore = wxLog.length;
@@ -1317,6 +1322,8 @@ console.log('== 搜索 ==');
   ok(p.data.results.persons.some((x) => x.id === 'zhang-qian'), '汉武帝关联人物张骞命中（details 全文）');
   eq(p.data.results.events[0].id, 'han-wudi', '同名事件标题命中排第一');
   ok(!p.data.empty, '非空结果');
+  ok(p.data.metaText.indexOf('86 人物') >= 0 && p.data.metaText.indexOf('命中') >= 0,
+    '检索汇总带库规模与命中数（后端式提示）');
 
   p.setData({ keyword: '盛唐' });
   p.onSearch();
@@ -1404,6 +1411,13 @@ console.log('== 搜索 ==');
   p.setData({ keyword: 'zzz不存在' });
   p.onSearch();
   ok(p.data.empty, '无结果为空态');
+  ok(p.data.metaText.indexOf('命中 0 条') >= 0, '空态汇总显示命中 0 条');
+
+  p.onInput({ detail: { value: '苏轼' } });
+  ok(!!p.searchTimer, '输入即排队检索（150ms 防抖）');
+  p.flushSearch();
+  ok(p.data.results.persons.some((x) => x.id === 'su-shi'), '实时检索命中苏轼');
+  eq(p.data.keyword, '苏轼', '实时检索沿用输入关键词');
   p.setData({ keyword: '' });
   p.onInput({ detail: { value: '' } });
 
