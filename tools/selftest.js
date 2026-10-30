@@ -64,7 +64,7 @@ const wxLog = [];
 let pendingModal = null;    // 最近一次 showModal(opts)
 let pendingSheet = null;    // 最近一次 showActionSheet(opts)
 const storage = {};
-const mockRequest = { payload: null, today: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）
+const mockRequest = { payload: null, today: null, apkFail: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）；apkFail(rel) 返回 true 则该资料库请求失败
 let storageCleared = 0;
 
 function route(kind, url, rest) {
@@ -96,6 +96,10 @@ const wx = {
     route('request', opts.url);
     if (opts.url.indexOf('/data/apk/') >= 0) {
       const rel = opts.url.split('/data/apk/')[1];
+      if (mockRequest.apkFail && mockRequest.apkFail(rel)) {
+        if (opts.fail) opts.fail(new Error('mock apk 403'));
+        return;
+      }
       try {
         const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'apk', rel), 'utf8'));
         if (opts.success) opts.success({ data, statusCode: 200 });
@@ -862,6 +866,48 @@ console.log('== 资料库 ==');
   list.clearKeyword();
   eq(list.data.total, 246, '清空后再次恢复全量');
 
+  // 不断层（2026-10-31）：分块失败时只合并「head + 连续成功前缀」，中段绝不空洞；
+  // 残缺数据不写缓存；退避重试补齐后无缝续上完整索引。
+  // quotes：677 条 = head 200 + part-1 200 + part-2 200 + part-3 77。
+  const realSetTimeout = global.setTimeout;
+  global.setTimeout = (fn) => { fn(); return 0; }; // 退避等待压缩为同步，重试轮在测试内跑完
+  let apkFailLeft = 2; // part-2 首轮两次尝试（含 loadFile 内部重试）都失败
+  mockRequest.apkFail = (rel) => /quotes\/part-2\.json$/.test(rel) && apkFailLeft-- > 0;
+  const apkPath = path.join(ROOT, 'utils', 'apkData.js');
+  delete require.cache[require.resolve(apkPath)]; // 全新模块实例，避免既有内存/缓存干扰
+  const apkFresh = require(apkPath);
+  Object.keys(storage).forEach((k) => {
+    if (k.indexOf('shige_apk_v3_quotes') === 0) delete storage[k];
+  });
+  const seen = [];
+  let cacheDuringPartial = null;
+  apkFresh.load('quotes', '', (err, items, info) => {
+    if (items.length === 400 && cacheDuringPartial === null) {
+      cacheDuringPartial = !!storage['shige_apk_v3_quotes_index_json'];
+    }
+    seen.push({ err: !!err, items, info });
+  });
+  mockRequest.apkFail = null;
+  global.setTimeout = realSetTimeout;
+
+  eq(seen[0].items.length, 200, '首屏先出 head 200 条（优先加载一部分）');
+  ok(seen[0].info.partial && seen[0].info.total === 677, '首屏 partial 且 total 为全量条数');
+  const partial400 = seen.find((s) => s.items.length === 400);
+  ok(partial400 && partial400.info.partial, 'part-2 失败：交付 head+part-1 连续前缀');
+  ok(partial400 && partial400.info.loaded === 400, '进度回调带已载入条数');
+  ok(partial400 && partial400.items.every((x) => x.id), '部分交付条目也全部规范化');
+  ok(!seen.some((s) => s.items.length === 477), '绝不交付「part-3 顶上」的开洞数据（477）');
+  ok(cacheDuringPartial === false, '残缺索引绝不写入缓存（partial 交付时点快照）');
+  eq(seen[seen.length - 1].items.length, 677, '重试补齐 part-2 后交付完整索引（677 无断层）');
+  ok(!seen[seen.length - 1].info.partial && seen[seen.length - 1].info.loaded === 677,
+    '完整交付 partial=false 且 loaded=全量');
+  ok(
+    storage['shige_apk_v3_quotes_index_json'] &&
+      storage['shige_apk_v3_quotes_index_json'].items.length === 677,
+    '完整索引才写缓存'
+  );
+  ok(seen[seen.length - 1].items.every((x) => x.id), '完整索引条目全部规范化');
+
   const detail = pages['archive-detail'];
   const detailBefore = wxLog.length;
   detail.onLoad({
@@ -898,7 +944,8 @@ console.log('== 资料库 ==');
   );
   ok(last('navigateTo').url.indexOf('/pages/archive-detail/archive-detail') === 0, '点击条目进详情页');
 
-  // head 分批加载契约：首次回调 head 200 条（partial + 全量 total），后台补齐后再回调全量
+  // head 分批加载契约（2026-10-31 渐进交付）：首回调 head 200 条（partial + 全量 total），
+  // 每接上一块「连续前缀」就再回调一次（长度单调不减、无断层），最终回调完整索引（partial=false）
   const apkMod = require(path.join(ROOT, 'utils', 'apkData.js'));
   const headCalls = [];
   apkMod.load('wars', '', (err, items, info) => {
@@ -909,10 +956,14 @@ console.log('== 资料库 ==');
       total: (info && info.total) || 0
     });
   });
-  eq(headCalls.length, 2, '分批加载回调两次（head + 补齐）');
+  ok(headCalls.length >= 2, '分批渐进回调（head → 连续前缀 → 完整）');
   ok(headCalls[0].partial === true && headCalls[0].n === 200 && headCalls[0].total === 466,
     '首屏回调 head 200 条且带全量 total');
-  ok(headCalls[1].partial === false && headCalls[1].n === 466, '完整目录后台补齐后二次回调');
+  const finalCall = headCalls[headCalls.length - 1];
+  ok(finalCall.partial === false && finalCall.n === 466, '完整目录后台补齐后终回调全量');
+  ok(headCalls.every((c, i) => i === 0 || c.n >= headCalls[i - 1].n), '渐进回调长度单调不减（列表平滑生长）');
+  ok(!headCalls.some((c) => c.n !== 200 && c.n !== 400 && c.n !== 466),
+    '每个交付点都在块边界上，绝不交付带洞数据');
 
   list.onLoad({ kind: 'figures', title: '历代人物' });
   eq(list.data.total, 4869, '人物资料列表总数');

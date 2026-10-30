@@ -27,6 +27,7 @@ Page({
     shown: [],
     total: 0,
     totalText: '0',
+    loadedText: '0',
     loading: true,
     partial: false,
     stalled: false,
@@ -75,6 +76,7 @@ Page({
   fetch() {
     this.totalAll = 0;
     this.haystack = null;
+    this._lastLoaded = 0;
     this.setData({
       loading: true,
       error: '',
@@ -84,20 +86,24 @@ Page({
       shown: [],
       total: 0,
       totalText: '0',
+      loadedText: '0',
       coverMeta: '正在加载'
     });
-    // apk.load 会回调两次：先 head 轻量包（partial）渲染首屏，
-    // 后台分块补齐后带全量再回调一次（partial=false）。
+    // apk.load 渐进回调：先 head 轻量包（partial）渲染首屏，
+    // 后台每接上一块连续分块就再回调一次（列表平滑生长、无断层），
+    // 全部到齐后带完整索引回调（partial=false）。
     apk.load(this.data.kind, this.data.type, (err, items, info) => {
       if (err || !items || !items.length) {
         this.all = [];
-        this._gotPartial = false;
+        this.haystack = null;
+        this._lastLoaded = 0;
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
           empty: false,
           partial: false,
           stalled: false,
+          loadedText: '0',
           coverMeta: '加载失败'
         });
         return;
@@ -106,11 +112,17 @@ Page({
       this.buildIndex(items);
       this.totalAll = (info && info.total) || items.length;
       const partial = !!(info && info.partial);
-      // 首屏 partial 属正常进行中；二次回调仍 partial 说明有分块拉取失败（限流/断网）
-      const stalled = partial && this._gotPartial;
-      if (partial) this._gotPartial = true;
-      else this._gotPartial = false;
-      this.setData({ loading: false, error: '', partial, stalled });
+      const loaded = (info && info.loaded) || items.length;
+      // partial 且载入量较上次回调没有增长 → 分块补齐受阻（限流/断网），提示点按重试
+      const stalled = partial && loaded <= (this._lastLoaded || 0);
+      this._lastLoaded = partial ? loaded : 0;
+      this.setData({
+        loading: false,
+        error: '',
+        partial,
+        stalled,
+        loadedText: fmt(loaded)
+      });
       this.applyFilter();
     });
   },

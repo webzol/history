@@ -1912,3 +1912,15 @@ miniprogram/data/history.js
 - selftest +8 断言：检索汇总带库规模与命中数、空态命中 0 条、输入即排队（防抖）+ `flushSearch` 实时命中苏轼、资料库 haystack 预构建、检索无结果进空态、清空恢复全量。
 - 说明：当前无真实后端，提示为前端模拟的「返回汇总」；`utils/remote.js` 注释已预留 09B NestJS 接入点，届时可替换为真实接口返回。
 - 验证：`node tools/selftest.js` PASS 1788 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+
+## 2026-10-31 · 资料库「不断层」交付：连续前缀合并 + 残缺不落盘 + 退避重试逐块续传
+
+- **修复断层根因**（`utils/apkData.js` `fetchParts`）：旧逻辑 `rows.filter(Boolean)` 拼接——part-2 失败时 part-3 顶上，列表中段直接少 200 条；且带洞合并结果会 `writeCache` 写入 index.json 缓存，7 天内重进页面都读残缺数据还被当完整数据（`partial:false`）。
+- **新交付契约**：
+  - 只合并「head + 连续成功前缀」：交付点永远落在完整块边界上（200/400/600…），绝不跳块开洞；
+  - 残缺数据绝不落盘：全部分块到齐才写内存与 index.json 缓存，partial 数据只留在回调里；
+  - 失败分块按 1.5s/4s 退避自动重试两轮（避开 jsDelivr 403 限流窗口），每接上一块立即再回调一次，列表平滑生长；两轮用尽仍缺则保持 partial，下次进入页面自动再补（head/已成功分块均命中内存，只重拉缺失块）；
+  - 回调 info 增 `loaded`（已载入条数），`load()` 同步透传。
+- **列表页适配**（`pages/archive-list`）：底部提示改「已载入 X / Y 条 · 正在补齐…」；`stalled` 判定从「第二次 partial 回调」改为「载入量较上次无进展」（旧判定在渐进交付下会误报），文案「分块补齐受阻 · 点按重试」；`haystack` 随每次渐进回调重建。
+- selftest：mock `wx.request` 加 `mockRequest.apkFail(rel)` 注入点；quotes（677=200+200+200+77）模拟 part-2 首轮失败——断言首屏 200 → 连续前缀 400（且 `loaded=400`、条目全规范化）→ 绝不出现 477 开洞数据 → partial 时点缓存快照为空 → 重试后 677 完整交付且才写缓存；wars 契约断言更新为渐进交付（长度单调不减、块边界对齐）。PASS 1801 / FAIL 0。
+- 验证：`node tools/selftest.js` PASS 1801 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。

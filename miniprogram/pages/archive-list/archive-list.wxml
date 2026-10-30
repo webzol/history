@@ -84,7 +84,7 @@
 
       <view wx:if="{{partial}}" class="loading-more {{stalled ? 'stalled' : ''}}" bindtap="fetch">
         <view class="mini-spin"></view>
-        <text class="loading-more-text">{{stalled ? '部分分卷载入失败 · 点按重试' : '正在载入完整目录…'}}</text>
+        <text class="loading-more-text">{{stalled ? '分块补齐受阻 · 点按重试' : '已载入 ' + loadedText + ' / ' + totalText + ' 条 · 正在补齐…'}}</text>
       </view>
       <block wx:else>
         <view wx:if="{{shown.length < total}}" class="more-wrap">

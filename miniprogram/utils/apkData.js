@@ -365,10 +365,15 @@ function loadHead(kind, type, cb) {
   attempt(1);
 }
 
-// head 首屏回调后，后台补齐剩余分块并合并成完整索引（写入 index.json 的内存与缓存）。
+// head 首屏回调后，后台补齐剩余分块并合并成完整索引。
 // 限流并发（jsDelivr 对突发请求会 403），按块序号归位保证顺序。
+// 不断层（2026-10-31）：合并只取「head + 连续成功前缀」，个别分块失败绝不让
+// 后面的分块顶上来开中段空洞；失败分块自动退避重试，每接上一块就再回调一次，
+// 列表随之平滑增长；全部到齐才写 index.json 的内存与缓存（残缺数据绝不落盘，
+// 否则断层会随 7 天缓存长期存在、且被误当成完整数据）。
 const assembling = {};
 const PART_CONCURRENCY = 4;
+const PART_RETRY_DELAYS = [1500, 4000]; // 首轮之后再补两轮，避开 jsDelivr 限流窗口
 
 function fetchParts(kind, type, head, done) {
   const file = indexFileFor(kind, type);
@@ -377,33 +382,81 @@ function fetchParts(kind, type, head, done) {
     return;
   }
   assembling[file] = [done];
+
   const rows = new Array(head.parts);
-  let nextPart = 1;
-  let pending = head.parts;
-  let failed = 0;
-  const finish = () => {
-    const list = assembling[file] || [];
-    delete assembling[file];
-    const full = normalizeIndex(head.items.concat(...rows.filter(Boolean)));
-    memory[file] = full;
-    writeCache(file, full);
-    list.forEach((fn) => fn(failed));
+  let remaining = []; // 本轮待拉分块序号（最小序号优先，尽快推进连续前缀）
+  let failed = []; // 本轮失败分块
+  let active = 0;
+  let round = 0;
+  for (let n = 1; n <= head.parts; n += 1) remaining.push(n);
+
+  const contiguous = () => {
+    let k = 0;
+    while (k < head.parts && rows[k]) k += 1;
+    return k;
   };
+
+  const emit = (complete) => {
+    const k = contiguous();
+    const list = normalizeIndex(head.items.concat(...rows.slice(0, k)));
+    const loaded =
+      head.items.length + rows.slice(0, k).reduce((sum, r) => sum + r.length, 0);
+    if (complete) {
+      memory[file] = list;
+      writeCache(file, list);
+    }
+    const subs = assembling[file] || [];
+    if (complete) delete assembling[file];
+    subs.forEach((fn) => {
+      if (typeof fn === 'function') {
+        fn(null, list, { partial: !complete, total: head.total, loaded });
+      }
+    });
+  };
+
+  const settle = () => {
+    if (!failed.length) {
+      emit(true);
+      return;
+    }
+    // 有失败分块：先把「head + 连续前缀」交付出去（列表无断层、立即可读），再退避重试
+    emit(false);
+    if (round >= PART_RETRY_DELAYS.length) return; // 重试轮用尽：保持 partial，下次进入页面自动再补
+    const delay = PART_RETRY_DELAYS[round];
+    round += 1;
+    remaining = failed;
+    failed = [];
+    setTimeout(() => start(Math.min(PART_CONCURRENCY, remaining.length)), delay);
+  };
+
   const worker = () => {
-    if (nextPart > head.parts) return;
-    const n = nextPart;
-    nextPart += 1;
+    if (!remaining.length) {
+      if (!active) settle();
+      return;
+    }
+    const n = Math.min.apply(null, remaining);
+    remaining = remaining.filter((x) => x !== n);
+    active += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
-      // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
-      // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
-      if (err || !Array.isArray(data)) failed += 1;
-      else rows[n - 1] = normalizeIndex(data) || [];
-      pending -= 1;
-      if (!pending) finish();
+      active -= 1;
+      if (err || !Array.isArray(data)) {
+        failed.push(n);
+      } else {
+        // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
+        // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
+        rows[n - 1] = normalizeIndex(data) || [];
+        if (contiguous() >= n) emit(false); // 新块接上连续前缀 → 立刻交付，列表平滑生长
+      }
+      if (!remaining.length && !active) settle();
       else worker();
     });
   };
-  for (let i = 0; i < Math.min(PART_CONCURRENCY, head.parts); i += 1) worker();
+
+  const start = (count) => {
+    for (let i = 0; i < count; i += 1) worker();
+  };
+
+  start(Math.min(PART_CONCURRENCY, head.parts));
 }
 
 function loadShard(kind, type, shard, cb) {
@@ -468,11 +521,11 @@ function find(kind, type, id, shard, cb) {
   });
 }
 
-// 列表加载（2026-10-24 首屏提速）：
+// 列表加载（2026-10-24 首屏提速；2026-10-31 不断层）：
 // 1) 完整索引已在内存/缓存 → 一次回调全量；
 // 2) 否则先拉 head.json（~12KB）回调首屏（info.partial=true, info.total=全量条数），
-//    后台并行拉 part-N.json 合并成完整索引后再次回调（partial=false）。
-//    个别分块失败时保持 partial=true（列表可用，搜索范围提示受限）。
+//    后台并行拉 part-N.json：每接上一块「连续前缀」就回调一次（partial=true, info.loaded=已载入条数），
+//    全部到齐后回调完整索引（partial=false）并写缓存；失败分块退避重试，绝不合并出带洞数据。
 // 3) head.json 不可用（旧数据未拆分/请求失败）→ 回退拉整份 index.json。
 function load(kind, type, cb) {
   const file = indexFileFor(kind, type);
@@ -494,16 +547,24 @@ function load(kind, type, cb) {
       return;
     }
     if (typeof cb === 'function') {
-      cb(null, head.items, { partial: head.parts > 0, total: head.total });
+      cb(null, head.items, {
+        partial: head.parts > 0,
+        total: head.total,
+        loaded: head.items.length
+      });
     }
     if (!head.parts) {
       memory[file] = head.items;
       writeCache(file, head.items);
       return;
     }
-    fetchParts(kind, type, head, (failed) => {
+    fetchParts(kind, type, head, (err2, list, info) => {
       if (typeof cb === 'function') {
-        cb(null, memory[file], { partial: failed > 0, total: head.total });
+        cb(err2, list, {
+          partial: !!(info && info.partial),
+          total: head.total,
+          loaded: (info && info.loaded) || 0
+        });
       }
     });
   });

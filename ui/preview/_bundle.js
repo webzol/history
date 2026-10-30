@@ -4637,10 +4637,15 @@ function loadHead(kind, type, cb) {
   attempt(1);
 }
 
-// head 首屏回调后，后台补齐剩余分块并合并成完整索引（写入 index.json 的内存与缓存）。
+// head 首屏回调后，后台补齐剩余分块并合并成完整索引。
 // 限流并发（jsDelivr 对突发请求会 403），按块序号归位保证顺序。
+// 不断层（2026-10-31）：合并只取「head + 连续成功前缀」，个别分块失败绝不让
+// 后面的分块顶上来开中段空洞；失败分块自动退避重试，每接上一块就再回调一次，
+// 列表随之平滑增长；全部到齐才写 index.json 的内存与缓存（残缺数据绝不落盘，
+// 否则断层会随 7 天缓存长期存在、且被误当成完整数据）。
 const assembling = {};
 const PART_CONCURRENCY = 4;
+const PART_RETRY_DELAYS = [1500, 4000]; // 首轮之后再补两轮，避开 jsDelivr 限流窗口
 
 function fetchParts(kind, type, head, done) {
   const file = indexFileFor(kind, type);
@@ -4649,33 +4654,81 @@ function fetchParts(kind, type, head, done) {
     return;
   }
   assembling[file] = [done];
+
   const rows = new Array(head.parts);
-  let nextPart = 1;
-  let pending = head.parts;
-  let failed = 0;
-  const finish = () => {
-    const list = assembling[file] || [];
-    delete assembling[file];
-    const full = normalizeIndex(head.items.concat(...rows.filter(Boolean)));
-    memory[file] = full;
-    writeCache(file, full);
-    list.forEach((fn) => fn(failed));
+  let remaining = []; // 本轮待拉分块序号（最小序号优先，尽快推进连续前缀）
+  let failed = []; // 本轮失败分块
+  let active = 0;
+  let round = 0;
+  for (let n = 1; n <= head.parts; n += 1) remaining.push(n);
+
+  const contiguous = () => {
+    let k = 0;
+    while (k < head.parts && rows[k]) k += 1;
+    return k;
   };
+
+  const emit = (complete) => {
+    const k = contiguous();
+    const list = normalizeIndex(head.items.concat(...rows.slice(0, k)));
+    const loaded =
+      head.items.length + rows.slice(0, k).reduce((sum, r) => sum + r.length, 0);
+    if (complete) {
+      memory[file] = list;
+      writeCache(file, list);
+    }
+    const subs = assembling[file] || [];
+    if (complete) delete assembling[file];
+    subs.forEach((fn) => {
+      if (typeof fn === 'function') {
+        fn(null, list, { partial: !complete, total: head.total, loaded });
+      }
+    });
+  };
+
+  const settle = () => {
+    if (!failed.length) {
+      emit(true);
+      return;
+    }
+    // 有失败分块：先把「head + 连续前缀」交付出去（列表无断层、立即可读），再退避重试
+    emit(false);
+    if (round >= PART_RETRY_DELAYS.length) return; // 重试轮用尽：保持 partial，下次进入页面自动再补
+    const delay = PART_RETRY_DELAYS[round];
+    round += 1;
+    remaining = failed;
+    failed = [];
+    setTimeout(() => start(Math.min(PART_CONCURRENCY, remaining.length)), delay);
+  };
+
   const worker = () => {
-    if (nextPart > head.parts) return;
-    const n = nextPart;
-    nextPart += 1;
+    if (!remaining.length) {
+      if (!active) settle();
+      return;
+    }
+    const n = Math.min.apply(null, remaining);
+    remaining = remaining.filter((x) => x !== n);
+    active += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
-      // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
-      // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
-      if (err || !Array.isArray(data)) failed += 1;
-      else rows[n - 1] = normalizeIndex(data) || [];
-      pending -= 1;
-      if (!pending) finish();
+      active -= 1;
+      if (err || !Array.isArray(data)) {
+        failed.push(n);
+      } else {
+        // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
+        // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
+        rows[n - 1] = normalizeIndex(data) || [];
+        if (contiguous() >= n) emit(false); // 新块接上连续前缀 → 立刻交付，列表平滑生长
+      }
+      if (!remaining.length && !active) settle();
       else worker();
     });
   };
-  for (let i = 0; i < Math.min(PART_CONCURRENCY, head.parts); i += 1) worker();
+
+  const start = (count) => {
+    for (let i = 0; i < count; i += 1) worker();
+  };
+
+  start(Math.min(PART_CONCURRENCY, head.parts));
 }
 
 function loadShard(kind, type, shard, cb) {
@@ -4740,11 +4793,11 @@ function find(kind, type, id, shard, cb) {
   });
 }
 
-// 列表加载（2026-10-24 首屏提速）：
+// 列表加载（2026-10-24 首屏提速；2026-10-31 不断层）：
 // 1) 完整索引已在内存/缓存 → 一次回调全量；
 // 2) 否则先拉 head.json（~12KB）回调首屏（info.partial=true, info.total=全量条数），
-//    后台并行拉 part-N.json 合并成完整索引后再次回调（partial=false）。
-//    个别分块失败时保持 partial=true（列表可用，搜索范围提示受限）。
+//    后台并行拉 part-N.json：每接上一块「连续前缀」就回调一次（partial=true, info.loaded=已载入条数），
+//    全部到齐后回调完整索引（partial=false）并写缓存；失败分块退避重试，绝不合并出带洞数据。
 // 3) head.json 不可用（旧数据未拆分/请求失败）→ 回退拉整份 index.json。
 function load(kind, type, cb) {
   const file = indexFileFor(kind, type);
@@ -4766,16 +4819,24 @@ function load(kind, type, cb) {
       return;
     }
     if (typeof cb === 'function') {
-      cb(null, head.items, { partial: head.parts > 0, total: head.total });
+      cb(null, head.items, {
+        partial: head.parts > 0,
+        total: head.total,
+        loaded: head.items.length
+      });
     }
     if (!head.parts) {
       memory[file] = head.items;
       writeCache(file, head.items);
       return;
     }
-    fetchParts(kind, type, head, (failed) => {
+    fetchParts(kind, type, head, (err2, list, info) => {
       if (typeof cb === 'function') {
-        cb(null, memory[file], { partial: failed > 0, total: head.total });
+        cb(err2, list, {
+          partial: !!(info && info.partial),
+          total: head.total,
+          loaded: (info && info.loaded) || 0
+        });
       }
     });
   });
@@ -6701,6 +6762,7 @@ Page('project://pages/archive-list/archive-list.js', {
     shown: [],
     total: 0,
     totalText: '0',
+    loadedText: '0',
     loading: true,
     partial: false,
     stalled: false,
@@ -6749,6 +6811,7 @@ Page('project://pages/archive-list/archive-list.js', {
   fetch() {
     this.totalAll = 0;
     this.haystack = null;
+    this._lastLoaded = 0;
     this.setData({
       loading: true,
       error: '',
@@ -6758,20 +6821,24 @@ Page('project://pages/archive-list/archive-list.js', {
       shown: [],
       total: 0,
       totalText: '0',
+      loadedText: '0',
       coverMeta: '正在加载'
     });
-    // apk.load 会回调两次：先 head 轻量包（partial）渲染首屏，
-    // 后台分块补齐后带全量再回调一次（partial=false）。
+    // apk.load 渐进回调：先 head 轻量包（partial）渲染首屏，
+    // 后台每接上一块连续分块就再回调一次（列表平滑生长、无断层），
+    // 全部到齐后带完整索引回调（partial=false）。
     apk.load(this.data.kind, this.data.type, (err, items, info) => {
       if (err || !items || !items.length) {
         this.all = [];
-        this._gotPartial = false;
+        this.haystack = null;
+        this._lastLoaded = 0;
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
           empty: false,
           partial: false,
           stalled: false,
+          loadedText: '0',
           coverMeta: '加载失败'
         });
         return;
@@ -6780,11 +6847,17 @@ Page('project://pages/archive-list/archive-list.js', {
       this.buildIndex(items);
       this.totalAll = (info && info.total) || items.length;
       const partial = !!(info && info.partial);
-      // 首屏 partial 属正常进行中；二次回调仍 partial 说明有分块拉取失败（限流/断网）
-      const stalled = partial && this._gotPartial;
-      if (partial) this._gotPartial = true;
-      else this._gotPartial = false;
-      this.setData({ loading: false, error: '', partial, stalled });
+      const loaded = (info && info.loaded) || items.length;
+      // partial 且载入量较上次回调没有增长 → 分块补齐受阻（限流/断网），提示点按重试
+      const stalled = partial && loaded <= (this._lastLoaded || 0);
+      this._lastLoaded = partial ? loaded : 0;
+      this.setData({
+        loading: false,
+        error: '',
+        partial,
+        stalled,
+        loadedText: fmt(loaded)
+      });
       this.applyFilter();
     });
   },
@@ -6874,7 +6947,7 @@ Page('project://pages/archive-list/archive-list.js', {
 });
 
 });
-__register('/pages/archive-list/archive-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">资料库</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\r\n    </view>\r\n\r\n    <view class=\"search-card\">\r\n      <text class=\"search-icon\">⌕</text>\r\n      <input\r\n        class=\"search-input\"\r\n        value=\"{{keyword}}\"\r\n        placeholder=\"{{searchPlaceholder}}\"\r\n        placeholder-class=\"ph\"\r\n        confirm-type=\"search\"\r\n        bindinput=\"onInput\"\r\n      />\r\n      <text wx:if=\"{{keyword}}\" class=\"search-clear\" bindtap=\"clearKeyword\">×</text>\r\n    </view>\r\n\r\n    <view class=\"cover-card\">\r\n      <image class=\"cover-img\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\r\n      <view class=\"cover-mask\"></view>\r\n      <view class=\"cover-copy\">\r\n        <text class=\"cover-kicker\">史页资料库 · 分类</text>\r\n        <text class=\"cover-title\">{{pageTitle}}</text>\r\n        <text class=\"cover-meta\">{{coverMeta}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view wx:if=\"{{keyword}}\" class=\"list-head\">\r\n      <text class=\"list-hint\">匹配“{{keyword}}”</text>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"state-card loading-card\">\r\n      <view class=\"ink-spin\"></view>\r\n      <text class=\"state-title\">正在打开资料库</text>\r\n      <text class=\"state-desc\">首次加载需要片刻，之后会缓存在本机。</text>\r\n      <view class=\"skel-list\">\r\n        <view class=\"skel-item\" wx:for=\"{{[0, 1, 2]}}\" wx:key=\"*this\">\r\n          <view class=\"skel-line w72\"></view>\r\n          <view class=\"skel-line w46\"></view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\r\n      <text class=\"state-title\">{{error}}</text>\r\n      <text class=\"state-action\">点此重试</text>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{empty}}\" class=\"state-card\">\r\n      <text class=\"state-title\">没有找到相关资料</text>\r\n      <text class=\"state-desc\">已在 {{totalText}} 条资料中检索完毕，无匹配内容；换个关键词试试。</text>\r\n    </view>\r\n\r\n    <block wx:else>\r\n      <view class=\"item-list\">\r\n        <view\r\n          wx:for=\"{{shown}}\"\r\n          wx:key=\"id\"\r\n          class=\"item\"\r\n          data-id=\"{{item.id}}\"\r\n          data-shard=\"{{item.shard}}\"\r\n          bindtap=\"onItem\"\r\n        >\r\n          <view class=\"item-main\">\r\n            <text class=\"item-title\">{{item.title}}</text>\r\n            <text wx:if=\"{{item.meta}}\" class=\"item-meta\">{{item.meta}}</text>\r\n            <text wx:if=\"{{item.summary}}\" class=\"item-summary\">{{item.summary}}</text>\r\n          </view>\r\n          <text class=\"item-arrow\">›</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{partial}}\" class=\"loading-more {{stalled ? 'stalled' : ''}}\" bindtap=\"fetch\">\r\n        <view class=\"mini-spin\"></view>\r\n        <text class=\"loading-more-text\">{{stalled ? '部分分卷载入失败 · 点按重试' : '正在载入完整目录…'}}</text>\r\n      </view>\r\n      <block wx:else>\r\n        <view wx:if=\"{{shown.length < total}}\" class=\"more-wrap\">\r\n          <view class=\"more\" bindtap=\"onMore\">\r\n            加载更多（{{shown.length}} / {{total}}）\r\n          </view>\r\n          <text class=\"more-hint\">滑到底部也会自动加载</text>\r\n        </view>\r\n        <view wx:else class=\"end\">已到末尾</view>\r\n      </block>\r\n    </block>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/archive-list/archive-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">资料库</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\r\n    </view>\r\n\r\n    <view class=\"search-card\">\r\n      <text class=\"search-icon\">⌕</text>\r\n      <input\r\n        class=\"search-input\"\r\n        value=\"{{keyword}}\"\r\n        placeholder=\"{{searchPlaceholder}}\"\r\n        placeholder-class=\"ph\"\r\n        confirm-type=\"search\"\r\n        bindinput=\"onInput\"\r\n      />\r\n      <text wx:if=\"{{keyword}}\" class=\"search-clear\" bindtap=\"clearKeyword\">×</text>\r\n    </view>\r\n\r\n    <view class=\"cover-card\">\r\n      <image class=\"cover-img\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\r\n      <view class=\"cover-mask\"></view>\r\n      <view class=\"cover-copy\">\r\n        <text class=\"cover-kicker\">史页资料库 · 分类</text>\r\n        <text class=\"cover-title\">{{pageTitle}}</text>\r\n        <text class=\"cover-meta\">{{coverMeta}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view wx:if=\"{{keyword}}\" class=\"list-head\">\r\n      <text class=\"list-hint\">匹配“{{keyword}}”</text>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"state-card loading-card\">\r\n      <view class=\"ink-spin\"></view>\r\n      <text class=\"state-title\">正在打开资料库</text>\r\n      <text class=\"state-desc\">首次加载需要片刻，之后会缓存在本机。</text>\r\n      <view class=\"skel-list\">\r\n        <view class=\"skel-item\" wx:for=\"{{[0, 1, 2]}}\" wx:key=\"*this\">\r\n          <view class=\"skel-line w72\"></view>\r\n          <view class=\"skel-line w46\"></view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\r\n      <text class=\"state-title\">{{error}}</text>\r\n      <text class=\"state-action\">点此重试</text>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{empty}}\" class=\"state-card\">\r\n      <text class=\"state-title\">没有找到相关资料</text>\r\n      <text class=\"state-desc\">已在 {{totalText}} 条资料中检索完毕，无匹配内容；换个关键词试试。</text>\r\n    </view>\r\n\r\n    <block wx:else>\r\n      <view class=\"item-list\">\r\n        <view\r\n          wx:for=\"{{shown}}\"\r\n          wx:key=\"id\"\r\n          class=\"item\"\r\n          data-id=\"{{item.id}}\"\r\n          data-shard=\"{{item.shard}}\"\r\n          bindtap=\"onItem\"\r\n        >\r\n          <view class=\"item-main\">\r\n            <text class=\"item-title\">{{item.title}}</text>\r\n            <text wx:if=\"{{item.meta}}\" class=\"item-meta\">{{item.meta}}</text>\r\n            <text wx:if=\"{{item.summary}}\" class=\"item-summary\">{{item.summary}}</text>\r\n          </view>\r\n          <text class=\"item-arrow\">›</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{partial}}\" class=\"loading-more {{stalled ? 'stalled' : ''}}\" bindtap=\"fetch\">\r\n        <view class=\"mini-spin\"></view>\r\n        <text class=\"loading-more-text\">{{stalled ? '分块补齐受阻 · 点按重试' : '已载入 ' + loadedText + ' / ' + totalText + ' 条 · 正在补齐…'}}</text>\r\n      </view>\r\n      <block wx:else>\r\n        <view wx:if=\"{{shown.length < total}}\" class=\"more-wrap\">\r\n          <view class=\"more\" bindtap=\"onMore\">\r\n            加载更多（{{shown.length}} / {{total}}）\r\n          </view>\r\n          <text class=\"more-hint\">滑到底部也会自动加载</text>\r\n        </view>\r\n        <view wx:else class=\"end\">已到末尾</view>\r\n      </block>\r\n    </block>\r\n  </view>\r\n</view>\r\n"; });
 __register('/pages/archive-list/archive-list.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.search-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n  margin-top: 26rpx;\r\n  padding: 0 24rpx;\r\n  height: 78rpx;\r\n  border-radius: 24rpx;\r\n  background: #FCFBF8;\r\n  border: 1rpx solid rgba(176, 142, 96, 0.22);\r\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.search-icon {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A9825E;\r\n}\r\n\r\n.search-input {\r\n  flex: 1;\r\n  min-width: 0;\r\n  height: 78rpx;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n}\r\n\r\n.ph {\r\n  color: #B4AA9C;\r\n}\r\n\r\n.search-clear {\r\n  width: 40rpx;\r\n  height: 40rpx;\r\n  line-height: 40rpx;\r\n  text-align: center;\r\n  border-radius: 50%;\r\n  background: #F1ECE2;\r\n  font-size: 26rpx;\r\n  color: #8C857A;\r\n}\r\n\r\n.cover-card {\r\n  position: relative;\r\n  margin-top: 22rpx;\r\n  height: 168rpx;\r\n  border-radius: 28rpx;\r\n  background: #E8E2D6;\r\n  box-shadow: 0 12rpx 28rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.cover-img {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.cover-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(90deg, rgba(26, 24, 20, 0.82) 0%, rgba(26, 24, 20, 0.52) 60%, rgba(26, 24, 20, 0.14) 100%);\r\n}\r\n\r\n.cover-copy {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  right: 28rpx;\r\n  bottom: 22rpx;\r\n}\r\n\r\n.cover-kicker {\r\n  display: block;\r\n  font-size: calc(15rpx * var(--fs, 1));\r\n  letter-spacing: 0.14em;\r\n  color: rgba(252, 251, 248, 0.78);\r\n}\r\n\r\n.cover-title {\r\n  display: block;\r\n  margin-top: 5rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #FCFBF8;\r\n  text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.32);\r\n}\r\n\r\n.cover-meta {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: rgba(252, 251, 248, 0.76);\r\n}\r\n\r\n.list-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin: 22rpx 4rpx 12rpx;\r\n}\r\n\r\n.list-count {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.list-hint {\r\n  max-width: 420rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  color: #A39A8E;\r\n}\r\n\r\n.item-list {\r\n  margin-top: 18rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n  overflow: hidden;\r\n}\r\n\r\n.item {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 16rpx;\r\n  padding: 26rpx 26rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.07);\r\n}\r\n\r\n.item:last-child {\r\n  border-bottom: none;\r\n}\r\n\r\n.item-main {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.item-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n  letter-spacing: 0.03em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.item-meta {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n  color: #A9825E;\r\n}\r\n\r\n.item-summary {\r\n  display: -webkit-box;\r\n  margin-top: 7rpx;\r\n  -webkit-box-orient: vertical;\r\n  -webkit-line-clamp: 2;\r\n  overflow: hidden;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.item-arrow {\r\n  flex: 0 0 auto;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #C0B6A8;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n\r\n.more-wrap {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  margin-top: 20rpx;\r\n}\r\n\r\n.more {\r\n  width: 100%;\r\n  box-sizing: border-box;\r\n  padding: 22rpx;\r\n  border-radius: 24rpx;\r\n  background: #F3EFE6;\r\n  text-align: center;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.more-hint {\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #B4AA9C;\r\n}\r\n\r\n.end {\r\n  margin-top: 24rpx;\r\n  text-align: center;\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #B4AA9C;\r\n}\r\n\r\n/* 完整目录后台载入提示（head 首屏已渲染、分块补齐中） */\r\n.loading-more {\r\n  margin-top: 24rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  gap: 12rpx;\r\n}\r\n\r\n.mini-spin {\r\n  width: 26rpx;\r\n  height: 26rpx;\r\n  border-radius: 50%;\r\n  border: 3rpx solid #E8E0D2;\r\n  border-top-color: #8C857A;\r\n  animation: ink-rotate 0.9s linear infinite;\r\n}\r\n\r\n.loading-more-text {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.loading-more.stalled .loading-more-text {\r\n  color: #A34A3E;\r\n}\r\n\r\n/* 首屏加载：淡墨环形 spinner + 列表骨架屏 */\r\n.loading-card {\r\n  gap: 16rpx;\r\n}\r\n\r\n.ink-spin {\r\n  width: 58rpx;\r\n  height: 58rpx;\r\n  margin-bottom: 4rpx;\r\n  border-radius: 50%;\r\n  border: 5rpx solid #E8E0D2;\r\n  border-top-color: #8C857A;\r\n  animation: ink-rotate 0.9s linear infinite;\r\n}\r\n\r\n.skel-list {\r\n  width: 100%;\r\n  box-sizing: border-box;\r\n  margin-top: 18rpx;\r\n  padding: 6rpx 14rpx 0;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 26rpx;\r\n}\r\n\r\n.skel-item {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 12rpx;\r\n}\r\n\r\n.skel-line {\r\n  height: 24rpx;\r\n  border-radius: 8rpx;\r\n  background: linear-gradient(90deg, #EFEAE1 25%, #E3DCCE 50%, #EFEAE1 75%);\r\n  background-size: 400% 100%;\r\n  animation: skel-sweep 1.3s ease infinite;\r\n}\r\n\r\n.skel-line.w72 {\r\n  width: 72%;\r\n}\r\n\r\n.skel-line.w46 {\r\n  width: 46%;\r\n  height: 19rpx;\r\n}\r\n\r\n@keyframes ink-rotate {\r\n  to {\r\n    transform: rotate(360deg);\r\n  }\r\n}\r\n\r\n@keyframes skel-sweep {\r\n  0% {\r\n    background-position: 100% 0;\r\n  }\r\n  100% {\r\n    background-position: -100% 0;\r\n  }\r\n}\r\n\r\n@media (prefers-reduced-motion: reduce) {\r\n  .ink-spin,\r\n  .mini-spin,\r\n  .skel-line {\r\n    animation: none;\r\n  }\r\n}\r\n"; });
 __register('/pages/archive-detail/archive-detail.js', function (require, module, exports) {
 const font = require('../../utils/font.js');
