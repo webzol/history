@@ -1340,7 +1340,7 @@ const persons = [
       '归隐后躬耕田园，饮酒赋诗，写下《归园田居》《饮酒》《桃花源记》《归去来兮辞》等名篇。',
       '陶诗语言平淡自然，意境深远，开创田园诗派。其“桃花源”成为中国人理想社会的永恒隐喻。'
     ],
-    relatedEvents: ['feishui', 'lanting']
+    relatedEvents: ['feishui']
   },
   {
     id: 'zu-chongzhi',
@@ -1394,7 +1394,7 @@ const persons = [
       '她完善科举，开创殿试、武举，破格用人，也任用酷吏。社会经济继续发展，人口增长。',
       '705年，张柬之等发动神龙政变，武则天退位，同年病逝，遗诏去帝号，称“则天大圣皇后”。'
     ],
-    relatedEvents: ['wuzetian', 'keju']
+    relatedEvents: ['wuzetian']
   },
   {
     id: 'xuanzang',
@@ -1448,7 +1448,7 @@ const persons = [
       '1140年，岳飞北伐，取得郾城、颍昌大捷，进军朱仙镇。宋高宗、秦桧却一心求和，连发十二道金牌召其班师。',
       '1141年岳飞被解除兵权，1142年以“莫须有”罪名遇害于临安风波亭，年三十九。宋孝宗时平反，追谥武穆。'
     ],
-    relatedEvents: ['yuefei', 'shaoxing']
+    relatedEvents: ['jingkang-1127', 'yuefei', 'shaoxing']
   },
   {
     id: 'zhu-xi',
@@ -1484,7 +1484,7 @@ const persons = [
       '此后蒙古发动西征，灭花剌子模，兵锋达中亚、西亚与东欧；又南征西夏、金朝。',
       '1227年，成吉思汗病逝于征西夏途中。其子孙建立横跨欧亚的蒙古帝国，元朝最终统一中国。'
     ],
-    relatedEvents: ['mongol-1206', 'yuan-establish']
+    relatedEvents: ['mongol-1206']
   },
   {
     id: 'kublai',
@@ -1592,7 +1592,7 @@ const persons = [
       '1637年，《天工开物》刊行，十八卷，涵盖谷物、纺织、制盐、陶瓷、冶铸、造纸、兵器等生产部门，附插图百余幅。',
       '该书在清代流传不广，却在日本、欧洲产生重要影响。宋应星被英国科学史家李约瑟称为“中国的狄德罗”。'
     ],
-    relatedEvents: ['tiangong', 'bencao']
+    relatedEvents: ['tiangong']
   },
   {
     id: 'da-yu',
@@ -2277,6 +2277,60 @@ const persons = [
       '战后国共谈判破裂，内战三年局势逆转；1949年12月自成都飞离大陆，退守台湾。在台主持党务改造、实行土地改革与地方自治，1975年4月5日病逝于台北，年八十八。'
     ],
     relatedEvents: ['beifa-1926', 'kangzhan-1945']
+  },
+  {
+    id: 'xie-an',
+    name: '谢安',
+    dates: '320–385',
+    era: '东晋',
+    roles: '政治家 · 军事统帅',
+    summary: '东山再起的东晋宰辅，淝水之战以八万北府兵破前秦大军。',
+    quote: '小儿辈大破贼。',
+    quoteSource: '《晋书·谢安传》',
+    source: '《晋书·谢安传》',
+    details: [
+      '谢安，字安石，陈郡阳夏人，陈郡谢氏的代表人物。少有重名，风神秀彻，屡辞征辟，高卧会稽东山，与王羲之、孙绰等纵游山水——永和九年（353年）兰亭雅集，谢安与弟谢万同席与会。',
+      '年四十余方应桓温之聘出仕，史称“东山再起”；历任吴兴太守、侍中、吏部尚书。373年权臣桓温带兵入朝、山雨欲来，谢安从容周旋，桓温病卒后与王彪之共辅朝政，政局得以安稳。',
+      '383年前秦苻坚号称百万大军南下，建康震恐。谢安坐镇京师，从容调度，遣弟谢石、侄谢玄率八万北府兵迎战；淝水一战大破秦军。捷报传来时他正与客对弈，阅后置之床下，了无喜色，徐答“小儿辈大破贼”。',
+      '战后进位太保，都督扬江等十五州军事；后遭孝武帝猜忌，出镇广陵。385年病逝，年六十六，谥文靖。“东山再起”“围棋赌墅”自此成为后世风流宰相的典范意象。'
+    ],
+    relatedEvents: ['lanting', 'feishui']
+  },
+  {
+    id: 'tang-xuanzong',
+    name: '唐玄宗',
+    dates: '685–762',
+    era: '唐',
+    roles: '皇帝 · 音乐家',
+    summary: '开元盛世的缔造者与安史之乱的亲历者，大唐由盛转衰的当事人。',
+    quote: '忆昔开元全盛日，小邑犹藏万家室。',
+    quoteSource: '杜甫《忆昔》',
+    source: '《旧唐书·玄宗纪》',
+    details: [
+      '唐玄宗李隆基，睿宗李旦第三子。710年联合太平公主发动唐隆政变诛韦后，拥立睿宗；712年受禅即位，次年发动先天政变赐死太平公主，大权独揽，改元开元。',
+      '开元年间先后任用姚崇、宋璟、张九龄为相，整顿吏治、检田括户、发展漕运，躬亲庶政三十余年；杜甫诗称“忆昔开元全盛日，小邑犹藏万家室”，户口、垦田与城市商业皆臻极盛，长安为当时世界第一都会。',
+      '在位后期渐怠政事，宠信李林甫、杨国忠，专宠杨贵妃，设梨园亲教法曲；府兵制崩坏后边镇节度使权重，安禄山身兼三镇节度使、拥兵近二十万。755年冬安史之乱爆发，东都洛阳旋即陷落。',
+      '756年长安危急，玄宗奔蜀，途中马嵬驿兵变，杨贵妃被缢死；太子李亨北上灵武即位（肃宗），玄宗被尊为太上皇。757年返京后幽居兴庆宫，760年被迫迁居西内，762年郁郁而终，年七十八，庙号玄宗。'
+    ],
+    relatedEvents: ['kaiyuan-713', 'anshi-755']
+  },
+  {
+    id: 'kou-zhun',
+    name: '寇准',
+    dates: '961–1023',
+    era: '北宋',
+    roles: '宰相 · 政治家',
+    summary: '澶渊之盟的力主者，坚请真宗亲征，以岁币换来宋辽百年和平。',
+    quote: '只有天在上，更无山与齐。',
+    quoteSource: '《咏华山》',
+    source: '《宋史·寇准传》',
+    details: [
+      '寇准，字平仲，华州下邽人。相传七岁作《咏华山》“只有天在上，更无山与齐”，有神童之名；太平兴国五年（980年）十九岁中进士，以刚直敢言著称，太宗尝比之为魏徵。',
+      '奏事忤旨，太宗怒起，寇准竟挽衣请坐再谏，太宗叹曰“朕得寇准，如唐太宗之得魏郑公”；淳化至至道年间两度执政，真宗即位后于1004年拜相。',
+      '同年辽军二十万南下深入，朝野震恐，王钦若请迁金陵、陈尧叟请迁成都，寇准力排南迁之议，坚请真宗亲征澶州；皇帝渡河后“万岁”声闻数十里，士气大振，宋军床子弩射杀辽帅萧挞凛，战局逆转。',
+      '1005年初宋辽订盟：约为兄弟之国，宋岁输银十万两、绢二十万匹，史称澶渊之盟——此后百余年间宋辽不战，边境榷场繁盛。寇准后遭“孤注一掷”之谮罢相，晚年被贬雷州，1023年卒于贬所，谥忠愍。'
+    ],
+    relatedEvents: ['chanyuan-1005']
   }
 ];
 
@@ -2368,7 +2422,7 @@ const events = [
     id: 'zhangqian-138',
     mode: 'ancient',
     year: -138,
-    yearText: '公元前138',
+    yearText: '公元前138年',
     era: '西汉',
     title: '张骞出使西域',
     desc: '张骞应募出使，凿空西域，丝绸之路自此开通。',
@@ -2386,7 +2440,7 @@ const events = [
     id: 'mobei-119',
     mode: 'ancient',
     year: -119,
-    yearText: '公元前119',
+    yearText: '公元前119年',
     era: '西汉',
     title: '漠北之战',
     desc: '卫青、霍去病各率五万骑深入漠北，匈奴远遁，漠南无王庭。',
@@ -2403,7 +2457,7 @@ const events = [
     id: 'zhenguan-627',
     mode: 'ancient',
     year: 627,
-    yearText: '627',
+    yearText: '公元627年',
     era: '唐',
     title: '贞观之治',
     desc: '唐太宗即位改元贞观，轻徭薄赋、纳谏用贤，开创盛世范本。',
@@ -2420,7 +2474,7 @@ const events = [
     id: 'kaiyuan-713',
     mode: 'ancient',
     year: 713,
-    yearText: '713',
+    yearText: '公元713年',
     era: '唐',
     title: '开元盛世',
     desc: '唐玄宗改元开元，整顿吏治、发展生产，唐朝进入极盛。',
@@ -2437,7 +2491,7 @@ const events = [
     id: 'anshi-755',
     mode: 'ancient',
     year: 755,
-    yearText: '755',
+    yearText: '公元755年',
     era: '唐',
     title: '安史之乱',
     desc: '安禄山自范阳起兵叛乱，两京陷落，唐朝由盛转衰。',
@@ -2454,7 +2508,7 @@ const events = [
     id: 'chenqiao-960',
     mode: 'ancient',
     year: 960,
-    yearText: '960',
+    yearText: '公元960年',
     era: '北宋',
     title: '陈桥兵变',
     desc: '禁军在陈桥驿拥立赵匡胤黄袍加身，代周建宋，结束五代乱局。',
@@ -2471,7 +2525,7 @@ const events = [
     id: 'chanyuan-1005',
     mode: 'ancient',
     year: 1005,
-    yearText: '1005',
+    yearText: '公元1005年',
     era: '北宋',
     title: '澶渊之盟',
     desc: '宋辽于澶州定盟罢兵，宋以岁币换取此后百余年的和平。',
@@ -2488,7 +2542,7 @@ const events = [
     id: 'wanganshi-1069',
     mode: 'ancient',
     year: 1069,
-    yearText: '1069',
+    yearText: '公元1069年',
     era: '北宋',
     title: '王安石变法',
     desc: '宋神宗任用王安石推行新法，青苗、保甲、免役诸法次第铺开。',
@@ -2505,7 +2559,7 @@ const events = [
     id: 'jingkang-1127',
     mode: 'ancient',
     year: 1127,
-    yearText: '1127',
+    yearText: '公元1127年',
     era: '北宋',
     title: '靖康之变',
     desc: '金军攻陷汴京，掳徽、钦二帝北去，北宋灭亡，宋室南渡。',
@@ -2522,7 +2576,7 @@ const events = [
     id: 'opium-war-1840',
     mode: 'modern',
     year: 1840,
-    yearText: '1840',
+    yearText: '公元1840年',
     era: '晚清',
     title: '鸦片战争',
     desc: '英国以坚船利炮发动鸦片战争，中国近代史由此开端。',
@@ -2539,7 +2593,7 @@ const events = [
     id: 'jiawu-1894',
     mode: 'modern',
     year: 1894,
-    yearText: '1894',
+    yearText: '公元1894年',
     era: '晚清',
     title: '甲午战争',
     desc: '甲午一役，北洋水师全军覆没，《马关条约》割台赔款。',
@@ -2556,7 +2610,7 @@ const events = [
     id: 'wuxu-1898',
     mode: 'modern',
     year: 1898,
-    yearText: '1898',
+    yearText: '公元1898年',
     era: '晚清',
     title: '戊戌变法',
     desc: '百日维新，制度变革的第一次尝试，以六君子喋血告终。',
@@ -2573,7 +2627,7 @@ const events = [
     id: 'newculture-1915',
     mode: 'modern',
     year: 1915,
-    yearText: '1915',
+    yearText: '公元1915年',
     era: '民国',
     title: '新文化运动',
     desc: '《新青年》举起德先生与赛先生两面大旗，白话文自此立起。',
@@ -2590,7 +2644,7 @@ const events = [
     id: 'xinhai-1911',
     mode: 'modern',
     year: 1911,
-    yearText: '1911',
+    yearText: '公元1911年',
     era: '民国',
     title: '辛亥革命',
     desc: '武昌起义爆发，各省响应，清帝退位，中华民国建立。',
@@ -2608,7 +2662,7 @@ const events = [
     id: 'mayfourth-1919',
     mode: 'modern',
     year: 1919,
-    yearText: '1919',
+    yearText: '公元1919年',
     era: '民国',
     title: '五四运动',
     desc: '北京学生游行，新文化运动与爱国运动汇合。',
@@ -2625,7 +2679,7 @@ const events = [
     id: 'mukden-1931',
     mode: 'modern',
     year: 1931,
-    yearText: '1931',
+    yearText: '公元1931年',
     era: '民国',
     title: '九一八事变',
     desc: '日本发动九一八事变，东北沦陷，民族危机加深。',
@@ -2642,7 +2696,7 @@ const events = [
     id: 'zunyi-1935',
     mode: 'modern',
     year: 1935,
-    yearText: '1935',
+    yearText: '公元1935年',
     era: '民国',
     title: '遵义会议',
     desc: '长征途中的历史转折，确立毛泽东在党内的领导地位。',
@@ -2659,7 +2713,7 @@ const events = [
     id: 'kangzhan-1945',
     mode: 'modern',
     year: 1945,
-    yearText: '1945',
+    yearText: '公元1945年',
     era: '民国',
     title: '抗战胜利',
     desc: '1945年9月2日日本签署降书，十四年抗战最终告捷。',
@@ -2676,7 +2730,7 @@ const events = [
     id: 'prc-1949',
     mode: 'modern',
     year: 1949,
-    yearText: '1949',
+    yearText: '公元1949年',
     era: '新中国',
     title: '中华人民共和国成立',
     desc: '中华人民共和国宣告成立，中国人民从此站起来了。',
@@ -2693,7 +2747,7 @@ const events = [
     id: 'reform-1978',
     mode: 'modern',
     year: 1978,
-    yearText: '1978',
+    yearText: '公元1978年',
     era: '新中国',
     title: '十一届三中全会',
     desc: '作出把党和国家工作中心转移到经济建设上来、实行改革开放的历史性决策。',
@@ -2710,7 +2764,7 @@ const events = [
     id: 'xuanwumen-626',
     mode: 'ancient',
     year: 626,
-    yearText: '626',
+    yearText: '公元626年',
     era: '唐',
     title: '玄武门之变',
     desc: '李世民伏兵玄武门，诛太子建成，旋即登基，贞观之治由此开局。',
@@ -2728,7 +2782,7 @@ const events = [
     id: 'beifa-1926',
     mode: 'modern',
     year: 1926,
-    yearText: '1926',
+    yearText: '公元1926年',
     era: '民国',
     title: '北伐战争',
     desc: '国共合作出师北伐，革命势力从珠江流域打到长江流域。',
@@ -2746,7 +2800,7 @@ const events = [
     id: 'jinggangshan-1927',
     mode: 'modern',
     year: 1927,
-    yearText: '1927',
+    yearText: '公元1927年',
     era: '民国',
     title: '秋收起义与井冈山',
     desc: '秋收起义受挫后引兵井冈，创建第一个农村革命根据地，工农武装割据由此发端。',
@@ -2764,7 +2818,7 @@ const events = [
     id: 'longmarch-1934',
     mode: 'modern',
     year: 1934,
-    yearText: '1934',
+    yearText: '公元1934年',
     era: '民国',
     title: '红军长征',
     desc: '红军实行战略转移，爬雪山过草地，两年间纵横十一省，实现战略大转移。',
@@ -2782,7 +2836,7 @@ const events = [
     id: 'qidan-916',
     mode: 'ancient',
     year: 916,
-    yearText: '916',
+    yearText: '公元916年',
     era: '辽',
     title: '契丹建国',
     desc: '耶律阿保机统一契丹八部称帝建契丹，北方草原政权自此第一次与中原长期对峙。',
@@ -2799,7 +2853,7 @@ const events = [
     id: 'xixia-1038',
     mode: 'ancient',
     year: 1038,
-    yearText: '1038',
+    yearText: '公元1038年',
     era: '西夏',
     title: '西夏立国',
     desc: '党项首领元昊称帝、国号大夏（史称西夏），此后宋夏战争与和议相循。',
@@ -2816,7 +2870,7 @@ const events = [
     id: 'jurchen-1115',
     mode: 'ancient',
     year: 1115,
-    yearText: '1115',
+    yearText: '公元1115年',
     era: '金',
     title: '女真建国',
     desc: '完颜阿骨打起兵反辽、称帝建金，其后辽亡、北宋亦倾覆于金。',
@@ -2833,7 +2887,7 @@ const events = [
     id: 'zhenghe-1405',
     mode: 'ancient',
     year: 1405,
-    yearText: '1405',
+    yearText: '公元1405年',
     era: '明',
     title: '郑和首下西洋',
     desc: '郑和率两百艘巨舰、二万七千余人自刘家港出海，明代官方海上航运冠绝当世。',
@@ -2851,7 +2905,7 @@ const events = [
     id: 'tumu-1449',
     mode: 'ancient',
     year: 1449,
-    yearText: '1449',
+    yearText: '公元1449年',
     era: '明',
     title: '土木堡之变',
     desc: '英宗亲征瓦剌在土木堡溃败被俘，于谦临危主政，力保京师不南迁。',
@@ -2869,7 +2923,7 @@ const events = [
     id: 'zhangjuzheng-1581',
     mode: 'ancient',
     year: 1581,
-    yearText: '1581',
+    yearText: '公元1581年',
     era: '明',
     title: '张居正改革',
     desc: '张居正当国十年，以考成法、清丈田亩与一条鞭法重整财政，明末改革的高点。',
@@ -2887,7 +2941,7 @@ const events = [
     id: 'ming-wang-1644',
     mode: 'ancient',
     year: 1644,
-    yearText: '1644',
+    yearText: '公元1644年',
     era: '明',
     title: '崇祯自缢·明亡',
     desc: '李自成大顺军破北京，崇祯帝自缢煤山，明亡；同年清军入关。',
@@ -2904,7 +2958,7 @@ const events = [
     id: 'ningwang-1519',
     mode: 'ancient',
     year: 1519,
-    yearText: '1519',
+    yearText: '公元1519年',
     era: '明',
     title: '平定宁王之乱',
     desc: '宁王朱宸濠反于南昌，王守仁仓促成军，起兵四十三日生擒宸濠，知行合一的实践之战。',
@@ -2921,7 +2975,7 @@ const events = [
     id: 'taizhou-1561',
     mode: 'ancient',
     year: 1561,
-    yearText: '1561',
+    yearText: '公元1561年',
     era: '明',
     title: '台州大捷',
     desc: '戚家军一个月内台州九战九捷，此后与俞大猷等次第荡平福建、广东倭患。',
@@ -2938,7 +2992,7 @@ const events = [
     id: 'kangxi-1681',
     mode: 'ancient',
     year: 1681,
-    yearText: '1681',
+    yearText: '公元1681年',
     era: '清',
     title: '平三藩·收台湾',
     desc: '少年天子力排众议撤藩，八年荡平三藩之乱；复于1683年以施琅收台湾，全国一统。',
@@ -2955,7 +3009,7 @@ const events = [
     id: 'humen-1839',
     mode: 'ancient',
     year: 1839,
-    yearText: '1839',
+    yearText: '公元1839年',
     era: '清',
     title: '虎门销烟',
     desc: '林则徐虎门海滩当众销毁鸦片二百三十七万斤，中英交涉从此步步走向鸦片战争。',
@@ -2973,7 +3027,7 @@ const events = [
     id: 'hongloumeng-1754',
     mode: 'ancient',
     year: 1754,
-    yearText: '1754',
+    yearText: '公元1754年',
     era: '清',
     title: '《红楼梦》成书',
     desc: '曹雪芹于悼红轩中披阅十载、增删五次，以贾府兴衰写尽人情世态；甲戌本抄本于乾隆十九年问世，中国古典小说由此登顶。',
@@ -2990,7 +3044,7 @@ const events = [
     id: 'taiping-1851',
     mode: 'modern',
     year: 1851,
-    yearText: '1851',
+    yearText: '公元1851年',
     era: '晚清',
     title: '太平天国运动',
     desc: '洪秀全金田起义，两年间席卷半壁；定都天京、颁《天朝田亩制度》，十四年后天京陷落，晚清政局自此改写。',
@@ -3007,7 +3061,7 @@ const events = [
     id: 'yangwu-1861',
     mode: 'modern',
     year: 1861,
-    yearText: '1861',
+    yearText: '公元1861年',
     era: '晚清',
     title: '洋务运动',
     desc: '总理各国事务衙门设立，曾、左、李以“自强”“求富”办军工、创船政、兴学堂、遣留学，为近代化凿开第一道口子。',
@@ -3024,7 +3078,7 @@ const events = [
     id: 'xinjiang-1878',
     mode: 'modern',
     year: 1878,
-    yearText: '1878',
+    yearText: '公元1878年',
     era: '晚清',
     title: '收复新疆',
     desc: '左宗棠舆榇西征，先北后南、缓进急战，两年收复天山南北；1884年新疆建省，西北边疆重归版图。',
@@ -3112,7 +3166,7 @@ const persons = [
       '对外先灭东突厥，西北各族共尊“天可汗”；置安西都护府经营西域，文成公主入藏和亲唐蕃修好，长安一时万国来朝。',
       '贞观十七年魏徵卒，太宗痛失“人镜”；晚年亲征高句丽不利，又因太子承乾案废立储君，649年崩，庙号太宗。其政为开元全盛预定了轨道。'
     ],
-    relatedEvents: ['xuanwumen-626', 'zhenguan-627', 'kaiyuan-713']
+    relatedEvents: ['xuanwumen-626', 'zhenguan-627']
   },
   {
     id: 'du-fu',
@@ -3169,7 +3223,7 @@ const persons = [
       '变法引发司马光、韩琦等激烈反对，新旧党争绵延数十年；熙宁七年罢相，九年复相、旋再罢，退居江宁钟山，著《字说》自遣。',
       '元祐元年（1086年）卒于江宁。散文雄健，为“唐宋八大家”之一；其诗遒劲清新，《泊船瓜洲》《梅花》等为人传诵。'
     ],
-    relatedEvents: ['wanganshi-1069', 'chanyuan-1005']
+    relatedEvents: ['wanganshi-1069']
   },
   {
     id: 'su-shi',
@@ -3188,7 +3242,7 @@ const persons = [
       '宣仁太后临朝、元祐更化时一度还朝坐殿；晚年政局再变，一贬再贬，自惠州而至海南儋州。',
       '徽宗即位后遇赦北归，建中靖国元年（1101年）卒于常州。诗、词、文、书、画皆为一代宗师，“唐宋八大家”之一，代表了宋代文化的最高峰。'
     ],
-    relatedEvents: ['chenqiao-960', 'chanyuan-1005', 'wanganshi-1069', 'jingkang-1127']
+    relatedEvents: ['wanganshi-1069']
   },
   {
     id: 'lin-zexu',

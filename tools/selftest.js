@@ -247,9 +247,9 @@ console.log('== 数据完整性 ==');
   const periodIds = new Set(history.periods.map((p) => p.id));
 
   eq(history.events.length, 100, '史事 100 条');
-  eq(history.persons.length, 86, '人物 86 位');
+  eq(history.persons.length, 89, '人物 89 位');
   ok(new Set([...eventIds]).size === 100, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 86, '人物 id 唯一');
+  ok(new Set([...personIds]).size === 89, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 24, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -417,7 +417,7 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'person' });
   ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 86, '弹层列出八十六位人物');
+  eq(p.data.sheet.list.length, 89, '弹层列出八十九位人物');
 
   const suIdx = p.data.sheet.list.findIndex((x) => x.id === 'su-shi');
   tap(p, 'onSheetItem', { index: suIdx });
@@ -572,7 +572,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [24, 100, 86, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [24, 100, 89, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -1164,8 +1164,8 @@ console.log('== 人物详情 ==');
 
   p.onLoad({ id: 'su-shi' });
   eq(p.data.person.name, '苏轼', '苏轼载入');
-  eq(p.data.related.map((e) => e.id), ['chenqiao-960', 'chanyuan-1005', 'wanganshi-1069', 'jingkang-1127'],
-    '相关史事映射');
+  eq(p.data.related.map((e) => e.id), ['wanganshi-1069'],
+    '相关史事映射（对齐审校后：苏轼仅关联王安石变法）');
   eq(p.data.accent, 'ancient', '古代赭石');
   eq(p.data.seal, '苏', '顶栏小印取自人名首字');
   eq(p.data.headImg, remotePersonImg('su-shi') || '/assets/paintings/song.jpg', '人物头卡：苏轼优先专属图，否则宋画');
@@ -1187,7 +1187,7 @@ console.log('== 人物详情 ==');
   eq(p.data.related.length, 1, '赵匡胤相关史事一条');
 
   p.onLoad({ id: 'wang-anshi' });
-  eq(p.data.related.length, 2, '王安石相关史事两条');
+  eq(p.data.related.length, 1, '王安石相关史事一条');
 
   p.onLoad({ id: 'lin-zexu' });
   eq(p.data.accent, 'modern', '林则徐按晚清走蓝灰');
@@ -1286,7 +1286,7 @@ console.log('== 事件详情 ==');
 
   p.onLoad({ id: 'chanyuan-1005' });
   eq(p.data.event.title, '澶渊之盟', '澶渊之盟载入');
-  eq(p.data.relatedPersons.map((x) => x.id), ['xiao-chuo', 'wang-anshi', 'su-shi'], '其时其人：反查列出萧绰、王安石与苏轼');
+  eq(p.data.relatedPersons.map((x) => x.id), ['xiao-chuo', 'kou-zhun'], '其时其人：反查列出萧绰与寇准（对齐审校后）');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
   eq(p.data.headImg, remoteEventImg('chanyuan-1005') || '/assets/paintings/song.jpg', '事件头卡：澶渊之盟优先专属图，否则清明上河图');
   ok(p.data.relatedPersons.every((x) => x.img && imgOk(x.img)), '其时其人：每人有配图且文件存在');
@@ -1373,7 +1373,7 @@ console.log('== 搜索 ==');
   ok(p.data.results.persons.some((x) => x.id === 'zhang-qian'), '汉武帝关联人物张骞命中（details 全文）');
   eq(p.data.results.events[0].id, 'han-wudi', '同名事件标题命中排第一');
   ok(!p.data.empty, '非空结果');
-  ok(p.data.metaText.indexOf('86 人物') >= 0 && p.data.metaText.indexOf('命中') >= 0,
+  ok(p.data.metaText.indexOf('89 人物') >= 0 && p.data.metaText.indexOf('命中') >= 0,
     '检索汇总带库规模与命中数（后端式提示）');
 
   p.setData({ keyword: '盛唐' });
