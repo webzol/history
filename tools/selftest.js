@@ -243,9 +243,9 @@ console.log('== 数据完整性 ==');
   const periodIds = new Set(history.periods.map((p) => p.id));
 
   eq(history.events.length, 100, '史事 100 条');
-  eq(history.persons.length, 72, '人物 72 位');
+  eq(history.persons.length, 86, '人物 86 位');
   ok(new Set([...eventIds]).size === 100, '史事 id 唯一');
-  ok(new Set([...personIds]).size === 72, '人物 id 唯一');
+  ok(new Set([...personIds]).size === 86, '人物 id 唯一');
   ok(new Set([...periodIds]).size === 24, '朝代 id 唯一');
 
   history.events.forEach((e) => {
@@ -413,7 +413,7 @@ console.log('== 首页 ==');
 
   tap(p, 'goPage', { page: 'person' });
   ok(p.data.sheet.open, '人物磁贴：打开自绘弹层');
-  eq(p.data.sheet.list.length, 72, '弹层列出七十二位人物');
+  eq(p.data.sheet.list.length, 86, '弹层列出八十六位人物');
 
   const suIdx = p.data.sheet.list.findIndex((x) => x.id === 'su-shi');
   tap(p, 'onSheetItem', { index: suIdx });
@@ -568,7 +568,7 @@ console.log('== 我的 ==' );
   const eventP = pages.event;
 
   p.onLoad();
-  eq(p.data.stats.map((s) => s.value), [24, 100, 72, 2], '统计与数据种子一致');
+  eq(p.data.stats.map((s) => s.value), [24, 100, 86, 2], '统计与数据种子一致');
 
   // 收藏：在人物详情页收藏苏轼 → 我的页出现
   personP.onLoad({ id: 'su-shi' });
@@ -1261,7 +1261,7 @@ console.log('== 事件详情 ==');
   ok(p.data.relatedPersons.some((x) => x.id === 'mao-zedong'), '遵义会议反查含毛泽东');
 
   p.onLoad({ id: 'yuanmingyuan-1860' });
-  eq(p.data.relatedPersons.length, 0, '圆明园无人物卡');
+  eq(p.data.relatedPersons.length, 1, '圆明园反查含奕䜣');
   tap(p, 'goTimeline');
   eq(last('switchTab').url, '/pages/timeline/timeline', '回时间轴（switchTab）');
   eq(storage.shige_tab_params && storage.shige_tab_params.timelineMode, 'modern', 'modern 交接 pending');

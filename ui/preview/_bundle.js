@@ -26,7 +26,7 @@ App('project://app.js', {
 
 });
 __register('/data/history-extra.js', function (require, module, exports) {
-// 历代人物与史事扩展（第二十五轮）
+// 历代人物与史事扩展（第二十六轮：补 14 位关联人物 + 12 条人物引言）
 // 覆盖夏商周、春秋战国、秦、东汉、三国、两晋南北朝、隋、五代十国、
 // 南宋、辽金西夏、元，以及明、清的若干制度/科技/文化节点。
 // 史料来源仅作索引，正式发布前仍需逐条审校。
@@ -1259,6 +1259,8 @@ const persons = [
     era: '东汉',
     roles: '发明家 · 宦官',
     summary: '改进造纸术，以廉价原料造出“蔡侯纸”，推动人类书写材料的革命。',
+    quote: '有才学，尽心敦慎，数犯严颜，匡弼得失。',
+    quoteSource: '《后汉书·蔡伦传》',
     source: '《后汉书·蔡伦传》',
     details: [
       '蔡伦，字敬仲，桂阳人。明帝时入宫为宦官，和帝时任中常侍，后兼任尚方令，主管宫廷器物制造。',
@@ -1284,7 +1286,7 @@ const persons = [
       '208年赤壁战败，南北分裂。曹操进位魏王，却未称帝。他用人唯才，抑制豪强，又擅长诗歌，开建安风骨。',
       '220年曹操去世，其子曹丕代汉称帝，追尊曹操为魏武帝。曹操形象在《三国演义》中被高度文学化。'
     ],
-    relatedEvents: ['guandu', 'chibi']
+    relatedEvents: ['huangjin', 'guandu', 'chibi']
   },
   {
     id: 'zhuge-liang',
@@ -1365,6 +1367,8 @@ const persons = [
     era: '隋',
     roles: '皇帝 · 统一者',
     summary: '代周建隋，统一南北，创三省六部与科举，开创“开皇之治”。',
+    quote: '克己复礼，勤劳思政，每一坐朝，或至日昃。',
+    quoteSource: '《贞观政要·政体》萧瑀语',
     source: '《隋书·高祖纪》',
     details: [
       '杨坚，弘农华阴人，北周外戚。580年周宣帝死后，他辅政，次年代周建隋，改元开皇。',
@@ -1381,6 +1385,8 @@ const persons = [
     era: '唐',
     roles: '皇帝 · 政治家',
     summary: '中国历史上唯一的女皇帝，改唐为周，开创殿试与武举，上承贞观下启开元。',
+    quote: '政由己出，明察善断，故当时英贤亦竞为之用。',
+    quoteSource: '《资治通鉴·唐纪二十一》',
     source: '《旧唐书·则天皇后纪》',
     details: [
       '武则天，并州文水人，十四岁入宫为唐太宗才人。高宗时立为皇后，逐渐参与朝政，与高宗并称“二圣”。',
@@ -1523,6 +1529,8 @@ const persons = [
     era: '明',
     roles: '皇帝 · 政治家',
     summary: '通过靖难之役夺位，迁都北京，派郑和下西洋，编《永乐大典》。',
+    quote: '幅陨之广，远迈汉、唐。成功骏烈，卓乎盛矣。',
+    quoteSource: '《明史·成祖纪》赞曰',
     source: '《明史·成祖纪》',
     details: [
       '朱棣是朱元璋第四子，封燕王，镇守北平。建文帝削藩，朱棣以“清君侧”为名起兵，史称靖难之役。',
@@ -1539,6 +1547,8 @@ const persons = [
     era: '明',
     roles: '医药学家',
     summary: '历时二十七年编成《本草纲目》，系统总结中国古代药物学。',
+    quote: '博而不繁，详而有要，综核究竟，直窥渊海。',
+    quoteSource: '王世贞《本草纲目·序》',
     source: '《本草纲目》',
     details: [
       '李时珍，字东璧，号濒湖，湖北蕲州人。出身医学世家，早年科举不第，遂专心医术。',
@@ -1735,6 +1745,8 @@ const persons = [
     era: '西晋',
     roles: '西晋开国皇帝',
     summary: '代魏建晋，发兵灭吴，结束三国分裂；又大封宗室、纵容奢靡，为八王之乱埋下祸根。',
+    quote: '宽惠仁厚，沈深有度量。',
+    quoteSource: '《晋书·武帝纪》',
     source: '《晋书·武帝纪》',
     details: [
       '司马炎，字安世，司马昭之子。265年，他逼魏元帝禅位，建立西晋，定都洛阳。',
@@ -1751,6 +1763,8 @@ const persons = [
     era: '西晋',
     roles: '史学家',
     summary: '撰《三国志》六十五卷，以简洁笔法记述魏蜀吴史事，位列“前四史”。',
+    quote: '时人称其善叙事，有良史之才。',
+    quoteSource: '《晋书·陈寿传》',
     source: '《晋书·陈寿传》',
     details: [
       '陈寿，字承祚，巴西安汉人。少从谯周学习，曾任蜀汉观阁令史。',
@@ -1803,6 +1817,8 @@ const persons = [
     era: '五代十国',
     roles: '后梁开国皇帝',
     summary: '由黄巢部将降唐，逐步控制中原，907年篡唐建后梁，唐朝灭亡、五代开始。',
+    quote: '处四战之地，与曹操略同，而狡猾过之。',
+    quoteSource: '毛泽东读《旧五代史》批语',
     source: '《旧五代史·梁太祖纪》',
     details: [
       '朱温，宋州砀山人。唐末参加黄巢起义，后降唐，被赐名“全忠”，任宣武节度使。',
@@ -1837,6 +1853,8 @@ const persons = [
     era: '辽',
     roles: '辽朝开国皇帝',
     summary: '统一契丹各部，916年称帝建国，设南北面官，创制契丹文字，奠定辽朝基业。',
+    quote: '身长九尺，丰上锐下，目光射人，关弓三百斤。',
+    quoteSource: '《辽史·太祖纪》',
     source: '《辽史·太祖纪》',
     details: [
       '耶律阿保机，契丹迭剌部人，出身贵族。907年，他统一契丹各部，被推为可汗。',
@@ -1871,6 +1889,8 @@ const persons = [
     era: '西夏',
     roles: '西夏开国皇帝',
     summary: '1038年称帝，建立西夏，创制西夏文，屡败宋军，形成宋辽夏三足鼎立格局。',
+    quote: '性雄毅，多大略，善绘画，能创制物始。',
+    quoteSource: '《宋史·夏国传》',
     source: '《宋史·夏国传》',
     details: [
       '李元昊，党项羌拓跋部首领，西夏奠基者李德明之子。他通汉文、习兵法，野心勃勃。',
@@ -1959,6 +1979,8 @@ const persons = [
     era: '清',
     roles: '清朝皇帝',
     summary: '擒鳌拜、平三藩、收台湾、抗沙俄、征噶尔丹，开创康乾盛世的第一个高峰。',
+    quote: '经文纬武，寰宇一统。虽曰守成，实同开创焉。',
+    quoteSource: '《清史稿·圣祖纪》赞曰',
     source: '《清史稿·圣祖纪》',
     details: [
       '爱新觉罗·玄烨，顺治帝第三子，1661年即位，年号康熙。',
@@ -1966,7 +1988,7 @@ const persons = [
       '1689年，中俄签订《尼布楚条约》；他又三征噶尔丹，多伦会盟，加强对蒙古地区的管理。',
       '康熙重视农业、治理黄河，编《康熙字典》，但文字狱与闭关政策亦在其统治时期强化。1722年病逝。'
     ],
-    relatedEvents: ['kangxi-1681']
+    relatedEvents: ['kangxi-1681', 'sanfan']
   },
   {
     id: 'qianlong',
@@ -1975,6 +1997,8 @@ const persons = [
     era: '清',
     roles: '清朝皇帝',
     summary: '在位六十年，平定西北、编纂《四库全书》，但后期吏治腐败、闭关锁国，清朝由盛转衰。',
+    quote: '励精图治，开疆拓宇，四征不庭，揆文奋武，于斯为盛。',
+    quoteSource: '《清史稿·高宗纪》赞曰',
     source: '《清史稿·高宗纪》',
     details: [
       '爱新觉罗·弘历，雍正帝第四子，1735年即位，年号乾隆。',
@@ -2001,6 +2025,258 @@ const persons = [
       '此后他继续护法、改组国民党，1924年提出联俄、联共、扶助农工三大政策。1925年病逝于北京。'
     ],
     relatedEvents: ['xinhai-1911']
+  },
+  {
+    id: 'qi-huan-gong',
+    name: '齐桓公',
+    dates: '？–前643',
+    era: '春秋',
+    roles: '君主 · 政治家',
+    summary: '春秋首霸，九合诸侯、尊王攘夷，葵丘之会霸业达于顶峰。',
+    quote: '九合诸侯，不以兵车，管仲之力也。',
+    quoteSource: '《论语·宪问》',
+    source: '《史记·齐太公世家》',
+    details: [
+      '齐桓公，姜姓，吕氏，名小白，齐僖公之子。襄公乱政时出奔莒国；公元前685年国内变乱，与公子纠争位，抢先入齐即成，史称齐桓公。',
+      '即位后不计一箭射钩之仇，用鲍叔牙之荐拜管仲为相；整饬行政军制，设轻重九府，通鱼盐之利，齐国由此富强，冠于东方。',
+      '以“尊王攘夷”相号召：北伐山戎以救燕，迁邢封卫以免狄难，南与楚会盟于召陵；公元前651年葵丘之会，周襄王赐胙、命毋下拜，霸业登峰造极。',
+      '晚年亲信易牙、竖刁、开方。前643年病卒，五公子争立，尸体停放六十七日方得入殓，虫出于户；齐国霸业随之瓦解，中原进入晋楚争衡的时代。'
+    ],
+    relatedEvents: ['qi-huan-gong']
+  },
+  {
+    id: 'bai-qi',
+    name: '白起',
+    dates: '？–前257',
+    era: '战国',
+    roles: '将领 · 军事家',
+    summary: '秦国名将，伊阙破韩魏，长平坑赵卒，战国歼灭战的巅峰。',
+    quote: '料敌合变，出奇无穷，声震天下。',
+    quoteSource: '《史记·白起王翦列传》',
+    source: '《史记·白起王翦列传》',
+    details: [
+      '白起，郿县人，行伍出身，事秦昭襄王。前293年伊阙之战斩韩魏联军二十四万、虏其主帅公孙喜，一战成名；此后连年东出，攻城略地，三十余年拔七十余城。',
+      '前278年大举伐楚，拔郢都、焚夷陵，迫楚东迁于陈，因功封武安君；其后攻魏拔华阳、取南阳，与赵争上党，为决战埋下伏笔。',
+      '前260年长平之战，暗调白起为上将军：佯败诱赵括倾巢出击，两翼奇兵断其粮道，围困四十六日，赵军四十余万尽降，坑杀于长平谷地，六国为之震恐。',
+      '长平之后白起欲乘胜灭赵，范雎受韩赵游说而许其割地请和，将相生隙。次年秦再攻邯郸，白起称病不行，贬为士伍，行至杜邮被赐剑自裁——一代战神死于君王猜忌与将相内耗。'
+    ],
+    relatedEvents: ['changping']
+  },
+  {
+    id: 'chen-sheng',
+    name: '陈胜',
+    dates: '？–前208',
+    era: '秦',
+    roles: '起义领袖',
+    summary: '大泽乡揭竿而起，首倡反秦，建“张楚”政权，开布衣呼啸之局。',
+    quote: '燕雀安知鸿鹄之志哉！',
+    quoteSource: '《史记·陈涉世家》',
+    source: '《史记·陈涉世家》',
+    details: [
+      '陈胜，字涉，阳城人，少时为人佣耕，怅恨而言“苟富贵，无相忘”，同伴笑其不自量，他叹道“燕雀安知鸿鹄之志哉”。',
+      '秦二世元年（前209年）七月，九百闾左戍卒被征赴渔阳，行至大泽乡遇雨失期，依法皆斩。陈胜与吴广计议“今亡亦死，举大计亦死”，遂杀两尉，揭竿为旗、斩木为兵。',
+      '起义军旬月之间连克大泽乡、蕲、铚、酂、苦、柘、谯，兵抵陈县，入据后自立为王，国号“张楚”；郡县苦秦吏者皆刑其长吏，杀之以应陈涉，反秦浪潮席卷关东。',
+      '周文西征大军一度逼近咸阳，为章邯击溃；吴广、陈胜相继败亡——前208年腊月，陈胜退至下城父，被车夫庄贾所杀。首倡之功不可没，《史记》破例为之立“世家”。'
+    ],
+    relatedEvents: ['chensheng']
+  },
+  {
+    id: 'xiang-yu',
+    name: '项羽',
+    dates: '前232–前202',
+    era: '秦',
+    roles: '将领 · 军事家',
+    summary: '巨鹿破釜沉舟灭秦主力，自封西楚霸王，垓下败亡的悲剧英雄。',
+    quote: '彼可取而代也。',
+    quoteSource: '《史记·项羽本纪》',
+    source: '《史记·项羽本纪》',
+    details: [
+      '项羽，名籍，字羽，下相人，楚将项燕之孙。少时学书不成，去学剑，又不成，要学“万人敌”；观秦始皇游会稽，脱口而出“彼可取而代也”。',
+      '前209年随叔父项梁举兵会稽，渡江而西；项梁战死后统军，前207年巨鹿之战破釜沉舟、持三日粮，九战九捷大破王离、章邯军，诸侯将入辕门“膝行而前，莫敢仰视”。',
+      '新安坑秦卒二十余万，入关屠咸阳、烧秦宫室，自立为西楚霸王，分封十八路诸侯，政由己出；分封失当，天下重归战火。',
+      '楚汉相争四年，彭城之战以三万骑破汉军五十六万，然刚愎自用、不用范增，失人心、失关中，终至垓下被围。四面楚歌之夜悲歌“力拔山兮气盖世”，突围至乌江亭自刎而死，年三十一。'
+    ],
+    relatedEvents: ['chensheng', 'chuhan']
+  },
+  {
+    id: 'liu-bang',
+    name: '刘邦',
+    dates: '前256–前195',
+    era: '西汉',
+    roles: '皇帝 · 政治家',
+    summary: '布衣出身的汉高祖，约法三章收秦民，垓下灭楚，开创四百年汉朝。',
+    quote: '大丈夫当如此也！',
+    quoteSource: '《史记·高祖本纪》',
+    source: '《史记·高祖本纪》',
+    details: [
+      '刘邦，字季，沛丰邑中阳里人，农家出身，起先为泗水亭长。观秦始皇出巡喟叹“大丈夫当如此也”；押送刑徒途中纵徒亡匿，自身亡命于芒砀山泽之间。',
+      '前209年秦末大乱，萧何、曹参、樊哙等拥之为沛公，起兵于沛；从项梁立楚怀王，奉约“先入关中者王之”，前206年先入咸阳，籍吏民、封府库，还军霸上，与父老约法三章，秦人大喜。',
+      '鸿门宴上韬晦脱身，受项羽封汉王，入汉中；用韩信之谋“明修栈道，暗度陈仓”还定三秦，此后荥阳成皋相持、鸿沟议和，前202年垓下之围迫项羽自刎，即皇帝位，国号汉，定都长安。',
+      '称帝后论功定封，继而翦灭韩信、彭越、英布等异姓诸侯王，与诸将刑白马盟誓“非刘氏而王，天下共击之”；承秦制、除苛暴，与民休息。前195年破英布还师，过沛与父老宴饮，击筑歌“大风起兮云飞扬”，同年崩于长乐宫。'
+    ],
+    relatedEvents: ['chuhan']
+  },
+  {
+    id: 'cao-pi',
+    name: '曹丕',
+    dates: '187–226',
+    era: '三国',
+    roles: '皇帝 · 文学家',
+    summary: '受禅代汉的魏文帝，行九品中正制，与父弟并称建安“三曹”。',
+    quote: '盖文章，经国之大业，不朽之盛事。',
+    quoteSource: '《典论·论文》',
+    source: '《三国志·魏书·文帝纪》',
+    details: [
+      '曹丕，字子桓，曹操次子，沛国谯人。八岁能属文，博通经史、善骑射击剑；建安二十二年（217年）在储位之争中胜出，立为魏太子。',
+      '220年曹操卒于洛阳，曹丕嗣位为魏王；采纳陈群所议九品官人之法，以品第取士，士族与皇权自此结盟。同年十月受汉献帝禅让称帝，国号魏，都洛阳，两汉四百余年至此告终。',
+      '在位七年：遣使复通西域、置凉州刺史部，平定河西之乱，恢复丝路控制；三次伐吴皆无功而返。黄初年间立法防后族宦官干政，整顿刑律，与民休养。',
+      '文学上为建安中坚：《燕歌行》是现存最早的成熟七言诗；《典论·论文》开文学批评风气，标举文章为“经国之大业，不朽之盛事”。226年病逝，年四十，谥文帝。'
+    ],
+    relatedEvents: ['caopi']
+  },
+  {
+    id: 'liu-yuan',
+    name: '刘渊',
+    dates: '？–310',
+    era: '西晋',
+    roles: '君主 · 统帅',
+    summary: '匈奴左部贵族，趁八王之乱建汉称王，揭开五胡十六国序幕。',
+    quote: '常鄙随陆无武，绛灌无文。',
+    quoteSource: '《晋书·刘元海载记》',
+    source: '《晋书·刘元海载记》',
+    details: [
+      '刘渊，字元海，新兴人，匈奴左贤王刘豹之子、冒顿单于之后；因汉匈和亲故事，冒姓刘氏。少游学洛阳，师事崔游，遍习经史、兼善武艺，尝谓同门生：“吾每观书传，常鄙随陆无武，绛灌无文。”',
+      '父豹卒后继为匈奴左部帅，明刑法、禁奸邪，轻财好施，倾心接人，五部豪杰与幽冀名儒多归之；晋廷拜其为五部大都督，屯邺城听调。',
+      '八王之乱中诸王相攻，成都王司马颖倚刘渊为外援。304年他以回部发兵为名脱归左国城，被匈奴诸部推为大单于；旋即称汉王，追尊刘禅，以“兄亡弟绍”自居汉室正统，建国立号。',
+      '308年称帝，迁都平阳，两度遣兵攻洛阳；310年病卒。其子刘聪继立，311年攻陷洛阳、316年破长安俘晋愍帝，西晋灭亡——五胡十六国的大幕由此拉开。'
+    ],
+    relatedEvents: ['babwang-291', 'yongjia-316']
+  },
+  {
+    id: 'huang-chao',
+    name: '黄巢',
+    dates: '？–884',
+    era: '唐',
+    roles: '起义领袖 · 诗人',
+    summary: '盐商出身的落第书生，流动作战十余省，攻入长安建大齐。',
+    quote: '待到秋来九月八，我花开后百花杀。',
+    quoteSource: '《不第后赋菊》',
+    source: '《新唐书·黄巢传》',
+    details: [
+      '黄巢，曹州冤句人，世代以贩卖私盐为业。善击剑骑射，略通书传；屡举进士不第，赋《不第后赋菊》“待到秋来九月八，我花开后百花杀”而去。',
+      '乾符二年（875年）响应王仙芝起义；878年仙芝战死，众推黄巢为首，号冲天大将军。避实击虚，自长江下游转战江南，879年南下攻占广州。',
+      '880年自桂林编木筏沿湘江北上，破潭州、渡淮水，连下洛阳、潼关，十二月入长安；黄巢升太极殿，即位于含元殿，国号大齐，改元金统。唐僖宗仓皇奔蜀。',
+      '困守长安两年余，既未穷追唐廷，又无根据地与粮饷，朱温叛降、李克用率沙陀骑兵入援，883年退出长安，884年败死于泰山狼虎谷。唐廷经此一击名存实亡，二十余年后朱温代唐建梁。'
+    ],
+    relatedEvents: ['huangchao']
+  },
+  {
+    id: 'chai-rong',
+    name: '柴荣',
+    dates: '921–959',
+    era: '五代十国',
+    roles: '皇帝 · 政治家',
+    summary: '后周世宗，五代第一明君，为北宋统一奠定制度与军事根基。',
+    quote: '十年开拓天下，十年养百姓，十年致太平。',
+    quoteSource: '《资治通鉴·后周纪》',
+    source: '《旧五代史·世宗纪》',
+    details: [
+      '柴荣，邢州尧山人，郭威内侄兼养子；早年曾随商人贩茶于江陵，备知民间疾苦。951年封晋王，954年郭威病卒，继皇帝位，是为后周世宗。',
+      '即位未及半载，北汉勾结辽军南犯，柴荣力排众议亲征，高平之战身先士卒大破北汉；回师即整顿禁军，裁汰老弱、广募精锐，置殿前诸班，赵匡胤自此崭露头角。',
+      '显德年间均定田赋、兴修汴口水陆、放宽商禁，限佛废寺三万余所、毁铜佛以铸钱；军事上西取后蜀秦、凤、成、阶四州，三征南唐尽得江北十四州。',
+      '959年北伐辽国，四十二日间连收益津、瓦桥、淤口三关与莫、瀛、易三州，正谋进取幽州而患病回师，六月病逝，年仅三十九。半年后赵匡胤陈桥兵变建立北宋，统一大业循其擘画而行。'
+    ],
+    relatedEvents: ['chairong']
+  },
+  {
+    id: 'chong-zhen',
+    name: '崇祯帝',
+    dates: '1611–1644',
+    era: '明',
+    roles: '皇帝',
+    summary: '明思宗朱由检，诛魏忠贤、宵衣旰食十七年，终自缢煤山。',
+    quote: '任贼分裂朕尸，勿伤百姓一人。',
+    quoteSource: '《明季北略》',
+    source: '《明史·庄烈帝本纪》',
+    details: [
+      '崇祯帝朱由检，明光宗第五子，天启帝之弟；1627年兄崩无嗣，入继大统。即位甫两月，即以雷霆手段翦除权阉魏忠贤，阉党尽逐，朝野一时称快。',
+      '在位十七年，起用袁崇焕、孙传庭、卢象升、洪承畴等能臣；然生性多疑、驭下苛急，中反间计凌迟袁崇焕，十七年间阁臣更易五十人，刑杀过当，群臣解体。',
+      '内忧外患并至：辽东清军数度入塞，中原连岁大旱，民变自陕西燎原；加征辽饷、剿饷、练饷，反驱饥民投闯。1642年松锦决战，明军关外精锐尽丧，洪承畴被俘降清。',
+      '1644年三月十八日夜，李自成军破北京外城，崇祯鸣钟召百官无一人至；遣太子微服出逃，令后妃自尽，登煤山自缢于寿皇亭，衣襟血书“任贼分裂朕尸，勿伤百姓一人”。明亡，其年清军入关。'
+    ],
+    relatedEvents: ['ming-wang-1644']
+  },
+  {
+    id: 'duo-er-gun',
+    name: '多尔衮',
+    dates: '1612–1650',
+    era: '清',
+    roles: '摄政王 · 统帅',
+    summary: '清入关的实际统帅与顺治朝摄政王，定鼎燕京、经略中原。',
+    quote: '定国开基，成一统之业，厥功最著。',
+    quoteSource: '乾隆四十三年上谕',
+    source: '《清史稿·睿忠亲王传》',
+    details: [
+      '爱新觉罗·多尔衮，清太祖努尔哈赤第十四子；少年从征蒙古、朝鲜，领正白旗，崇德年间统军征明，松山之战生俘洪承畴，军功冠于诸王。',
+      '1643年皇太极暴逝，豪格与多尔衮争位相持，议立六岁的福临（顺治帝），多尔衮与济尔哈朗同为辅政，旋称摄政王，实掌朝纲。',
+      '1644年李自成陷北京，多尔衮纳范文程、洪承畴之议倾国南征；应吴三桂之请疾驰山海关，一片石之战大破李自成，五月入据北京，十月迎顺治帝入京即位，祭天“定鼎燕京”。',
+      '摄政七年间追击李自成、张献忠，下江南俘弘光帝，统一中原；颁剃发令、行圈地法，又开科取士、开馆修《明史》。1650年猎于边外坠马受伤，卒于喀喇城，年三十九；旋遭追论削爵毁墓，乾隆四十三年方昭雪复封。'
+    ],
+    relatedEvents: ['qing-ruguan']
+  },
+  {
+    id: 'yi-xin',
+    name: '奕䜣',
+    dates: '1833–1898',
+    era: '晚清',
+    roles: '亲王 · 洋务领袖',
+    summary: '恭亲王，创设总理衙门并主持其事近三十年，洋务运动的中枢。',
+    quote: '探源之策，在于自强，自强之术，必先练兵。',
+    quoteSource: '《筹办夷务始末·咸丰朝》',
+    source: '《清史稿·诸王传》',
+    details: [
+      '爱新觉罗·奕䜣，道光帝第六子，人称“鬼子六”。文才武略冠于诸皇子而终失储位，封恭亲王；1860年英法联军陷北京，咸丰出奔热河，奕䜣留京议和，主持签订《北京条约》。',
+      '1861年奏设总理各国事务衙门并亲任总理大臣；年底与两宫太后联袂发动辛酉政变，诛顾命八臣，以议政王身份领军机处，形成慈禧垂帘、亲王辅政的格局。',
+      '力主“探源之策，在于自强”：奏办京师同文馆、选派留美幼童，支持曾国藩、李鸿章、左宗棠创设江南制造总局、福州船政局，购置舰炮、编练新式水陆之师，洋务运动由此铺开。',
+      '1884年中法战事失利，以“萎靡因循”被罢斥（甲申易枢），闲居十年；1894年甲午战败后复起督办军务、重领总理衙门，然事权衰替。1898年5月病逝，谥忠亲王；其身后百日，戊戌变法即遭政变。'
+    ],
+    relatedEvents: ['yuanmingyuan-1860', 'yangwu-1861']
+  },
+  {
+    id: 'guang-xu',
+    name: '光绪帝',
+    dates: '1871–1908',
+    era: '晚清',
+    roles: '皇帝 · 变法君主',
+    summary: '清德宗载湉，甲午痛定锐意维新，百日变法败于政变，幽禁十年。',
+    quote: '我不能为亡国之君，若不假我权，我宁逊位。',
+    quoteSource: '《戊戌政变记》',
+    source: '《清史稿·德宗本纪》',
+    details: [
+      '光绪帝载湉，醇亲王奕譞次子，生母为慈禧太后之妹。1875年同治帝崩而无嗣，四岁入宫即位，两宫垂帘听政，实权操于慈禧。',
+      '1889年大婚亲政，然用人行政仍须请命太后。1894年甲午战争力主对日作战，北洋水师全军覆没；次年《马关条约》割台赔款二万万两，举国震动，康有为率千余举人公车上书。',
+      '1898年6月11日颁《定国是诏》宣布变法：废八股、设京师大学堂、汰冗员、许臣民上书、编练新军，百日之内颁新政谕旨一百八十余道；变法之前尝言“我不能为亡国之君，若不假我权，我宁逊位”。',
+      '新政触动旧党，慈禧于9月21日发动政变，幽禁光绪于中南海瀛台，杀谭嗣同等“戊戌六君子”，新政除京师大学堂外尽废。1900年庚子之变随驾西逃西安；1908年11月14日先慈禧一日崩于瀛台，年三十八。'
+    ],
+    relatedEvents: ['wuxu-1898']
+  },
+  {
+    id: 'jiang-jieshi',
+    name: '蒋介石',
+    dates: '1887–1975',
+    era: '民国',
+    roles: '政治家 · 军事统帅',
+    summary: '黄埔建军的北伐统帅，领导全国抗战八年，1949年退守台湾。',
+    quote: '地无分南北，年无分老幼，无论何人，皆有守土抗战之责任。',
+    quoteSource: '《对于卢沟桥事件之严正声明》（1937）',
+    source: '《总统蒋公大事长编初稿》；《中华民国史》',
+    details: [
+      '蒋介石，名中正，字介石，浙江奉化溪口人。早年就读保定通国陆军速成学堂，后留学日本振武学校，加入同盟会；1922年陈炯明叛变时登永丰舰护卫孙中山，1924年任黄埔军校校长，奠定军权根基。',
+      '1926年任国民革命军总司令誓师北伐，两年间连破吴佩孚、孙传芳；1928年二次北伐告成、东北易帜，中国在名义上重归统一。此后与冯玉祥、阎锡山、桂系屡有战事，并对中央苏区连续“围剿”。',
+      '1936年西安事变和平解决，国共转向合作抗日。1937年7月17日发表庐山谈话：“如果战端一开，那就是地无分南北，年无分老幼，无论何人，皆有守土抗战之责任”，宣告全面抗战；指挥淞沪、徐州、武汉诸大会战，迁都重庆苦撑八年，1945年抗战胜利，中国跻身联合国安理会常任理事国。',
+      '战后国共谈判破裂，内战三年局势逆转；1949年12月自成都飞离大陆，退守台湾。在台主持党务改造、实行土地改革与地方自治，1975年4月5日病逝于台北，年八十八。'
+    ],
+    relatedEvents: ['beifa-1926', 'kangzhan-1945']
   }
 ];
 
@@ -2164,7 +2440,7 @@ const events = [
     yearText: '755',
     era: '唐',
     title: '安史之乱',
-    desc: '安禄山范阳起兵，唐朝由盛转衰的转折点。',
+    desc: '安禄山自范阳起兵叛乱，两京陷落，唐朝由盛转衰。',
     tags: '战争 · 转折',
     source: '《旧唐书·玄宗本纪》；《资治通鉴》',
     details: [
@@ -2181,7 +2457,7 @@ const events = [
     yearText: '960',
     era: '北宋',
     title: '陈桥兵变',
-    desc: '赵匡胤黄袍加身，建立北宋。',
+    desc: '禁军在陈桥驿拥立赵匡胤黄袍加身，代周建宋，结束五代乱局。',
     tags: '建国 · 政治',
     source: '《宋史·太祖本纪》',
     details: [
@@ -2198,7 +2474,7 @@ const events = [
     yearText: '1005',
     era: '北宋',
     title: '澶渊之盟',
-    desc: '宋辽订盟，以岁币换取长期和平。',
+    desc: '宋辽于澶州定盟罢兵，宋以岁币换取此后百余年的和平。',
     tags: '外交 · 宋辽',
     source: '《续资治通鉴长编》',
     details: [
@@ -2215,7 +2491,7 @@ const events = [
     yearText: '1069',
     era: '北宋',
     title: '王安石变法',
-    desc: '熙宁新政，从青苗法到保甲法。',
+    desc: '宋神宗任用王安石推行新法，青苗、保甲、免役诸法次第铺开。',
     tags: '改革 · 经济',
     source: '《宋史·王安石传》',
     details: [
@@ -2232,7 +2508,7 @@ const events = [
     yearText: '1127',
     era: '北宋',
     title: '靖康之变',
-    desc: '汴京陷落，北宋灭亡。',
+    desc: '金军攻陷汴京，掳徽、钦二帝北去，北宋灭亡，宋室南渡。',
     tags: '战争 · 转折',
     source: '《宋史·钦宗本纪》',
     details: [
@@ -2249,7 +2525,7 @@ const events = [
     yearText: '1840',
     era: '晚清',
     title: '鸦片战争',
-    desc: '英国发动鸦片战争，中国近代史由此开始。',
+    desc: '英国以坚船利炮发动鸦片战争，中国近代史由此开端。',
     tags: '战争 · 晚清',
     source: '《清史稿·宣宗本纪》',
     details: [
@@ -2403,7 +2679,7 @@ const events = [
     yearText: '1949',
     era: '新中国',
     title: '中华人民共和国成立',
-    desc: '中国人民站起来了，历史翻开新的一页。',
+    desc: '中华人民共和国宣告成立，中国人民从此站起来了。',
     tags: '建国 · 现代',
     source: '《中华人民共和国史稿》',
     details: [
@@ -3065,7 +3341,7 @@ const persons = [
       '1945年8月赴重庆谈判；指挥三大战役与渡江战役，1949年10月1日在天安门宣告中华人民共和国成立；建国后领导土地改革、抗美援朝与社会主义改造。',
       '1956年《论十大关系》探索中国自己的建设道路；此后二十年社会主义建设的探索成就与失误并存。1976年9月9日病逝于北京。诗歌（如《沁园春·雪》）与书法并为一时一代气象。'
     ],
-    relatedEvents: ['jinggangshan-1927', 'longmarch-1934', 'zunyi-1935', 'prc-1949']
+    relatedEvents: ['jinggangshan-1927', 'longmarch-1934', 'zunyi-1935', 'kangzhan-1945', 'prc-1949']
   },
   {
     id: 'zheng-he',
@@ -3074,6 +3350,8 @@ const persons = [
     era: '明',
     roles: '航海家 · 外交使臣',
     summary: '七下西洋，把海上丝绸之路推到前近代的顶点。',
+    quote: '欲耀兵异域，示中国富强。',
+    quoteSource: '《明史·郑和传》',
     source: '《明史·郑和传》',
     details: [
       '郑和本姓马，小字三保，云南昆阳人，回族家庭出身；幼年入燕王藩邸为宦，靖难之役屡立战功，成祖赐姓郑，任内官监太监，称“三保太监”。',
@@ -5602,8 +5880,8 @@ Page('project://pages/event/event.js', {
 });
 
 });
-__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{event}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <view class=\"top-center\">\n        <text class=\"top-title\">事件</text>\n        <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n      </view>\n    </view>\n\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"e-copy\">\n        <text class=\"e-year\">{{event.yearText}}</text>\n        <text class=\"e-title\">{{event.title}}</text>\n        <view class=\"e-meta\">\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\n            <text>{{event.era}}</text>\n          </view>\n          <text class=\"e-tags\">{{event.tags}}</text>\n        </view>\n      </view>\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\n        <text>{{event.desc}}</text>\n      </view>\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\n      <text class=\"section-title\">其时其人</text>\n    </view>\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\n      <view\n        wx:for=\"{{relatedPersons}}\"\n        wx:key=\"id\"\n        class=\"p-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goPerson\"\n      >\n        <view class=\"p-thumb-wrap\">\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\n          <image\n            wx:if=\"{{item.img !== item.fallback}}\"\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\n            src=\"{{item.img}}\"\n            mode=\"aspectFill\"\n            bindload=\"onThumbLoad\"\n            binderror=\"onThumbErr\"\n            data-id=\"{{item.id}}\"\n          ></image>\n        </view>\n        <view class=\"p-info\">\n          <text class=\"p-name\">{{item.name}}</text>\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\n          <text class=\"p-roles\">{{item.roles}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\n        <text>回时间轴再看一眼</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{event.source}}</view>\n  </view>\n</view>\n"; });
-__register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  padding: 0 10rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\n  overflow: hidden;\n  transition: transform 0.12s ease, background 0.12s ease;\n}\n\n.back-pressed {\n  transform: scale(0.97);\n  background: rgba(244, 236, 224, 0.96);\n}\n\n.back-icon {\n  position: relative;\n  width: 32rpx;\n  height: 20rpx;\n  flex: 0 0 32rpx;\n}\n\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  border-radius: 1rpx;\n  transform: rotate(45deg);\n}\n\n.back-shaft {\n  position: absolute;\n  left: 7rpx;\n  top: 9rpx;\n  width: 22rpx;\n  height: 2rpx;\n  border-radius: 2rpx;\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\n}\n\n.back-divider {\n  width: 1rpx;\n  height: 18rpx;\n  margin: 0 10rpx 0 5rpx;\n  background: rgba(138, 106, 62, 0.20);\n  flex: 0 0 1rpx;\n}\n\n.back-label {\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 24rpx;\n  line-height: 1;\n  letter-spacing: 0.08em;\n  text-indent: 0.08em;\n  color: #6B5A33;\n  white-space: nowrap;\n}\n\n.top-center {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  top: 0;\n  bottom: 0;\n  display: flex;\n  align-items: center;\n  gap: 12rpx;\n}\n\n.top-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C857A;\n}\n\n.top-seal {\n  width: 40rpx;\n  height: 44rpx;\n  opacity: 0.92;\n  transform: rotate(3deg);\n}\n\n.head-card {\n  position: relative;\n  display: flex;\n  align-items: stretch;\n  gap: 26rpx;\n  margin-top: 26rpx;\n  padding: 30rpx;\n  border-radius: 38rpx;\n  overflow: hidden;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n}\n\n.e-copy {\n  position: relative;\n  z-index: 1;\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}\n\n.e-fig {\n  width: 200rpx;\n  height: 200rpx;\n  flex: 0 0 200rpx;\n  align-self: center;\n  border-radius: 24rpx;\n  overflow: hidden;\n  background: #F3EFE6;\n  border: 4rpx solid #FFFDF8;\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10);\n}\n\n.e-fig-img {\n  width: 100%;\n  height: 100%;\n  display: block;\n  filter: saturate(0.82) brightness(1.02);\n}\n\n.head-card.head-modern {\n  border-top-color: rgba(126, 154, 154, 0.6);\n}\n\n.e-year {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #A9825E;\n}\n\n.head-modern .e-year {\n  color: #7E9A9A;\n}\n\n.e-title {\n  display: block;\n  margin-top: 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(50rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  line-height: 1.25;\n  color: #1F1D19;\n}\n\n.e-meta {\n  margin-top: 22rpx;\n  display: flex;\n  align-items: center;\n  gap: 18rpx;\n}\n\n.era-chip {\n  display: inline-flex;\n  align-items: center;\n  height: 44rpx;\n  padding: 0 20rpx;\n  border-radius: 22rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A9825E;\n}\n\n.era-chip.chip-modern {\n  border-color: rgba(126, 154, 154, 0.45);\n  color: #7E9A9A;\n}\n\n.e-tags {\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #8C857A;\n}\n\n.body-card {\n  margin-top: 22rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.para {\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.85;\n  letter-spacing: 0.02em;\n  color: #2C2924;\n}\n\n.para + .para {\n  margin-top: 22rpx;\n}\n\n.para.lead {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(25rpx * var(--fs, 1));\n  color: #1F1D19;\n  margin-bottom: 22rpx;\n  padding-bottom: 20rpx;\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\n}\n\n.section-head {\n  margin-top: 34rpx;\n}\n\n.section-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #1F1D19;\n}\n\n.p-list {\n  margin-top: 18rpx;\n}\n\n.p-card {\n  display: flex;\n  align-items: center;\n  gap: 22rpx;\n  margin-bottom: 16rpx;\n  padding: 24rpx 26rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.p-thumb-wrap {\n  position: relative;\n  width: 104rpx;\n  height: 104rpx;\n  flex: 0 0 104rpx;\n  border-radius: 20rpx;\n  overflow: hidden;\n  background: #F3EFE6;\n  border: 4rpx solid #FFFDF8;\n  box-shadow: 0 6rpx 16rpx rgba(90, 70, 50, 0.10);\n}\n\n/* 底层默认图（本地时代细部，秒出）；上层远端专属图加载完淡入。\n   aspectFill：任意比例远端图等比缩放铺满裁切，不拉伸变形。 */\n.p-thumb-bg,\n.p-thumb-img {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  display: block;\n  filter: saturate(0.86) brightness(1.02);\n}\n\n.p-thumb-img {\n  opacity: 0;\n  transition: opacity 0.28s ease;\n}\n\n.p-thumb-img.on {\n  opacity: 1;\n}\n\n.p-info {\n  flex: 1;\n  min-width: 0;\n}\n\n.p-name {\n  display: block;\n  margin-bottom: 4rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(28rpx * var(--fs, 1));\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.p-dates {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #A9825E;\n}\n\n.p-dates.accent-modern {\n  color: #7E9A9A;\n}\n\n.p-roles {\n  display: block;\n  margin-top: 6rpx;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #5F5A52;\n}\n\n.rel-arrow {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 32rpx;\n  color: #A39A8E;\n}\n\n.foot-actions {\n  margin-top: 30rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.ghost-btn {\n  flex: 1;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n.ghost-btn.on {\n  border-color: rgba(163, 74, 62, 0.45);\n  background: rgba(163, 74, 62, 0.06);\n  color: #A34A3E;\n}\n\n.ghost-btn.on.on-modern {\n  border-color: rgba(126, 154, 154, 0.5);\n  background: rgba(126, 154, 154, 0.08);\n  color: #5F7E7E;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n"; });
+__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{event}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <view class=\"top-center\">\r\n        <text class=\"top-title\">事件</text>\r\n        <view class=\"top-seal\">\r\n          <text class=\"seal-char\">{{seal}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"e-copy\">\r\n        <text class=\"e-year\">{{event.yearText}}</text>\r\n        <text class=\"e-title\">{{event.title}}</text>\r\n        <view class=\"e-meta\">\r\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\r\n            <text>{{event.era}}</text>\r\n          </view>\r\n          <text class=\"e-tags\">{{event.tags}}</text>\r\n        </view>\r\n      </view>\r\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\r\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\r\n        <text>{{event.desc}}</text>\r\n      </view>\r\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\r\n      <text class=\"section-title\">其时其人</text>\r\n    </view>\r\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\r\n      <view\r\n        wx:for=\"{{relatedPersons}}\"\r\n        wx:key=\"id\"\r\n        class=\"p-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goPerson\"\r\n      >\r\n        <view class=\"p-thumb-wrap\">\r\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\r\n          <image\r\n            wx:if=\"{{item.img !== item.fallback}}\"\r\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\r\n            src=\"{{item.img}}\"\r\n            mode=\"aspectFill\"\r\n            bindload=\"onThumbLoad\"\r\n            binderror=\"onThumbErr\"\r\n            data-id=\"{{item.id}}\"\r\n          ></image>\r\n        </view>\r\n        <view class=\"p-info\">\r\n          <text class=\"p-name\">{{item.name}}</text>\r\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\r\n          <text class=\"p-roles\">{{item.roles}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\r\n        <text>回时间轴再看一眼</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{event.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-center {\r\n  position: absolute;\r\n  left: 50%;\r\n  transform: translateX(-50%);\r\n  top: 0;\r\n  bottom: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: stretch;\r\n  gap: 26rpx;\r\n  margin-top: 26rpx;\r\n  padding: 30rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.e-copy {\r\n  position: relative;\r\n  z-index: 1;\r\n  flex: 1;\r\n  min-width: 0;\r\n  display: flex;\r\n  flex-direction: column;\r\n  justify-content: center;\r\n}\r\n\r\n.e-fig {\r\n  width: 200rpx;\r\n  height: 200rpx;\r\n  flex: 0 0 200rpx;\r\n  align-self: center;\r\n  border-radius: 24rpx;\r\n  overflow: hidden;\r\n  background: #F3EFE6;\r\n  border: 4rpx solid #FFFDF8;\r\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10);\r\n}\r\n\r\n.e-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.82) brightness(1.02);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.e-year {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A9825E;\r\n}\r\n\r\n.head-modern .e-year {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-title {\r\n  display: block;\r\n  margin-top: 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(50rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  line-height: 1.25;\r\n  color: #1F1D19;\r\n}\r\n\r\n.e-meta {\r\n  margin-top: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 18rpx;\r\n}\r\n\r\n.era-chip {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-tags {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n  margin-bottom: 22rpx;\r\n  padding-bottom: 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.p-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.p-thumb-wrap {\r\n  position: relative;\r\n  width: 104rpx;\r\n  height: 104rpx;\r\n  flex: 0 0 104rpx;\r\n  border-radius: 20rpx;\r\n  overflow: hidden;\r\n  background: #F3EFE6;\r\n  border: 4rpx solid #FFFDF8;\r\n  box-shadow: 0 6rpx 16rpx rgba(90, 70, 50, 0.10);\r\n}\r\n\r\n/* 底层默认图（本地时代细部，秒出）；上层远端专属图加载完淡入。\r\n   aspectFill：任意比例远端图等比缩放铺满裁切，不拉伸变形。 */\r\n.p-thumb-bg,\r\n.p-thumb-img {\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.86) brightness(1.02);\r\n}\r\n\r\n.p-thumb-img {\r\n  opacity: 0;\r\n  transition: opacity 0.28s ease;\r\n}\r\n\r\n.p-thumb-img.on {\r\n  opacity: 1;\r\n}\r\n\r\n.p-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  margin-bottom: 4rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-dates {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-roles {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
 __register('/pages/person/person.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
@@ -5708,8 +5986,8 @@ Page('project://pages/person/person.js', {
 });
 
 });
-__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{person}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">人物</text>\n      <text class=\"top-seal {{accent === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\n    </view>\n\n    <view class=\"head-card\">\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      <view class=\"p-veil\"></view>\n      <view class=\"p-copy\">\n        <text class=\"p-name\">{{person.name}}</text>\n        <view class=\"p-meta\">\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\n          <text class=\"p-dot\">·</text>\n          <text class=\"p-roles\">{{person.roles}}</text>\n        </view>\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\n          <text>{{person.era}}</text>\n        </view>\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\n          <text class=\"quote-mark\">“</text>\n          <text class=\"quote\">{{person.quote}}</text>\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\n        </view>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\n      <text class=\"section-title\">生平际会 · 相关史事</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\n      <view\n        wx:for=\"{{related}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{person.source}}</view>\n  </view>\n</view>\n"; });
-__register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  position: relative;\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.p-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.46;\r\n  filter: saturate(0.6) brightness(1.04);\r\n}\r\n\r\n.p-veil {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0.36) 0%, rgba(252, 251, 248, 0.78) 48%, rgba(252, 251, 248, 0.95) 100%);\r\n}\r\n\r\n.p-copy {\r\n  position: relative;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(64rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-meta {\r\n  margin-top: 16rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n}\r\n\r\n.p-dates {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-dot {\r\n  color: #8C857A;\r\n}\r\n\r\n.p-roles {\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-chip {\r\n  margin-top: 22rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.quote-block {\r\n  margin-top: 28rpx;\r\n  padding: 26rpx 26rpx 24rpx;\r\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\r\n  background: rgba(252, 251, 248, 0.72);\r\n  border-radius: 0 24rpx 24rpx 0;\r\n}\r\n\r\n.quote-mark {\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 40rpx;\r\n  line-height: 0.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.quote {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  color: #1F1D19;\r\n}\r\n\r\n.quote-src {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #8C857A;\r\n  text-align: right;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-thumb {\r\n  width: 80rpx;\r\n  height: 80rpx;\r\n  flex: 0 0 80rpx;\r\n  display: block;\r\n  border-radius: 18rpx;\r\n  background: #F3EFE6;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  filter: saturate(0.88) brightness(1.01);\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
+__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{person}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">人物</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      <view class=\"p-veil\"></view>\r\n      <view class=\"p-copy\">\r\n        <text class=\"p-name\">{{person.name}}</text>\r\n        <view class=\"p-meta\">\r\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\r\n          <text class=\"p-dot\">·</text>\r\n          <text class=\"p-roles\">{{person.roles}}</text>\r\n        </view>\r\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\r\n          <text>{{person.era}}</text>\r\n        </view>\r\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\r\n          <text class=\"quote-mark\">“</text>\r\n          <text class=\"quote\">{{person.quote}}</text>\r\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\r\n      <text class=\"section-title\">生平际会 · 相关史事</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\r\n      <view\r\n        wx:for=\"{{related}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{person.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  position: relative;\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.p-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.46;\r\n  filter: saturate(0.6) brightness(1.04);\r\n}\r\n\r\n.p-veil {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0.36) 0%, rgba(252, 251, 248, 0.78) 48%, rgba(252, 251, 248, 0.95) 100%);\r\n}\r\n\r\n.p-copy {\r\n  position: relative;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(64rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-meta {\r\n  margin-top: 16rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n}\r\n\r\n.p-dates {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-dot {\r\n  color: #8C857A;\r\n}\r\n\r\n.p-roles {\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-chip {\r\n  margin-top: 22rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.quote-block {\r\n  margin-top: 28rpx;\r\n  padding: 26rpx 26rpx 24rpx;\r\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\r\n  background: rgba(252, 251, 248, 0.72);\r\n  border-radius: 0 24rpx 24rpx 0;\r\n}\r\n\r\n.quote-mark {\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 40rpx;\r\n  line-height: 0.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.quote {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  color: #1F1D19;\r\n}\r\n\r\n.quote-src {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #8C857A;\r\n  text-align: right;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-thumb {\r\n  width: 80rpx;\r\n  height: 80rpx;\r\n  flex: 0 0 80rpx;\r\n  display: block;\r\n  border-radius: 18rpx;\r\n  background: #F3EFE6;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  filter: saturate(0.88) brightness(1.01);\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
 __register('/pages/period/period.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
@@ -5836,8 +6114,8 @@ Page('project://pages/period/period.js', {
 });
 
 });
-__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{period}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">朝代</text>\r\n      <text class=\"top-seal {{period.id === 'modern' ? 'seal-modern' : ''}}\">{{seal}}</text>\r\n    </view>\r\n\r\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"hero-band\">\r\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\r\n        <view class=\"hero-shade\"></view>\r\n        <view class=\"hero-copy\">\r\n          <text class=\"p-name\">{{period.name}}</text>\r\n          <text class=\"p-years\">{{period.yearText}}</text>\r\n        </view>\r\n        <text class=\"hero-title\">{{period.title}}</text>\r\n      </view>\r\n      <text class=\"p-desc\">{{period.desc}}</text>\r\n    </view>\r\n\r\n    <view class=\"body-card\" wx:if=\"{{span}}\">\r\n      <view class=\"para\">\r\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\r\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\r\n        <text>进时间轴看这个时代的脉络</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\r\n      <text class=\"section-title\">这个时代的史事</text>\r\n      <text class=\"section-count\">{{events.length}} 条</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\r\n      <view\r\n        wx:for=\"{{events}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{period.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  background: #A34A3E;\r\n  color: #FFF8EF;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 20rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  transform: rotate(2deg);\r\n}\r\n\r\n.top-seal.seal-modern {\r\n  background: #7E9A9A;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 24rpx 24rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.hero-band {\r\n  position: relative;\r\n  height: 300rpx;\r\n  border-radius: 30rpx;\r\n  overflow: hidden;\r\n}\r\n\r\n.hero-img {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.hero-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\r\n}\r\n\r\n.hero-copy {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(52rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.1;\r\n  color: #FCFBF8;\r\n}\r\n\r\n.p-years {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: rgba(252, 251, 248, 0.86);\r\n}\r\n\r\n.hero-title {\r\n  position: absolute;\r\n  right: 24rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n  height: 44rpx;\r\n  padding: 0 18rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  border-radius: 22rpx;\r\n  background: rgba(252, 251, 248, 0.92);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.p-desc {\r\n  display: block;\r\n  margin-top: 24rpx;\r\n  padding: 0 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  letter-spacing: 0.02em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-count {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.02em;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n}\r\n\r\n.time-btn {\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n"; });
+__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{period}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">朝代</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"hero-band\">\r\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\r\n        <view class=\"hero-shade\"></view>\r\n        <view class=\"hero-copy\">\r\n          <text class=\"p-name\">{{period.name}}</text>\r\n          <text class=\"p-years\">{{period.yearText}}</text>\r\n        </view>\r\n        <text class=\"hero-title\">{{period.title}}</text>\r\n      </view>\r\n      <text class=\"p-desc\">{{period.desc}}</text>\r\n    </view>\r\n\r\n    <view class=\"body-card\" wx:if=\"{{span}}\">\r\n      <view class=\"para\">\r\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\r\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\r\n        <text>进时间轴看这个时代的脉络</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\r\n      <text class=\"section-title\">这个时代的史事</text>\r\n      <text class=\"section-count\">{{events.length}} 条</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\r\n      <view\r\n        wx:for=\"{{events}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{period.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 24rpx 24rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.hero-band {\r\n  position: relative;\r\n  height: 300rpx;\r\n  border-radius: 30rpx;\r\n  overflow: hidden;\r\n}\r\n\r\n.hero-img {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.hero-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\r\n}\r\n\r\n.hero-copy {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(52rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.1;\r\n  color: #FCFBF8;\r\n}\r\n\r\n.p-years {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: rgba(252, 251, 248, 0.86);\r\n}\r\n\r\n.hero-title {\r\n  position: absolute;\r\n  right: 24rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n  height: 44rpx;\r\n  padding: 0 18rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  border-radius: 22rpx;\r\n  background: rgba(252, 251, 248, 0.92);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.p-desc {\r\n  display: block;\r\n  margin-top: 24rpx;\r\n  padding: 0 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  letter-spacing: 0.02em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-count {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.02em;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n}\r\n\r\n.time-btn {\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n"; });
 __register('/pages/search/search.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
