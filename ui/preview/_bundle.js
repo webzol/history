@@ -3733,6 +3733,8 @@ __register('/utils/historyData.js', function (require, module, exports) {
 // - 初始返回打包内的本地种子 require('../data/history.js')（离线零依赖）
 // - onShow 时页面调用 refresh()：jsDelivr 拉到新 JSON 且校验通过 → 热替换，
 //   并通知订阅回调重建页面数据（内容更新不用发版）
+// - 稳态零开销（2026-10-31）：remote.js 内存缓存 + sameData 引用短路，
+//   切页 refresh 不再读盘/解析/stringify；「清除缓存」会 resetMemory()
 // - 校验不通过/网络失败 → 保持 current 不变，UI 零影响
 // - 09B 后 NestJS 上线时，仅需替换 remote.js 的 URL 与载荷解析
 
