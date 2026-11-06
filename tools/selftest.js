@@ -1469,6 +1469,11 @@ console.log('== 搜索 ==');
   p.flushSearch();
   ok(p.data.results.persons.some((x) => x.id === 'su-shi'), '实时检索命中苏轼');
   eq(p.data.keyword, '苏轼', '实时检索沿用输入关键词');
+
+  p.clearKeyword();
+  eq(p.data.keyword, '', '清除按钮清空关键词');
+  eq(p.data.results, null, '清除后回到热门检索页');
+  eq(p.data.metaText, '', '清除后检索汇总同步清空');
   p.setData({ keyword: '' });
   p.onInput({ detail: { value: '' } });
 

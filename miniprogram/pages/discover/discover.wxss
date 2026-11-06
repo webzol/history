@@ -399,10 +399,3 @@
   color: #A39A8E;
 }
 
-.tba-note {
-  margin-top: 26rpx;
-  font-size: calc(18rpx * var(--fs, 1));
-  letter-spacing: 0.04em;
-  color: #A39A8E;
-}
-

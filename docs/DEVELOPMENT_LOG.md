@@ -1939,3 +1939,16 @@ miniprogram/data/history.js
 - **保留 2 处合理例外**并在脚本中标注：刘渊（卒 310）→永嘉之乱（316，其所建汉赵灭西晋）；徐光启（卒 1633）→《农政全书》成书（1639 遗著刊行）。
 - 数据规模：人物 86→**89**；`data/history.json` 重建 192.4KB；selftest 数量断言 86→89（4 处）+ 苏轼/王安石/澶渊其时其人 3 处关联断言对齐。
 - 验证：`node tools/selftest.js` PASS 1810 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；对齐审计脚本复跑仅剩 2 项已标注例外。
+
+## 2026-10-31 · 加载提速（热更链路稳态零开销）+ 无用交互清理
+
+- **热更链路稳态提速**：
+  - `utils/remote.js` 加模块级内存缓存：`shige_history_remote`（~192KB JSON）此前每次页面 `onShow` 的 `hd.refresh` 都要 `getStorageSync` 读盘 + 解析，`historyData.sameData` 还要做两次 `JSON.stringify` 对比——实测每次 onShow 隐性开销 ≈5.6ms（低端机更高）。现在首读落内存、引用直达，稳态切 tab 零 IO 零解析；`sameData` 加引用相等短路，稳态不再 stringify。
+  - 「清除缓存」（profile `clearStorageSync`）后调用 `remote.resetMemory()`，内存缓存与 storage 同步失效。
+  - 启动预热（3s 后 hd.refresh）不变；首读之后进任何页面 refresh 全部零成本。
+- **无用交互清理**：
+  - 删除发现页尾部占位文案「世纪 · 历史地图 · 更多专题，正在整理中。」（`.tba-note`，wxml+wxss）——对不可用功能的死承诺；
+  - 搜索页新增关键词一键清除「×」（与资料库列表页一致）：`clearKeyword` 同步清 keyword/results/metaText 并取消防抖定时器，回到热门检索页。
+- 交互盘点结论：13 页全部 bindtap 均有处理与反馈（toast/弹层/导航），无死链按钮；「搜索」按钮保留为显式触发（与输入即搜并存）。
+- selftest +3 断言（清除按钮清空关键词/回热门页/汇总同步清空）。
+- 验证：`node tools/selftest.js` PASS 1813 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。

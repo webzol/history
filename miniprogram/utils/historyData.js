@@ -52,6 +52,7 @@ function apply(data) {
 }
 
 function sameData(a, b) {
+  if (a === b) return true; // 内存缓存引用直达（2026-10-31）：稳态下零 stringify 开销
   try {
     return JSON.stringify(a) === JSON.stringify(b);
   } catch (e) {

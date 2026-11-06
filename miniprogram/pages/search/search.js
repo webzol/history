@@ -63,6 +63,15 @@ Page({
     this.onSearch();
   },
 
+  // 一键清空关键词，回到热门检索页
+  clearKeyword() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+    this.setData({ keyword: '', results: null, empty: false, metaText: '' });
+  },
+
   onHide() {
     if (this.searchTimer) {
       clearTimeout(this.searchTimer);

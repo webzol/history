@@ -11,19 +11,31 @@ const PURGE_URL =
 const CACHE_KEY = 'shige_history_remote';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
+// 模块级内存缓存：~200KB 的 JSON 每次从 storage 读 + 解析不便宜（每个页面
+// onShow 都会 refresh 一次），首读落内存后引用直达，切页零 IO 零解析。
+let memoryData = null;
+
 function readCache() {
+  if (memoryData) return memoryData;
   const raw = wx.getStorageSync(CACHE_KEY);
   if (!raw || !raw.data) return null;
   if (Date.now() - raw.at > CACHE_TTL) return null;
+  memoryData = raw.data;
   return raw.data;
 }
 
 function writeCache(data) {
+  memoryData = data;
   try {
     wx.setStorageSync(CACHE_KEY, { at: Date.now(), data });
   } catch (e) {
     // 存储失败不影响当次使用
   }
+}
+
+// 「清除缓存」等场景显式失效内存缓存（storage 已被清空，内存不能还留着旧引用）
+function resetMemory() {
+  memoryData = null;
 }
 
 // 请求 jsDelivr 清其 CDN 缓存（官方 purge 端点），让「检查更新」即时拉到新内容
@@ -79,5 +91,6 @@ module.exports = {
   REMOTE_URL,
   PURGE_URL,
   purgeRemoteCache,
-  fetchRemoteHistory
+  fetchRemoteHistory,
+  resetMemory
 };

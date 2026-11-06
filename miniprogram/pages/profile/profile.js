@@ -205,6 +205,7 @@ Page({
       success: (res) => {
         if (!res.confirm) return;
         wx.clearStorageSync();
+        require('../../utils/remote.js').resetMemory();
         this.onShow();
         wx.showToast({ title: '已清除', icon: 'success' });
       }
