@@ -1952,3 +1952,10 @@ miniprogram/data/history.js
 - 交互盘点结论：13 页全部 bindtap 均有处理与反馈（toast/弹层/导航），无死链按钮；「搜索」按钮保留为显式触发（与输入即搜并存）。
 - selftest +3 断言（清除按钮清空关键词/回热门页/汇总同步清空）。
 - 验证：`node tools/selftest.js` PASS 1813 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+
+## 2026-11-11 · 更换小程序 AppID
+
+- 将 AppID 由 `wxe61b785946958cc7` 更换为 `wx8abc71167197b4b9`。
+- 涉及文件：`miniprogram/project.config.json`（`appid` 字段）、`AGENTS.md`（§4 运行说明 + §7 已知问题第 6 条）、`miniprogram/README.md`（导入说明 + 已知问题）。
+- 已全仓 grep 复核：旧 AppID 无残留，新 AppID 5 处一致；`project.private.config.json` 不含 appid，无需改动。
+- 遗留：新 AppID 归属与权限需在微信公众平台/开发者工具确认；正式发布前核对。

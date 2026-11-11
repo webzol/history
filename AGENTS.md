@@ -131,7 +131,7 @@ E:\AI\history\ui\reference\home-v3.html
 
 1. 打开微信开发者工具。
 2. 导入 `E:\AI\history\miniprogram`。
-3. AppID 已配置为 `wxe61b785946958cc7`（正式发布前确认归属）。
+3. AppID 已配置为 `wx8abc71167197b4b9`（正式发布前确认归属）。
 4. 基础库建议 3.x，编译预览。
 
 ### 自测工具（2026-10-19 起可用）
@@ -228,7 +228,7 @@ python tools/validate_miniprogram.py
 3. ~~事件/人物详情独立成页；朝代 Modal~~ → 2026-10-19 晚：朝代详情页 `pages/period/` 已落地，全站仅剩专题（盛唐气象/百年中国）走时间轴，无 Modal 残留。
 4. ~~收藏、浏览足迹占位~~ → 2026-10-19 晚：已落地（`utils/store.js` 本地存储；详情页收藏按钮、「我的」页列表、清缓存联动）。
 5. 搜索已完成（2026-10-19 下午，入口在「我的」页）；全部 12 条事件已补 details 正文；数据仍在本地 `data/history.js` 种子，后端/CMS 尚未启动。
-6. `project.config.json` 已配置 AppID `wxe61b785946958cc7`；正式发布前确认归属与权限。
+6. `project.config.json` 已配置 AppID `wx8abc71167197b4b9`；正式发布前确认归属与权限。
 7. ~~paper-bg.png 约 871KB~~ → 已解决：全部图片转优化 JPG（paper-bg.jpg 25KB 等），包体 550KB；`tools/compress_assets.py` 可复现。
 8. 四个主页面顶部均为纯字标；时间轴靠页内"古代/近现代"分段切换，无需菜单。
 9. ~~首页"今日史事"日期匹配未完成~~ → 2026-10-19 晚：已按公历「月-日」日期库匹配；2026-10-25 起无匹配日改为「每日随机」抽一条史事（`api.pickDaily` 日期种子），仅日期库 16 组匹配日仍按库固定显示。农历事件暂未列入，正式发布前仍需历史审校。
