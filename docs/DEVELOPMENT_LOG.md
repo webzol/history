@@ -1959,3 +1959,10 @@ miniprogram/data/history.js
 - 涉及文件：`miniprogram/project.config.json`（`appid` 字段）、`AGENTS.md`（§4 运行说明 + §7 已知问题第 6 条）、`miniprogram/README.md`（导入说明 + 已知问题）。
 - 已全仓 grep 复核：旧 AppID 无残留，新 AppID 5 处一致；`project.private.config.json` 不含 appid，无需改动。
 - 遗留：新 AppID 归属与权限需在微信公众平台/开发者工具确认；正式发布前核对。
+
+## 2026-11-11 · 首页字标「史页」改为「阅史记」
+
+- 首页顶部字标文案变更：`pages/home/home.wxml` 的 `.brand` 由「史页」改为「阅史记」；同步 `pages/home/home.json` 的 `navigationBarTitleText`（自定义导航栏虽不显示，仍保持一致，避免分享/调试标题不符）。
+- 网页预览同步：`ui/reference/home-v3.html` 顶部字标同改「阅史记」。
+- 说明：仅改首页字标；其余页面（时间轴/发现/我的）顶部字标仍为各自页面名，`app.js` `globalData.appName`、分享标题、资料库/关于等其它「史页」文案未动（如需品牌全面更名请另行说明）。
+- 验证：`node tools/build_preview.js` 重打包 OK；`node tools/selftest.js` PASS 1813 / FAIL 0。

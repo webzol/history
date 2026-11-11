@@ -2,7 +2,7 @@
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
     <view class="topbar">
-      <text class="brand">史页</text>
+      <text class="brand">阅史记</text>
     </view>
 
     <view class="date">{{dateText}}</view>
