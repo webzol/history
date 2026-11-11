@@ -1966,3 +1966,11 @@ miniprogram/data/history.js
 - 网页预览同步：`ui/reference/home-v3.html` 顶部字标同改「阅史记」。
 - 说明：仅改首页字标；其余页面（时间轴/发现/我的）顶部字标仍为各自页面名，`app.js` `globalData.appName`、分享标题、资料库/关于等其它「史页」文案未动（如需品牌全面更名请另行说明）。
 - 验证：`node tools/build_preview.js` 重打包 OK；`node tools/selftest.js` PASS 1813 / FAIL 0。
+
+## 2026-11-11 · 「我的」页新增开发者版权署名
+
+- 页脚署名（`pages/profile/profile.wxml` + `.wxss`）：菜单卡之后新增居中竖排页脚——56rpx 细分隔线、「设计开发」疏排淡墨 + `@DING` 朱砂描边小印（楷体，呼应全站印章语言）、`© 2026 阅史记 · 版权所有`；字号均走 `calc(Nrpx * var(--fs, 1))` 随阅读字号缩放；`margin-top 46rpx` / `margin-bottom 72rpx` 留白，避免贴底。
+- 「关于史页」弹层文案追加一段「设计开发：@DING　© 2026 阅史记 · 版权所有。」（`profile.js` onAbout）。
+- selftest +1 断言（关于弹层含 `@DING` 与 `2026`）。
+- 验证：`node tools/selftest.js` PASS 1814 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+- 遗留：真机核对页脚与固定 tabbar / 底部安全区的间距。

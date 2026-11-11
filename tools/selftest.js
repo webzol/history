@@ -634,6 +634,7 @@ console.log('== 我的 ==' );
   const aboutText = p.data.info.paragraphs.join('');
   ok(aboutText.indexOf('史事 100') >= 0, '关于弹层含数据统计');
   ok(aboutText.indexOf('公开网络') >= 0 && aboutText.indexOf('删除') >= 0, '关于弹层含素材来源一句话声明');
+  ok(aboutText.indexOf('@DING') >= 0 && aboutText.indexOf('2026') >= 0, '关于弹层含开发者版权署名');
   tap(p, 'closeInfo');
   eq(p.data.info.open, false, '关于弹层可关闭');
 

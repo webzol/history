@@ -494,3 +494,50 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* 开发者版权署名 */
+.footer {
+  margin-top: 46rpx;
+  margin-bottom: 72rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.footer-rule {
+  width: 56rpx;
+  height: 2rpx;
+  border-radius: 1rpx;
+  background: rgba(70, 58, 45, 0.16);
+}
+
+.footer-line {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.footer-label {
+  font-size: calc(19rpx * var(--fs, 1));
+  letter-spacing: 0.24em;
+  color: #A39A8E;
+  padding-left: 0.24em;
+}
+
+/* @DING 作朱砂小印式署名 */
+.footer-dev {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", serif;
+  font-size: calc(21rpx * var(--fs, 1));
+  letter-spacing: 0.08em;
+  color: #A34A3E;
+  border: 2rpx solid rgba(163, 74, 62, 0.5);
+  border-radius: 6rpx;
+  padding: 3rpx 12rpx 4rpx;
+}
+
+.footer-copy {
+  font-size: calc(17rpx * var(--fs, 1));
+  letter-spacing: 0.14em;
+  color: #B3ABA0;
+}
+

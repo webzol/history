@@ -191,7 +191,8 @@ Page({
         paragraphs: [
           '一页一页读历史。古代史与近现代史并列，史料可追溯。',
           `收录朝代 ${this.data.stats[0].value} · 史事 ${this.data.stats[1].value} · 人物 ${this.data.stats[2].value} · 专题 ${this.data.stats[3].value}。`,
-          '素材来源于公开网络，如有侵权请联系我们删除。'
+          '素材来源于公开网络，如有侵权请联系我们删除。',
+          '设计开发：@DING　© 2026 阅史记 · 版权所有。'
         ]
       }
     });
