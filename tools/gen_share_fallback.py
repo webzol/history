@@ -28,59 +28,76 @@ FONT_HEI = 'C:/Windows/Fonts/simhei.ttf'
 img = Image.new('RGB', (W, H), PAPER)
 d = ImageDraw.Draw(img)
 
+# 卷轴形态：顶/底深木墨色轴杆（分段模拟圆柱高光）
+def draw_rod(y):
+    d.rectangle([0, y, W, y + 8], fill=(46, 40, 32))
+    d.rectangle([0, y + 1, W, y + 2], fill=(78, 70, 58))
+    d.rectangle([0, y + 6, W, y + 8], fill=(22, 18, 14))
+    d.rectangle([0, y, 4, y + 8], fill=(27, 23, 18))
+    d.rectangle([W - 4, y, W, y + 8], fill=(27, 23, 18))
+
+draw_rod(0)
+draw_rod(H - 8)
+
+# 右缘竖排「阅史记」淡墨透背字
+f_bg = ImageFont.truetype(FONT_KAI, 40)
+for i, ch in enumerate('阅史记'):
+    bbox = d.textbbox((0, 0), ch, font=f_bg)
+    d.text((W - 60, 320 + i * 66), ch, font=f_bg, fill=(31, 29, 25, 14))
+
 # 顶/底朱砂界格细线
 cinnabar_line = (198, 122, 111)
-d.rectangle([72, 54, W - 72, 57], fill=cinnabar_line)
-d.rectangle([72, H - 57, W - 72, H - 54], fill=cinnabar_line)
+d.rectangle([72, 60, W - 72, 63], fill=cinnabar_line)
+d.rectangle([72, H - 63, W - 72, H - 60], fill=cinnabar_line)
 
 # 裱底（圆角暖白）+ 占位画心
 round_r = 18
-d.rounded_rectangle([48, 84, W - 48, 474], radius=round_r, fill=CARD)
-d.rounded_rectangle([72, 108, W - 72, 450], radius=6, fill=CANVAS_BG)
+d.rounded_rectangle([48, 90, W - 48, 480], radius=round_r, fill=CARD)
+d.rounded_rectangle([72, 114, W - 72, 456], radius=6, fill=CANVAS_BG)
 f_center = ImageFont.truetype(FONT_KAI, 44)
 bbox = d.textbbox((0, 0), '阅史记', font=f_center)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 260), '阅史记', font=f_center, fill=(185, 174, 158))
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 266), '阅史记', font=f_center, fill=(185, 174, 158))
 
 # 朱砂 kicker
 f_kicker = ImageFont.truetype(FONT_KAI, 34)
 text = '阅 史 记'
 bbox = d.textbbox((0, 0), text, font=f_kicker)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 540), text, font=f_kicker, fill=CINNABAR)
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 546), text, font=f_kicker, fill=CINNABAR)
 
 # 「共此卷」大字
 f_title = ImageFont.truetype(FONT_KAI, 96)
 bbox = d.textbbox((0, 0), '共此卷', font=f_title)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 600), '共此卷', font=f_title, fill=INK)
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 606), '共此卷', font=f_title, fill=INK)
 
 # 淡墨细线
-d.rectangle([120, 780, W - 120, 782], fill=(199, 190, 178))
+d.rectangle([120, 786, W - 120, 788], fill=(199, 190, 178))
 
 # 楷体名句（通用句）
 f_quote = ImageFont.truetype(FONT_KAI, 46)
 text = '以千年为卷轴，读万古事'
 bbox = d.textbbox((0, 0), text, font=f_quote)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 830), text, font=f_quote, fill=(59, 55, 49))
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 836), text, font=f_quote, fill=(59, 55, 49))
 
 # 出处行
 f_src = ImageFont.truetype(FONT_KAI, 30)
 text = '—— 一页一页读历史'
 bbox = d.textbbox((0, 0), text, font=f_src)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 910), text, font=f_src, fill=FADE)
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], 916), text, font=f_src, fill=FADE)
 
 # 底部信息区：提示（左）+「史载」印（右）
 f_note = ImageFont.truetype(FONT_HEI, 30)
-d.text([90, 1000], '转发好友，直达本页', font=f_note, fill=GRAY)
+d.text([90, 1006], '转发好友，直达本页', font=f_note, fill=GRAY)
 seal = Image.open(os.path.join(ROOT, 'miniprogram', 'assets', 'seal.png')).convert('RGBA')
 seal_h = 156
 seal_w = round(seal_h * seal.width / seal.height)
 seal = seal.resize((seal_w, seal_h), Image.LANCZOS)
-img.paste(seal, (W - 96 - seal_w, 966), seal)
+img.paste(seal, (W - 96 - seal_w, 972), seal)
 
 # 品牌行
 f_brand = ImageFont.truetype(FONT_HEI, 30)
 text = '阅史记 · 一页一页读历史'
 bbox = d.textbbox((0, 0), text, font=f_brand)
-d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], H - 116), text, font=f_brand, fill=FADE)
+d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], H - 122), text, font=f_brand, fill=FADE)
 
 img.save(OUT, 'JPEG', quality=75, optimize=True)
 print('OK', os.path.relpath(OUT, ROOT), img.size)

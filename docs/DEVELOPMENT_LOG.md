@@ -2059,3 +2059,12 @@ miniprogram/data/history.js
 - **修复面板被 tabbar 遮挡（真机+预览同因）**：面板原在 `.screen` 容器内，而各页 `.screen { z-index: 2 }` 创建层叠上下文，把面板 z-120 封印在内——custom-tab-bar(z-10) / harness tabshell(z-10) 在外层恒压面板（按钮被盖）。修复：ss-layer 移出 `.screen` 挂到 page 根直下，z-120 全局生效盖过 tabbar。用浏览器 elementsFromPoint + z-index 动态实验定位（先疑似 harness 失真，后证实真机同因）。
 - 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图核对——SE/标准/ProMax 三档按钮同行等宽可见、题图贴顶、面板盖 tabbar 全部正确。
 - 遗留：真机确认楷体按钮字与渐变渲染；小屏面板滚动余量已足够（删提示行后单屏容纳）。
+
+## 2026-11-14 · 海报卷轴化：轴杆 + 竖排透背字（历史背景风格）
+
+- 需求：海报背景设计为历史卷轴或历史背景文字风格。
+- **卷轴形态（drawPoster）**：海报顶/底各加一根**深木墨色轴杆**（8px，纯色分段模拟圆柱高光/阴影——旧 canvas 无渐变 API，两端轴头深色端块），题图成为「卷首展开图」，宣纸底为展开卷面；底部朱砂界格线移至底轴杆上缘。
+- **背景历史文字**：内容区右缘竖排「阅史记」三字淡墨透背字（楷体 17px，rgba 0.055，逐字 fillText 竖排）——宣纸透背书法质感，呼应全站 paper-bg 暗纹语言，不占内容空间。
+- 兜底固定图同步：`tools/gen_share_fallback.py` 加同款轴杆 + 竖排透背字，元素 y 随卷轴结构整体下移，重生成。
+- 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`node tools/build_preview.js` 重打包；截图核对——苏轼卷首画/西汉卷首图 + 顶底轴杆 + 右缘透背字 + 同行按钮全部正确，卷轴意象成立。
+- 遗留：真机核对轴杆纯色分段高光的观感（若发实可改图片轴杆材质）。

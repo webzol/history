@@ -7042,17 +7042,33 @@ function drawPoster(page) {
   try {
     const ctx = wx.createCanvasContext(CANVAS_ID);
 
-    // 宣纸底
-    ctx.setFillStyle('#F6F1EA');
-    ctx.fillRect(0, 0, W, H);
+    // 卷轴形态：顶/底深木墨色轴杆（纯色分段模拟圆柱高光，旧 canvas 无渐变 API）
+    const drawRod = (y) => {
+      ctx.setFillStyle('#2E2820');
+      ctx.fillRect(0, y, W, 8);
+      ctx.setFillStyle('rgba(246, 241, 234, 0.20)');
+      ctx.fillRect(0, y + 1, W, 1);
+      ctx.setFillStyle('rgba(0, 0, 0, 0.28)');
+      ctx.fillRect(0, y + 6, W, 2);
+      // 两端轴头
+      ctx.setFillStyle('#1B1712');
+      ctx.fillRect(0, y, 4, 8);
+      ctx.fillRect(W - 4, y, 4, 8);
+    };
+    drawRod(0);
+    drawRod(H - 8);
 
-    // 题图贴顶全幅（当前页相关图；远端图加载失败回退 share.imgFallback 本地朝代画，
-    // 再失败画占位底，保证最顶部始终是相关图）
+    // 宣纸底（轴杆之间）
+    ctx.setFillStyle('#F6F1EA');
+    ctx.fillRect(0, 8, W, H - 16);
+
+    // 题图贴顶（当前页相关图；远端图加载失败回退 share.imgFallback 本地朝代画，
+    // 再失败画占位底，保证最顶部始终是相关图）——卷首展开图
     const drawCover = (src) => {
       // 按真实宽高裁中带（cover；优先 getImageInfo 宽高，未知尺寸的远端专属图按 360×360 估计）
       const iw = share.imgW || (/\/data\/img\//.test(src) ? 360 : 0);
       const ih = share.imgH || (/\/data\/img\//.test(src) ? 360 : 0);
-      const dw = W, dh = IMG_H;
+      const dy = 8, dw = W, dh = IMG_H - 8;
       if (iw > 0 && ih > 0) {
         const ratio = dw / dh;
         let sw = iw;
@@ -7063,26 +7079,33 @@ function drawPoster(page) {
         }
         const sx = Math.round((iw - sw) / 2);
         const sy = Math.round((ih - sh) / 2);
-        ctx.drawImage(src, sx, sy, sw, sh, 0, 0, dw, dh);
+        ctx.drawImage(src, sx, sy, sw, sh, 0, dy, dw, dh);
       } else {
-        ctx.drawImage(src, 0, 0, dw, dh);
+        ctx.drawImage(src, 0, dy, dw, dh);
       }
     };
     if (share.imgLocal) {
       drawCover(share.imgLocal);
     } else {
       ctx.setFillStyle('#EFE9DD');
-      ctx.fillRect(0, 0, W, IMG_H);
+      ctx.fillRect(0, 8, W, IMG_H - 8);
       ctx.setFillStyle('#B9AE9E');
       ctx.setFontSize(13);
       ctx.setTextAlign('center');
       ctx.fillText('阅史记', W / 2, IMG_H / 2 + 5);
     }
 
-    // 朱砂界格线：压题图底 + 底部
+    // 朱砂界格线：压题图底 + 底部轴杆上缘
     ctx.setFillStyle('rgba(163, 74, 62, 0.55)');
     ctx.fillRect(0, IMG_H, W, 1.5);
-    ctx.fillRect(24, H - 16, W - 48, 1.5);
+    ctx.fillRect(24, H - 20, W - 48, 1.5);
+
+    // 背景历史文字：右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('rgba(31, 29, 25, 0.055)');
+    ctx.font = '17px "Kaiti SC", "STKaiti", "KaiTi", serif';
+    '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - 15, 176 + i * 22));
+    ctx.font = '';
 
     // kicker（朱砂小字）
     ctx.setTextAlign('center');
