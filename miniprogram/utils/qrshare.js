@@ -14,6 +14,8 @@ const hd = require('./historyData.js');
 
 // 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
+// 题图兜底：当前页相关图全链路取不到时的卷首画
+const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
 
 // 海报 canvas 尺寸（px，与 app.wxss .ss-canvas 一致；面板内显示+保存导出同源）
 const CANVAS_ID = 'ssQrCanvas';
@@ -224,12 +226,8 @@ function drawPoster(page) {
     if (share.imgLocal) {
       drawCover(share.imgLocal);
     } else {
-      ctx.setFillStyle('#EFE9DD');
-      ctx.fillRect(0, 8, W, IMG_H - 8);
-      ctx.setFillStyle('#B9AE9E');
-      ctx.setFontSize(13);
-      ctx.setTextAlign('center');
-      ctx.fillText('阅史记', W / 2, IMG_H / 2 + 5);
+      // 全链路（远端 + imgFallback）都未取到时，画预置卷首兜底图（tools/gen_share_fallback.py 生成）
+      ctx.drawImage(FALLBACK_COVER, 0, 8, W, IMG_H - 8);
     }
 
     // 朱砂界格线：压题图底 + 底部轴杆上缘

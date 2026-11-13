@@ -12,6 +12,7 @@ import os
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 OUT = os.path.join(ROOT, 'miniprogram', 'assets', 'share-fallback.jpg')
+OUT_COVER = os.path.join(ROOT, 'miniprogram', 'assets', 'share-cover-fallback.jpg')
 
 W, H = 520, 848  # 260×424 的 2 倍
 PAPER = (246, 241, 234)      # #F6F1EA 宣纸
@@ -101,3 +102,30 @@ d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], H - 122), text, font=f_brand, f
 
 img.save(OUT, 'JPEG', quality=75, optimize=True)
 print('OK', os.path.relpath(OUT, ROOT), img.size)
+
+# ---------------------------------------------------------------------------
+# 第二张：海报题图兜底图 share-cover-fallback.jpg（780×426 = 题图区 260×142 的 3 倍）。
+# 当前页相关图（远端/回退链）全部获取不到时，drawPoster 画这张作为卷首画，
+# 替代原来的灰底占位——保证海报顶部永远是完整的历史视觉。
+# ---------------------------------------------------------------------------
+CW, CH = 520, 284  # 260×142 的 2 倍（主包体积余量收紧）
+cover = Image.new('RGB', (CW, CH), PAPER)
+dc = ImageDraw.Draw(cover)
+
+# 淡墨横向界格（上下各一条，卷面留白感）
+dc.rectangle([60, 40, CW - 60, 43], fill=(214, 205, 190))
+dc.rectangle([60, CH - 43, CW - 60, CH - 40], fill=(214, 205, 190))
+
+# 中央「史载」朱砂大印（半透明贴，像卷首钤印）
+seal_raw = Image.open(os.path.join(ROOT, 'miniprogram', 'assets', 'seal.png')).convert('RGBA')
+seal_c = seal_raw.resize((125, 216), Image.LANCZOS)
+cover.paste(seal_c, ((CW - 125) // 2, 20), seal_c)
+
+# 印下方品牌题字
+f_cover = ImageFont.truetype(FONT_KAI, 34)
+text = '阅史记 · 卷首'
+bbox = dc.textbbox((0, 0), text, font=f_cover)
+dc.text(((CW - (bbox[2] - bbox[0])) / 2 - bbox[0], CH - 68), text, font=f_cover, fill=FADE)
+
+cover.save(OUT_COVER, 'JPEG', quality=75, optimize=True)
+print('OK', os.path.relpath(OUT_COVER, ROOT), cover.size)

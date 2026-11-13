@@ -2068,3 +2068,12 @@ miniprogram/data/history.js
 - 兜底固定图同步：`tools/gen_share_fallback.py` 加同款轴杆 + 竖排透背字，元素 y 随卷轴结构整体下移，重生成。
 - 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`node tools/build_preview.js` 重打包；截图核对——苏轼卷首画/西汉卷首图 + 顶底轴杆 + 右缘透背字 + 同行按钮全部正确，卷轴意象成立。
 - 遗留：真机核对轴杆纯色分段高光的观感（若发实可改图片轴杆材质）。
+
+## 2026-11-14 · 海报题图兜底卷首图（灰块占位升级为预置历史视觉图）
+
+- 需求：当前图获取不到时放一张预置兜底图，不留灰块。
+- **新增 `assets/share-cover-fallback.jpg`（7.6KB，520×284 = 题图区 2 倍）**：PIL 生成（`tools/gen_share_fallback.py` 一次输出两张）——宣纸底 + 居中「史载」朱砂大印（卷首钤印）+「阅史记 · 卷首」楷体题字 + 上下界格线，全站视觉一致。
+- **接入（qrshare.drawPoster）**：题图全链路（远端 getImageInfo → imgFallback 本地朝代画）都未取到时，原「灰底 + 阅史记字样」占位改为 `drawImage(FALLBACK_COVER)` 卷首兜底图——海报顶部任何异常下都是完整历史视觉。包内资源 drawImage 几乎不会失败，兜底链至此闭环：远端图 → 本地朝代画 → 卷首兜底图。
+- 体积：主包 2029→2039KB（余量 9KB，2 倍分辨率控制住体积；3 倍版曾 13.5KB）。
+- 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`node tools/build_preview.js` 重打包；35 张截图全过；兜底图视觉单独核对。
+- 遗留：主包余量 9KB——新增主包资产前必须先核对体积（见 AGENTS 体积预算条款）。
