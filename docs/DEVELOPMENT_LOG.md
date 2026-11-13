@@ -2038,3 +2038,14 @@ miniprogram/data/history.js
 - mock 同步：selftest/harness 删 downloadFile mock，加 getImageInfo mock（harness 继续映射仓库本地文件保证离线截图有真图；selftest 用 netFail 开关覆盖失败场景）。
 - 验证：`node tools/selftest.js` PASS 1902 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图（含 SE/标准/ProMax 三档机型）全部成功。
 - 遗留：仅剩真机项（旧 canvas 渲染细节），分享功能全链路已无任何需开通/第三方依赖。
+
+## 2026-11-14 · 主包瘦身 123KB（修复 80051 超限 2152KB > 2MB）
+
+- 现象：微信开发者工具预览/上传报「错误码 80051，source size 2152KB exceed max limit 2MB」——分享功能三轮新增（qrcode.js 56KB + solarlunar 14KB + share-fallback.jpg 56KB + qrshare 16KB）把主包顶过了 2MB 上限。
+- **① 资料库自抓图清单移出主包（-176KB，最大头）**：`utils/archiveArtRemote.js`（176KB 纯 id 数据，6,406 条）→ `data/img/archive/art-remote.json`（在 packOptions.ignore 的 data/img 下，jsDelivr 提供）；`utils/archiveArt.js` 改远端按需加载（内存 + `shige_art_remote` 7 天本地缓存 + app.js onLaunch 3s 静默预取）；清单未就绪/无网时 `remoteImage` 返回 ''（画片隐藏）——与远端图本身无网不可用的降级一致。`archive-detail.js` apply 后 `archiveArt.ensure` 重算 art（清单就绪后头卡画片补显）；selftest 加 `_setRemote` 注入口（从仓库 JSON 读入）。
+- **② qrcode.js 裁剪（56→38KB）**：删 DOM/GIF 输出区块（_this.createTableTag/SvgTag/DataURL/ImgTag/ASCII/renderTo2dContext、qrKanji、byteArrayOutputStream/base64/gifImage 工具），保留编码核心 + UTF-8 支持 + UMD。首轮裁剪误伤内层工厂闭合（`return _this; };` 在 734-735），用括号深度追踪定位后从 git 恢复原版按正确边界（459-733、1755-2245）重裁，node 验证中文/长文本编码完整。
+- **③ share-fallback.jpg 重生成（56→19KB）**：PIL 尺寸 3 倍降 2 倍（520×848）+ q75 optimize。
+- **④ 两张无透明 PNG 转 JPG（72→13KB）**：scroll-accent.png（40KB，资料库分类题图）/ avatar-scholar.png（32KB，默认兜底头像）均为 RGB 无 alpha → JPG q82/85，引用同步（archiveImages.js/profile.js），selftest 两处断言同步。
+- 体积核对：主包估算 2152KB → **2029KB**（余量 19KB；估算口径与微信报错数字差 1KB，可信）。paintings 24 张已高度优化（重压反而 +124KB，不再动）。
+- 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图全过。
+- 遗留：主包余量仅 19KB——**后续往主包加内容/素材前必须先核对体积**（数据 minify 化是下轮备选，但 history.js/history-extra.js 是手工内容种子，压缩会破坏维护 diff，暂不动）；开发者工具重新预览确认 80051 消失。

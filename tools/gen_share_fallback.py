@@ -4,7 +4,8 @@
 # 保证任何异常下用户看到的都是完整、符合全站风格的卡片（qrshare.js 引用）。
 #
 # 用法：python tools/gen_share_fallback.py
-# 复现：改文案/配色后重跑；输出 780×1272（海报 260×424 的 3 倍，与 canvas destWidth 同倍率）。
+# 复现：改文案/配色后重跑；输出 520×848（海报 260×424 的 2 倍，主包 2MB 上限下的
+# 体积/清晰度平衡；2026-11-14 从 3 倍降为 2 倍 + q75，56KB→约 25KB）。
 
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -12,7 +13,7 @@ import os
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 OUT = os.path.join(ROOT, 'miniprogram', 'assets', 'share-fallback.jpg')
 
-W, H = 780, 1272  # 260×424 的 3 倍
+W, H = 520, 848  # 260×424 的 2 倍
 PAPER = (246, 241, 234)      # #F6F1EA 宣纸
 CARD = (252, 251, 248)       # #FCFBF8 暖白裱底
 CANVAS_BG = (239, 233, 221)  # #EFE9DD 占位画心
@@ -81,5 +82,5 @@ text = '阅史记 · 一页一页读历史'
 bbox = d.textbbox((0, 0), text, font=f_brand)
 d.text(((W - (bbox[2] - bbox[0])) / 2 - bbox[0], H - 116), text, font=f_brand, fill=FADE)
 
-img.save(OUT, 'JPEG', quality=88)
+img.save(OUT, 'JPEG', quality=75, optimize=True)
 print('OK', os.path.relpath(OUT, ROOT), img.size)

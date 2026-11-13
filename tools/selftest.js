@@ -722,7 +722,7 @@ console.log('== 我的 ==' );
   ok(p.data.favs.every((x) => x.img && imgOk(x.img)), '收藏条目带配图');
   eq(p.data.favs.find((x) => x.id === 'xinhai-1911').img, remoteEventImg('xinhai-1911') || '/assets/thumbs/republic-1.jpg', '辛亥革命收藏优先专属事件图');
   ok(p.data.foots.every((x) => x.img && imgOk(x.img)), '足迹条目带配图');
-  ok(fs.existsSync(path.join(ROOT, 'assets/avatar-scholar.png')), '手绘历史形象头像存在');
+  ok(fs.existsSync(path.join(ROOT, 'assets/avatar-scholar.jpg')), '手绘历史形象头像存在');
 
   // 取消收藏
   personP.onLoad({ id: 'su-shi' });
@@ -889,7 +889,7 @@ console.log('== 资料库 ==');
   eq(archive.data.groups[4].name, '诗文', '诗文单独成组');
   eq(archive.data.groups[4].countText, '14,772', '诗文组数量');
   ok(archive.data.groups.every((group) => group.cover.indexOf('/assets/') === 0), '资料库五组都有分类题图');
-  eq(archive.data.groups[0].cover, '/assets/scroll-accent.png', '典籍辞条题图');
+  eq(archive.data.groups[0].cover, '/assets/scroll-accent.jpg', '典籍辞条题图');
   eq(archive.data.groups[2].cover, '/assets/thumbs/ming-2.jpg', '事件题图');
   eq(archive.data.stats.figuresText, '5,242', '首屏人物统计与人物组一致');
   eq(archive.data.stats.eventsText, '1,200', '首屏事件统计与事件组一致');
@@ -1148,7 +1148,10 @@ console.log('== 资料库 ==');
   ok(detail.data.sections.some((section) => section.label === '原文'), '诗文详情拆出原文段');
 
   // 条目配图（2026-10-24）：主站图匹配 > 资料库自抓图 > 无图
+  // 自抓图清单已移出主包（jsDelivr 加载），selftest 从仓库 JSON 注入测试
   const archiveArt = require(path.join(ROOT, 'utils', 'archiveArt.js'));
+  archiveArt._setRemote(JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'img', 'archive', 'art-remote.json'), 'utf8')));
+  ok(archiveArt.isLoaded(), '资料详情配图 · 自抓图清单（远端版）注入');
   ok(archiveArt.entryImage('figures', 'hf-song4chao2_su1shi4') === remotePersonImg('su-shi'),
     '资料详情配图 · 苏轼条目匹配主站人物图');
   ok(archiveArt.entryImage('emperors', 'hem-0186-tang2chao2_li3shi4min2') === remotePersonImg('tang-taizong'),

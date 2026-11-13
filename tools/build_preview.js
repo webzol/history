@@ -51,7 +51,6 @@ parts.push(wrapJs('utils/archiveImages.js', read('utils/archiveImages.js')));
 parts.push(wrapJs('utils/artRemote.js', read('utils/artRemote.js')));
 parts.push(wrapJs('utils/archiveArt.js', read('utils/archiveArt.js')));
 parts.push(wrapJs('utils/archiveArtMatch.js', read('utils/archiveArtMatch.js')));
-parts.push(wrapJs('utils/archiveArtRemote.js', read('utils/archiveArtRemote.js')));
 parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
 parts.push(wrapJs('utils/qrcode.js', read('utils/qrcode.js')));
 parts.push(wrapJs('utils/solarlunar.js', read('utils/solarlunar.js')));

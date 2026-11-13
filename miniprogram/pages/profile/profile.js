@@ -26,7 +26,7 @@ Page({
     fontOptions: font.OPTIONS,
     fontKey: 'm',
     fontClass: 'm',
-    identity: { avatar: '/assets/avatar-scholar.png', nick: '阅史客', motto: '以千年为卷轴，读万古事' }
+    identity: { avatar: '/assets/avatar-scholar.jpg', nick: '阅史客', motto: '以千年为卷轴，读万古事' }
   },
 
   onLoad() {

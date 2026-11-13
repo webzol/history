@@ -1,7 +1,7 @@
 // 资料库分类题图：复用本地绘画/缩略图，只做分类或栏目题图。
 // 条目本身没有图片字段，避免把某张时代画误配成具体人物/事件配图。
 const GROUP_COVERS = {
-  cards: '/assets/scroll-accent.png',
+  cards: '/assets/scroll-accent.jpg',
   people: '/assets/thumbs/tang-1.jpg',
   events: '/assets/thumbs/ming-2.jpg',
   docs: '/assets/thumbs/song-2.jpg',

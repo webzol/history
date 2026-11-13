@@ -213,8 +213,7 @@ Page({
         factRows,
         showSections,
         showBody: !showSections && blocks.length > 0 && item.text !== item.title,
-        showTranslation: !!item.translation && !hasTranslationSection,
-        showLead:
+        showTranslation: !!item.translation && !hasTranslationSection,        showLead:
           this.kind !== 'cards' &&
           this.kind !== 'quotes' &&
           this.kind !== 'poemquotes' &&
@@ -223,6 +222,15 @@ Page({
           !!item.summary &&
           item.summary !== item.text,
         showMeta: !!item.meta && item.meta !== kicker
+      });
+      // 自抓图清单移出主包（jsDelivr 按需加载）：清单未就绪时 art 先为空，
+      // 就绪后（含 onLaunch 预取完成）重算一次，头卡画片补显
+      const entryId = item.id;
+      archiveArt.ensure(() => {
+        const art = archiveArt.entryImage(this.kind, entryId);
+        if (art && this.data.item && this.data.item.id === entryId && art !== this.data.art) {
+          this.setData({ art });
+        }
       });
     });
   },
