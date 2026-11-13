@@ -129,19 +129,15 @@
       }
       return ret;
     },
-    // 本地路径直通；远端专属图映射仓库本地文件（data/img/ 随仓库，预览离线可画）
-    downloadFile: function (o) {
-      var url = (o && o.url) || '';
-      if (url.indexOf('http') !== 0) {
-        if (o && o.success) o.success({ statusCode: 200, tempFilePath: url });
-        return;
-      }
+    // 远端题图走 getImageInfo（qrshare 用，不受域名白名单限制）：映射仓库本地文件
+    getImageInfo: function (o) {
+      var url = (o && o.src) || '';
       var rel = url.split('/miniprogram/')[1];
       if (rel) {
-        if (o && o.success) o.success({ statusCode: 200, tempFilePath: '../../miniprogram/' + rel });
+        if (o && o.success) o.success({ path: '../../miniprogram/' + rel, width: 360, height: 360 });
         return;
       }
-      if (o && o.fail) o.fail({ errMsg: 'downloadFile:fail offline' });
+      if (o && o.fail) o.fail({ errMsg: 'getImageInfo:fail offline' });
     },
     env: { USER_DATA_PATH: 'wxfile://previewusr' },
     getFileSystemManager: function () {

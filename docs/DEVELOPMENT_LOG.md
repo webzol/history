@@ -2029,3 +2029,12 @@ miniprogram/data/history.js
 - selftest +12 断言：导出失败 → 兜底图经用户目录转存相册；降级态直接保存兜底图；harness/selftest mock 补 `wx.env`、`getFileSystemManager`（readFile/writeFile）与 `canvasToTempFilePath` fail 开关。
 - 验证：`node tools/selftest.js` PASS 1902 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图全部成功。
 - **离线不可自测、需真机验证的兼容项**（微信开发者工具多机型真机预览时核对）：旧版 canvas 接口圆角 path 与楷体（部分安卓无 KaiTi 回退默认字体）、seal.png 透明通道绘制、destWidth 3x 导出在低端机内存、FSM 代码包路径两级尝试的实际命中、分享面板与各机型底部安全区。
+
+## 2026-11-14 · 分享链路零依赖改造（去 downloadFile 白名单 / 去占位域名）
+
+- 约束重申：所有方案只用当前环境可自测完成，不需要额外开通、不引入第三方服务。据此清掉分享链路残留的两处「待配置」依赖。
+- **远端题图：downloadFile → wx.getImageInfo**。downloadFile 受 downloadFile 合法域名限制（需公众平台配置）；getImageInfo 官方明确不受域名白名单限制，零配置可用，且顺带返回真实宽高——drawCover 改为按真实尺寸动态裁中带（cover），横幅画/方图都能精准裁切（未知尺寸的远端专属图仍按 360×360 估计兜底）。
+- **二维码内容：占位域名 → 页内路径文本**。原 QR_BASE=`https://yueshiji.cn` 是「等待公众平台配置」状态；改为编码「阅史记：pages/person/person?id=su-shi」——扫码即可读出页面位置，零依赖。onShareAppMessage 与 qrText 仍同源（转发 path = 码文本去「阅史记：」前缀）。QR_BASE 常量删除。
+- mock 同步：selftest/harness 删 downloadFile mock，加 getImageInfo mock（harness 继续映射仓库本地文件保证离线截图有真图；selftest 用 netFail 开关覆盖失败场景）。
+- 验证：`node tools/selftest.js` PASS 1902 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图（含 SE/标准/ProMax 三档机型）全部成功。
+- 遗留：仅剩真机项（旧 canvas 渲染细节），分享功能全链路已无任何需开通/第三方依赖。

@@ -125,18 +125,13 @@ const wx = {
       }
     };
   },
-  // 本地路径直通；远端 URL 走 netFail 开关
-  downloadFile(opts) {
-    const url = (opts && opts.url) || '';
-    if (url.indexOf('http') === 0) {
-      if (mockQr.netFail) {
-        if (opts.fail) opts.fail({ errMsg: 'downloadFile:fail' });
-        return;
-      }
-      if (opts.success) opts.success({ statusCode: 200, tempFilePath: 'tmp://dl.png' });
+  // 远端题图走 getImageInfo（不受域名白名单限制）：netFail 开关控制失败场景
+  getImageInfo(opts) {
+    if (mockQr.netFail) {
+      if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
       return;
     }
-    if (opts.success) opts.success({ statusCode: 200, tempFilePath: url });
+    if (opts.success) opts.success({ path: 'tmp://img.png', width: 360, height: 360 });
   },
   canvasToTempFilePath(opts) {
     if (mockQr.exportFail) {
@@ -257,13 +252,13 @@ function assertSharePanel(page, cfg, tag) {
   ok(page.data.share.quoteSource.length > 0, `${tag}名句含出处`);
   ok(page.data.share.lunarText.indexOf('农历') === 0, `${tag}海报含农历日期（${page.data.share.lunarText}）`);
   ok(page.data.share.dateText.indexOf('年') > 0, `${tag}海报含公历日期`);
-  ok(page.data.share.qrText.indexOf(qrshare.QR_BASE) === 0, `${tag}二维码以 ${qrshare.QR_BASE} 开头`);
+  ok(page.data.share.qrText.indexOf('阅史记：') === 0, `${tag}二维码以「阅史记：」路径文本开头`);
   ok(page.data.share.qrText.indexOf(cfg.pathTail) > 0, `${tag}二维码含页内路径 ${cfg.pathTail}`);
   qrshare.drawPoster(page);
   ok(mockPoster.texts >= 8, `${tag}海报含 kicker/标题/摘要/名句/出处/日期/品牌文字层`);
   ok(mockPoster.fills > 200, `${tag}海报二维码有模块填充`);
   const msg = page.onShareAppMessage();
-  ok(msg.path === page.data.share.qrText.slice(qrshare.QR_BASE.length), `${tag}转发 path 与二维码内容一致`);
+  ok(msg.path === page.data.share.qrText.slice(4), `${tag}转发 path 与二维码内容路径一致`);
   mockQr.saved = 0;
   page.saveQr();
   ok(mockQr.saved === 1, `${tag}保存分享卡片到相册`);

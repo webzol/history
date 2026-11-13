@@ -7574,9 +7574,8 @@ __register('/utils/solarlunar.js', function (require, module, exports) {
 __register('/utils/qrshare.js', function (require, module, exports) {
 // 分享面板：分享卡片海报（题图 + 页面内容摘要 + 二维码）+ 保存相册，纯前端实现。
 //
-// 卡片二维码：本地编码绘制（qrcode.js），内容为页面 https 链接。将来若在小程序
-// 公众平台配置「扫普通链接二维码打开小程序」（需已备案域名），把 QR_BASE 换成
-// 该域名即可扫码直达；好友直达分享始终走「转寄好友」的微信原生卡片。
+// 卡片二维码：本地编码绘制（qrcode.js），内容为页内路径文本（零配置、零第三方依赖，
+// 扫码可读「这是哪个页面」）；好友直达分享走「转寄好友」的微信原生卡片，不依赖二维码。
 //
 // 页面接入约定：
 //   1. data 里初始化 share: { open: false }
@@ -7586,9 +7585,6 @@ __register('/utils/qrshare.js', function (require, module, exports) {
 const qrcode = require('./qrcode.js');
 const solarlunar = require('./solarlunar.js');
 const hd = require('./historyData.js');
-
-// 普通二维码兜底域名：待配置——公众平台「扫普通链接二维码打开小程序」绑定已备案域名后替换
-const QR_BASE = 'https://yueshiji.cn';
 
 // 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
@@ -7637,9 +7633,10 @@ function encode(text) {
   return qr;
 }
 
-// 二维码文本（页面 https 链接）
+// 二维码文本：零依赖方案——编码页内路径文本，扫码可读「这是哪个页面」；
+// 将来若公众平台配置「扫普通链接二维码打开小程序」，改回 https 链接即可扫码直达。
 function qrTextOf(path) {
-  return QR_BASE + (path || '/pages/home/home');
+  return `阅史记：${path || '/pages/home/home'}`;
 }
 
 // 中英文混排宽度估算（旧 canvas 无 measureText）
@@ -7671,14 +7668,15 @@ function wrapText(s, size, maxW, lines) {
   return rows;
 }
 
-// 装载图片：本地路径原样回调；远端 URL 走 downloadFile（需在 downloadFile 合法域名加
-// gcore.jsdelivr.net）。失败回调 null，由调用方决定降级画法。
+// 装载图片：本地路径原样回调；远端 URL 走 getImageInfo——不受 downloadFile 域名白名单
+// 限制，无需公众平台配置，零开通可用；顺带拿到真实宽高用于精准 cover 裁剪。失败回调 null。
 function loadImg(src, cb) {
-  if (!src || typeof wx.downloadFile !== 'function') { cb(null); return; }
+  if (!src) { cb(null); return; }
   if (src.indexOf('http') !== 0) { cb(src); return; }
-  wx.downloadFile({
-    url: src,
-    success: (res) => cb(res.statusCode === 200 ? res.tempFilePath : null),
+  if (typeof wx.getImageInfo !== 'function') { cb(null); return; }
+  wx.getImageInfo({
+    src,
+    success: (res) => cb(res.path || null, res.width || 0, res.height || 0),
     fail: () => cb(null)
   });
 }
@@ -7696,6 +7694,8 @@ function open(page) {
       desc: payload.desc || '',
       img: payload.img || '',
       imgLocal: '',  // 题图本地路径（就绪后重画；空则画占位底）
+      imgW: 0,       // 题图真实宽高（getImageInfo 返回，用于动态 cover 裁剪）
+      imgH: 0,
       quote: quote ? quote.quote : '',
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
@@ -7707,9 +7707,9 @@ function open(page) {
   // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画
   setTimeout(() => drawPoster(page), 120);
   if (payload.img) {
-    loadImg(payload.img, (local) => {
+    loadImg(payload.img, (local, w, h) => {
       if (page.data.share.open) {
-        page.setData({ 'share.imgLocal': local || '' });
+        page.setData({ 'share.imgLocal': local || '', 'share.imgW': w || 0, 'share.imgH': h || 0 });
         drawPoster(page);
       }
     });
@@ -7757,10 +7757,23 @@ function drawPoster(page) {
     roundRect(ctx, 16, 28, W - 32, 130, 6);
     ctx.fill();
     const drawCover = (src) => {
-      if (/\/data\/img\//.test(src)) {
-        ctx.drawImage(src, 0, 77, 360, 208, 24, 36, W - 48, 114);
+      // 按真实宽高裁中带（cover；优先 getImageInfo 宽高，未知尺寸的远端专属图按 360×360 估计）
+      const iw = share.imgW || (/\/data\/img\//.test(src) ? 360 : 0);
+      const ih = share.imgH || (/\/data\/img\//.test(src) ? 360 : 0);
+      const dx = 24, dy = 36, dw = W - 48, dh = 114;
+      if (iw > 0 && ih > 0) {
+        const ratio = dw / dh;
+        let sw = iw;
+        let sh = Math.round(iw / ratio);
+        if (sh > ih) {
+          sh = ih;
+          sw = Math.round(ih * ratio);
+        }
+        const sx = Math.round((iw - sw) / 2);
+        const sy = Math.round((ih - sh) / 2);
+        ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
       } else {
-        ctx.drawImage(src, 24, 36, W - 48, 114);
+        ctx.drawImage(src, dx, dy, dw, dh);
       }
     };
     if (share.imgLocal) {
@@ -7941,7 +7954,7 @@ function saveFallback(page) {
 module.exports = {
   open, close, save, saveFallback, drawPoster, encode, qrTextOf, loadImg,
   dailyQuote, lunarText, dateText,
-  QR_BASE, FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
+  FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
 };
 
 });
