@@ -9,6 +9,12 @@ const path = require('path');
 const util = require('util');
 
 const ROOT = path.join(__dirname, '..', 'miniprogram');
+const qrshare = require(path.join(ROOT, 'utils', 'qrshare.js'));
+
+// 分享面板 mock 状态：ops/fills=绘制填充次数 texts=文字绘制 images=图片绘制
+// saved=成功保存次数 denied=相册授权被拒 netFail=downloadFile 网络失败
+const mockQr = { ops: 0, saved: 0, denied: false, netFail: false };
+const mockPoster = { fills: 0, texts: 0, images: 0 };
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
 // 2026-10-24：cdn.jsdelivr.net 对图片一律 301 跳 raw.githubusercontent.com，图片基址已切 gcore
@@ -92,6 +98,57 @@ const wx = {
   },
   showLoading(o) { route('showLoading', '', { title: o && o.title }); },
   hideLoading() { route('hideLoading', '', {}); },
+  // 分享面板海报（utils/qrshare.js）：记录绘制填充/文字/图片次数
+  createCanvasContext(canvasId) {
+    let fills = 0;
+    let texts = 0;
+    let images = 0;
+    return {
+      setFillStyle() { return this; },
+      setFontSize() { return this; },
+      setTextAlign() { return this; },
+      fillRect() { fills += 1; return this; },
+      fillText() { texts += 1; return this; },
+      drawImage() { images += 1; return this; },
+      draw() {
+        mockQr.ops = fills;
+        mockPoster.fills = fills;
+        mockPoster.texts = texts;
+        mockPoster.images = images;
+        return this;
+      }
+    };
+  },
+  // 本地路径直通；远端 URL 走 netFail 开关
+  downloadFile(opts) {
+    const url = (opts && opts.url) || '';
+    if (url.indexOf('http') === 0) {
+      if (mockQr.netFail) {
+        if (opts.fail) opts.fail({ errMsg: 'downloadFile:fail' });
+        return;
+      }
+      if (opts.success) opts.success({ statusCode: 200, tempFilePath: 'tmp://dl.png' });
+      return;
+    }
+    if (opts.success) opts.success({ statusCode: 200, tempFilePath: url });
+  },
+  canvasToTempFilePath(opts) {
+    if (opts.success) opts.success({ tempFilePath: 'tmp://qr-share.png' });
+  },
+  saveImageToPhotosAlbum(opts) {
+    if (mockQr.denied) {
+      opts.fail({ errMsg: 'saveImageToPhotosAlbum:fail auth deny' });
+      return;
+    }
+    mockQr.saved += 1;
+    route('saveImage', '', { filePath: opts.filePath });
+    if (opts.success) opts.success({});
+  },
+  openSetting(opts) {
+    route('openSetting', '', {});
+    mockQr.denied = false; // 用户在设置页开启权限
+    if (opts.success) opts.success({ authSetting: { 'scope.writePhotosAlbum': true } });
+  },
   request(opts) {
     route('request', opts.url);
     if (opts.url.indexOf('/data/apk/') >= 0) {
@@ -160,6 +217,35 @@ function pickSheet(index) {
   pendingSheet = null;
   if (!opts) return;
   if (opts.success) opts.success({ tapIndex: index });
+}
+
+// 分享面板通用断言（详情页四页共用）：打开 → 卡片内容 → 海报绘制 → 保存（成功 + 授权拒绝重试）→ 关闭
+// cfg: { kicker, pathTail }
+function assertSharePanel(page, cfg, tag) {
+  page.openShare();
+  ok(page.data.share.open, `${tag}分享面板打开`);
+  eq(page.data.share.kicker, cfg.kicker, `${tag}分享卡片 kicker`);
+  ok(page.data.share.desc.length >= 8, `${tag}分享卡片含页面摘要`);
+  ok(page.data.share.img.length > 0, `${tag}分享卡片含题图`);
+  ok(page.data.share.qrText.indexOf(qrshare.QR_BASE) === 0, `${tag}二维码以 ${qrshare.QR_BASE} 开头`);
+  ok(page.data.share.qrText.indexOf(cfg.pathTail) > 0, `${tag}二维码含页内路径 ${cfg.pathTail}`);
+  qrshare.drawPoster(page);
+  ok(mockPoster.texts >= 3, `${tag}海报含 kicker/标题/摘要/品牌文字层`);
+  ok(mockPoster.fills > 200, `${tag}海报二维码有模块填充`);
+  const msg = page.onShareAppMessage();
+  ok(msg.path === page.data.share.qrText.slice(qrshare.QR_BASE.length), `${tag}转发 path 与二维码内容一致`);
+  mockQr.saved = 0;
+  page.saveQr();
+  ok(mockQr.saved === 1, `${tag}保存分享卡片到相册`);
+  mockQr.denied = true;
+  page.saveQr();
+  ok(pendingModal && pendingModal.title === '需要相册权限', `${tag}授权被拒 → 引导弹窗`);
+  confirmModal(true);
+  ok(last('openSetting'), `${tag}引导去设置页`);
+  ok(mockQr.saved === 2, `${tag}授权恢复后自动重试保存（累计 2 次）`);
+  mockQr.denied = false;
+  page.closeShare();
+  eq(page.data.share.open, false, `${tag}分享面板关闭`);
 }
 
 function urlTarget(url) {
@@ -935,6 +1021,7 @@ console.log('== 资料库 ==');
   ok(detail.data.kicker === '诸子百家名句赏析', '资料库详情保留分类名');
   ok(detail.onShareAppMessage().path.indexOf('kind=cards') >= 0, '资料库详情分享带参数');
   ok(detail.onShareAppMessage().path.indexOf('shard=' + first.shard) >= 0, '资料库详情分享带分卷');
+  assertSharePanel(detail, { kicker: detail.data.kicker, pathTail: 'archive-detail/archive-detail?kind=' }, '资料详情页');
 
   // 列表点击条目 → 转场期间预取详情分卷
   resetWifiStack();
@@ -1197,6 +1284,7 @@ console.log('== 人物详情 ==');
   wxLog.length = 0;
   const share = p.onShareAppMessage();
   ok(share && share.path === '/pages/person/person?id=lin-zexu', '人物页分享带 id 参数');
+  assertSharePanel(p, { kicker: '人物 · 晚清', pathTail: '/pages/person/person?id=lin-zexu' }, '人物页');
 
   resetWifiStack();
   p.onLoad({ id: 'nope' });
@@ -1266,6 +1354,7 @@ console.log('== 朝代详情 ==');
   wxLog.length = 0;
   p.onLoad({ id: 'han' });
   ok(p.onShareAppMessage().path === '/pages/period/period?id=han', '朝代页分享带 id 参数');
+  assertSharePanel(p, { kicker: '大汉气象', pathTail: '/pages/period/period?id=han' }, '朝代页');
   tap(p, 'goEvent', { id: 'han-wudi' });
   eq(last('navigateTo').url, '/pages/event/event?id=han-wudi', '朝代史事列表 → 事件详情');
   resetWifiStack();
@@ -1334,6 +1423,7 @@ console.log('== 事件详情 ==');
   wxLog.length = 0;
   p.onLoad({ id: 'xinhai-1911' });
   ok(p.onShareAppMessage().path === '/pages/event/event?id=xinhai-1911', '事件页分享带 id 参数');
+  assertSharePanel(p, { kicker: '史事 · 民国', pathTail: '/pages/event/event?id=xinhai-1911' }, '事件页');
 
   // 收藏按钮状态
   eq(p.data.collected, false, '未收藏状态');

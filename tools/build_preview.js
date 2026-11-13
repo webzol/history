@@ -53,6 +53,8 @@ parts.push(wrapJs('utils/archiveArt.js', read('utils/archiveArt.js')));
 parts.push(wrapJs('utils/archiveArtMatch.js', read('utils/archiveArtMatch.js')));
 parts.push(wrapJs('utils/archiveArtRemote.js', read('utils/archiveArtRemote.js')));
 parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
+parts.push(wrapJs('utils/qrcode.js', read('utils/qrcode.js')));
+parts.push(wrapJs('utils/qrshare.js', read('utils/qrshare.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>

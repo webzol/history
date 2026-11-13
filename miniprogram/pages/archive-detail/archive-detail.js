@@ -5,6 +5,7 @@ const archiveArt = require('../../utils/archiveArt.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const store = require('../../utils/store.js');
 const entries = require('../../utils/entries.js');
+const qrshare = require('../../utils/qrshare.js');
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -122,7 +123,8 @@ Page({
     loading: true,
     error: '',
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -261,11 +263,34 @@ Page({
     wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/archive/archive' }) });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const item = this.data.item;
+    return {
+      kicker: this.data.kicker || '资料库',
+      title: item ? item.title : '阅史记资料库',
+      desc: item ? item.summary || '' : '',
+      img: this.data.art || this.data.cover || '',
+      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+    };
+  },
+
   onShareAppMessage() {
     const item = this.data.item;
     return {
       title: item ? `阅史记 · ${item.title}` : '阅史记 · 资料库',
-      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+      path: this.sharePayload().path
     };
   }
 });

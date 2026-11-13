@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 const personThumb = require('../../utils/eraImages.js').personThumb;
@@ -14,7 +15,8 @@ Page({
     relatedPersons: [],
     thumbLoaded: {},
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -109,11 +111,34 @@ Page({
     wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const event = this.data.event;
+    return {
+      kicker: event ? `史事 · ${event.era || ''}` : '史事',
+      title: event ? event.title : '阅史记',
+      desc: event ? event.desc || '' : '',
+      img: this.data.headImg || '',
+      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const event = this.data.event;
     return {
       title: event ? `${event.title} · 阅史记` : '阅史记',
-      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });

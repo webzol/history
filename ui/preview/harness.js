@@ -81,6 +81,55 @@
     showActionSheet: function (o) { drawSheet(o); },
     showLoading: function () {},
     hideLoading: function () {},
+    // 分享面板海报（utils/qrshare.js）：旧版 canvas 接口 → 浏览器 2d context
+    createCanvasContext: function (canvasId) {
+      var cv = pageHost.querySelector('canvas[canvas-id="' + canvasId + '"]');
+      var ctx = null;
+      if (cv && cv.getContext) {
+        var cw = cv.clientWidth || 260;
+        var ch = cv.clientHeight || 372;
+        if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+        ctx = cv.getContext('2d');
+      }
+      return {
+        setFillStyle: function (c) { if (ctx) ctx.fillStyle = c; return this; },
+        setFontSize: function (s) { if (ctx) ctx.font = s + 'px "Songti SC", "STSong", serif'; return this; },
+        setTextAlign: function (a) { if (ctx) ctx.textAlign = a; return this; },
+        fillRect: function (x, y, w, h) { if (ctx) ctx.fillRect(x, y, w, h); return this; },
+        fillText: function (t, x, y) { if (ctx) ctx.fillText(t, x, y); return this; },
+        drawImage: function (src) {
+          if (!ctx) return this;
+          var img = new Image();
+          var rest = Array.prototype.slice.call(arguments, 1);
+          img.onload = function () { ctx.drawImage.apply(ctx, [img].concat(rest)); };
+          img.onerror = function () {
+            var d = rest.length >= 8 ? rest.slice(4) : rest;
+            ctx.fillStyle = '#EFE9DD';
+            ctx.fillRect(d[0], d[1], d[2], d[3]);
+          };
+          img.src = String(src)
+            .replace(/^\/assets\//, '../../miniprogram/assets/')
+            .replace(/^https?:\/\/[^/]+\//, '');
+          return this;
+        },
+        draw: function () { return this; }
+      };
+    },
+    // 本地路径直通；远端专属图映射仓库本地文件（data/img/ 随仓库，预览离线可画）
+    downloadFile: function (o) {
+      var url = (o && o.url) || '';
+      if (url.indexOf('http') !== 0) {
+        if (o && o.success) o.success({ statusCode: 200, tempFilePath: url });
+        return;
+      }
+      var rel = url.split('/miniprogram/')[1];
+      if (rel) {
+        if (o && o.success) o.success({ statusCode: 200, tempFilePath: '../../miniprogram/' + rel });
+        return;
+      }
+      if (o && o.fail) o.fail({ errMsg: 'downloadFile:fail offline' });
+    },
+    canvasToTempFilePath: function (o) { if (o && o.success) o.success({ tempFilePath: '' }); },
     // 60s「历史上的今天」返回样例载荷；其余请求（jsDelivr）走离线失败 → 回退种子
     request: function (o) {
       if (o && o.url && o.url.indexOf('today_in_history') >= 0 && o.success) {
@@ -205,7 +254,16 @@
     var cfg = PAGE_CFG['project://' + modPath.slice(1)];
     var inst = { name: name, cfg: cfg, data: deepClone(cfg.data || {}) };
     inst.setData = function (patch, cb) {
-      for (var k in patch) inst.data[k] = patch[k];
+      // 支持 'a.b.c' 点路径（与真机 setData 行为一致，utils/qrshare.js 依赖）
+      Object.keys(patch).forEach(function (k) {
+        var segs = k.split('.');
+        var node = inst.data;
+        for (var i = 0; i < segs.length - 1; i++) {
+          if (node[segs[i]] === undefined || typeof node[segs[i]] !== 'object') node[segs[i]] = {};
+          node = node[segs[i]];
+        }
+        node[segs[segs.length - 1]] = patch[k];
+      });
       renderPage(inst);
       if (cb) cb();
     };
@@ -453,6 +511,9 @@
         else if (out === 'aspectFill') el.style.objectFit = 'cover';
         else if (out === 'widthFix') el.style.height = 'auto';
         else if (out === 'heightFix') el.style.width = 'auto';
+      } else if (node.tag === 'canvas' && key === 'canvas-id') {
+        // 保留 canvas-id，供 wx.createCanvasContext mock 定位画布
+        el.setAttribute('canvas-id', out);
       } else if (node.tag === 'input') {
         if (key === 'value') el.value = out;
         else if (key === 'placeholder') el.setAttribute('placeholder', out);

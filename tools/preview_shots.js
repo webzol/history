@@ -42,7 +42,10 @@ const targets = [
   ['25-archive-poemquote', `archive-detail?shot=1&kind=poemquotes&shard=00&title=${esc('诗文名句')}&id=hpq-1`],
   ['26-archive-poems', `archive-list?shot=1&kind=poems-shi&title=${esc('诗文全文 · 诗')}`],
   ['27-archive-poem-detail', `archive-detail?shot=1&kind=poems-shi&type=00&shard=00&title=${esc('诗文全文 · 诗')}&id=hpw-10020`],
-  ['28-archive-cards-open', `archive?shot=1&s=${esc('click:.group-card')}`]
+  ['28-archive-cards-open', `archive?shot=1&s=${esc('click:.group-card')}`],
+  ['29-person-share', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`],
+  ['30-event-share', `event?shot=1&id=xinhai-1911&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`],
+  ['31-period-share', `period?shot=1&id=han&s=${esc('click:.foot-actions .ghost-btn')}`]
 ];
 
 let miss = 0;

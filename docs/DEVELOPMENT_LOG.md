@@ -1986,3 +1986,17 @@ miniprogram/data/history.js
 - 不动项：时间轴/发现/我的页顶部字标（远端有意保留各页名）、`shige_*` 存储 key、AGENTS.md 通篇旧称、`ui/neo/` 归档。
 - 验证：`node tools/selftest.js` PASS 1814 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包 OK；全仓 grep 小程序目录无「史页」残留。
 - 遗留：分享标题为纯文案变更无需热更 JSON；真机确认分享卡片展示正常。
+
+## 2026-11-14 · 详情页新增「共此卷」分享卡片（海报 + 二维码，纯前端）
+
+- 需求：详情页进入后新增分享面板，生成带二维码、含当前页面内容的分享卡片可保存转发。命名按用户要求弃用「分享」二字，采用「**共此卷**」（呼应「一卷千年，灯下阅史」座右铭，卷=史卷）。
+- 覆盖四详情页：人物 / 事件 / 朝代 / 资料详情。入口在各页底部按钮区（person/event 的 foot-actions 加第三个按钮「共此卷」，event 页「回时间轴再看一眼」收字为「回时间轴」避免三按钮溢出；period 新增 foot-actions（样式对齐 event）；archive-detail 的 fav-row 改 flex 双按钮）。
+- 面板（`app.wxss` 全局 `.ss-*`，视觉对齐 profile 的 info sheet）：grip + 标题「共此卷」+ 260×372px 海报 canvas + 提示行 + 「转寄好友」（button open-type=share 触发各页 onShareAppMessage）+ 「保存卡片到相册」。
+- 海报（`utils/qrshare.js` drawPoster，旧版 canvas 接口）：题图（远端专属图按 360×360 裁中带防变形，本地图直接铺，加载失败画占位底）+ 朱砂 kicker（人物 · 北宋 / 史事 · 民国 / 大汉气象 / 资料 kicker）+ 宋体标题（超宽截断）+ 摘要两行折行 + 二维码 + 品牌行「阅史记 · 一页一页读历史」。各页 sharePayload() 提供 kicker/title/desc/img/path，onShareAppMessage 复用同源 path。
+- 二维码：`utils/qrcode.js` 引入 qrcode-generator@1.4.4（kazuhikoarase，MIT，原样引入含 UTF-8 中文支持），本地编码绘制（66px、纠错 M、模块间 +0.3px 消白缝）。内容 = QR_BASE（`https://yueshiji.cn` 占位）+ 页面路径。
+- **官方小程序码（太阳码）不可行说明**：生成必须 access_token（微信硬约束），云开发 / GitHub Actions / 自建后端均需额外开通或服务；按用户「只用当前环境、零开通、零第三方」约束，曾实现 GitHub Actions 预生成链路（gen_wxacode.js + workflow）后撤除。好友直达分享由「转寄好友」微信原生卡片承担；QR_BASE 将来若在公众平台配置「扫普通链接二维码打开小程序」（需已备案域名）后替换常量即扫码直达，无需改其他代码。
+- 保存：canvasToTempFilePath 3 倍分辨率导出 → saveImageToPhotosAlbum；授权被拒 showModal 引导 → openSetting 回来自动重试一次。
+- harness 升级：`setData` 支持 `a.b.c` 点路径（qrshare 依赖，真机语义一致）；`downloadFile` 远端专属图映射仓库本地文件（预览离线可画真图）；旧版 canvas 接口 mock（setFillStyle/setFontSize/setTextAlign/fillRect/fillText/drawImage→2d context）+ `canvas-id` 属性保留。
+- selftest：mock createCanvasContext/downloadFile/saveImageToPhotosAlbum/openSetting + `assertSharePanel` 四页共用断言（打开/内容/绘制/保存/授权拒绝重试/关闭），+56 断言。
+- 验证：`node tools/selftest.js` PASS 1870 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图 29-person-share / 30-event-share / 31-period-share 核对（题图、kicker、标题、摘要、码、品牌行、面板文案全部正确）。
+- 遗留：① QR_BASE 为占位域名，扫码暂不能直达（转发卡片不受影响），配置跳转规则后改一行生效；② downloadFile 合法域名需加 `gcore.jsdelivr.net`（海报远端题图拉取）；③ 真机核对旧版 canvas 绘制效果与 3x 导出清晰度；④ 小屏面板海报下「保存卡片」按钮需滚动可见（max-height 86vh + overflow）。

@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 const personImage = require('../../utils/eraImages.js').personImage;
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const altArt = require('../../utils/eraImages.js').altArt;
@@ -16,7 +17,8 @@ Page({
     headImg: '',
     related: [],
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -91,11 +93,34 @@ Page({
     });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const person = this.data.person;
+    return {
+      kicker: person ? `人物 · ${person.era || ''}` : '人物',
+      title: person ? person.name : '阅史记',
+      desc: person ? person.summary || '' : '',
+      img: this.data.headImg || '',
+      path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const person = this.data.person;
     return {
       title: person ? `${person.name} · 阅史记` : '阅史记',
-      path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });

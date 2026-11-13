@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -41,7 +42,8 @@ Page({
     events: [],
     span: '',
     seal: '',
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -113,11 +115,34 @@ Page({
     wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const period = this.data.period;
+    return {
+      kicker: period ? period.title || '朝代' : '朝代',
+      title: period ? period.name : '阅史记',
+      desc: period ? period.desc || '' : '',
+      img: period ? period.img || '' : '',
+      path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const period = this.data.period;
     return {
       title: period ? `${period.name} · 阅史记` : '阅史记',
-      path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });

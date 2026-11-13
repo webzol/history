@@ -62,6 +62,29 @@
       </view>
     </view>
 
+    <view class="foot-actions">
+      <view class="ghost-btn" bindtap="openShare">
+        <text>共此卷</text>
+      </view>
+    </view>
+
     <view class="source-line">史料 · {{period.source}}</view>
+
+    <view class="ss-layer" wx:if="{{share.open}}">
+      <view class="ss-mask" bindtap="closeShare"></view>
+      <view class="ss-panel">
+        <view class="ss-grip"></view>
+        <view class="ss-head">
+          <text class="ss-title">共此卷</text>
+          <text class="ss-close" bindtap="closeShare">×</text>
+        </view>
+        <view class="ss-qr-wrap">
+          <canvas canvas-id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
+          <text class="ss-qr-tip">转寄好友直达本页 · 卡片可保存转发</text>
+        </view>
+        <button class="ss-btn ss-btn-primary" open-type="share">转寄好友</button>
+        <view class="ss-btn ss-btn-ghost" bindtap="saveQr">保存卡片到相册</view>
+      </view>
+    </view>
   </view>
 </view>

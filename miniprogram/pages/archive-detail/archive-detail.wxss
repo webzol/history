@@ -455,9 +455,12 @@
 /* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */
 .fav-row {
   margin-top: 20rpx;
+  display: flex;
+  gap: 16rpx;
 }
 
 .fav-btn {
+  flex: 1;
   height: 72rpx;
   display: flex;
   align-items: center;

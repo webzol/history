@@ -5262,6 +5262,2555 @@ function reroll() {
 module.exports = { KEY, AVATAR_COUNT, NICK_A, NICK_B, MOTTOS, avatarPath, allAvatars, get, reroll };
 
 });
+__register('/utils/qrcode.js', function (require, module, exports) {
+// QR Code Generator for JavaScript — 二维码编码核心（分享面板用，utils/qrshare.js 调用）
+// 来源：qrcode-generator@1.4.4（kazuhikoarase/qrcode-generator，MIT），原样引入未改动
+//
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+});
+__register('/utils/qrshare.js', function (require, module, exports) {
+// 分享面板：分享卡片海报（题图 + 页面内容摘要 + 二维码）+ 保存相册，纯前端实现。
+//
+// 卡片二维码：本地编码绘制（qrcode.js），内容为页面 https 链接。将来若在小程序
+// 公众平台配置「扫普通链接二维码打开小程序」（需已备案域名），把 QR_BASE 换成
+// 该域名即可扫码直达；好友直达分享始终走「转寄好友」的微信原生卡片。
+//
+// 页面接入约定：
+//   1. data 里初始化 share: { open: false }
+//   2. 页面提供 sharePayload()，返回 { kicker, title, desc, img, path }
+//      img 为海报题图（本地图 /assets/... 或远端图 URL 均可）
+//   3. Page 方法 openShare/closeShare/saveQr 各一行委托本模块
+const qrcode = require('./qrcode.js');
+
+// 普通二维码兜底域名：待配置——公众平台「扫普通链接二维码打开小程序」绑定已备案域名后替换
+const QR_BASE = 'https://yueshiji.cn';
+
+// 海报 canvas 尺寸（px，与 app.wxss .ss-canvas 一致；面板内显示+保存导出同源）
+const CANVAS_ID = 'ssQrCanvas';
+const W = 260;
+const H = 372;
+const IMG_H = 150; // 题图高度
+const CODE_SIZE = 66; // 二维码边长
+const INK = '#1F1D19';
+
+// 二维码编码（typeNumber 0 = 自动版本；中文走 UTF-8 字节模式，纠错 M）
+function encode(text) {
+  const qr = qrcode(0, 'M');
+  qr.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+  qr.addData(text, 'Byte');
+  qr.make();
+  return qr;
+}
+
+// 二维码文本（页面 https 链接）
+function qrTextOf(path) {
+  return QR_BASE + (path || '/pages/home/home');
+}
+
+// 中英文混排宽度估算（旧 canvas 无 measureText）
+function charW(ch, size) {
+  return /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/.test(ch) ? size : size * 0.56;
+}
+
+// 截断到 maxW 宽；ellipsis=true 时末尾加省略号
+function clipText(s, size, maxW, ellipsis) {
+  let w = 0;
+  for (let i = 0; i < s.length; i += 1) {
+    const cw = charW(s[i], size);
+    if (w + cw > maxW) return ellipsis ? s.slice(0, i) + '…' : s.slice(0, i);
+    w += cw;
+  }
+  return s;
+}
+
+// 按宽折行（最多 lines 行，末行截断加省略号）
+function wrapText(s, size, maxW, lines) {
+  const rows = [];
+  let rest = String(s || '');
+  for (let i = 0; i < lines && rest; i += 1) {
+    const last = i === lines - 1;
+    const row = clipText(rest, size, maxW, last);
+    rows.push(row);
+    rest = row.slice(-1) === '…' ? '' : rest.slice(row.length);
+  }
+  return rows;
+}
+
+// 装载图片：本地路径原样回调；远端 URL 走 downloadFile（需在 downloadFile 合法域名加
+// gcore.jsdelivr.net）。失败回调 null，由调用方决定降级画法。
+function loadImg(src, cb) {
+  if (!src || typeof wx.downloadFile !== 'function') { cb(null); return; }
+  if (src.indexOf('http') !== 0) { cb(src); return; }
+  wx.downloadFile({
+    url: src,
+    success: (res) => cb(res.statusCode === 200 ? res.tempFilePath : null),
+    fail: () => cb(null)
+  });
+}
+
+function open(page) {
+  const payload = (typeof page.sharePayload === 'function' && page.sharePayload()) || {};
+  const path = payload.path || '/pages/home/home';
+
+  page.setData({
+    share: {
+      open: true,
+      kicker: payload.kicker || '',
+      title: payload.title || '阅史记',
+      desc: payload.desc || '',
+      img: payload.img || '',
+      imgLocal: '',  // 题图本地路径（就绪后重画；空则画占位底）
+      qrText: qrTextOf(path)
+    }
+  });
+
+  // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画
+  setTimeout(() => drawPoster(page), 120);
+  if (payload.img) {
+    loadImg(payload.img, (local) => {
+      if (page.data.share.open) {
+        page.setData({ 'share.imgLocal': local || '' });
+        drawPoster(page);
+      }
+    });
+  }
+}
+
+function close(page) {
+  page.setData({ 'share.open': false });
+}
+
+// 海报：题图（cover 裁切）+ kicker + 标题 + 摘要 + 二维码 + 品牌行
+function drawPoster(page) {
+  const share = page.data.share;
+  if (!share || !share.open) return;
+  if (typeof wx.createCanvasContext !== 'function') return; // 无 canvas 环境静默跳过
+
+  try {
+    const ctx = wx.createCanvasContext(CANVAS_ID);
+
+    // 底
+    ctx.setFillStyle('#FFFFFF');
+    ctx.fillRect(0, 0, W, H);
+
+    // 题图：远端专属图按 360×360 裁中带（避免拉伸变形），其余直接铺
+    const drawCover = (src) => {
+      if (/\/data\/img\//.test(src)) {
+        ctx.drawImage(src, 0, 77, 360, 208, 0, 0, W, IMG_H);
+      } else {
+        ctx.drawImage(src, 0, 0, W, IMG_H);
+      }
+    };
+    if (share.imgLocal) {
+      drawCover(share.imgLocal);
+    } else {
+      ctx.setFillStyle('#EFE9DD');
+      ctx.fillRect(0, 0, W, IMG_H);
+      ctx.setFillStyle('#B9AE9E');
+      ctx.setFontSize(13);
+      ctx.setTextAlign('center');
+      ctx.fillText('阅史记', W / 2, IMG_H / 2 + 5);
+    }
+
+    // kicker（朱砂小字）
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('#A34A3E');
+    ctx.setFontSize(10);
+    ctx.fillText(share.kicker, W / 2, IMG_H + 24);
+
+    // 标题（宋体大字，最多一行）
+    ctx.setFillStyle(INK);
+    ctx.setFontSize(19);
+    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 50);
+
+    // 摘要（淡墨，最多两行）
+    ctx.setFillStyle('#5F5A52');
+    ctx.setFontSize(11);
+    const rows = wrapText(share.desc, 11, W - 56, 2);
+    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 74 + i * 17));
+
+    // 分隔细线
+    ctx.setFillStyle('rgba(70, 58, 45, 0.14)');
+    ctx.fillRect(40, IMG_H + 110, W - 80, 1);
+
+    // 二维码（本地编码绘制）
+    try {
+      const qr = encode(share.qrText);
+      const count = qr.getModuleCount();
+      const cx = Math.round((W - CODE_SIZE) / 2);
+      const cy = IMG_H + 124;
+      const m = 5;
+      const cell = Math.floor((CODE_SIZE - m * 2) / count);
+      const off = Math.round((CODE_SIZE - cell * count) / 2);
+      ctx.setFillStyle(INK);
+      for (let r = 0; r < count; r += 1) {
+        for (let c = 0; c < count; c += 1) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
+          }
+        }
+      }
+    } catch (e) { /* 码文本异常时留白 */ }
+
+    // 品牌行
+    ctx.setFillStyle('#8C857A');
+    ctx.setFontSize(10);
+    ctx.fillText('阅史记 · 一页一页读历史', W / 2, IMG_H + 124 + CODE_SIZE + 20);
+
+    ctx.draw();
+  } catch (e) {
+    if (wx.showToast) wx.showToast({ title: '海报绘制失败', icon: 'none' });
+  }
+}
+
+// 导出海报 → 保存到相册（授权被拒则引导去设置，回来自动重试一次）
+function save(page) {
+  const share = page.data.share;
+  if (!share || !share.open) return;
+  if (typeof wx.canvasToTempFilePath !== 'function') return;
+
+  const writeAlbum = (filePath) => {
+    wx.saveImageToPhotosAlbum({
+      filePath,
+      success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+      fail: (err) => {
+        const msg = (err && err.errMsg) || '';
+        if (msg.indexOf('auth') < 0 && msg.indexOf('deny') < 0) {
+          wx.showToast({ title: '保存失败', icon: 'none' });
+          return;
+        }
+        wx.showModal({
+          title: '需要相册权限',
+          content: '请在设置中允许「保存到相册」',
+          confirmText: '去设置',
+          success: (res) => {
+            if (!res.confirm || typeof wx.openSetting !== 'function') return;
+            wx.openSetting({
+              success: (setting) => {
+                if (setting && setting.authSetting && setting.authSetting['scope.writePhotosAlbum']) {
+                  writeAlbum(filePath);
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+  };
+
+  wx.canvasToTempFilePath({
+    canvasId: CANVAS_ID,
+    destWidth: W * 3, // 3 倍分辨率导出，避免保存图发虚
+    destHeight: H * 3,
+    success: (res) => writeAlbum(res.tempFilePath),
+    fail: () => wx.showToast({ title: '海报导出失败', icon: 'none' })
+  });
+}
+
+module.exports = {
+  open, close, save, drawPoster, encode, qrTextOf, loadImg,
+  QR_BASE, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
+};
+
+});
 
 __register('/pages/home/home.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
@@ -5895,6 +8444,7 @@ __register('/pages/event/event.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 const personThumb = require('../../utils/eraImages.js').personThumb;
@@ -5908,7 +8458,8 @@ Page('project://pages/event/event.js', {
     relatedPersons: [],
     thumbLoaded: {},
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -6003,22 +8554,46 @@ Page('project://pages/event/event.js', {
     wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const event = this.data.event;
+    return {
+      kicker: event ? `史事 · ${event.era || ''}` : '史事',
+      title: event ? event.title : '阅史记',
+      desc: event ? event.desc || '' : '',
+      img: this.data.headImg || '',
+      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const event = this.data.event;
     return {
       title: event ? `${event.title} · 阅史记` : '阅史记',
-      path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });
 
 });
-__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{event}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <view class=\"top-center\">\r\n        <text class=\"top-title\">事件</text>\r\n        <view class=\"top-seal\">\r\n          <text class=\"seal-char\">{{seal}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"e-copy\">\r\n        <text class=\"e-year\">{{event.yearText}}</text>\r\n        <text class=\"e-title\">{{event.title}}</text>\r\n        <view class=\"e-meta\">\r\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\r\n            <text>{{event.era}}</text>\r\n          </view>\r\n          <text class=\"e-tags\">{{event.tags}}</text>\r\n        </view>\r\n      </view>\r\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\r\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\r\n        <text>{{event.desc}}</text>\r\n      </view>\r\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\r\n      <text class=\"section-title\">其时其人</text>\r\n    </view>\r\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\r\n      <view\r\n        wx:for=\"{{relatedPersons}}\"\r\n        wx:key=\"id\"\r\n        class=\"p-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goPerson\"\r\n      >\r\n        <view class=\"p-thumb-wrap\">\r\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\r\n          <image\r\n            wx:if=\"{{item.img !== item.fallback}}\"\r\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\r\n            src=\"{{item.img}}\"\r\n            mode=\"aspectFill\"\r\n            bindload=\"onThumbLoad\"\r\n            binderror=\"onThumbErr\"\r\n            data-id=\"{{item.id}}\"\r\n          ></image>\r\n        </view>\r\n        <view class=\"p-info\">\r\n          <text class=\"p-name\">{{item.name}}</text>\r\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\r\n          <text class=\"p-roles\">{{item.roles}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\r\n        <text>回时间轴再看一眼</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{event.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{event}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <view class=\"top-center\">\r\n        <text class=\"top-title\">事件</text>\r\n        <view class=\"top-seal\">\r\n          <text class=\"seal-char\">{{seal}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"e-copy\">\r\n        <text class=\"e-year\">{{event.yearText}}</text>\r\n        <text class=\"e-title\">{{event.title}}</text>\r\n        <view class=\"e-meta\">\r\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\r\n            <text>{{event.era}}</text>\r\n          </view>\r\n          <text class=\"e-tags\">{{event.tags}}</text>\r\n        </view>\r\n      </view>\r\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\r\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\r\n        <text>{{event.desc}}</text>\r\n      </view>\r\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\r\n      <text class=\"section-title\">其时其人</text>\r\n    </view>\r\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\r\n      <view\r\n        wx:for=\"{{relatedPersons}}\"\r\n        wx:key=\"id\"\r\n        class=\"p-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goPerson\"\r\n      >\r\n        <view class=\"p-thumb-wrap\">\r\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\r\n          <image\r\n            wx:if=\"{{item.img !== item.fallback}}\"\r\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\r\n            src=\"{{item.img}}\"\r\n            mode=\"aspectFill\"\r\n            bindload=\"onThumbLoad\"\r\n            binderror=\"onThumbErr\"\r\n            data-id=\"{{item.id}}\"\r\n          ></image>\r\n        </view>\r\n        <view class=\"p-info\">\r\n          <text class=\"p-name\">{{item.name}}</text>\r\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\r\n          <text class=\"p-roles\">{{item.roles}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\r\n        <text>共此卷</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\r\n        <text>回时间轴</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{event.source}}</view>\r\n\r\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\r\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\r\n      <view class=\"ss-panel\">\r\n        <view class=\"ss-grip\"></view>\r\n        <view class=\"ss-head\">\r\n          <text class=\"ss-title\">共此卷</text>\r\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\r\n        </view>\r\n        <view class=\"ss-qr-wrap\">\r\n          <canvas canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n          <text class=\"ss-qr-tip\">转寄好友直达本页 · 卡片可保存转发</text>\r\n        </view>\r\n        <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转寄好友</button>\r\n        <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保存卡片到相册</view>\r\n      </view>\r\n    </view>\r\n  </view>\r\n</view>\r\n"; });
 __register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-center {\r\n  position: absolute;\r\n  left: 50%;\r\n  transform: translateX(-50%);\r\n  top: 0;\r\n  bottom: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n}\r\n\r\n.top-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: stretch;\r\n  gap: 26rpx;\r\n  margin-top: 26rpx;\r\n  padding: 30rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.e-copy {\r\n  position: relative;\r\n  z-index: 1;\r\n  flex: 1;\r\n  min-width: 0;\r\n  display: flex;\r\n  flex-direction: column;\r\n  justify-content: center;\r\n}\r\n\r\n.e-fig {\r\n  width: 200rpx;\r\n  height: 200rpx;\r\n  flex: 0 0 200rpx;\r\n  align-self: center;\r\n  border-radius: 24rpx;\r\n  overflow: hidden;\r\n  background: #F3EFE6;\r\n  border: 4rpx solid #FFFDF8;\r\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10);\r\n}\r\n\r\n.e-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.82) brightness(1.02);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.e-year {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A9825E;\r\n}\r\n\r\n.head-modern .e-year {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-title {\r\n  display: block;\r\n  margin-top: 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(50rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  line-height: 1.25;\r\n  color: #1F1D19;\r\n}\r\n\r\n.e-meta {\r\n  margin-top: 22rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 18rpx;\r\n}\r\n\r\n.era-chip {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.e-tags {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n  margin-bottom: 22rpx;\r\n  padding-bottom: 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.p-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.p-thumb-wrap {\r\n  position: relative;\r\n  width: 104rpx;\r\n  height: 104rpx;\r\n  flex: 0 0 104rpx;\r\n  border-radius: 20rpx;\r\n  overflow: hidden;\r\n  background: #F3EFE6;\r\n  border: 4rpx solid #FFFDF8;\r\n  box-shadow: 0 6rpx 16rpx rgba(90, 70, 50, 0.10);\r\n}\r\n\r\n/* 底层默认图（本地时代细部，秒出）；上层远端专属图加载完淡入。\r\n   aspectFill：任意比例远端图等比缩放铺满裁切，不拉伸变形。 */\r\n.p-thumb-bg,\r\n.p-thumb-img {\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n  filter: saturate(0.86) brightness(1.02);\r\n}\r\n\r\n.p-thumb-img {\r\n  opacity: 0;\r\n  transition: opacity 0.28s ease;\r\n}\r\n\r\n.p-thumb-img.on {\r\n  opacity: 1;\r\n}\r\n\r\n.p-info {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  margin-bottom: 4rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-dates {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-roles {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
 __register('/pages/person/person.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 const personImage = require('../../utils/eraImages.js').personImage;
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const altArt = require('../../utils/eraImages.js').altArt;
@@ -6034,7 +8609,8 @@ Page('project://pages/person/person.js', {
     headImg: '',
     related: [],
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -6109,22 +8685,46 @@ Page('project://pages/person/person.js', {
     });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const person = this.data.person;
+    return {
+      kicker: person ? `人物 · ${person.era || ''}` : '人物',
+      title: person ? person.name : '阅史记',
+      desc: person ? person.summary || '' : '',
+      img: this.data.headImg || '',
+      path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const person = this.data.person;
     return {
       title: person ? `${person.name} · 阅史记` : '阅史记',
-      path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });
 
 });
-__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{person}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">人物</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      <view class=\"p-veil\"></view>\r\n      <view class=\"p-copy\">\r\n        <text class=\"p-name\">{{person.name}}</text>\r\n        <view class=\"p-meta\">\r\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\r\n          <text class=\"p-dot\">·</text>\r\n          <text class=\"p-roles\">{{person.roles}}</text>\r\n        </view>\r\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\r\n          <text>{{person.era}}</text>\r\n        </view>\r\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\r\n          <text class=\"quote-mark\">“</text>\r\n          <text class=\"quote\">{{person.quote}}</text>\r\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\r\n      <text class=\"section-title\">生平际会 · 相关史事</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\r\n      <view\r\n        wx:for=\"{{related}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{person.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{person}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">人物</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card\">\r\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\r\n      <view class=\"p-veil\"></view>\r\n      <view class=\"p-copy\">\r\n        <text class=\"p-name\">{{person.name}}</text>\r\n        <view class=\"p-meta\">\r\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\r\n          <text class=\"p-dot\">·</text>\r\n          <text class=\"p-roles\">{{person.roles}}</text>\r\n        </view>\r\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\r\n          <text>{{person.era}}</text>\r\n        </view>\r\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\r\n          <text class=\"quote-mark\">“</text>\r\n          <text class=\"quote\">{{person.quote}}</text>\r\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"body-card\">\r\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\r\n        <text>{{item}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\r\n      <text class=\"section-title\">生平际会 · 相关史事</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\r\n      <view\r\n        wx:for=\"{{related}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\r\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\r\n      </view>\r\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\r\n        <text>共此卷</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{person.source}}</view>\r\n\r\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\r\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\r\n      <view class=\"ss-panel\">\r\n        <view class=\"ss-grip\"></view>\r\n        <view class=\"ss-head\">\r\n          <text class=\"ss-title\">共此卷</text>\r\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\r\n        </view>\r\n        <view class=\"ss-qr-wrap\">\r\n          <canvas canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n          <text class=\"ss-qr-tip\">转寄好友直达本页 · 卡片可保存转发</text>\r\n        </view>\r\n        <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转寄好友</button>\r\n        <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保存卡片到相册</view>\r\n      </view>\r\n    </view>\r\n  </view>\r\n</view>\r\n"; });
 __register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  position: relative;\r\n  margin-top: 26rpx;\r\n  padding: 40rpx 34rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  overflow: hidden;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.p-bg {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.46;\r\n  filter: saturate(0.6) brightness(1.04);\r\n}\r\n\r\n.p-veil {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0.36) 0%, rgba(252, 251, 248, 0.78) 48%, rgba(252, 251, 248, 0.95) 100%);\r\n}\r\n\r\n.p-copy {\r\n  position: relative;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(64rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.p-meta {\r\n  margin-top: 16rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 14rpx;\r\n}\r\n\r\n.p-dates {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #A9825E;\r\n}\r\n\r\n.p-dates.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.p-dot {\r\n  color: #8C857A;\r\n}\r\n\r\n.p-roles {\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.era-chip {\r\n  margin-top: 22rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  height: 44rpx;\r\n  padding: 0 20rpx;\r\n  border-radius: 22rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A9825E;\r\n}\r\n\r\n.era-chip.chip-modern {\r\n  border-color: rgba(126, 154, 154, 0.45);\r\n  color: #7E9A9A;\r\n}\r\n\r\n.quote-block {\r\n  margin-top: 28rpx;\r\n  padding: 26rpx 26rpx 24rpx;\r\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\r\n  background: rgba(252, 251, 248, 0.72);\r\n  border-radius: 0 24rpx 24rpx 0;\r\n}\r\n\r\n.quote-mark {\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: 40rpx;\r\n  line-height: 0.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.quote {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  color: #1F1D19;\r\n}\r\n\r\n.quote-src {\r\n  display: block;\r\n  margin-top: 12rpx;\r\n  font-family: \"KaiTi\", \"STKaiti\", serif;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #8C857A;\r\n  text-align: right;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 20rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 6rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #5F5A52;\r\n}\r\n\r\n.rel-thumb {\r\n  width: 80rpx;\r\n  height: 80rpx;\r\n  flex: 0 0 80rpx;\r\n  display: block;\r\n  border-radius: 18rpx;\r\n  background: #F3EFE6;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  filter: saturate(0.88) brightness(1.01);\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.ghost-btn {\r\n  flex: 1;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.ghost-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.ghost-btn.on.on-modern {\r\n  border-color: rgba(126, 154, 154, 0.5);\r\n  background: rgba(126, 154, 154, 0.08);\r\n  color: #5F7E7E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n"; });
 __register('/pages/period/period.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const qrshare = require('../../utils/qrshare.js');
 
 // 朝代卡配图（与发现页一致，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
@@ -6165,7 +8765,8 @@ Page('project://pages/period/period.js', {
     events: [],
     span: '',
     seal: '',
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -6237,18 +8838,41 @@ Page('project://pages/period/period.js', {
     wx.switchTab({ url: '/pages/timeline/timeline' });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const period = this.data.period;
+    return {
+      kicker: period ? period.title || '朝代' : '朝代',
+      title: period ? period.name : '阅史记',
+      desc: period ? period.desc || '' : '',
+      img: period ? period.img || '' : '',
+      path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
+    };
+  },
+
   onShareAppMessage() {
     const period = this.data.period;
     return {
       title: period ? `${period.name} · 阅史记` : '阅史记',
-      path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
+      path: this.sharePayload().path
     };
   }
 });
 
 });
-__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{period}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">朝代</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"hero-band\">\r\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\r\n        <view class=\"hero-shade\"></view>\r\n        <view class=\"hero-copy\">\r\n          <text class=\"p-name\">{{period.name}}</text>\r\n          <text class=\"p-years\">{{period.yearText}}</text>\r\n        </view>\r\n        <text class=\"hero-title\">{{period.title}}</text>\r\n      </view>\r\n      <text class=\"p-desc\">{{period.desc}}</text>\r\n    </view>\r\n\r\n    <view class=\"body-card\" wx:if=\"{{span}}\">\r\n      <view class=\"para\">\r\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\r\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\r\n        <text>进时间轴看这个时代的脉络</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\r\n      <text class=\"section-title\">这个时代的史事</text>\r\n      <text class=\"section-count\">{{events.length}} 条</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\r\n      <view\r\n        wx:for=\"{{events}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{period.source}}</view>\r\n  </view>\r\n</view>\r\n"; });
-__register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 24rpx 24rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.hero-band {\r\n  position: relative;\r\n  height: 300rpx;\r\n  border-radius: 30rpx;\r\n  overflow: hidden;\r\n}\r\n\r\n.hero-img {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.hero-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\r\n}\r\n\r\n.hero-copy {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(52rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.1;\r\n  color: #FCFBF8;\r\n}\r\n\r\n.p-years {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: rgba(252, 251, 248, 0.86);\r\n}\r\n\r\n.hero-title {\r\n  position: absolute;\r\n  right: 24rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n  height: 44rpx;\r\n  padding: 0 18rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  border-radius: 22rpx;\r\n  background: rgba(252, 251, 248, 0.92);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.p-desc {\r\n  display: block;\r\n  margin-top: 24rpx;\r\n  padding: 0 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  letter-spacing: 0.02em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-count {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.02em;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n}\r\n\r\n.time-btn {\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n"; });
+__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\" wx:if=\"{{period}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">朝代</text>\r\n      <view class=\"top-seal\">\r\n        <text class=\"seal-char\">{{seal}}</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\r\n      <view class=\"hero-band\">\r\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\r\n        <view class=\"hero-shade\"></view>\r\n        <view class=\"hero-copy\">\r\n          <text class=\"p-name\">{{period.name}}</text>\r\n          <text class=\"p-years\">{{period.yearText}}</text>\r\n        </view>\r\n        <text class=\"hero-title\">{{period.title}}</text>\r\n      </view>\r\n      <text class=\"p-desc\">{{period.desc}}</text>\r\n    </view>\r\n\r\n    <view class=\"body-card\" wx:if=\"{{span}}\">\r\n      <view class=\"para\">\r\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\r\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\r\n        <text>进时间轴看这个时代的脉络</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\r\n      <text class=\"section-title\">这个时代的史事</text>\r\n      <text class=\"section-count\">{{events.length}} 条</text>\r\n    </view>\r\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\r\n      <view\r\n        wx:for=\"{{events}}\"\r\n        wx:key=\"id\"\r\n        class=\"rel-card\"\r\n        data-id=\"{{item.id}}\"\r\n        bindtap=\"goEvent\"\r\n      >\r\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\r\n        <view class=\"rel-body\">\r\n          <text class=\"rel-title\">{{item.title}}</text>\r\n          <text class=\"rel-desc\">{{item.desc}}</text>\r\n        </view>\r\n        <text class=\"rel-arrow\">›</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"foot-actions\">\r\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\r\n        <text>共此卷</text>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"source-line\">史料 · {{period.source}}</view>\r\n\r\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\r\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\r\n      <view class=\"ss-panel\">\r\n        <view class=\"ss-grip\"></view>\r\n        <view class=\"ss-head\">\r\n          <text class=\"ss-title\">共此卷</text>\r\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\r\n        </view>\r\n        <view class=\"ss-qr-wrap\">\r\n          <canvas canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n          <text class=\"ss-qr-tip\">转寄好友直达本页 · 卡片可保存转发</text>\r\n        </view>\r\n        <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转寄好友</button>\r\n        <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保存卡片到相册</view>\r\n      </view>\r\n    </view>\r\n  </view>\r\n</view>\r\n"; });
+__register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 48rpx;\r\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\r\n  border: 2rpx solid #8B4513;\r\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\r\n  /* 透明底色，让宣纸透出 */\r\n  background: transparent;\r\n  /* 轻微旋转，模拟手工盖印的不规则 */\r\n  transform: rotate(-3deg);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  /* 外发光模拟印泥洇散 */\r\n  box-shadow:\r\n    0 0 4rpx rgba(139, 69, 19, 0.12),\r\n    0 0 10rpx rgba(139, 69, 19, 0.06);\r\n}\r\n\r\n.seal-char {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\r\n  font-size: 22rpx;\r\n  font-weight: bold;\r\n  /* 朱砂印泥色（同「史载」印章） */\r\n  color: #8B4513;\r\n  /* 篆书效果：紧凑字距 */\r\n  letter-spacing: 0.02em;\r\n  /* 文字描边增强篆刻感 */\r\n  text-shadow:\r\n    0 0 1rpx #8B4513,\r\n    0 0 2rpx rgba(139, 69, 19, 0.25);\r\n  line-height: 1;\r\n  /* 轻微压缩，模拟篆书方正感 */\r\n  transform: scaleX(0.92);\r\n}\r\n\r\n.head-card {\r\n  margin-top: 26rpx;\r\n  padding: 24rpx 24rpx 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n}\r\n\r\n.head-card.head-modern {\r\n  border-top-color: rgba(126, 154, 154, 0.6);\r\n}\r\n\r\n.hero-band {\r\n  position: relative;\r\n  height: 300rpx;\r\n  border-radius: 30rpx;\r\n  overflow: hidden;\r\n}\r\n\r\n.hero-img {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  display: block;\r\n}\r\n\r\n.hero-shade {\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\r\n}\r\n\r\n.hero-copy {\r\n  position: absolute;\r\n  left: 28rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n}\r\n\r\n.p-name {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(52rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1.1;\r\n  color: #FCFBF8;\r\n}\r\n\r\n.p-years {\r\n  display: block;\r\n  margin-top: 10rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: rgba(252, 251, 248, 0.86);\r\n}\r\n\r\n.hero-title {\r\n  position: absolute;\r\n  right: 24rpx;\r\n  bottom: 24rpx;\r\n  z-index: 2;\r\n  height: 44rpx;\r\n  padding: 0 18rpx;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  border-radius: 22rpx;\r\n  background: rgba(252, 251, 248, 0.92);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.p-desc {\r\n  display: block;\r\n  margin-top: 24rpx;\r\n  padding: 0 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.7;\r\n  letter-spacing: 0.02em;\r\n  color: #5F5A52;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 22rpx;\r\n  padding: 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.para {\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  letter-spacing: 0.02em;\r\n  color: #2C2924;\r\n}\r\n\r\n.para + .para {\r\n  margin-top: 22rpx;\r\n}\r\n\r\n.para.lead {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-head {\r\n  margin-top: 34rpx;\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n}\r\n\r\n.section-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section-count {\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-list {\r\n  margin-top: 18rpx;\r\n}\r\n\r\n.rel-card {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 22rpx;\r\n  margin-bottom: 16rpx;\r\n  padding: 24rpx 26rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.rel-year {\r\n  flex: 0 0 auto;\r\n  white-space: nowrap;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  letter-spacing: 0.02em;\r\n  color: #A9825E;\r\n}\r\n\r\n.rel-year.accent-modern {\r\n  color: #7E9A9A;\r\n}\r\n\r\n.rel-body {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n\r\n.rel-title {\r\n  display: block;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.rel-desc {\r\n  display: block;\r\n  margin-top: 8rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #8C857A;\r\n}\r\n\r\n.rel-arrow {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: 32rpx;\r\n  color: #A39A8E;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 30rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.03em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.foot-actions {\r\n  margin-top: 30rpx;\r\n}\r\n\r\n.time-btn {\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 38rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n}\r\n\n/* 底部操作行（分享，与 event 页 ghost-btn 同款） */\n.foot-actions {\n  margin-top: 30rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.ghost-btn {\n  flex: 1;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n"; });
 __register('/pages/search/search.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
@@ -7038,6 +9662,7 @@ const archiveArt = require('../../utils/archiveArt.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const store = require('../../utils/store.js');
 const entries = require('../../utils/entries.js');
+const qrshare = require('../../utils/qrshare.js');
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -7155,7 +9780,8 @@ Page('project://pages/archive-detail/archive-detail.js', {
     loading: true,
     error: '',
     collected: false,
-    fontClass: 'm'
+    fontClass: 'm',
+    share: { open: false }
   },
 
   onLoad(options) {
@@ -7294,18 +9920,41 @@ Page('project://pages/archive-detail/archive-detail.js', {
     wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/archive/archive' }) });
   },
 
+  openShare() {
+    qrshare.open(this);
+  },
+
+  closeShare() {
+    qrshare.close(this);
+  },
+
+  saveQr() {
+    qrshare.save(this);
+  },
+
+  sharePayload() {
+    const item = this.data.item;
+    return {
+      kicker: this.data.kicker || '资料库',
+      title: item ? item.title : '阅史记资料库',
+      desc: item ? item.summary || '' : '',
+      img: this.data.art || this.data.cover || '',
+      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+    };
+  },
+
   onShareAppMessage() {
     const item = this.data.item;
     return {
       title: item ? `阅史记 · ${item.title}` : '阅史记 · 资料库',
-      path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
+      path: this.sharePayload().path
     };
   }
 });
 
 });
-__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <view class=\"head-cover-wrap\">\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n          <view class=\"head-cover-fade\"></view>\n        </view>\n        <view class=\"head-body\">\n          <view class=\"head-row\">\n            <view class=\"head-copy\">\n              <text class=\"head-kicker\">{{kicker}}</text>\n              <text class=\"head-title\">{{item.title}}</text>\n            </view>\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\n            </view>\n          </view>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view class=\"fav-row\">\n        <view class=\"fav-btn {{collected ? 'on' : ''}}\" bindtap=\"toggleCollect\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\n              <text class=\"section-label\">{{item.label}}</text>\n              <text class=\"section-rule\"></text>\n            </view>\n            <text\n              wx:for=\"{{item.paras}}\"\n              wx:key=\"id\"\n              class=\"section-para\"\n            >{{item.text}}</text>\n          </view>\n        </view>\n\n        <block wx:elif=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\n        <view class=\"facts-head\">\n          <text class=\"facts-title\">资料卡</text>\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\n        </view>\n        <view class=\"fact-grid\">\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\n            <text class=\"fact-value\">{{item.value}}</text>\n          </view>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 阅史记资料库</view>\n    </block>\n  </view>\n</view>\n"; });
-__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 28rpx;\r\n  padding: 0;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover-wrap {\r\n  position: relative;\r\n  height: 160rpx;\r\n  background: #E8E2D6;\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.head-cover-fade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  height: 54rpx;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\r\n}\r\n\r\n.head-body {\r\n  padding: 28rpx 34rpx 32rpx;\r\n}\r\n\r\n/* 条目画片：右侧装裱小画（匹配主站专属图或资料库自抓图），无图时整行退化为纯文字 */\r\n.head-row {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  justify-content: space-between;\r\n  gap: 22rpx;\r\n}\r\n\r\n.head-copy {\r\n  flex: 1 1 auto;\r\n  min-width: 0;\r\n}\r\n\r\n.head-fig {\r\n  flex: 0 0 auto;\r\n  width: 164rpx;\r\n  height: 164rpx;\r\n  padding: 10rpx;\r\n  box-sizing: border-box;\r\n  border-radius: 12rpx;\r\n  background: #FFFFFF;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.28);\r\n  box-shadow: 0 10rpx 22rpx rgba(90, 70, 50, 0.08);\r\n}\r\n\r\n.head-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 6rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.head-kicker {\r\n  display: inline-block;\r\n  padding: 5rpx 13rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\r\n  border-radius: 999rpx;\r\n  background: #F7F2E9;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C6A45;\r\n}\r\n\r\n.head-title {\r\n  display: block;\r\n  margin-top: 16rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(40rpx * var(--fs, 1));\r\n  line-height: 1.42;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.head-meta {\r\n  display: block;\r\n  margin-top: 18rpx;\r\n  padding-top: 16rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.5;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 20rpx;\r\n  padding: 32rpx 32rpx 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.sections {\r\n  display: block;\r\n}\r\n\r\n.section {\r\n  margin-bottom: 30rpx;\r\n}\r\n\r\n.section:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section-head {\r\n  display: flex;\r\n  align-items: center;\r\n  margin-bottom: 14rpx;\r\n}\r\n\r\n.section-label {\r\n  flex: none;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.12em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.section-rule {\r\n  display: block;\r\n  flex: 1;\r\n  height: 1rpx;\r\n  margin-left: 14rpx;\r\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\r\n}\r\n\r\n.section-para {\r\n  display: block;\r\n  margin-bottom: 16rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.section-para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section.verse .section-para {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section.note .section-para {\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.82;\r\n  color: #5F5A52;\r\n}\r\n\r\n.lead {\r\n  margin-bottom: 26rpx;\r\n  padding: 20rpx 22rpx;\r\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\r\n  border-radius: 0 18rpx 18rpx 0;\r\n  background: #F7F2E9;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.75;\r\n  color: #5F5A52;\r\n}\r\n\r\n.para {\r\n  margin-bottom: 22rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.para-head {\r\n  display: block;\r\n  margin: 30rpx 0 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.para-head:first-child {\r\n  margin-top: 0;\r\n}\r\n\r\n.translation {\r\n  margin-top: 28rpx;\r\n  padding-top: 24rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.trans-title {\r\n  display: block;\r\n  margin-bottom: 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #A9825E;\r\n}\r\n\r\n.trans-text {\r\n  display: block;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  color: #5F5A52;\r\n}\r\n\r\n.facts {\r\n  margin-top: 22rpx;\r\n  padding: 26rpx 30rpx 20rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\r\n  border-radius: 28rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.facts-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.facts-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.facts-count {\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-grid {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  margin: 0 -8rpx;\r\n}\r\n\r\n.fact-item {\r\n  box-sizing: border-box;\r\n  width: 50%;\r\n  min-width: 0;\r\n  padding: 10rpx 8rpx;\r\n}\r\n\r\n.fact-item.wide {\r\n  width: 100%;\r\n}\r\n\r\n.fact-key {\r\n  display: block;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-value {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #3A342C;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 28rpx;\r\n  padding: 18rpx 22rpx;\r\n  border-radius: 20rpx;\r\n  background: rgba(243, 239, 230, 0.58);\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n\n/* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */\n.fav-row {\n  margin-top: 20rpx;\n}\n\n.fav-btn {\n  height: 72rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 36rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n  transition: transform 0.18s ease;\n}\n\n.fav-btn.on {\n  border-color: rgba(163, 74, 62, 0.45);\n  background: rgba(163, 74, 62, 0.06);\n  color: #A34A3E;\n}\n\n.fav-pressed {\n  transform: scale(0.98);\n}\n"; });
+__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <view class=\"head-cover-wrap\">\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n          <view class=\"head-cover-fade\"></view>\n        </view>\n        <view class=\"head-body\">\n          <view class=\"head-row\">\n            <view class=\"head-copy\">\n              <text class=\"head-kicker\">{{kicker}}</text>\n              <text class=\"head-title\">{{item.title}}</text>\n            </view>\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\n            </view>\n          </view>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view class=\"fav-row\">\n        <view class=\"fav-btn {{collected ? 'on' : ''}}\" bindtap=\"toggleCollect\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>\n        </view>\n        <view class=\"fav-btn\" bindtap=\"openShare\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>共此卷</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\n              <text class=\"section-label\">{{item.label}}</text>\n              <text class=\"section-rule\"></text>\n            </view>\n            <text\n              wx:for=\"{{item.paras}}\"\n              wx:key=\"id\"\n              class=\"section-para\"\n            >{{item.text}}</text>\n          </view>\n        </view>\n\n        <block wx:elif=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\n        <view class=\"facts-head\">\n          <text class=\"facts-title\">资料卡</text>\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\n        </view>\n        <view class=\"fact-grid\">\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\n            <text class=\"fact-value\">{{item.value}}</text>\n          </view>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 阅史记资料库</view>\n    </block>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <canvas canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n          <text class=\"ss-qr-tip\">转寄好友直达本页 · 卡片可保存转发</text>\n        </view>\n        <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转寄好友</button>\n        <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保存卡片到相册</view>\n      </view>\n    </view>\n  </view>\n</view>\n"; });
+__register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #8C857A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 28rpx;\r\n  padding: 0;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover-wrap {\r\n  position: relative;\r\n  height: 160rpx;\r\n  background: #E8E2D6;\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.head-cover-fade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  height: 54rpx;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\r\n}\r\n\r\n.head-body {\r\n  padding: 28rpx 34rpx 32rpx;\r\n}\r\n\r\n/* 条目画片：右侧装裱小画（匹配主站专属图或资料库自抓图），无图时整行退化为纯文字 */\r\n.head-row {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  justify-content: space-between;\r\n  gap: 22rpx;\r\n}\r\n\r\n.head-copy {\r\n  flex: 1 1 auto;\r\n  min-width: 0;\r\n}\r\n\r\n.head-fig {\r\n  flex: 0 0 auto;\r\n  width: 164rpx;\r\n  height: 164rpx;\r\n  padding: 10rpx;\r\n  box-sizing: border-box;\r\n  border-radius: 12rpx;\r\n  background: #FFFFFF;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.28);\r\n  box-shadow: 0 10rpx 22rpx rgba(90, 70, 50, 0.08);\r\n}\r\n\r\n.head-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 6rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.head-kicker {\r\n  display: inline-block;\r\n  padding: 5rpx 13rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\r\n  border-radius: 999rpx;\r\n  background: #F7F2E9;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #8C6A45;\r\n}\r\n\r\n.head-title {\r\n  display: block;\r\n  margin-top: 16rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(40rpx * var(--fs, 1));\r\n  line-height: 1.42;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.head-meta {\r\n  display: block;\r\n  margin-top: 18rpx;\r\n  padding-top: 16rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.5;\r\n  color: #8C857A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 20rpx;\r\n  padding: 32rpx 32rpx 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.sections {\r\n  display: block;\r\n}\r\n\r\n.section {\r\n  margin-bottom: 30rpx;\r\n}\r\n\r\n.section:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section-head {\r\n  display: flex;\r\n  align-items: center;\r\n  margin-bottom: 14rpx;\r\n}\r\n\r\n.section-label {\r\n  flex: none;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.12em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.section-rule {\r\n  display: block;\r\n  flex: 1;\r\n  height: 1rpx;\r\n  margin-left: 14rpx;\r\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\r\n}\r\n\r\n.section-para {\r\n  display: block;\r\n  margin-bottom: 16rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.section-para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section.verse .section-para {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section.note .section-para {\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.82;\r\n  color: #5F5A52;\r\n}\r\n\r\n.lead {\r\n  margin-bottom: 26rpx;\r\n  padding: 20rpx 22rpx;\r\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\r\n  border-radius: 0 18rpx 18rpx 0;\r\n  background: #F7F2E9;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.75;\r\n  color: #5F5A52;\r\n}\r\n\r\n.para {\r\n  margin-bottom: 22rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.para-head {\r\n  display: block;\r\n  margin: 30rpx 0 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.para-head:first-child {\r\n  margin-top: 0;\r\n}\r\n\r\n.translation {\r\n  margin-top: 28rpx;\r\n  padding-top: 24rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.trans-title {\r\n  display: block;\r\n  margin-bottom: 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #A9825E;\r\n}\r\n\r\n.trans-text {\r\n  display: block;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  color: #5F5A52;\r\n}\r\n\r\n.facts {\r\n  margin-top: 22rpx;\r\n  padding: 26rpx 30rpx 20rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\r\n  border-radius: 28rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.facts-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.facts-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.facts-count {\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-grid {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  margin: 0 -8rpx;\r\n}\r\n\r\n.fact-item {\r\n  box-sizing: border-box;\r\n  width: 50%;\r\n  min-width: 0;\r\n  padding: 10rpx 8rpx;\r\n}\r\n\r\n.fact-item.wide {\r\n  width: 100%;\r\n}\r\n\r\n.fact-key {\r\n  display: block;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #A39A8E;\r\n}\r\n\r\n.fact-value {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #3A342C;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 28rpx;\r\n  padding: 18rpx 22rpx;\r\n  border-radius: 20rpx;\r\n  background: rgba(243, 239, 230, 0.58);\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  letter-spacing: 0.03em;\r\n  color: #8C857A;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #A39A8E;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n\r\n/* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */\r\n.fav-row {\r\n  margin-top: 20rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.fav-btn {\r\n  flex: 1;\r\n  height: 72rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 36rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n  transition: transform 0.18s ease;\r\n}\r\n\r\n.fav-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.fav-pressed {\r\n  transform: scale(0.98);\r\n}\r\n"; });
 
-__register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n"; });
+__register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #7B746A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n\r\n/* 分享面板（详情页通用，utils/qrshare.js；视觉对齐 profile 的 info sheet） */\r\n.ss-layer {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  z-index: 120;\r\n}\r\n\r\n.ss-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  background: rgba(31, 29, 25, 0.3);\r\n  animation: ssFade 0.18s ease both;\r\n}\r\n\r\n.ss-panel {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  max-height: 86vh;\r\n  overflow-y: auto;\r\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\r\n  background: #FCFBF8;\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\r\n  animation: ssUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n\r\n.ss-grip {\r\n  width: 66rpx;\r\n  height: 6rpx;\r\n  margin: 4rpx auto 14rpx;\r\n  border-radius: 3rpx;\r\n  background: #E6E0D4;\r\n}\r\n\r\n.ss-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 6rpx 8rpx 16rpx;\r\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\r\n}\r\n\r\n.ss-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(33rpx * var(--fs, 1));\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.ss-close {\r\n  font-size: 40rpx;\r\n  line-height: 1;\r\n  padding: 6rpx 12rpx;\r\n  color: #8C857A;\r\n}\r\n\r\n.ss-qr-wrap {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  margin-bottom: 34rpx;\r\n}\r\n\r\n.ss-canvas {\r\n  width: 260px;\r\n  height: 372px;\r\n  border-radius: 20rpx;\r\n  background: #FFFFFF;\r\n  border: 1px solid rgba(70, 58, 45, 0.12);\r\n}\r\n\r\n.ss-qr-tip {\r\n  margin-top: 16rpx;\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #8C857A;\r\n}\r\n\r\n/* open-type=\"share\" 的原生 button 与普通 view 按钮同款 reset */\r\n.ss-btn {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 100%;\r\n  height: 84rpx;\r\n  margin: 0 0 20rpx;\r\n  padding: 0;\r\n  border-radius: 42rpx;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  line-height: 1;\r\n  box-sizing: border-box;\r\n}\r\n\r\n.ss-btn::after {\r\n  border: none;\r\n}\r\n\r\n.ss-btn-primary {\r\n  background: #1F1D19;\r\n  color: #F6F1EA;\r\n}\r\n\r\n.ss-btn-ghost {\r\n  background: #EEF0F0;\r\n  color: #5F5A52;\r\n}\r\n\r\n@keyframes ssFade {\r\n  from { opacity: 0; }\r\n  to { opacity: 1; }\r\n}\r\n\r\n@keyframes ssUp {\r\n  from { transform: translateY(42%); opacity: 0.4; }\r\n  to { transform: translateY(0); opacity: 1; }\r\n}\r\n"; });
 })();
