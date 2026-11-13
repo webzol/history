@@ -2011,3 +2011,11 @@ miniprogram/data/history.js
 - selftest +20 断言：share.quote/quoteSource/lunarText/dateText 存在性与格式、dailyQuote 同日确定性 + 固定日期可复现、海报文字层计数提到 ≥8。
 - 验证：`node tools/selftest.js` PASS 1890 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图 29/30/31 核对——名句、出处、公历农历、二维码布局全部正确，同日跨页名句一致。
 - 遗留：真机核对楷体（KaiTi）在旧版 canvas ctx.font 的实际渲染；名句池随人物库扩充自动扩容（historyData 热更即生效）。
+
+## 2026-11-14 · 分享海报改版「宣纸笺」风格（对齐全站视觉语言）
+
+- 需求：海报整体风格要贴合小程序的历史风格，之前白底海报偏现代。
+- 改版要点（`utils/qrshare.js` drawPoster 重写）：白底 → **宣纸底 `#F6F1EA`**；顶部/底部**朱砂界格细线**（rgba 朱砂 55%，仿笺纸界格）；题图改**装裱式**——暖白 `#FCFBF8` 圆角裱底（quadraticCurveTo 模拟圆角，旧 canvas 无 arcTo）内嵌画心；落款区升级为「二维码（左）+ 公历/农历（中）+ **「史载」朱砂印章（右，`assets/seal.png` 114×197 竖长按比例 52px 高）**」——古籍落款押印布局；品牌行移至底线之上。
+- mock 补齐：selftest 与 harness 的 canvas mock 加 `beginPath/moveTo/lineTo/quadraticCurveTo/closePath/fill`（roundRect 依赖；漏 lineTo 曾致绘制中断被 catch 吞掉，已在 catch 加 `console.error` 便于真机 vConsole 排查）。
+- 验证：`node tools/selftest.js` PASS 1890 / FAIL 0；截图 29/30/31 核对——宣纸底、界格线、裱框题图、「史载」印、楷体名句、农历日期全部正确呈现，历史视觉语言与全站一致。
+- 遗留：真机核对旧 canvas 圆角 path 渲染与印章 drawImage 清晰度。

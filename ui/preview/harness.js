@@ -95,6 +95,12 @@
         setFillStyle: function (c) { if (ctx) ctx.fillStyle = c; return this; },
         setFontSize: function (s) { if (ctx) ctx.font = s + 'px "Songti SC", "STSong", serif'; return this; },
         setTextAlign: function (a) { if (ctx) ctx.textAlign = a; return this; },
+        beginPath: function () { if (ctx) ctx.beginPath(); return this; },
+        moveTo: function (x, y) { if (ctx) ctx.moveTo(x, y); return this; },
+        lineTo: function (x, y) { if (ctx) ctx.lineTo(x, y); return this; },
+        quadraticCurveTo: function (cpx, cpy, x, y) { if (ctx) ctx.quadraticCurveTo(cpx, cpy, x, y); return this; },
+        closePath: function () { if (ctx) ctx.closePath(); return this; },
+        fill: function () { if (ctx) ctx.fill(); return this; },
         fillRect: function (x, y, w, h) { if (ctx) ctx.fillRect(x, y, w, h); return this; },
         fillText: function (t, x, y) { if (ctx) ctx.fillText(t, x, y); return this; },
         drawImage: function (src) {
