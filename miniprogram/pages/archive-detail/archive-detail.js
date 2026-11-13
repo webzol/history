@@ -290,6 +290,7 @@ Page({
       title: item ? item.title : '阅史记资料库',
       desc: item ? item.summary || '' : '',
       img: this.data.art || this.data.cover || '',
+      imgFallback: this.data.cover || '/assets/palace.jpg',
       path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
     };
   },

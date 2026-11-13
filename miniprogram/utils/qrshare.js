@@ -130,13 +130,23 @@ function open(page) {
     }
   });
 
-  // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画
+  // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画。
+  // 远端题图失败时回退 imgFallback（本地朝代画），保证顶部始终是当前相关图。
   setTimeout(() => drawPoster(page), 120);
   if (payload.img) {
     loadImg(payload.img, (local, w, h) => {
-      if (page.data.share.open) {
-        page.setData({ 'share.imgLocal': local || '', 'share.imgW': w || 0, 'share.imgH': h || 0 });
+      if (page.data.share.open && local) {
+        page.setData({ 'share.imgLocal': local, 'share.imgW': w || 0, 'share.imgH': h || 0 });
         drawPoster(page);
+        return;
+      }
+      if (payload.imgFallback) {
+        loadImg(payload.imgFallback, (local2) => {
+          if (page.data.share.open && local2) {
+            page.setData({ 'share.imgLocal': local2, 'share.imgW': 0, 'share.imgH': 0 });
+            drawPoster(page);
+          }
+        });
       }
     });
   }
@@ -173,20 +183,13 @@ function drawPoster(page) {
     ctx.setFillStyle('#F6F1EA');
     ctx.fillRect(0, 0, W, H);
 
-    // 顶/底界格朱砂细线
-    ctx.setFillStyle('rgba(163, 74, 62, 0.55)');
-    ctx.fillRect(24, 18, W - 48, 1.5);
-    ctx.fillRect(24, H - 16, W - 48, 1.5);
-
-    // 题图装裱：暖白裱底（圆角）+ 画心
-    ctx.setFillStyle('#FCFBF8');
-    roundRect(ctx, 16, 28, W - 32, 130, 6);
-    ctx.fill();
+    // 题图贴顶全幅（当前页相关图；远端图加载失败回退 share.imgFallback 本地朝代画，
+    // 再失败画占位底，保证最顶部始终是相关图）
     const drawCover = (src) => {
       // 按真实宽高裁中带（cover；优先 getImageInfo 宽高，未知尺寸的远端专属图按 360×360 估计）
       const iw = share.imgW || (/\/data\/img\//.test(src) ? 360 : 0);
       const ih = share.imgH || (/\/data\/img\//.test(src) ? 360 : 0);
-      const dx = 24, dy = 36, dw = W - 48, dh = 114;
+      const dw = W, dh = IMG_H;
       if (iw > 0 && ih > 0) {
         const ratio = dw / dh;
         let sw = iw;
@@ -197,62 +200,67 @@ function drawPoster(page) {
         }
         const sx = Math.round((iw - sw) / 2);
         const sy = Math.round((ih - sh) / 2);
-        ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
+        ctx.drawImage(src, sx, sy, sw, sh, 0, 0, dw, dh);
       } else {
-        ctx.drawImage(src, dx, dy, dw, dh);
+        ctx.drawImage(src, 0, 0, dw, dh);
       }
     };
     if (share.imgLocal) {
       drawCover(share.imgLocal);
     } else {
       ctx.setFillStyle('#EFE9DD');
-      ctx.fillRect(24, 36, W - 48, 114);
+      ctx.fillRect(0, 0, W, IMG_H);
       ctx.setFillStyle('#B9AE9E');
       ctx.setFontSize(13);
       ctx.setTextAlign('center');
-      ctx.fillText('阅史记', W / 2, 36 + 62);
+      ctx.fillText('阅史记', W / 2, IMG_H / 2 + 5);
     }
+
+    // 朱砂界格线：压题图底 + 底部
+    ctx.setFillStyle('rgba(163, 74, 62, 0.55)');
+    ctx.fillRect(0, IMG_H, W, 1.5);
+    ctx.fillRect(24, H - 16, W - 48, 1.5);
 
     // kicker（朱砂小字）
     ctx.setTextAlign('center');
     ctx.setFillStyle('#A34A3E');
     ctx.setFontSize(10);
-    ctx.fillText(share.kicker, W / 2, IMG_H + 44);
+    ctx.fillText(share.kicker, W / 2, IMG_H + 24);
 
     // 标题（宋体大字，最多一行）
     ctx.setFillStyle(INK);
     ctx.font = 'bold 19px "Songti SC", "STSong", "SimSun", serif';
-    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 70);
+    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 50);
     ctx.font = '';
 
     // 摘要（淡墨，最多两行）
     ctx.setFillStyle('#5F5A52');
     ctx.setFontSize(11);
     const rows = wrapText(share.desc, 11, W - 56, 2);
-    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 92 + i * 17));
+    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 72 + i * 17));
 
     // 淡墨分隔细线
     ctx.setFillStyle('rgba(70, 58, 45, 0.14)');
-    ctx.fillRect(40, IMG_H + 124, W - 80, 1);
+    ctx.fillRect(40, IMG_H + 106, W - 80, 1);
 
     // 每日名句（楷体，最多两行）+ 出处
     if (share.quote) {
       ctx.setFillStyle('#3B3731');
       ctx.font = '12px "Kaiti SC", "STKaiti", "KaiTi", serif';
       const qrows = wrapText(share.quote, 12, W - 56, 2);
-      qrows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 144 + i * 19));
+      qrows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 126 + i * 19));
       ctx.font = '';
       ctx.setFillStyle('#8C857A');
       ctx.setFontSize(9);
-      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, IMG_H + 144 + (qrows.length - 1) * 19 + 16);
+      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, IMG_H + 126 + (qrows.length - 1) * 19 + 16);
     }
 
     // 淡墨分隔细线
     ctx.setFillStyle('rgba(70, 58, 45, 0.10)');
-    ctx.fillRect(40, IMG_H + 190, W - 80, 1);
+    ctx.fillRect(40, IMG_H + 172, W - 80, 1);
 
     // 落款区：二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
-    const cy = IMG_H + 204;
+    const cy = IMG_H + 186;
     const cx = 30;
     try {
       const qr = encode(share.qrText);

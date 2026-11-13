@@ -146,25 +146,29 @@ view, text, image {
   border: 1px solid rgba(70, 58, 45, 0.12);
 }
 
-.ss-qr-tip {
-  margin-top: 16rpx;
-  font-size: calc(19rpx * var(--fs, 1));
-  letter-spacing: 0.1em;
-  color: #8C857A;
+
+/* open-type="share" 的原生 button 与普通 view 按钮同款 reset；
+   两枚按钮同一行等宽，风格对齐返回胶囊（暖纸渐变 + 赭金细边 + 内高光 + 楷体字） */
+.ss-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 4rpx;
+  margin-bottom: 8rpx;
 }
 
-/* open-type="share" 的原生 button 与普通 view 按钮同款 reset */
 .ss-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 84rpx;
-  margin: 0 0 14rpx;
+  width: auto;
+  height: 78rpx;
+  margin: 0;
   padding: 0;
-  border-radius: 42rpx;
+  border-radius: 39rpx;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", serif;
   font-size: calc(26rpx * var(--fs, 1));
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   line-height: 1;
   box-sizing: border-box;
 }
@@ -174,13 +178,17 @@ view, text, image {
 }
 
 .ss-btn-primary {
-  background: #1F1D19;
+  background: linear-gradient(180deg, #2C2822, #1F1D19);
   color: #F6F1EA;
+  border: 1rpx solid rgba(190, 150, 90, 0.45);
+  box-shadow: inset 0 1rpx 0 rgba(246, 241, 234, 0.16), 0 6rpx 16rpx rgba(31, 29, 25, 0.18);
 }
 
 .ss-btn-ghost {
-  background: #EEF0F0;
+  background: linear-gradient(180deg, #F3EADA, #EFE2CC);
   color: #5F5A52;
+  border: 1rpx solid rgba(150, 110, 60, 0.34);
+  box-shadow: inset 0 1rpx 0 rgba(255, 252, 246, 0.65);
 }
 
 @keyframes ssFade {

@@ -2049,3 +2049,13 @@ miniprogram/data/history.js
 - 体积核对：主包估算 2152KB → **2029KB**（余量 19KB；估算口径与微信报错数字差 1KB，可信）。paintings 24 张已高度优化（重压反而 +124KB，不再动）。
 - 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图全过。
 - 遗留：主包余量仅 19KB——**后续往主包加内容/素材前必须先核对体积**（数据 minify 化是下轮备选，但 history.js/history-extra.js 是手工内容种子，压缩会破坏维护 diff，暂不动）；开发者工具重新预览确认 80051 消失。
+
+## 2026-11-14 · 分享面板按钮同行历史化 + 海报题图贴顶 + 修复面板被 tabbar 遮挡
+
+- 需求：① 两枚按钮大小一致、同一行；② 按钮设计为历史风格；③ 海报最顶部为当前页相关图。
+- **按钮同行 + 历史风格**：四页 `.ss-actions` flex 行内两枚等宽按钮（`flex:1`，78rpx 高，39rpx 圆角胶囊），文案「转 寄 好 友」/「保 存 卡 片」（疏排楷体）；风格对齐返回胶囊语言——主按钮墨色渐变底 + 赭金细边 + 内高光，次按钮暖纸渐变底 + 赭金细边（app.wxss）。
+- **海报题图贴顶**：题图从「28px 边距 + 暖白裱框」改为贴顶全幅 bleed（0,0,260,150），朱砂界格线改压题图底边；内容区（kicker/标题/摘要/名句/落款）坐标整体上移重排；删除与按钮语义重复的面板提示行。
+- **顶部相关图保障链**：远端题图 `getImageInfo` 失败时回退 `sharePayload().imgFallback`（person/event 用本地朝代画 PERSON_ART/eraImage，period/archive 用 palace/cover 本地图），再失败才画占位底——最顶部始终是当前相关图。
+- **修复面板被 tabbar 遮挡（真机+预览同因）**：面板原在 `.screen` 容器内，而各页 `.screen { z-index: 2 }` 创建层叠上下文，把面板 z-120 封印在内——custom-tab-bar(z-10) / harness tabshell(z-10) 在外层恒压面板（按钮被盖）。修复：ss-layer 移出 `.screen` 挂到 page 根直下，z-120 全局生效盖过 tabbar。用浏览器 elementsFromPoint + z-index 动态实验定位（先疑似 harness 失真，后证实真机同因）。
+- 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图核对——SE/标准/ProMax 三档按钮同行等宽可见、题图贴顶、面板盖 tabbar 全部正确。
+- 遗留：真机确认楷体按钮字与渐变渲染；小屏面板滚动余量已足够（删提示行后单屏容纳）。

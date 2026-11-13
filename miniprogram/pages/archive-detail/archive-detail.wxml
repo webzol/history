@@ -103,6 +103,8 @@
       <view wx:if="{{item.source}}" class="source-line">来源：{{item.source}} · 阅史记资料库</view>
     </block>
 
+  </view>
+
     <view class="ss-layer" wx:if="{{share.open}}">
       <view class="ss-mask" bindtap="closeShare"></view>
       <view class="ss-panel">
@@ -114,11 +116,11 @@
         <view class="ss-qr-wrap">
           <image wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
           <canvas wx:else canvas-id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
-          <text class="ss-qr-tip">转寄好友直达本页 · 卡片可保存转发</text>
         </view>
-        <button class="ss-btn ss-btn-primary" open-type="share">转寄好友</button>
-        <view class="ss-btn ss-btn-ghost" bindtap="saveQr">保存卡片到相册</view>
+        <view class="ss-actions">
+          <button class="ss-btn ss-btn-primary" open-type="share">转 寄 好 友</button>
+          <view class="ss-btn ss-btn-ghost" bindtap="saveQr">保 存 卡 片</view>
+        </view>
       </view>
     </view>
-  </view>
 </view>

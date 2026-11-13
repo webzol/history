@@ -6,6 +6,8 @@ const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 const personThumb = require('../../utils/eraImages.js').personThumb;
 const altArt = require('../../utils/eraImages.js').altArt;
+const EVENT_ART = require('../../utils/eraImages.js').EVENT_ART;
+const eraImage = require('../../utils/eraImages.js').eraImage;
 
 Page({
   data: {
@@ -130,6 +132,7 @@ Page({
       title: event ? event.title : '阅史记',
       desc: event ? event.desc || '' : '',
       img: this.data.headImg || '',
+      imgFallback: (event && (EVENT_ART[event.id] || eraImage(event.era))) || '/assets/palace.jpg',
       path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
     };
   },

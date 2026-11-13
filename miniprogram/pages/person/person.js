@@ -5,6 +5,8 @@ const qrshare = require('../../utils/qrshare.js');
 const personImage = require('../../utils/eraImages.js').personImage;
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const altArt = require('../../utils/eraImages.js').altArt;
+const PERSON_ART = require('../../utils/eraImages.js').PERSON_ART;
+const eraImage = require('../../utils/eraImages.js').eraImage;
 
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -112,6 +114,7 @@ Page({
       title: person ? person.name : '阅史记',
       desc: person ? person.summary || '' : '',
       img: this.data.headImg || '',
+      imgFallback: (person && (PERSON_ART[person.id] || eraImage(person.era))) || '/assets/palace.jpg',
       path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
     };
   },

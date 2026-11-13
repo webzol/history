@@ -134,6 +134,7 @@ Page({
       title: period ? period.name : '阅史记',
       desc: period ? period.desc || '' : '',
       img: period ? period.img || '' : '',
+      imgFallback: '/assets/palace.jpg',
       path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
     };
   },
