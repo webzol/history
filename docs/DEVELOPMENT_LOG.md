@@ -2019,3 +2019,13 @@ miniprogram/data/history.js
 - mock 补齐：selftest 与 harness 的 canvas mock 加 `beginPath/moveTo/lineTo/quadraticCurveTo/closePath/fill`（roundRect 依赖；漏 lineTo 曾致绘制中断被 catch 吞掉，已在 catch 加 `console.error` 便于真机 vConsole 排查）。
 - 验证：`node tools/selftest.js` PASS 1890 / FAIL 0；截图 29/30/31 核对——宣纸底、界格线、裱框题图、「史载」印、楷体名句、农历日期全部正确呈现，历史视觉语言与全站一致。
 - 遗留：真机核对旧 canvas 圆角 path 渲染与印章 drawImage 清晰度。
+
+## 2026-11-14 · 分享海报异常兜底固定图 + 多机型兼容自测
+
+- 需求：① 自测多机型兼容；② 调用异常时展示预置的固定图（提前准备好），任何情况下用户看到的都是完整卡片。
+- **兜底固定图**：`tools/gen_share_fallback.py`（PIL，simkai 楷体 + seal 印合成）生成 `assets/share-fallback.jpg`（780×1272 = 海报 260×424 的 3 倍，与 canvas destWidth 同倍率）——宣纸底、朱砂界格、裱框占位画心、「共此卷」楷体大字、通用名句「以千年为卷轴，读万古事」、「史载」印，全站风格一致；改文案重跑脚本即可复现。
+- **降级链路（utils/qrshare.js）**：① drawPoster 抛异常 → catch 里 `share.fallback=true`，面板 canvas 自动切 `<image src="/assets/share-fallback.jpg">`（四页 wxml `wx:if/wx:else`）；② `canvasToTempFilePath` 导出失败或已降级 → `saveFallback()`：FileSystemManager 读包内兜底图（`/assets/...` 与 `assets/...` 两级路径尝试，兼容各基础库版本）→ 写 `wx.env.USER_DATA_PATH` → saveImageToPhotosAlbum 转存相册（saveImageToPhotosAlbum 不接受代码包路径，必须 FSM 中转）；授权引导逻辑抽为 `writeAlbum` 共用。
+- **多机型兼容自测**：preview_shots 支持 per-shot 视口（第三列），新增 4 场景——32-person-share-se（iPhone SE 375×667）/ 33-period-share-se / 34-person-share-max（430×932）/ 35-archive-share-max。核对：三档机型面板均无破版，小屏靠 `max-height 86vh + overflow-y` 滚动可达「保存卡片」按钮，大屏一屏放下全部元素。
+- selftest +12 断言：导出失败 → 兜底图经用户目录转存相册；降级态直接保存兜底图；harness/selftest mock 补 `wx.env`、`getFileSystemManager`（readFile/writeFile）与 `canvasToTempFilePath` fail 开关。
+- 验证：`node tools/selftest.js` PASS 1902 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；35 张截图全部成功。
+- **离线不可自测、需真机验证的兼容项**（微信开发者工具多机型真机预览时核对）：旧版 canvas 接口圆角 path 与楷体（部分安卓无 KaiTi 回退默认字体）、seal.png 透明通道绘制、destWidth 3x 导出在低端机内存、FSM 代码包路径两级尝试的实际命中、分享面板与各机型底部安全区。

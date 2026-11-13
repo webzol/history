@@ -12,8 +12,8 @@ const ROOT = path.join(__dirname, '..', 'miniprogram');
 const qrshare = require(path.join(ROOT, 'utils', 'qrshare.js'));
 
 // 分享面板 mock 状态：ops/fills=绘制填充次数 texts=文字绘制 images=图片绘制
-// saved=成功保存次数 denied=相册授权被拒 netFail=downloadFile 网络失败
-const mockQr = { ops: 0, saved: 0, denied: false, netFail: false };
+// saved=成功保存次数 denied=相册授权被拒 netFail=downloadFile 网络失败 exportFail=canvas 导出失败
+const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [] };
 const mockPoster = { fills: 0, texts: 0, images: 0 };
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
@@ -139,7 +139,27 @@ const wx = {
     if (opts.success) opts.success({ statusCode: 200, tempFilePath: url });
   },
   canvasToTempFilePath(opts) {
+    if (mockQr.exportFail) {
+      if (opts.fail) opts.fail({ errMsg: 'canvasToTempFilePath:fail' });
+      return;
+    }
     if (opts.success) opts.success({ tempFilePath: 'tmp://qr-share.png' });
+  },
+  env: { USER_DATA_PATH: 'wxfile://mockusr' },
+  getFileSystemManager() {
+    return {
+      readFile(opts) {
+        if ((opts.filePath || '').indexOf('share-fallback.jpg') >= 0) {
+          if (opts.success) opts.success({ data: { __mock: 'jpg-bytes' } });
+          return;
+        }
+        if (opts.fail) opts.fail({ errMsg: 'readFile:fail ' + opts.filePath });
+      },
+      writeFile(opts) {
+        mockQr.fsWrites.push(opts.filePath);
+        if (opts.success) opts.success({});
+      }
+    };
   },
   saveImageToPhotosAlbum(opts) {
     if (mockQr.denied) {
@@ -254,6 +274,20 @@ function assertSharePanel(page, cfg, tag) {
   ok(last('openSetting'), `${tag}引导去设置页`);
   ok(mockQr.saved === 2, `${tag}授权恢复后自动重试保存（累计 2 次）`);
   mockQr.denied = false;
+  // 异常降级：导出失败 → 兜底静态图经用户目录转存相册
+  mockQr.exportFail = true;
+  mockQr.saved = 0;
+  mockQr.fsWrites = [];
+  page.saveQr();
+  ok(mockQr.saved === 1, `${tag}导出失败降级保存兜底图`);
+  ok(mockQr.fsWrites.some((p) => p.indexOf('share-fallback.jpg') >= 0), `${tag}兜底图经用户目录转存`);
+  // canvas 降级态（drawPoster 异常已切静态图）→ 直接保存兜底图
+  page.data.share.fallback = true;
+  mockQr.saved = 0;
+  page.saveQr();
+  ok(mockQr.saved === 1, `${tag}降级态直接保存兜底图`);
+  page.data.share.fallback = false;
+  mockQr.exportFail = false;
   page.closeShare();
   eq(page.data.share.open, false, `${tag}分享面板关闭`);
 }

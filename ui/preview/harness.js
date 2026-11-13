@@ -143,6 +143,19 @@
       }
       if (o && o.fail) o.fail({ errMsg: 'downloadFile:fail offline' });
     },
+    env: { USER_DATA_PATH: 'wxfile://previewusr' },
+    getFileSystemManager: function () {
+      return {
+        readFile: function (o) {
+          if ((o.filePath || '').indexOf('share-fallback.jpg') >= 0) {
+            if (o.success) o.success({ data: [1] });
+            return;
+          }
+          if (o.fail) o.fail({ errMsg: 'readFile:fail' });
+        },
+        writeFile: function (o) { if (o.success) o.success({}); }
+      };
+    },
     canvasToTempFilePath: function (o) { if (o && o.success) o.success({ tempFilePath: '' }); },
     // 60s「历史上的今天」返回样例载荷；其余请求（jsDelivr）走离线失败 → 回退种子
     request: function (o) {

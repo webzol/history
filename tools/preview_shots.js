@@ -14,6 +14,10 @@ const BASE = 'http://127.0.0.1:8137/ui/preview/index.html#';
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const esc = encodeURIComponent;
+// 多机型兼容自测视口：标准 / 小屏（iPhone SE 375×667）/ 大屏（iPhone Pro Max 430×932），1.34x 渲染窗
+const VIEWPORT_STD = '522,1036';
+const VIEWPORT_SE = '502,894';
+const VIEWPORT_MAX = '576,1248';
 const targets = [
   ['01-home', 'home?shot=1'],
   ['02-home-sheet-dynasty', `home?shot=1&s=${esc('click:.quick-item.t2')}`],
@@ -45,7 +49,12 @@ const targets = [
   ['28-archive-cards-open', `archive?shot=1&s=${esc('click:.group-card')}`],
   ['29-person-share', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`],
   ['30-event-share', `event?shot=1&id=xinhai-1911&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`],
-  ['31-period-share', `period?shot=1&id=han&s=${esc('click:.foot-actions .ghost-btn')}`]
+  ['31-period-share', `period?shot=1&id=han&s=${esc('click:.foot-actions .ghost-btn')}`],
+  // 多机型兼容自测：小屏 / 大屏（视口第三列）
+  ['32-person-share-se', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`, VIEWPORT_SE],
+  ['33-period-share-se', `period?shot=1&id=han&s=${esc('click:.foot-actions .ghost-btn')}`, VIEWPORT_SE],
+  ['34-person-share-max', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`, VIEWPORT_MAX],
+  ['35-archive-share-max', `archive-detail?shot=1&kind=cards&type=12&shard=00&title=${esc('诸子百家名句赏析')}&id=hc-12-00001&s=${esc('click:.fav-btn:nth-child(2)')}`, VIEWPORT_MAX]
 ];
 
 let miss = 0;
@@ -64,14 +73,15 @@ try {
   process.exit(2);
 }
 
-for (const [name, hash] of targets) {
+// targets 项支持第三列 [name, hash, viewport]，viewport 缺省标准视口。
+for (const [name, hash, viewport] of targets) {
   const out = path.join(OUT_DIR, `${name}.png`);
   const mtimeBefore = fs.existsSync(out) ? fs.statSync(out).mtimeMs : 0;
   const res = spawnSync(
     CHROME,
     [
       '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
-      '--window-size=522,1036',
+      `--window-size=${viewport || VIEWPORT_STD}`,
       '--virtual-time-budget=5000',
       `--screenshot=${out}`,
       `${BASE}${hash}`

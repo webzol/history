@@ -16,6 +16,9 @@ const hd = require('./historyData.js');
 // 普通二维码兜底域名：待配置——公众平台「扫普通链接二维码打开小程序」绑定已备案域名后替换
 const QR_BASE = 'https://yueshiji.cn';
 
+// 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
+const FALLBACK_IMG = '/assets/share-fallback.jpg';
+
 // 海报 canvas 尺寸（px，与 app.wxss .ss-canvas 一致；面板内显示+保存导出同源）
 const CANVAS_ID = 'ssQrCanvas';
 const W = 260;
@@ -276,56 +279,93 @@ function drawPoster(page) {
     ctx.draw();
   } catch (e) {
     console.error('qrshare drawPoster:', e);
-    if (wx.showToast) wx.showToast({ title: '海报绘制失败', icon: 'none' });
+    // 绘制异常降级：面板切预置静态卡片图（保持完整视觉，见 tools/gen_share_fallback.py）
+    if (page && page.setData) page.setData({ 'share.fallback': true });
+    if (wx.showToast) wx.showToast({ title: '已切换备用卡片', icon: 'none' });
   }
 }
 
-// 导出海报 → 保存到相册（授权被拒则引导去设置，回来自动重试一次）
+// 写入相册（授权被拒则引导去设置，回来自动重试一次）
+function writeAlbum(filePath) {
+  wx.saveImageToPhotosAlbum({
+    filePath,
+    success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+    fail: (err) => {
+      const msg = (err && err.errMsg) || '';
+      if (msg.indexOf('auth') < 0 && msg.indexOf('deny') < 0) {
+        wx.showToast({ title: '保存失败', icon: 'none' });
+        return;
+      }
+      wx.showModal({
+        title: '需要相册权限',
+        content: '请在设置中允许「保存到相册」',
+        confirmText: '去设置',
+        success: (res) => {
+          if (!res.confirm || typeof wx.openSetting !== 'function') return;
+          wx.openSetting({
+            success: (setting) => {
+              if (setting && setting.authSetting && setting.authSetting['scope.writePhotosAlbum']) {
+                writeAlbum(filePath);
+              }
+            }
+          });
+        }
+      });
+    }
+  });
+}
+
+// 导出海报 → 保存到相册；导出失败或 canvas 已降级时，改保存预置兜底图
 function save(page) {
   const share = page.data.share;
   if (!share || !share.open) return;
-  if (typeof wx.canvasToTempFilePath !== 'function') return;
-
-  const writeAlbum = (filePath) => {
-    wx.saveImageToPhotosAlbum({
-      filePath,
-      success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
-      fail: (err) => {
-        const msg = (err && err.errMsg) || '';
-        if (msg.indexOf('auth') < 0 && msg.indexOf('deny') < 0) {
-          wx.showToast({ title: '保存失败', icon: 'none' });
-          return;
-        }
-        wx.showModal({
-          title: '需要相册权限',
-          content: '请在设置中允许「保存到相册」',
-          confirmText: '去设置',
-          success: (res) => {
-            if (!res.confirm || typeof wx.openSetting !== 'function') return;
-            wx.openSetting({
-              success: (setting) => {
-                if (setting && setting.authSetting && setting.authSetting['scope.writePhotosAlbum']) {
-                  writeAlbum(filePath);
-                }
-              }
-            });
-          }
-        });
-      }
-    });
-  };
+  if (share.fallback || typeof wx.canvasToTempFilePath !== 'function') {
+    saveFallback(page);
+    return;
+  }
 
   wx.canvasToTempFilePath({
     canvasId: CANVAS_ID,
     destWidth: W * 3, // 3 倍分辨率导出，避免保存图发虚
     destHeight: H * 3,
     success: (res) => writeAlbum(res.tempFilePath),
-    fail: () => wx.showToast({ title: '海报导出失败', icon: 'none' })
+    fail: () => saveFallback(page)
   });
 }
 
+// 兜底保存：把包内静态卡片图（FALLBACK_IMG）经用户目录转存到相册。
+// saveImageToPhotosAlbum 不接受代码包路径，须用 FileSystemManager 中转。
+function saveFallback(page) {
+  if (typeof wx.getFileSystemManager !== 'function' || !wx.env || !wx.env.USER_DATA_PATH) {
+    wx.showToast({ title: '暂不支持保存备用卡片', icon: 'none' });
+    return;
+  }
+  const fsm = wx.getFileSystemManager();
+  const dst = `${wx.env.USER_DATA_PATH}/share-fallback.jpg`;
+  // 代码包路径各版本对前导 / 行为不一，两级尝试
+  const tryPaths = [FALLBACK_IMG, FALLBACK_IMG.replace(/^\//, '')];
+
+  (function attempt(i) {
+    fsm.readFile({
+      filePath: tryPaths[i],
+      success: (res) => {
+        fsm.writeFile({
+          filePath: dst,
+          data: res.data,
+          success: () => writeAlbum(dst),
+          fail: () => wx.showToast({ title: '保存失败', icon: 'none' })
+        });
+      },
+      fail: () => {
+        if (i + 1 < tryPaths.length) attempt(i + 1);
+        else wx.showToast({ title: '备用卡片不可用', icon: 'none' });
+      }
+    });
+  })(0);
+}
+
 module.exports = {
-  open, close, save, drawPoster, encode, qrTextOf, loadImg,
+  open, close, save, saveFallback, drawPoster, encode, qrTextOf, loadImg,
   dailyQuote, lunarText, dateText,
-  QR_BASE, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
+  QR_BASE, FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
 };
