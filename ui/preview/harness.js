@@ -91,7 +91,7 @@
         if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
         ctx = cv.getContext('2d');
       }
-      return {
+      var ret = {
         setFillStyle: function (c) { if (ctx) ctx.fillStyle = c; return this; },
         setFontSize: function (s) { if (ctx) ctx.font = s + 'px "Songti SC", "STSong", serif'; return this; },
         setTextAlign: function (a) { if (ctx) ctx.textAlign = a; return this; },
@@ -114,6 +114,14 @@
         },
         draw: function () { return this; }
       };
+      // ctx.font 赋值穿透（qrshare 海报用 ctx.font 设宋体/楷体）
+      if (ctx) {
+        Object.defineProperty(ret, 'font', {
+          set: function (v) { ctx.font = v; },
+          get: function () { return ctx.font; }
+        });
+      }
+      return ret;
     },
     // 本地路径直通；远端专属图映射仓库本地文件（data/img/ 随仓库，预览离线可画）
     downloadFile: function (o) {

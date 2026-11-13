@@ -2000,3 +2000,14 @@ miniprogram/data/history.js
 - selftest：mock createCanvasContext/downloadFile/saveImageToPhotosAlbum/openSetting + `assertSharePanel` 四页共用断言（打开/内容/绘制/保存/授权拒绝重试/关闭），+56 断言。
 - 验证：`node tools/selftest.js` PASS 1870 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图 29-person-share / 30-event-share / 31-period-share 核对（题图、kicker、标题、摘要、码、品牌行、面板文案全部正确）。
 - 遗留：① QR_BASE 为占位域名，扫码暂不能直达（转发卡片不受影响），配置跳转规则后改一行生效；② downloadFile 合法域名需加 `gcore.jsdelivr.net`（海报远端题图拉取）；③ 真机核对旧版 canvas 绘制效果与 3x 导出清晰度；④ 小屏面板海报下「保存卡片」按钮需滚动可见（max-height 86vh + overflow）。
+
+## 2026-11-14 · 分享海报新增农历日期与每日历史名句
+
+- 需求：海报里加当前日期（农历）+ 有吸引力的历史句子，增强内容感。
+- **每日历史名句**：数据源直接用项目内 89 位人物引文库（`data/history.js` 的 quote/quoteSource，全员有值）；`qrshare.dailyQuote()` 以公历年月日做种子确定性抽取（`y*10000+m*100+d` 模池长）——同一天所有用户/所有页面同一句、隔天自动换，与首页 `api.pickDaily` 同一设计思路。海报楷体两行折行显示 + 「—— 出处」淡墨小字。
+- **农历日期**：引入 `utils/solarlunar.js`（solarlunar@2.0.1，yize/solarlunar，MIT，min 版原样引入；API 需三参数字调用）。海报底部信息区左二维码（54px）右双行日期：公历「2026年11月14日」+ 农历「农历丙午年 十月初六」（干支年 + 中文月日）。
+- 海报复排版（260×424，原 372 加高）：题图 140（压缩）→ kicker → 宋体标题（`ctx.font` 设宋体）→ 摘要两行 → 细线 → 名句区（楷体 + 出处）→ 细线 → 底部信息区（码 + 公历/农历）→ 品牌行。按钮间距 20→14rpx 压缩面板高度。
+- harness：canvas mock 的 `font` 属性用 defineProperty 穿透到 2d context（海报宋体/楷体生效）；build_preview 注册 solarlunar.js。
+- selftest +20 断言：share.quote/quoteSource/lunarText/dateText 存在性与格式、dailyQuote 同日确定性 + 固定日期可复现、海报文字层计数提到 ≥8。
+- 验证：`node tools/selftest.js` PASS 1890 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图 29/30/31 核对——名句、出处、公历农历、二维码布局全部正确，同日跨页名句一致。
+- 遗留：真机核对楷体（KaiTi）在旧版 canvas ctx.font 的实际渲染；名句池随人物库扩充自动扩容（historyData 热更即生效）。

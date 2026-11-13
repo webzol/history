@@ -10,6 +10,8 @@
 //      img 为海报题图（本地图 /assets/... 或远端图 URL 均可）
 //   3. Page 方法 openShare/closeShare/saveQr 各一行委托本模块
 const qrcode = require('./qrcode.js');
+const solarlunar = require('./solarlunar.js');
+const hd = require('./historyData.js');
 
 // 普通二维码兜底域名：待配置——公众平台「扫普通链接二维码打开小程序」绑定已备案域名后替换
 const QR_BASE = 'https://yueshiji.cn';
@@ -17,10 +19,37 @@ const QR_BASE = 'https://yueshiji.cn';
 // 海报 canvas 尺寸（px，与 app.wxss .ss-canvas 一致；面板内显示+保存导出同源）
 const CANVAS_ID = 'ssQrCanvas';
 const W = 260;
-const H = 372;
-const IMG_H = 150; // 题图高度
-const CODE_SIZE = 66; // 二维码边长
+const H = 424;
+const IMG_H = 140; // 题图高度
+const CODE_SIZE = 54; // 二维码边长
 const INK = '#1F1D19';
+
+// 每日名句：日期做种子从人物引文库确定性抽取（同一天全用户同一句，隔天自动换）
+function dailyQuote(now) {
+  const d = now || new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const pool = [];
+  (hd.get().persons || []).forEach((p) => {
+    if (typeof p.quote === 'string' && p.quote.length >= 4) pool.push(p);
+  });
+  if (!pool.length) return null;
+  const pick = pool[seed % pool.length];
+  return { quote: pick.quote, source: pick.quoteSource || '' };
+}
+
+// 农历日期文本：「农历丙午年 十月初六」
+function lunarText(now) {
+  const d = now || new Date();
+  const r = solarlunar.solar2lunar(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  if (!r || !r.monthCn) return '';
+  return `农历${r.gzYear}年 ${r.monthCn}${r.dayCn}`;
+}
+
+// 公历日期文本：「2026年11月14日」
+function dateText(now) {
+  const d = now || new Date();
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
 
 // 二维码编码（typeNumber 0 = 自动版本；中文走 UTF-8 字节模式，纠错 M）
 function encode(text) {
@@ -80,6 +109,7 @@ function loadImg(src, cb) {
 function open(page) {
   const payload = (typeof page.sharePayload === 'function' && page.sharePayload()) || {};
   const path = payload.path || '/pages/home/home';
+  const quote = dailyQuote();
 
   page.setData({
     share: {
@@ -89,6 +119,10 @@ function open(page) {
       desc: payload.desc || '',
       img: payload.img || '',
       imgLocal: '',  // 题图本地路径（就绪后重画；空则画占位底）
+      quote: quote ? quote.quote : '',
+      quoteSource: quote ? quote.source : '',
+      dateText: dateText(),
+      lunarText: lunarText(),
       qrText: qrTextOf(path)
     }
   });
@@ -145,30 +179,47 @@ function drawPoster(page) {
     ctx.setTextAlign('center');
     ctx.setFillStyle('#A34A3E');
     ctx.setFontSize(10);
-    ctx.fillText(share.kicker, W / 2, IMG_H + 24);
+    ctx.fillText(share.kicker, W / 2, IMG_H + 22);
 
     // 标题（宋体大字，最多一行）
     ctx.setFillStyle(INK);
-    ctx.setFontSize(19);
-    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 50);
+    ctx.font = 'bold 19px "Songti SC", "STSong", "SimSun", serif';
+    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 48);
+    ctx.font = '';
 
     // 摘要（淡墨，最多两行）
     ctx.setFillStyle('#5F5A52');
     ctx.setFontSize(11);
     const rows = wrapText(share.desc, 11, W - 56, 2);
-    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 74 + i * 17));
+    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 70 + i * 17));
 
     // 分隔细线
     ctx.setFillStyle('rgba(70, 58, 45, 0.14)');
-    ctx.fillRect(40, IMG_H + 110, W - 80, 1);
+    ctx.fillRect(40, IMG_H + 106, W - 80, 1);
 
-    // 二维码（本地编码绘制）
+    // 每日名句（楷体，最多两行）+ 出处
+    if (share.quote) {
+      ctx.setFillStyle('#3B3731');
+      ctx.font = '12px "Kaiti SC", "STKaiti", "KaiTi", serif';
+      const qrows = wrapText(share.quote, 12, W - 56, 2);
+      qrows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 126 + i * 19));
+      ctx.font = '';
+      ctx.setFillStyle('#8C857A');
+      ctx.setFontSize(9);
+      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, IMG_H + 126 + (qrows.length - 1) * 19 + 16);
+    }
+
+    // 分隔细线
+    ctx.setFillStyle('rgba(70, 58, 45, 0.10)');
+    ctx.fillRect(40, IMG_H + 172, W - 80, 1);
+
+    // 底部信息区：二维码（左）+ 公历/农历日期（右）
+    const cy = IMG_H + 186;
+    const cx = 36;
     try {
       const qr = encode(share.qrText);
       const count = qr.getModuleCount();
-      const cx = Math.round((W - CODE_SIZE) / 2);
-      const cy = IMG_H + 124;
-      const m = 5;
+      const m = 4;
       const cell = Math.floor((CODE_SIZE - m * 2) / count);
       const off = Math.round((CODE_SIZE - cell * count) / 2);
       ctx.setFillStyle(INK);
@@ -181,10 +232,19 @@ function drawPoster(page) {
       }
     } catch (e) { /* 码文本异常时留白 */ }
 
-    // 品牌行
+    ctx.setTextAlign('left');
+    ctx.setFillStyle(INK);
+    ctx.setFontSize(11);
+    ctx.fillText(share.dateText || '', 106, cy + 20);
     ctx.setFillStyle('#8C857A');
     ctx.setFontSize(10);
-    ctx.fillText('阅史记 · 一页一页读历史', W / 2, IMG_H + 124 + CODE_SIZE + 20);
+    ctx.fillText(share.lunarText || '', 106, cy + 40);
+
+    // 品牌行
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('#8C857A');
+    ctx.setFontSize(10);
+    ctx.fillText('阅史记 · 一页一页读历史', W / 2, H - 12);
 
     ctx.draw();
   } catch (e) {
@@ -238,5 +298,6 @@ function save(page) {
 
 module.exports = {
   open, close, save, drawPoster, encode, qrTextOf, loadImg,
+  dailyQuote, lunarText, dateText,
   QR_BASE, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
 };

@@ -227,10 +227,14 @@ function assertSharePanel(page, cfg, tag) {
   eq(page.data.share.kicker, cfg.kicker, `${tag}分享卡片 kicker`);
   ok(page.data.share.desc.length >= 8, `${tag}分享卡片含页面摘要`);
   ok(page.data.share.img.length > 0, `${tag}分享卡片含题图`);
+  ok(page.data.share.quote.length >= 4, `${tag}分享卡片含每日历史名句`);
+  ok(page.data.share.quoteSource.length > 0, `${tag}名句含出处`);
+  ok(page.data.share.lunarText.indexOf('农历') === 0, `${tag}海报含农历日期（${page.data.share.lunarText}）`);
+  ok(page.data.share.dateText.indexOf('年') > 0, `${tag}海报含公历日期`);
   ok(page.data.share.qrText.indexOf(qrshare.QR_BASE) === 0, `${tag}二维码以 ${qrshare.QR_BASE} 开头`);
   ok(page.data.share.qrText.indexOf(cfg.pathTail) > 0, `${tag}二维码含页内路径 ${cfg.pathTail}`);
   qrshare.drawPoster(page);
-  ok(mockPoster.texts >= 3, `${tag}海报含 kicker/标题/摘要/品牌文字层`);
+  ok(mockPoster.texts >= 8, `${tag}海报含 kicker/标题/摘要/名句/出处/日期/品牌文字层`);
   ok(mockPoster.fills > 200, `${tag}海报二维码有模块填充`);
   const msg = page.onShareAppMessage();
   ok(msg.path === page.data.share.qrText.slice(qrshare.QR_BASE.length), `${tag}转发 path 与二维码内容一致`);
@@ -1285,6 +1289,15 @@ console.log('== 人物详情 ==');
   const share = p.onShareAppMessage();
   ok(share && share.path === '/pages/person/person?id=lin-zexu', '人物页分享带 id 参数');
   assertSharePanel(p, { kicker: '人物 · 晚清', pathTail: '/pages/person/person?id=lin-zexu' }, '人物页');
+
+  // 每日名句：同日确定性抽取（日期种子），不同日期种子可换
+  const q1 = qrshare.dailyQuote();
+  const q2 = qrshare.dailyQuote();
+  ok(q1 && q2 && q1.quote === q2.quote && q1.source === q2.source, '每日名句同日确定性');
+  const qFixed = qrshare.dailyQuote(new Date(2026, 10, 14));
+  ok(typeof qFixed.quote === 'string' && qFixed.quote.length >= 4, '每日名句固定日期可复现抽取');
+  ok(qrshare.lunarText(new Date(2026, 10, 14)).indexOf('农历') === 0, '农历日期文本格式');
+  ok(qrshare.dateText(new Date(2026, 10, 14)) === '2026年11月14日', '公历日期文本格式');
 
   resetWifiStack();
   p.onLoad({ id: 'nope' });
