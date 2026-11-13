@@ -194,6 +194,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '史页 · 一页一页读历史', path: '/pages/home/home' };
+    return { title: '阅史记 · 一页一页读历史', path: '/pages/home/home' };
   }
 });

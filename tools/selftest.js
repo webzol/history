@@ -182,7 +182,7 @@ const pages = {};
 let currentFile = '';
 
 global.App = (cfg) => cfg;
-global.getApp = () => ({ globalData: { appName: '史页' } });
+global.getApp = () => ({ globalData: { appName: '阅史记' } });
 global.Page = (cfg) => {
   pages[currentFile] = instantiate(cfg, currentFile);
   return cfg;
@@ -628,9 +628,9 @@ console.log('== 我的 ==' );
   eq(last('showToast').title, '暂无网络，稍后再试', '检查更新离线提示');
   eq(p.data.updating, false, '检查更新失败后状态复位');
 
-  // 关于史页（数据/素材/关于三合一）
+  // 关于阅史记（数据/素材/关于三合一）
   tap(p, 'onAbout');
-  ok(p.data.info.open && p.data.info.title === '关于史页', '关于史页弹层');
+  ok(p.data.info.open && p.data.info.title === '关于阅史记', '关于阅史记弹层');
   const aboutText = p.data.info.paragraphs.join('');
   ok(aboutText.indexOf('史事 100') >= 0, '关于弹层含数据统计');
   ok(aboutText.indexOf('公开网络') >= 0 && aboutText.indexOf('删除') >= 0, '关于弹层含素材来源一句话声明');

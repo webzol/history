@@ -58,7 +58,7 @@ function resolveEntry(x, index) {
       type: 'archive',
       id: x.id,
       title: info.title,
-      sub: info.meta || info.cat || '史页资料库',
+      sub: info.meta || info.cat || '阅史记资料库',
       img: archiveArt.entryImage(info.kind, info.rawId) || archiveImages.cover(info.kind, info.aType),
       nav: archiveUrl(info),
       modern: false

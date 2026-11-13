@@ -264,7 +264,7 @@ Page({
   onShareAppMessage() {
     const item = this.data.item;
     return {
-      title: item ? `史页 · ${item.title}` : '史页 · 资料库',
+      title: item ? `阅史记 · ${item.title}` : '阅史记 · 资料库',
       path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
     };
   }

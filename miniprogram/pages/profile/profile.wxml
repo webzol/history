@@ -115,7 +115,7 @@
         <text class="menu-arrow">›</text>
       </view>
       <view class="menu-row" bindtap="onAbout">
-        <text class="menu-label">关于史页</text>
+        <text class="menu-label">关于阅史记</text>
         <text class="menu-arrow">›</text>
       </view>
       <view class="menu-row last" bindtap="onClearCache">

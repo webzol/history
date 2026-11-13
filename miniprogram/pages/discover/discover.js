@@ -100,6 +100,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '史页 · 发现', path: '/pages/discover/discover' };
+    return { title: '阅史记 · 发现', path: '/pages/discover/discover' };
   }
 });

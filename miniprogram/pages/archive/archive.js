@@ -201,6 +201,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '史页 · 资料库', path: '/pages/archive/archive' };
+    return { title: '阅史记 · 资料库', path: '/pages/archive/archive' };
   }
 });

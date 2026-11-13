@@ -1974,3 +1974,15 @@ miniprogram/data/history.js
 - selftest +1 断言（关于弹层含 `@DING` 与 `2026`）。
 - 验证：`node tools/selftest.js` PASS 1814 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 - 遗留：真机核对页脚与固定 tabbar / 底部安全区的间距。
+
+## 2026-11-13 · 品牌更名「阅史记」全量同步（分享标题 + 页面内文案）
+
+- 背景：2026-11-11 仅改了首页字标，远端日志留口「如需品牌全面更名请另行说明」；本次拉取后全仓排查，确认 12 处分享标题与 7 处页面内文案仍为「史页」，首页分享卡片标题与首页字标不一致，故全量同步（用户确认）。
+- 分享标题 11 文件 12 处改「阅史记」：home（一页一页读历史）/ timeline（时间轴上的中国）/ discover / person / event / period（`xx · 阅史记`）/ favorites / footprints（`我的xx · 阅史记`）/ archive 三页（`阅史记 · 资料库`等）。
+- 页面内文案：资料库首页 hero「阅史记资料库」、列表页 cover-kicker、详情页来源行、发现页入口 kicker、「关于史页」菜单行与弹层标题改「关于阅史记」。
+- 生成文案微调（保持节奏，非机械替换）：默认昵称「史页客」→「阅史客」（三字）；座右铭「一卷千年，灯下史页」→「一卷千年，灯下阅史」（保持 4+4 对仗）。
+- 其他：`app.js` `globalData.appName` 死字段同步改「阅史记」（全仓无引用，仅保持一致）；`utils/entries.js` 资料足迹 sub 兜底改「阅史记资料库」；AGENTS.md §0 顶部加品牌更名说明（内部文档与 `shige_*` 存储 key 沿用旧名，新增面向用户文案一律「阅史记」）。
+- selftest 同步：mock `appName` 与「关于史页」弹层断言改「关于阅史记」。
+- 不动项：时间轴/发现/我的页顶部字标（远端有意保留各页名）、`shige_*` 存储 key、AGENTS.md 通篇旧称、`ui/neo/` 归档。
+- 验证：`node tools/selftest.js` PASS 1814 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包 OK；全仓 grep 小程序目录无「史页」残留。
+- 遗留：分享标题为纯文案变更无需热更 JSON；真机确认分享卡片展示正常。

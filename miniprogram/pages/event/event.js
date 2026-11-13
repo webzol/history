@@ -112,7 +112,7 @@ Page({
   onShareAppMessage() {
     const event = this.data.event;
     return {
-      title: event ? `${event.title} · 史页` : '史页',
+      title: event ? `${event.title} · 阅史记` : '阅史记',
       path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
     };
   }

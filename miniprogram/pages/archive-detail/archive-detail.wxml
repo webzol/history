@@ -97,7 +97,7 @@
         </view>
       </view>
 
-      <view wx:if="{{item.source}}" class="source-line">来源：{{item.source}} · 史页资料库</view>
+      <view wx:if="{{item.source}}" class="source-line">来源：{{item.source}} · 阅史记资料库</view>
     </block>
   </view>
 </view>

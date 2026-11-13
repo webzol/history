@@ -31,7 +31,7 @@
       <image class="cover-img" src="{{cover}}" mode="aspectFill"></image>
       <view class="cover-mask"></view>
       <view class="cover-copy">
-        <text class="cover-kicker">史页资料库 · 分类</text>
+        <text class="cover-kicker">阅史记资料库 · 分类</text>
         <text class="cover-title">{{pageTitle}}</text>
         <text class="cover-meta">{{coverMeta}}</text>
       </view>

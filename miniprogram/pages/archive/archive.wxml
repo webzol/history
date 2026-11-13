@@ -15,7 +15,7 @@
 
     <view class="hero">
       <text class="hero-kicker">从辞条到人物 · 按类翻阅</text>
-      <text class="hero-title">史页资料库</text>
+      <text class="hero-title">阅史记资料库</text>
       <text class="hero-desc">从历史资料中整理，共 {{stats.totalText}} 条。首次打开某类时按需加载，常读内容会缓存在本机。</text>
       <view class="hero-stats">
         <view class="hstat">

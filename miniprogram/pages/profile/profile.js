@@ -26,7 +26,7 @@ Page({
     fontOptions: font.OPTIONS,
     fontKey: 'm',
     fontClass: 'm',
-    identity: { avatar: '/assets/avatar-scholar.png', nick: '史页客', motto: '以千年为卷轴，读万古事' }
+    identity: { avatar: '/assets/avatar-scholar.png', nick: '阅史客', motto: '以千年为卷轴，读万古事' }
   },
 
   onLoad() {
@@ -187,7 +187,7 @@ Page({
     this.setData({
       info: {
         open: true,
-        title: '关于史页',
+        title: '关于阅史记',
         paragraphs: [
           '一页一页读历史。古代史与近现代史并列，史料可追溯。',
           `收录朝代 ${this.data.stats[0].value} · 史事 ${this.data.stats[1].value} · 人物 ${this.data.stats[2].value} · 专题 ${this.data.stats[3].value}。`,

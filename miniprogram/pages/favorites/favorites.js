@@ -72,7 +72,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: '我的收藏 · 史页',
+      title: '我的收藏 · 阅史记',
       path: '/pages/favorites/favorites'
     };
   }

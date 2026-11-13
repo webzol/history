@@ -9,7 +9,7 @@
 
     <view class="archive-entry" bindtap="goArchive">
       <view class="archive-entry-copy">
-        <text class="archive-entry-kicker">史页资料库</text>
+        <text class="archive-entry-kicker">阅史记资料库</text>
         <text class="archive-entry-title">{{archive.totalText}} 条资料，按类翻阅</text>
         <text class="archive-entry-desc">{{archive.cardsText}} 条典籍辞条 · {{archive.figuresText}} 位人物 · {{archive.eventsText}} 条史事</text>
       </view>

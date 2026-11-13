@@ -94,7 +94,7 @@ Page({
   onShareAppMessage() {
     const person = this.data.person;
     return {
-      title: person ? `${person.name} · 史页` : '史页',
+      title: person ? `${person.name} · 阅史记` : '阅史记',
       path: person ? `/pages/person/person?id=${person.id}` : '/pages/home/home'
     };
   }

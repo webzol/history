@@ -4,7 +4,7 @@ const hd = require('./utils/historyData.js');
 
 App({
   globalData: {
-    appName: '史页'
+    appName: '阅史记'
   },
 
   onLaunch() {

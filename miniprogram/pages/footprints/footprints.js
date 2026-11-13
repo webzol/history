@@ -75,7 +75,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: '我的浏览足迹 · 史页',
+      title: '我的浏览足迹 · 阅史记',
       path: '/pages/footprints/footprints'
     };
   }

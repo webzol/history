@@ -84,6 +84,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '史页 · 时间轴上的中国', path: '/pages/timeline/timeline' };
+    return { title: '阅史记 · 时间轴上的中国', path: '/pages/timeline/timeline' };
   }
 });

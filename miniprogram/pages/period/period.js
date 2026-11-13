@@ -116,7 +116,7 @@ Page({
   onShareAppMessage() {
     const period = this.data.period;
     return {
-      title: period ? `${period.name} · 史页` : '史页',
+      title: period ? `${period.name} · 阅史记` : '阅史记',
       path: period ? `/pages/period/period?id=${period.id}` : '/pages/home/home'
     };
   }

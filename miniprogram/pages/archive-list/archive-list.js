@@ -205,7 +205,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: `史页 · ${this.data.pageTitle}`,
+      title: `阅史记 · ${this.data.pageTitle}`,
       path: `/pages/archive-list/archive-list?kind=${this.data.kind}&type=${encodeURIComponent(this.data.type)}&title=${encodeURIComponent(this.data.pageTitle)}`
     };
   }
