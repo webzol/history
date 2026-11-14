@@ -62,7 +62,7 @@ let miss = 0;
 // 起跑前先确认预览服务在线：服务没起时 Chrome 不写文件，
 // 旧图存在会让「文件存在即 OK」的判断全绿（漏报），必须先探测。
 try {
-  const probe = spawnSync('curl', ['-s', '-o', 'nul', '-w', '%{http_code}', '--max-time', '3', BASE.replace('#', '')]);
+  const probe = spawnSync('curl', ['-s', '-o', process.platform === 'win32' ? 'nul' : '/dev/null', '-w', '%{http_code}', '--max-time', '3', BASE.replace('#', '')]);
   const code = String((probe.stdout || '').toString().trim());
   if (code !== '200') {
     console.error(`预览服务未就绪（${BASE.replace('#', '')} 返回 ${code || '无响应'}）。请先运行：node tools/preview_server.js`);
