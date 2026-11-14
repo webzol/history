@@ -1,0 +1,58 @@
+# 太阳码批量生成：数据变更 push 后自动增量生成官方小程序码并提交仓库。
+# 前置：仓库 Settings → Secrets and variables → Actions 添加 WX_APPSECRET
+# （微信公众平台「开发管理-开发设置」获取 AppSecret；secret 绝不写进代码）。
+# 首跑 / runner IP 变化时会返回 89503，需小程序管理员在微信推送里确认本次调用后继续。
+# 手动触发：Actions 页选 wxacode → Run workflow（可用 --force 全量重生成，见下方 input）。
+name: wxacode
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'miniprogram/data/history.js'
+      - 'miniprogram/data/history-extra.js'
+      - 'miniprogram/data/archive-meta.js'
+      - 'miniprogram/data/apk/**'
+      - 'miniprogram/utils/wxacode.js'
+      - 'tools/gen_wxacode.js'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '全量重新生成（--force）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wxacode
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 生成太阳码
+        env:
+          WX_APPSECRET: ${{ secrets.WX_APPSECRET }}
+        run: node tools/gen_wxacode.js ${{ inputs.force == true && '--force' || '' }}
+
+      - name: 提交码图
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniprogram/data/img/wxacode
+          if git diff --cached --quiet; then
+            echo "码图无变化，跳过提交"
+          else
+            git commit -m "wxacode: 太阳码增量生成（Actions）[skip ci]"
+            git push
+          fi

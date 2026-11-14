@@ -13,7 +13,7 @@ const qrshare = require(path.join(ROOT, 'utils', 'qrshare.js'));
 
 // 分享面板 mock 状态：ops/fills=绘制填充次数 texts=文字绘制 images=图片绘制
 // saved=成功保存次数 denied=相册授权被拒 netFail=downloadFile 网络失败 exportFail=canvas 导出失败
-const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [] };
+const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [], codeFail: true };
 const mockPoster = { fills: 0, texts: 0, images: 0 };
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
@@ -70,7 +70,7 @@ const wxLog = [];
 let pendingModal = null;    // 最近一次 showModal(opts)
 let pendingSheet = null;    // 最近一次 showActionSheet(opts)
 const storage = {};
-const mockRequest = { payload: null, today: null, apkFail: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）；apkFail(rel) 返回 true 则该资料库请求失败
+const mockRequest = { payload: null, today: null, apkFail: null, wxacodeIdx: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）；apkFail(rel) 返回 true 则该资料库请求失败；wxacodeIdx 为太阳码 idx 清单桩
 let storageCleared = 0;
 
 function route(kind, url, rest) {
@@ -133,6 +133,11 @@ const wx = {
       if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
       return;
     }
+    // 太阳码图默认失败（本地仓库通常无码图）走本地二维码兜底；codeFail=false 模拟码图就绪
+    if (src.indexOf('/data/img/wxacode/') >= 0 && mockQr.codeFail) {
+      if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
+      return;
+    }
     if (opts.success) opts.success({ path: src.indexOf('http') === 0 ? 'tmp://img.png' : src, width: 480, height: 320 });
   },
   canvasToTempFilePath(opts) {
@@ -174,6 +179,11 @@ const wx = {
   },
   request(opts) {
     route('request', opts.url);
+    if (opts.url.indexOf('/data/img/wxacode/') >= 0) {
+      if (mockRequest.wxacodeIdx) opts.success({ data: mockRequest.wxacodeIdx, statusCode: 200 });
+      else if (opts.fail) opts.fail(new Error('no idx fixture'));
+      return;
+    }
     if (opts.url.indexOf('/data/apk/') >= 0) {
       const rel = opts.url.split('/data/apk/')[1];
       if (mockRequest.apkFail && mockRequest.apkFail(rel)) {
@@ -1975,6 +1985,113 @@ console.log('== 阅读字号 ==');
   ok(p.data.identity && p.data.identity.avatar, '我的页 onLoad 装配随机身份');
   p.onRerollIdentity();
   ok(p.data.identity && p.data.identity.nick, '点「换一位史客」可重掷身份');
+})();
+
+// ---------------------------------------------------------------------------
+// 太阳码（utils/wxacode.js 编解码 + qrshare 海报码图分支）
+// ---------------------------------------------------------------------------
+
+console.log('== 太阳码 wxacode ==');
+(function () {
+  const wxacode = require(path.join(ROOT, 'utils', 'wxacode.js'));
+
+  // scene 编解码 round-trip：主库三页 + 资料库
+  eq(wxacode.sceneOf({ page: 'person', id: 'han-wudi' }), 'p=han-wudi', 'person scene 编码');
+  eq(wxacode.sceneOf({ page: 'event', id: 'zhenghe-1405' }), 'e=zhenghe-1405', 'event scene 编码');
+  eq(wxacode.sceneOf({ page: 'period', id: 'han' }), 'd=han', 'period scene 编码');
+  const figScene = wxacode.sceneOf({ page: 'archive', kind: 'figures', id: 'hf-shang4gu3_shun4di4' });
+  eq(figScene, 'g=f&i=hf-shang4gu3_shun4di4', 'archive 短 id scene 编码');
+  eq(wxacode.decodeScene(figScene), { page: 'archive', kind: 'figures', type: '', id: 'hf-shang4gu3_shun4di4' }, 'archive scene 解码');
+  const cardsScene = wxacode.sceneOf({ page: 'archive', kind: 'cards', type: '5', id: 'hc-5-00001' });
+  eq(cardsScene, 'g=c&t=5&i=hc-5-00001', 'cards scene 编码带分类');
+  eq(wxacode.decodeScene(cardsScene).type, '5', 'cards scene 解码还原分类');
+  eq(wxacode.decodeScene('g=ps&i=hpw-100087').kind, 'poems-shi', 'poems 短码解码');
+  eq(wxacode.sceneOf({ page: 'archive', kind: 'nope', id: 'x' }), null, '未知栏目拒绝编码');
+  eq(wxacode.sceneOf({ page: 'person', id: '含中文' }), null, '非法字符集拒绝编码');
+
+  // 超限 id（figures/emperors 长拼音 id）：hash scene + 解码
+  const longId = 'hf-qing1chao2_gu4lun2wen1zhuang1zhang3gong1zhu3';
+  const hashScene = wxacode.sceneOf({ page: 'archive', kind: 'figures', id: longId }, () => 'abc123def456');
+  ok(hashScene === 'g=f&h=abc123def456', '超限 id 走 hash scene');
+  ok(hashScene.length <= 32 && wxacode.validScene(hashScene), 'hash scene 合法且 ≤32');
+  const decodedHash = wxacode.decodeScene(hashScene);
+  ok(decodedHash.hash === 'abc123def456' && !decodedHash.id, 'hash scene 解码带 hash 不带 id');
+  eq(wxacode.sceneOf({ page: 'archive', kind: 'figures', id: longId }), null, '超限 id 无 hashFn 拒绝编码');
+
+  // mergeScene：扫码进入补参数；普通跳转原样透传
+  eq(wxacode.mergeScene({ scene: 'p=han-wudi' }), { scene: 'p=han-wudi', id: 'han-wudi' }, 'mergeScene person 补 id');
+  eq(wxacode.mergeScene({ id: 'kongzi' }), { id: 'kongzi' }, 'mergeScene 无 scene 原样透传');
+  const mergedHash = wxacode.mergeScene({ scene: hashScene });
+  ok(mergedHash.id === '' && mergedHash.wxacodeHash === 'abc123def456' && mergedHash.kind === 'figures', 'mergeScene hash 置空 id 带 wxacodeHash');
+  eq(wxacode.mergeScene({ scene: 'bad scene!' }), { scene: 'bad scene!' }, '非法 scene 不注入任何参数');
+
+  // 海报码图 URL：主库三页 + 资料库分组 + 备用域名
+  eq(wxacode.codeUrlOf('/pages/person/person?id=han-wudi'),
+    'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/wxacode/person/han-wudi.jpg',
+    'person 海报码图 URL');
+  ok(wxacode.codeUrlOf('/pages/archive-detail/archive-detail?kind=cards&type=5&id=hc-5-00001')
+    .indexOf('/wxacode/cards-5/hc-5-00001.jpg') > 0, 'cards 码图分组带分类');
+  ok(wxacode.codeUrlOf('/pages/archive-detail/archive-detail?kind=poems-shi&id=hpw-100087')
+    .indexOf('/wxacode/poems-shi/hpw-100087.jpg') > 0, 'poems 码图分组');
+  eq(wxacode.codeUrlOf('/pages/home/home'), '', '无目标路径返回空（走本地二维码兜底）');
+  const mainUrl = wxacode.codeUrlOf('/pages/person/person?id=han-wudi');
+  eq(wxacode.altCodeUrl(mainUrl), mainUrl.replace('gcore.jsdelivr.net', 'testingcf.jsdelivr.net'), '备用域名切换');
+  eq(wxacode.altCodeUrl('https://other.example/a.jpg'), '', '非主域名不给备用');
+
+  // resolveIndex：hash → 全量 id（wx.request 桩 + 内存缓存）
+  const LONG = 'hf-qing1chao2_gu4lun2wen1zhuang1zhang3gong1zhu3';
+  mockRequest.wxacodeIdx = { abc123def456: LONG };
+  const beforeReq = wxLog.filter((x) => x.kind === 'request').length;
+  let resolved = '';
+  wxacode.resolveIndex('figures', 'abc123def456', (err, id) => { resolved = err ? '' : id; });
+  ok(resolved === LONG, 'resolveIndex 还原超限 id');
+  ok(wxLog.filter((x) => x.kind === 'request').length === beforeReq + 1, 'resolveIndex 发出请求');
+  let cached = '';
+  wxacode.resolveIndex('figures', 'abc123def456', (err, id) => { cached = err ? '' : id; });
+  ok(cached === LONG, 'resolveIndex 命中缓存');
+  ok(wxLog.filter((x) => x.kind === 'request').length === beforeReq + 1, '缓存命中不再发请求');
+  let missing = false;
+  wxacode.resolveIndex('figures', 'zzzzzzzzzzzz', (err) => { missing = !!err; });
+  ok(missing, 'idx 未命中报错');
+  mockRequest.wxacodeIdx = null;
+
+  // 页面接入：person onLoad scene 解析（普通参数与扫码参数一致）
+  resetWifiStack();
+  const p = pages.person;
+  p.onLoad({ id: 'su-shi' });
+  eq(p.data.person.name, '苏轼', '普通跳转 onLoad 不受影响');
+  p.onLoad({ scene: 'p=su-shi' });
+  eq(p.data.person.name, '苏轼', '太阳码扫码进入等价 ?id=');
+
+  // 海报分支：太阳码就绪 → drawImage；未就绪 → 本地二维码逐模块填充
+  const fakePage = {
+    data: {
+      share: {
+        open: true, kicker: '人物 · 西汉', title: '汉武帝', desc: '雄才大略的帝王', img: '', imgLocal: '', imgW: 0, imgH: 0,
+        quote: '犯强汉者虽远必诛', quoteSource: '《汉书》', dateText: '2026年11月14日', lunarText: '农历丙午年 十月初六',
+        qrText: '阅史记：/pages/person/person?id=han-wudi', codeImg: ''
+      }
+    }
+  };
+  qrshare.drawPoster(fakePage);
+  ok(mockPoster.fills > 200, '无太阳码 → 本地二维码模块填充兜底');
+  ok(mockPoster.images >= 2, '无太阳码 → 题图+印章仍绘制');
+  fakePage.data.share.codeImg = 'tmp://suncode.jpg';
+  qrshare.drawPoster(fakePage);
+  ok(mockPoster.images >= 3, '太阳码就绪 → drawImage 绘制码图');
+  ok(mockPoster.fills < 100, '太阳码就绪 → 不再逐模块填充');
+
+  // 面板集成：mock 码图就绪后 openShare 异步装载 codeImg（getImageInfo 桩同步回调）
+  mockQr.codeFail = false;
+  const person = pages.person;
+  person.onLoad({ id: 'han-wudi' });
+  person.openShare();
+  ok(person.data.share.codeImg === 'tmp://img.png', '码图就绪 → 面板装载太阳码图');
+  person.closeShare();
+  mockQr.codeFail = true;
+  person.openShare();
+  ok(person.data.share.codeImg === '', '码图取不到 → 保持空走本地二维码兜底');
+  person.closeShare();
 })();
 
 // ---------------------------------------------------------------------------

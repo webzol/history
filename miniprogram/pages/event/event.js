@@ -2,6 +2,7 @@ const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const qrshare = require('../../utils/qrshare.js');
+const wxacode = require('../../utils/wxacode.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
 const personThumb = require('../../utils/eraImages.js').personThumb;
@@ -23,7 +24,8 @@ Page({
 
   onLoad(options) {
     font.apply(this);
-    this.curId = options.id;
+    // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
+    this.curId = wxacode.mergeScene(options || {}).id;
     this.apply(true);
     hd.refresh((changed) => {
       if (changed) this.apply(false);

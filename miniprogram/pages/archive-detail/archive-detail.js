@@ -6,6 +6,7 @@ const altArt = require('../../utils/eraImages.js').altArt;
 const store = require('../../utils/store.js');
 const entries = require('../../utils/entries.js');
 const qrshare = require('../../utils/qrshare.js');
+const wxacode = require('../../utils/wxacode.js');
 
 function safeTitle(value, fallback) {
   if (!value) return fallback;
@@ -129,19 +130,36 @@ Page({
 
   onLoad(options) {
     font.apply(this);
-    const opts = options || {};
-    this.kind = opts.kind || 'figures';
-    this.type = opts.type || '';
-    this.id = safeTitle(opts.id, '');
-    // 列表页会带上 shard；旧分享链接没有 shard 时，find 会先用索引定位。
-    this.shard = opts.shard || (this.kind.indexOf('poems-') === 0 ? this.type : '');
-    this.setData({
-      kicker: safeTitle(opts.title, this.fallbackTitle(this.kind, this.type)),
-      cover: archiveImages.cover(this.kind, this.type),
-      loading: true,
-      error: ''
-    });
-    this.fetch();
+    // 太阳码扫码进入：options 只有 scene，mergeScene 解出 kind/type/id（普通跳转原样透传）
+    const opts = wxacode.mergeScene(options || {});
+    const boot = () => {
+      this.kind = opts.kind || 'figures';
+      this.type = opts.type || '';
+      this.id = safeTitle(opts.id, '');
+      // 列表页会带上 shard；旧分享链接没有 shard 时，find 会先用索引定位。
+      this.shard = opts.shard || (this.kind.indexOf('poems-') === 0 ? this.type : '');
+      this.setData({
+        kicker: safeTitle(opts.title, this.fallbackTitle(this.kind, this.type)),
+        cover: archiveImages.cover(this.kind, this.type),
+        loading: true,
+        error: ''
+      });
+      this.fetch();
+    };
+    // 超限 id 条目（figures/emperors 长拼音 id）：scene 只带 h=短哈希，
+    // 先查 idx 清单还原全量 id 再加载；清单拉取失败与数据加载失败同文案
+    if (opts.wxacodeHash) {
+      wxacode.resolveIndex(opts.kind || 'figures', opts.wxacodeHash, (err, id) => {
+        if (err || !id) {
+          this.setData({ loading: false, error: '资料加载失败，请检查网络后重试' });
+          return;
+        }
+        opts.id = id;
+        boot();
+      });
+      return;
+    }
+    boot();
   },
 
   onShow() {

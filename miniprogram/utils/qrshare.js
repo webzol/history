@@ -11,6 +11,7 @@
 const qrcode = require('./qrcode.js');
 const solarlunar = require('./solarlunar.js');
 const hd = require('./historyData.js');
+const wxacode = require('./wxacode.js');
 
 // 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
@@ -133,13 +134,36 @@ function open(page) {
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
       lunarText: lunarText(),
-      qrText: qrTextOf(path)
+      qrText: qrTextOf(path),
+      codeImg: ''   // 太阳码图本地路径（jsDelivr 就绪后重画；空则画本地编码二维码）
     }
   });
 
   // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画。
   // 远端题图失败时回退 imgFallback（本地朝代画），保证顶部始终是当前相关图。
   setTimeout(() => drawPoster(page), 120);
+
+  // 太阳码（官方小程序码）：Actions 预生成走 jsDelivr，扫码直达当前页；
+  // 主域名失败换备用域名重试一次，仍未取到则保持本地编码二维码兜底。
+  const codeUrl = wxacode.codeUrlOf(path);
+  if (codeUrl) {
+    loadImg(codeUrl, (img) => {
+      if (page.data.share.open && img) {
+        page.setData({ 'share.codeImg': img });
+        drawPoster(page);
+        return;
+      }
+      const alt = wxacode.altCodeUrl(codeUrl);
+      if (alt) {
+        loadImg(alt, (img2) => {
+          if (page.data.share.open && img2) {
+            page.setData({ 'share.codeImg': img2 });
+            drawPoster(page);
+          }
+        });
+      }
+    });
+  }
   if (payload.img) {
     loadImg(payload.img, (local, w, h) => {
       if (page.data.share.open && local) {
@@ -292,24 +316,30 @@ function drawPoster(page) {
     ctx.setFillStyle('rgba(70, 58, 45, 0.10)');
     ctx.fillRect(36, 316, W - 72, 1);
 
-    // 落款区：二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
+    // 落款区：太阳码/二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
     const cy = 330;
     const cx = 24;
-    try {
-      const qr = encode(share.qrText);
-      const count = qr.getModuleCount();
-      const m = 4;
-      const cell = Math.floor((CODE_SIZE - m * 2) / count);
-      const off = Math.round((CODE_SIZE - cell * count) / 2);
-      ctx.setFillStyle(INK);
-      for (let r = 0; r < count; r += 1) {
-        for (let c = 0; c < count; c += 1) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
+    if (share.codeImg) {
+      // 官方小程序码（圆形白底）就绪：直接绘制，微信扫一扫直达当前页
+      ctx.drawImage(share.codeImg, cx, cy, CODE_SIZE, CODE_SIZE);
+    } else {
+      // 本地编码兜底：零依赖普通二维码，内容为页内路径文本
+      try {
+        const qr = encode(share.qrText);
+        const count = qr.getModuleCount();
+        const m = 4;
+        const cell = Math.floor((CODE_SIZE - m * 2) / count);
+        const off = Math.round((CODE_SIZE - cell * count) / 2);
+        ctx.setFillStyle(INK);
+        for (let r = 0; r < count; r += 1) {
+          for (let c = 0; c < count; c += 1) {
+            if (qr.isDark(r, c)) {
+              ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
+            }
           }
         }
-      }
-    } catch (e) { /* 码文本异常时留白 */ }
+      } catch (e) { /* 码文本异常时留白 */ }
+    }
 
     ctx.setTextAlign('left');
     ctx.setFillStyle(INK);

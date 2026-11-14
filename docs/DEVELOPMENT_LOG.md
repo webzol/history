@@ -2088,3 +2088,21 @@ miniprogram/data/history.js
 - mock 补齐：selftest/harness 的 canvas mock 加 `arc`（轴头依赖；漏加曾致绘制中断）。
 - 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图核对——立轴形态/人物完整/渐隐/按钮同行全部正确。
 - 遗留：真机核对 24 行渐隐的渲染平滑度（若出现条纹可改为图片蒙版方案）。
+
+## 2026-11-14 · 分享码升级官方太阳码：Actions 预生成 + jsDelivr 分发（解封「零第三方」决策）
+
+- 需求：用户要求分享海报改为官方太阳码（小程序码）。此前的「零开通、零第三方」约束由用户主动解封，选择 **GitHub Actions 自动生成** 通道；小程序**已正式发布**；覆盖全部 4 类详情页（含资料库全量）。
+- **架构**：数据变更 push main → Actions 跑 `tools/gen_wxacode.js`（stable_token → getwxacodeunlimit，width=280/check_path/env_version=release）→ 码图提交 `data/img/wxacode/<分组>/<id>.jpg`（主包外，与远端图同模式）→ jsDelivr（gcore）分发 → 海报落款区 `drawImage` 直绘码图；主域名失败换 testingcf 重试一次（仿 eraImages.altArt），仍未取到保持**本地编码二维码兜底**（qrTextOf 不动）——离线/CDN 失败零劣化。
+- **新增 `utils/wxacode.js`（共享编码模块，Node 可直接 require，两端单一样式来源）**：
+  - scene 规范（≤32 可见字符）：`p=<id>` / `e=<id>` / `d=<id>` 三主库页直存；archive 页 `g=<栏目短码>&i=<id>`，短码表 f/m/v/w/y/q/n/p/c + ps/pc/pw/pq/pf（poems 五体裁），cards 另带 `&t=<分类key>`；
+  - **超限 id 方案**：figures 2023 条 + emperors 344 条 id 超 26 字符（含 4 条带 `·` 不在 scene 字符集）→ `g=<短码>&h=<sha1 前 12 位 base36>`，扫码后拉 `idx/<栏目>.json`（{hash: id} 清单，7 天 storage 缓存 + 失败重试一次）还原 id 再走 apk.find。**hash 对不变 id 恒定 → scene 永不漂移 → skip-if-exists 增量生成恒安全**（曾评估序号 rank 方案，因数据插入会漂移弃用）；
+  - `mergeScene(options)`：页面 onLoad 一行接入，普通跳转原样透传；`codeUrlOf(path)`/`altCodeUrl()` 海报码图 URL；`resolveIndex(kind, hash, cb)` idx 还原。
+- **页面接入（各 1-2 行）**：person/event/period onLoad `this.curId = wxacode.mergeScene(options || {}).id`；archive-detail onLoad 拆 boot()——`wxacodeHash` 存在时先异步还原 id 再 fetch（cards 的 type 由 scene `t` 恢复，poems/标准栏目无 shard 走索引定位，复用既有回退链）。
+- **qrshare.js**：open() 并行装载码图（主→备域名，静默失败），drawPoster 落款区 `share.codeImg ? drawImage : 本地编码`分支，其余海报结构不动。
+- **`tools/gen_wxacode.js`**：清单构建（history.js 三库 213 + data/apk 全栏目 39,067，共 39,280 张，`--dry` 全量校验 scene 非法 0）；stable_token 普通模式；skip-if-exists 增量 + 并发 4 × 150ms 节流；错误阶梯：40001 重取 token / 45009 退避 30s / 40129·41030 记录继续 / **89503 提示管理员确认并 30s 轮询重试** / 40164 白名单指引后退出；`--only / --force / --prune`；idx 清单随生成写入。
+- **`.github/workflows/wxacode.yml`**：push main 触发（paths 限数据文件 + wxacode.js，天然免疫码图自触发）+ workflow_dispatch（--force 输入）；commit 用 github-actions[bot] + [skip ci]。全量首跑约 50-65 分钟，增量秒级。
+- **IP 白名单现实**：stable_token 同样校验（40164），Actions 出口 IP 动态无法加白 → 依赖 89503 管理员确认流程（微信推送给管理员确认后放行，换 IP 再确认）。退路：同一脚本本地跑（仅生成时需要）。
+- **体积**：wxacode.js 9.2KB 进主包 → 2039→2041KB（余量 7KB，2MB 上限）；码图 ~39,280 × 4-6KB ≈ 仓库增重约 180MB（包外，不影响小程序包体）。
+- selftest：canvas mock getImageInfo 加 wxacode URL 分支（codeFail 开关）+ wx.request 加 idx 清单桩；新增 37 断言——scene 编解码 round-trip（含超限 hash、非法拒绝）、mergeScene 透传/补参、codeUrlOf 四页分组、altCodeUrl、resolveIndex 命中/缓存/未命中、person 页扫码 onLoad 等价、drawPoster 双分支（码图 drawImage / 本地二维码模块填充）。
+- 验证：`node tools/gen_wxacode.js --dry` 清单 39,280 张与资料库统计逐项吻合；`node tools/selftest.js` PASS 1940 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
+- 遗留：① 用户需在 GitHub Secrets 配 `WX_APPSECRET` 并手动触发 workflow 完成真码生成（首跑按日志提示完成管理员确认）；② 真机扫海报太阳码验收四类页面直达（重点抽验 figures/emperors 超限 hash 条目与 cards 分类条目）；③ 主包余量仅 7KB，新增主包内容前必须先核对体积；④ 数据下线的码图需 `--prune` 清理（workflow 默认不带）。
