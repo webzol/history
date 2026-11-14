@@ -12,9 +12,64 @@ const ROOT = path.join(__dirname, '..', 'miniprogram');
 const qrshare = require(path.join(ROOT, 'utils', 'qrshare.js'));
 
 // 分享面板 mock 状态：ops/fills=绘制填充次数 texts=文字绘制 images=图片绘制
-// saved=成功保存次数 denied=相册授权被拒 netFail=downloadFile 网络失败 exportFail=canvas 导出失败
+// saved=成功保存次数 denied=相册授权被拒 netFail=远端图失败 exportFail=canvas 导出失败
+// codeFail=太阳码图失败（默认 true，本地仓库通常无码图 → 海报走本地二维码兜底）
 const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [], codeFail: true };
 const mockPoster = { fills: 0, texts: 0, images: 0 };
+
+// mock canvas 2d 节点（canvas type="2d"）：getContext 返回计数 ctx，
+// createImage 同步 onload（netFail 模拟远端图失败、codeFail 模拟太阳码图失败，本地路径始终可画）
+function makeMockCanvasNode() {
+  const counts = { fills: 0, texts: 0, images: 0 };
+  const sync = () => {
+    mockPoster.fills = counts.fills;
+    mockPoster.texts = counts.texts;
+    mockPoster.images = counts.images;
+  };
+  const ctx = {
+    fillStyle: '',
+    font: '',
+    textAlign: '',
+    globalAlpha: 1,
+    scale() {},
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    rect() {},
+    quadraticCurveTo() {},
+    arc() {},
+    closePath() {},
+    clip() {},
+    fill() {},
+    fillRect() { counts.fills += 1; sync(); },
+    fillText() { counts.texts += 1; sync(); },
+    drawImage() { counts.images += 1; sync(); }
+  };
+  return {
+    width: 0,
+    height: 0,
+    getContext() { return ctx; },
+    createImage() {
+      const img = { width: 480, height: 320, onload: null, onerror: null, _src: '' };
+      Object.defineProperty(img, 'src', {
+        set(v) {
+          img._src = v;
+          const remoteFail = mockQr.netFail && typeof v === 'string' && v.indexOf('http') === 0;
+          const codeFail = mockQr.codeFail && typeof v === 'string' && v.indexOf('/data/img/wxacode/') >= 0;
+          if (remoteFail || codeFail) {
+            if (img.onerror) img.onerror();
+          } else if (img.onload) {
+            img.onload();
+          }
+        },
+        get() { return img._src; }
+      });
+      return img;
+    }
+  };
+}
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
 // 2026-10-24：cdn.jsdelivr.net 对图片一律 301 跳 raw.githubusercontent.com，图片基址已切 gcore
@@ -98,51 +153,20 @@ const wx = {
   },
   showLoading(o) { route('showLoading', '', { title: o && o.title }); },
   hideLoading() { route('hideLoading', '', {}); },
-  // 分享面板海报（utils/qrshare.js）：记录绘制填充/文字/图片次数
-  createCanvasContext(canvasId) {
-    let fills = 0;
-    let texts = 0;
-    let images = 0;
-    return {
-      setFillStyle() { return this; },
-      setFontSize() { return this; },
-      setTextAlign() { return this; },
-      beginPath() { return this; },
-      moveTo() { return this; },
-      lineTo() { return this; },
-      quadraticCurveTo() { return this; },
-      arc() { return this; },
-      closePath() { return this; },
-      fill() { return this; },
-      fillRect() { fills += 1; return this; },
-      fillText() { texts += 1; return this; },
-      drawImage() { images += 1; return this; },
-      draw() {
-        mockQr.ops = fills;
-        mockPoster.fills = fills;
-        mockPoster.texts = texts;
-        mockPoster.images = images;
-        return this;
-      }
+  // 分享面板海报（utils/qrshare.js canvas 2d API）：SelectorQuery 返回 mock 画布节点，
+  // 2d ctx 逐次记录填充/文字/图片次数（直接更新 mockPoster，2d API 无 draw()）
+  createSelectorQuery() {
+    const chain = {};
+    ['in', 'select', 'fields'].forEach((m) => { chain[m] = () => chain; });
+    chain.exec = (cb) => {
+      cb([{ node: makeMockCanvasNode() }]);
+      return chain;
     };
-  },
-  // 题图统一走 getImageInfo（contain 展示需要宽高）：netFail 开关控制远端失败场景
-  getImageInfo(opts) {
-    const src = (opts && opts.src) || '';
-    if (mockQr.netFail && src.indexOf('http') === 0) {
-      if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
-      return;
-    }
-    // 太阳码图默认失败（本地仓库通常无码图）走本地二维码兜底；codeFail=false 模拟码图就绪
-    if (src.indexOf('/data/img/wxacode/') >= 0 && mockQr.codeFail) {
-      if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
-      return;
-    }
-    if (opts.success) opts.success({ path: src.indexOf('http') === 0 ? 'tmp://img.png' : src, width: 480, height: 320 });
+    return chain;
   },
   canvasToTempFilePath(opts) {
-    if (mockQr.exportFail) {
-      if (opts.fail) opts.fail({ errMsg: 'canvasToTempFilePath:fail' });
+    if (mockQr.exportFail || !(opts && opts.canvas)) {
+      if (opts && opts.fail) opts.fail({ errMsg: 'canvasToTempFilePath:fail' });
       return;
     }
     if (opts.success) opts.success({ tempFilePath: 'tmp://qr-share.png' });
@@ -257,6 +281,7 @@ function pickSheet(index) {
 function assertSharePanel(page, cfg, tag) {
   page.openShare();
   ok(page.data.share.open, `${tag}分享面板打开`);
+  qrshare.attachCanvas(page); // mock exec 同步回调：挂载 2d 画布并跑完题图/太阳码装载链
   eq(page.data.share.kicker, cfg.kicker, `${tag}分享卡片 kicker`);
   ok(page.data.share.desc.length >= 8, `${tag}分享卡片含页面摘要`);
   ok(page.data.share.img.length > 0, `${tag}分享卡片含题图`);
@@ -2064,10 +2089,11 @@ console.log('== 太阳码 wxacode ==');
   eq(p.data.person.name, '苏轼', '太阳码扫码进入等价 ?id=');
 
   // 海报分支：太阳码就绪 → drawImage；未就绪 → 本地二维码逐模块填充
+  // （mock exec 每次返回全新节点，计数即"单帧"语义）
   const fakePage = {
     data: {
       share: {
-        open: true, kicker: '人物 · 西汉', title: '汉武帝', desc: '雄才大略的帝王', img: '', imgLocal: '', imgW: 0, imgH: 0,
+        open: true, kicker: '人物 · 西汉', title: '汉武帝', desc: '雄才大略的帝王', img: '', imgLocal: '',
         quote: '犯强汉者虽远必诛', quoteSource: '《汉书》', dateText: '2026年11月14日', lunarText: '农历丙午年 十月初六',
         qrText: '阅史记：/pages/person/person?id=han-wudi', codeImg: ''
       }
@@ -2081,15 +2107,18 @@ console.log('== 太阳码 wxacode ==');
   ok(mockPoster.images >= 3, '太阳码就绪 → drawImage 绘制码图');
   ok(mockPoster.fills < 100, '太阳码就绪 → 不再逐模块填充');
 
-  // 面板集成：mock 码图就绪后 openShare 异步装载 codeImg（getImageInfo 桩同步回调）
+  // 面板集成：mock 码图就绪后 openShare 同步装载 codeImg（createImage 桩同步 onload）
   mockQr.codeFail = false;
   const person = pages.person;
   person.onLoad({ id: 'han-wudi' });
   person.openShare();
-  ok(person.data.share.codeImg === 'tmp://img.png', '码图就绪 → 面板装载太阳码图');
+  qrshare.attachCanvas(person);
+  ok(person.data.share.codeImg === wxacode.codeUrlOf('/pages/person/person?id=han-wudi'), '码图就绪 → 面板装载太阳码图');
   person.closeShare();
+  qrshare.resetImgs(); // 清缓存：codeFail 切换后模拟「未缓存过码图」的真实首开
   mockQr.codeFail = true;
   person.openShare();
+  qrshare.attachCanvas(person);
   ok(person.data.share.codeImg === '', '码图取不到 → 保持空走本地二维码兜底');
   person.closeShare();
 })();

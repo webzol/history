@@ -82,7 +82,7 @@
         </view>
         <view class="ss-qr-wrap">
           <image wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
-          <canvas wx:else canvas-id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
+          <canvas wx:else type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
         </view>
         <view class="ss-actions">
           <button class="ss-btn ss-btn-primary" open-type="share">转 寄 好 友</button>

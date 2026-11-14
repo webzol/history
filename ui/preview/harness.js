@@ -81,54 +81,44 @@
     showActionSheet: function (o) { drawSheet(o); },
     showLoading: function () {},
     hideLoading: function () {},
-    // 分享面板海报（utils/qrshare.js）：旧版 canvas 接口 → 浏览器 2d context
-    createCanvasContext: function (canvasId) {
-      var cv = pageHost.querySelector('canvas[canvas-id="' + canvasId + '"]');
-      var ctx = null;
-      if (cv && cv.getContext) {
-        var cw = cv.clientWidth || 260;
-        var ch = cv.clientHeight || 372;
-        if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
-        ctx = cv.getContext('2d');
+    // 分享面板海报（utils/qrshare.js canvas 2d API）：SelectorQuery → 浏览器真实 canvas 节点。
+    // width/height 直写画布缓冲（海报固定 1170×1908 高清），createImage 包装 new Image
+    // 并做仓库路径映射（远端专属图 → ../../miniprogram/ 本地文件，离线预览可画真图）。
+    createSelectorQuery: function () {
+      function mapImgSrc(v) {
+        var s = String(v);
+        if (s.indexOf('http') === 0) {
+          var rel = s.split('/miniprogram/')[1];
+          return rel ? '../../miniprogram/' + rel : s;
+        }
+        return s.replace(/^\/assets\//, '../../miniprogram/assets/');
       }
-      var ret = {
-        setFillStyle: function (c) { if (ctx) ctx.fillStyle = c; return this; },
-        setFontSize: function (s) { if (ctx) ctx.font = s + 'px "Songti SC", "STSong", serif'; return this; },
-        setTextAlign: function (a) { if (ctx) ctx.textAlign = a; return this; },
-        beginPath: function () { if (ctx) ctx.beginPath(); return this; },
-        moveTo: function (x, y) { if (ctx) ctx.moveTo(x, y); return this; },
-        lineTo: function (x, y) { if (ctx) ctx.lineTo(x, y); return this; },
-        quadraticCurveTo: function (cpx, cpy, x, y) { if (ctx) ctx.quadraticCurveTo(cpx, cpy, x, y); return this; },
-        arc: function (x, y, r, a0, a1) { if (ctx) ctx.arc(x, y, r, a0, a1); return this; },
-        closePath: function () { if (ctx) ctx.closePath(); return this; },
-        fill: function () { if (ctx) ctx.fill(); return this; },
-        fillRect: function (x, y, w, h) { if (ctx) ctx.fillRect(x, y, w, h); return this; },
-        fillText: function (t, x, y) { if (ctx) ctx.fillText(t, x, y); return this; },
-        drawImage: function (src) {
-          if (!ctx) return this;
-          var img = new Image();
-          var rest = Array.prototype.slice.call(arguments, 1);
-          img.onload = function () { ctx.drawImage.apply(ctx, [img].concat(rest)); };
-          img.onerror = function () {
-            var d = rest.length >= 8 ? rest.slice(4) : rest;
-            ctx.fillStyle = '#EFE9DD';
-            ctx.fillRect(d[0], d[1], d[2], d[3]);
-          };
-          img.src = String(src)
-            .replace(/^\/assets\//, '../../miniprogram/assets/')
-            .replace(/^https?:\/\/[^/]+\//, '');
-          return this;
-        },
-        draw: function () { return this; }
+      function makeNode(cv) {
+        var node = {
+          getContext: function (type) { return cv.getContext(type || '2d'); },
+          createImage: function () {
+            // 返回真实 Image 元素（drawImage 需要），仅在实例上拦截 src 做仓库路径映射；
+            // onload/onerror 由调用方直接赋给原生属性，width/height 即原生自然尺寸
+            var img = new Image();
+            Object.defineProperty(img, 'src', {
+              set: function (v) { img.setAttribute('src', mapImgSrc(v)); },
+              get: function () { return img.getAttribute('src'); }
+            });
+            return img;
+          }
+        };
+        Object.defineProperty(node, 'width', { set: function (v) { cv.width = v; }, get: function () { return cv.width; } });
+        Object.defineProperty(node, 'height', { set: function (v) { cv.height = v; }, get: function () { return cv.height; } });
+        return node;
+      }
+      var chain = {};
+      ['in', 'select', 'fields'].forEach(function (m) { chain[m] = function () { return chain; }; });
+      chain.exec = function (cb) {
+        var cv = pageHost.querySelector('canvas#ssQrCanvas');
+        cb([cv && cv.getContext ? { node: makeNode(cv) } : { node: null }]);
+        return chain;
       };
-      // ctx.font 赋值穿透（qrshare 海报用 ctx.font 设宋体/楷体）
-      if (ctx) {
-        Object.defineProperty(ret, 'font', {
-          set: function (v) { ctx.font = v; },
-          get: function () { return ctx.font; }
-        });
-      }
-      return ret;
+      return chain;
     },
     // 题图统一走 getImageInfo（contain 需要宽高）：远端专属图映射仓库本地文件
     getImageInfo: function (o) {

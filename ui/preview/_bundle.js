@@ -7136,10 +7136,17 @@ module.exports = {
 
 });
 __register('/utils/qrshare.js', function (require, module, exports) {
-// 分享面板：分享卡片海报（题图 + 页面内容摘要 + 二维码）+ 保存相册，纯前端实现。
+// 分享面板：分享卡片海报（宣纸纹理 + 立轴题图 + 页面内容摘要 + 太阳码）+ 保存相册，纯前端实现。
 //
-// 卡片二维码：本地编码绘制（qrcode.js），内容为页内路径文本（零配置、零第三方依赖，
-// 扫码可读「这是哪个页面」）；好友直达分享走「转寄好友」的微信原生卡片，不依赖二维码。
+// 渲染架构（2026-11-14 高清化）：canvas 2d API（type="2d"），固定 4.5 倍缓冲（1170×1908，
+// 与设备像素比无关）——所有绘制坐标仍按 260×424 逻辑尺寸书写，ctx.scale(4.5) 一次放大；
+// 导出按缓冲原生分辨率，相册里 1170×1908 全高清。旧版 canvas 的缓冲尺寸随设备 dpr 浮动，
+// 低像素比设备上 3 倍拉伸导出发虚，是本次迁移的直接原因。
+// 每次绘制都重新查询 canvas 节点并整幅重画（width 赋值会重置画布状态，正好配合全幅重绘）：
+// 真机 wx:if 节点持久、查询开销可忽略；harness 整页重渲染后也能拿到新元素。
+//
+// 卡片太阳码：Actions 预生成走 jsDelivr（utils/wxacode.js），扫码直达当前页；
+// 码图取不到自动回退本地编码二维码（qrcode.js，内容为页内路径文本），零劣化。
 //
 // 页面接入约定：
 //   1. data 里初始化 share: { open: false }
@@ -7155,13 +7162,27 @@ const wxacode = require('./wxacode.js');
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
 // 题图兜底：当前页相关图全链路取不到时的卷首画
 const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
+// 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
+const PAPER_BG = '/assets/paper-bg.jpg';
 
-// 海报 canvas 尺寸（px，与 app.wxss .ss-canvas 一致；面板内显示+保存导出同源）
+// 海报逻辑尺寸（px，与 app.wxss .ss-canvas 一致）与高清倍率
 const CANVAS_ID = 'ssQrCanvas';
 const W = 260;
 const H = 424;
-const CODE_SIZE = 54; // 二维码边长
+const SCALE = 4.5;
+const BW = Math.round(W * SCALE); // 缓冲 1170
+const BH = Math.round(H * SCALE); // 缓冲 1908
+const CODE_SIZE = 54; // 太阳码/二维码边长
 const INK = '#1F1D19';
+const PAPER = '#F6F1EA';
+
+// 字体栈：与 app.wxss 同源（标题宋体 / 名句楷体 / 其余默认黑体系）
+const KAI = '"Kaiti SC", "STKaiti", "KaiTi", serif';
+const SONG = '"Songti SC", "STSong", "SimSun", serif';
+const SANS = '"PingFang SC", "Noto Sans SC", sans-serif';
+
+// 图片对象缓存（createImage 按 src 复用；ok:false 记失败，避免重复请求）
+const imgCache = {};
 
 // 每日名句：日期做种子从人物引文库确定性抽取（同一天全用户同一句，隔天自动换）
 function dailyQuote(now) {
@@ -7199,13 +7220,12 @@ function encode(text) {
   return qr;
 }
 
-// 二维码文本：零依赖方案——编码页内路径文本，扫码可读「这是哪个页面」；
-// 将来若公众平台配置「扫普通链接二维码打开小程序」，改回 https 链接即可扫码直达。
+// 二维码文本：零依赖方案——编码页内路径文本，扫码可读「这是哪个页面」。
 function qrTextOf(path) {
   return `阅史记：${path || '/pages/home/home'}`;
 }
 
-// 中英文混排宽度估算（旧 canvas 无 measureText）
+// 中英文混排宽度估算（与旧版一致，折行结果保持稳定）
 function charW(ch, size) {
   return /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/.test(ch) ? size : size * 0.56;
 }
@@ -7234,23 +7254,88 @@ function wrapText(s, size, maxW, lines) {
   return rows;
 }
 
-// 装载图片：统一走 getImageInfo 拿真实宽高（contain 展示需要；本地图/远端图都支持，
-// 且 getImageInfo 不受 downloadFile 域名白名单限制，零配置）。失败回调 null。
-function loadImg(src, cb) {
-  if (!src) { cb(null); return; }
-  if (typeof wx.getImageInfo !== 'function') {
-    // 无 getImageInfo 环境：本地路径仍可直接画（drawCover 走估计尺寸）
-    cb(src.indexOf('http') !== 0 ? src : null);
+// 查询 2d canvas 节点（每次绘制/装载/导出都重新查询，wx:if 重挂载与 harness 重渲染后仍有效）
+function getCanvasNode(page, cb) {
+  if (typeof wx.createSelectorQuery !== 'function') return;
+  wx.createSelectorQuery()
+    .in(page)
+    .select('#' + CANVAS_ID)
+    .fields({ node: true, size: true })
+    .exec((res) => {
+      const node = res && res[0] && res[0].node;
+      if (node && typeof node.getContext === 'function') cb(node);
+    });
+}
+
+// 建画布帧：设固定缓冲 → getContext → scale(4.5)，返回就绪的 2d ctx。
+// 对 width 赋值会重置画布全部状态，正好配合 paintPoster 的整幅重绘。
+function frameCanvas(node) {
+  node.width = BW;
+  node.height = BH;
+  const ctx = node.getContext('2d');
+  ctx.scale(SCALE, SCALE);
+  return ctx;
+}
+
+// 装载 2d canvas 图像对象：createImage 本地图/远端图都支持，不受域名白名单限制。
+// 缓存命中同步返回；失败记录 ok:false 不再重试。回调 (img|null)，img 带 width/height。
+function loadCanvasImg(page, src, cb) {
+  if (!src) {
+    cb(null);
     return;
   }
-  wx.getImageInfo({
-    src,
-    success: (res) => cb(res.path || null, res.width || 0, res.height || 0),
-    fail: () => {
-      // 远端失败彻底回退 null；本地路径失败也直画兜底（估计尺寸）
-      cb(src.indexOf('http') !== 0 ? src : null);
+  const hit = imgCache[src];
+  if (hit) {
+    cb(hit.ok ? hit.img : null);
+    return;
+  }
+  getCanvasNode(page, (node) => {
+    if (typeof node.createImage !== 'function') {
+      cb(null);
+      return;
     }
+    const img = node.createImage();
+    img.onload = () => {
+      imgCache[src] = { ok: true, img };
+      cb(img);
+    };
+    img.onerror = () => {
+      imgCache[src] = { ok: false, img: null };
+      cb(null);
+    };
+    img.src = src;
   });
+}
+
+// 绘制中只读缓存取图（不触发加载/重绘——加载统一在 drawPoster 的预取步骤完成，
+// 避免"同步加载回调→递归重绘"导致一次调用内多层绘制互相覆盖）
+function peekImg(src) {
+  if (!src) return null;
+  const hit = imgCache[src];
+  return hit && hit.ok ? hit.img : null;
+}
+
+// 绘制前预取海报需要的全部图：缓存未命中的发起异步装载，就绪后触发下一轮重绘。
+// 真机：首绘只有纸底/本地码，图陆续就绪逐次补绘收敛；同步 mock 环境：当轮即可全部命中。
+function preloadPosterImgs(page, share) {
+  const srcs = [
+    PAPER_BG,
+    share.imgLocal || FALLBACK_COVER,
+    share.imgLocal ? FALLBACK_COVER : '', // 题图装载中先备好兜底卷首
+    '/assets/seal.png',
+    share.codeImg || ''
+  ];
+  srcs.forEach((src) => {
+    if (!src || imgCache[src]) return;
+    loadCanvasImg(page, src, () => {
+      if (page.data.share && page.data.share.open) drawPoster(page);
+    });
+  });
+}
+
+// 测试/网络环境切换用：清空图片对象缓存（下次绘制重新装载）
+function resetImgs() {
+  Object.keys(imgCache).forEach((k) => delete imgCache[k]);
 }
 
 function open(page) {
@@ -7258,6 +7343,8 @@ function open(page) {
   const path = payload.path || '/pages/home/home';
   const quote = dailyQuote();
 
+  page.__qrPath = path;
+  page.__qrPayload = payload;
   page.setData({
     share: {
       open: true,
@@ -7265,246 +7352,254 @@ function open(page) {
       title: payload.title || '阅史记',
       desc: payload.desc || '',
       img: payload.img || '',
-      imgLocal: '',  // 题图本地路径（就绪后重画；空则画占位底）
-      imgW: 0,       // 题图真实宽高（getImageInfo 返回，用于动态 cover 裁剪）
-      imgH: 0,
+      imgLocal: '',  // 题图源（就绪后重绘；空则画预置卷首兜底图）
       quote: quote ? quote.quote : '',
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
       lunarText: lunarText(),
       qrText: qrTextOf(path),
-      codeImg: ''   // 太阳码图本地路径（jsDelivr 就绪后重画；空则画本地编码二维码）
+      codeImg: ''   // 太阳码图源（jsDelivr 就绪后重绘；空则画本地编码二维码）
     }
   });
 
-  // canvas 由 wx:if 挂载，先画基础版（占位题图 + 内容 + 二维码），题图就绪后重画。
+  // canvas 由 wx:if 挂载，稍等渲染后首绘（先纸底 + 兜底卷首 + 本地码，图就绪各自补绘）。
   // 远端题图失败时回退 imgFallback（本地朝代画），保证顶部始终是当前相关图。
-  setTimeout(() => drawPoster(page), 120);
+  setTimeout(() => attachCanvas(page, payload, path), 120);
+}
 
-  // 太阳码（官方小程序码）：Actions 预生成走 jsDelivr，扫码直达当前页；
-  // 主域名失败换备用域名重试一次，仍未取到则保持本地编码二维码兜底。
+// 首绘 + 启动题图/太阳码装载链（open 的延迟回调；测试里可同步调用）
+function attachCanvas(page, payload, path) {
+  drawPoster(page);
+  startCoverChain(page, payload || page.__qrPayload);
+  startCodeChain(page, path || page.__qrPath);
+}
+
+// 题图装载链：远端专属图 → imgFallback（本地朝代画）→ 都失败则画预置卷首兜底图
+function startCoverChain(page, payload) {
+  const primary = (payload && payload.img) || '';
+  const fallback = (payload && payload.imgFallback) || '';
+  const trySrc = (src) => {
+    if (!src) {
+      drawPoster(page);
+      return;
+    }
+    loadCanvasImg(page, src, (img) => {
+      if (!page.data.share.open) return;
+      if (img) {
+        page.setData({ 'share.imgLocal': src });
+        drawPoster(page);
+        return;
+      }
+      trySrc(fallback && src !== fallback ? fallback : '');
+    });
+  };
+  trySrc(primary);
+}
+
+// 太阳码装载链：主域名 → 备用域名重试一次 → 都失败保持本地编码二维码
+function startCodeChain(page, path) {
   const codeUrl = wxacode.codeUrlOf(path);
-  if (codeUrl) {
-    loadImg(codeUrl, (img) => {
-      if (page.data.share.open && img) {
-        page.setData({ 'share.codeImg': img });
+  if (!codeUrl) return;
+  const trySrc = (url) => {
+    if (!url) return;
+    loadCanvasImg(page, url, (img) => {
+      if (!page.data.share.open) return;
+      if (img) {
+        page.setData({ 'share.codeImg': url });
         drawPoster(page);
         return;
       }
-      const alt = wxacode.altCodeUrl(codeUrl);
-      if (alt) {
-        loadImg(alt, (img2) => {
-          if (page.data.share.open && img2) {
-            page.setData({ 'share.codeImg': img2 });
-            drawPoster(page);
-          }
-        });
-      }
+      trySrc(wxacode.altCodeUrl(url));
     });
-  }
-  if (payload.img) {
-    loadImg(payload.img, (local, w, h) => {
-      if (page.data.share.open && local) {
-        page.setData({ 'share.imgLocal': local, 'share.imgW': w || 0, 'share.imgH': h || 0 });
-        drawPoster(page);
-        return;
-      }
-      if (payload.imgFallback) {
-        loadImg(payload.imgFallback, (local2, w2, h2) => {
-          if (page.data.share.open && local2) {
-            page.setData({ 'share.imgLocal': local2, 'share.imgW': w2 || 0, 'share.imgH': h2 || 0 });
-            drawPoster(page);
-          }
-        });
-      }
-    });
-  }
+  };
+  trySrc(codeUrl);
 }
 
 function close(page) {
   page.setData({ 'share.open': false });
 }
 
-// 海报：宣纸笺风——宣纸底 + 界格朱砂线 + 装裱题图 + 楷体名句 + 码/日期落款 + 「史载」朱砂印
-// 圆角矩形（旧 canvas 无 arcTo，用 quadraticCurveTo 模拟）
-function roundRect(ctx, x, y, w, h, r) {
+// 海报：宣纸卷轴风——宣纸纹理卷面 + 天地轴杆绫边 + 装裱题图 + 楷体名句 + 码/日期落款 + 「史载」朱砂印。
+// 纯绘制函数：图一律经 peekImg 读缓存（缺图由预取触发下一轮重绘补上），本函数不含任何异步。
+function paintPoster(ctx, share) {
+  // 立轴挂画形态：天杆 / 地杆（深木色横杆）+ 左右绫边（暗褐绢色 + 内金线）+ 宣纸卷面
+  const drawBar = (y, h) => {
+    ctx.fillStyle = '#2E2820';
+    ctx.fillRect(0, y, W, h);
+    ctx.fillStyle = 'rgba(246, 241, 234, 0.20)';
+    ctx.fillRect(0, y + 1, W, 1);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.30)';
+    ctx.fillRect(0, y + h - 2, W, 2);
+  };
+  drawBar(0, 12);
+  drawBar(H - 12, 12);
+  // 地杆两端轴头（立轴地杆出头）
+  ctx.fillStyle = '#1B1712';
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  ctx.arc(3, H - 6, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(W - 3, H - 6, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 左右绫边 + 内金线
+  const RIB = 12;
+  ctx.fillStyle = '#463C30';
+  ctx.fillRect(0, 12, RIB, H - 24);
+  ctx.fillRect(W - RIB, 12, RIB, H - 24);
+  ctx.fillStyle = 'rgba(190, 150, 90, 0.35)';
+  ctx.fillRect(RIB - 1, 12, 1, H - 24);
+  ctx.fillRect(W - RIB, 12, 1, H - 24);
+
+  // 宣纸卷面：先铺底色，再 aspectFill 居中裁切绘入与全站同源的宣纸纹理（clip 防溢出）
+  const tw = W - RIB * 2;
+  const th = H - 24;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(RIB, 12, tw, th);
+  const paper = peekImg(PAPER_BG);
+  if (paper && paper.width && paper.height) {
+    const s = Math.max(tw / paper.width, th / paper.height);
+    const pw = paper.width * s;
+    const ph = paper.height * s;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(RIB, 12, tw, th);
+    ctx.clip();
+    ctx.drawImage(paper, RIB + (tw - pw) / 2, 12 + (th - ph) / 2, pw, ph);
+    ctx.restore();
+  }
+
+  // 卷面右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(31, 29, 25, 0.055)';
+  ctx.font = '16px ' + KAI;
+  '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - RIB - 12, 178 + i * 21));
+
+  // 卷首画：当前页相关图**完整展示不裁切**（contain），底部虚化渐隐融入卷面
+  // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
+  const dx = RIB + 14, dy = 22, dw = W - RIB * 2 - 28, dh = 108;
+  const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
+  if (cover) {
+    const iw = cover.width || 0;
+    const ih = cover.height || 0;
+    if (iw > 0 && ih > 0) {
+      const scale = Math.min(dw / iw, dh / ih);
+      const dw2 = Math.round(iw * scale);
+      const dh2 = Math.round(ih * scale);
+      ctx.drawImage(cover, Math.round(dx + (dw - dw2) / 2), Math.round(dy + (dh - dh2) / 2), dw2, dh2);
+    } else {
+      ctx.drawImage(cover, dx, dy, dw, dh);
+    }
+  }
+  // 题图底部虚化渐隐：逐行覆盖宣纸色（alpha 0→0.95），人物完整不裁切且下缘融入卷面
+  const fadeY = dy + dh - 24;
+  for (let i = 0; i < 24; i += 1) {
+    ctx.fillStyle = 'rgba(246, 241, 234, ' + ((i / 24) * 0.95).toFixed(3) + ')';
+    ctx.fillRect(dx, fadeY + i, dw, 1);
+  }
+
+  // kicker（朱砂小字）
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#A34A3E';
+  ctx.font = '10px ' + SANS;
+  ctx.fillText(share.kicker, W / 2, 164);
+
+  // 标题（宋体大字，最多一行）
+  ctx.fillStyle = INK;
+  ctx.font = 'bold 19px ' + SONG;
+  ctx.fillText(clipText(share.title, 19, 208, true), W / 2, 190);
+
+  // 摘要（淡墨，最多两行）
+  ctx.fillStyle = '#5F5A52';
+  ctx.font = '11px ' + SANS;
+  const rows = wrapText(share.desc, 11, 196, 2);
+  rows.forEach((row, i) => ctx.fillText(row, W / 2, 212 + i * 17));
+
+  // 淡墨分隔细线
+  ctx.fillStyle = 'rgba(70, 58, 45, 0.14)';
+  ctx.fillRect(36, 248, W - 72, 1);
+
+  // 每日名句（楷体，最多两行）+ 出处
+  if (share.quote) {
+    ctx.fillStyle = '#3B3731';
+    ctx.font = '12px ' + KAI;
+    const qrows = wrapText(share.quote, 12, 196, 2);
+    qrows.forEach((row, i) => ctx.fillText(row, W / 2, 266 + i * 19));
+    ctx.fillStyle = '#8C857A';
+    ctx.font = '9px ' + SANS;
+    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, 266 + (qrows.length - 1) * 19 + 16);
+  }
+
+  // 淡墨分隔细线
+  ctx.fillStyle = 'rgba(70, 58, 45, 0.10)';
+  ctx.fillRect(36, 316, W - 72, 1);
+
+  // 落款区：太阳码/二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
+  const cy = 330;
+  const cx = 24;
+  const codeImg = peekImg(share.codeImg);
+  if (codeImg) {
+    // 官方小程序码（圆形白底）就绪：直接绘制，微信扫一扫直达当前页
+    ctx.drawImage(codeImg, cx, cy, CODE_SIZE, CODE_SIZE);
+  } else {
+    // 本地编码兜底：零依赖普通二维码，内容为页内路径文本
+    try {
+      const qr = encode(share.qrText);
+      const count = qr.getModuleCount();
+      const m = 4;
+      const cell = Math.floor((CODE_SIZE - m * 2) / count);
+      const off = Math.round((CODE_SIZE - cell * count) / 2);
+      ctx.fillStyle = INK;
+      for (let r = 0; r < count; r += 1) {
+        for (let c = 0; c < count; c += 1) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
+          }
+        }
+      }
+    } catch (e) { /* 码文本异常时留白 */ }
+  }
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = INK;
+  ctx.font = '11px ' + SANS;
+  ctx.fillText(share.dateText || '', 90, cy + 22);
+  ctx.fillStyle = '#8C857A';
+  ctx.font = '10px ' + SANS;
+  ctx.fillText(share.lunarText || '', 90, cy + 42);
+
+  // 「史载」朱砂印（assets/seal.png，114×197 竖长按比例）
+  const seal = peekImg('/assets/seal.png');
+  if (seal) {
+    const sealH = 52;
+    const sealW = Math.round(sealH * 114 / 197);
+    ctx.drawImage(seal, W - RIB - 14 - sealW, cy - 2, sealW, sealH);
+  }
+
+  // 品牌行
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8C857A';
+  ctx.font = '10px ' + SANS;
+  ctx.fillText('阅史记 · 一页一页读历史', W / 2, H - 24);
 }
 
 function drawPoster(page) {
   const share = page.data.share;
-  if (!share || !share.open) return;
-  if (typeof wx.createCanvasContext !== 'function') return; // 无 canvas 环境静默跳过
+  if (!share || !share.open) return; // 面板已关
+  if (typeof wx.createSelectorQuery !== 'function') return; // 无环境静默跳过
 
-  try {
-    const ctx = wx.createCanvasContext(CANVAS_ID);
-
-    // 立轴挂画形态：天杆 / 地杆（深木色横杆）+ 左右绫边（暗褐绢色 + 内金线）+ 宣纸卷面
-    const drawBar = (y, h) => {
-      ctx.setFillStyle('#2E2820');
-      ctx.fillRect(0, y, W, h);
-      ctx.setFillStyle('rgba(246, 241, 234, 0.20)');
-      ctx.fillRect(0, y + 1, W, 1);
-      ctx.setFillStyle('rgba(0, 0, 0, 0.30)');
-      ctx.fillRect(0, y + h - 2, W, 2);
-    };
-    drawBar(0, 12);
-    drawBar(H - 12, 12);
-    // 地杆两端轴头（立轴地杆出头）
-    ctx.setFillStyle('#1B1712');
-    ctx.beginPath();
-    ctx.arc(3, H - 6, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(W - 3, H - 6, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 左右绫边 + 内金线
-    const RIB = 12;
-    ctx.setFillStyle('#463C30');
-    ctx.fillRect(0, 12, RIB, H - 24);
-    ctx.fillRect(W - RIB, 12, RIB, H - 24);
-    ctx.setFillStyle('rgba(190, 150, 90, 0.35)');
-    ctx.fillRect(RIB - 1, 12, 1, H - 24);
-    ctx.fillRect(W - RIB, 12, 1, H - 24);
-
-    // 宣纸卷面
-    ctx.setFillStyle('#F6F1EA');
-    ctx.fillRect(RIB, 12, W - RIB * 2, H - 24);
-
-    // 卷面右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
-    ctx.setTextAlign('center');
-    ctx.setFillStyle('rgba(31, 29, 25, 0.055)');
-    ctx.font = '16px "Kaiti SC", "STKaiti", "KaiTi", serif';
-    '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - RIB - 12, 178 + i * 21));
-    ctx.font = '';
-
-    // 卷首画：当前页相关图**完整展示不裁切**（contain），底部虚化渐隐融入卷面
-    // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
-    const dx = RIB + 14, dy = 22, dw = W - RIB * 2 - 28, dh = 108;
-    const drawCover = (src) => {
-      const iw = share.imgW || (/\/data\/img\//.test(src) ? 360 : 0);
-      const ih = share.imgH || (/\/data\/img\//.test(src) ? 360 : 0);
-      if (iw > 0 && ih > 0) {
-        const scale = Math.min(dw / iw, dh / ih);
-        const dw2 = Math.round(iw * scale);
-        const dh2 = Math.round(ih * scale);
-        ctx.drawImage(src, Math.round(dx + (dw - dw2) / 2), Math.round(dy + (dh - dh2) / 2), dw2, dh2);
-      } else {
-        ctx.drawImage(src, dx, dy, dw, dh);
-      }
-    };
-    if (share.imgLocal) {
-      drawCover(share.imgLocal);
-    } else {
-      // 全链路（远端 + imgFallback）都未取到时，画预置卷首兜底图（tools/gen_share_fallback.py 生成）
-      ctx.drawImage(FALLBACK_COVER, dx, dy, dw, dh);
+  getCanvasNode(page, (node) => {
+    try {
+      const ctx = frameCanvas(node);
+      preloadPosterImgs(page, share);
+      paintPoster(ctx, share);
+    } catch (e) {
+      console.error('qrshare drawPoster:', e);
+      // 绘制异常降级：面板切预置静态卡片图（保持完整视觉，见 tools/gen_share_fallback.py）
+      if (page && page.setData) page.setData({ 'share.fallback': true });
+      if (wx.showToast) wx.showToast({ title: '已切换备用卡片', icon: 'none' });
     }
-    // 题图底部虚化渐隐：逐行覆盖宣纸色（alpha 0→0.95），人物完整不裁切且下缘融入卷面
-    const fadeY = dy + dh - 24;
-    for (let i = 0; i < 24; i += 1) {
-      ctx.setFillStyle('rgba(246, 241, 234, ' + ((i / 24) * 0.95).toFixed(3) + ')');
-      ctx.fillRect(dx, fadeY + i, dw, 1);
-    }
-
-    // kicker（朱砂小字）
-    ctx.setTextAlign('center');
-    ctx.setFillStyle('#A34A3E');
-    ctx.setFontSize(10);
-    ctx.fillText(share.kicker, W / 2, 164);
-
-    // 标题（宋体大字，最多一行）
-    ctx.setFillStyle(INK);
-    ctx.font = 'bold 19px "Songti SC", "STSong", "SimSun", serif';
-    ctx.fillText(clipText(share.title, 19, 208, true), W / 2, 190);
-    ctx.font = '';
-
-    // 摘要（淡墨，最多两行）
-    ctx.setFillStyle('#5F5A52');
-    ctx.setFontSize(11);
-    const rows = wrapText(share.desc, 11, 196, 2);
-    rows.forEach((row, i) => ctx.fillText(row, W / 2, 212 + i * 17));
-
-    // 淡墨分隔细线
-    ctx.setFillStyle('rgba(70, 58, 45, 0.14)');
-    ctx.fillRect(36, 248, W - 72, 1);
-
-    // 每日名句（楷体，最多两行）+ 出处
-    if (share.quote) {
-      ctx.setFillStyle('#3B3731');
-      ctx.font = '12px "Kaiti SC", "STKaiti", "KaiTi", serif';
-      const qrows = wrapText(share.quote, 12, 196, 2);
-      qrows.forEach((row, i) => ctx.fillText(row, W / 2, 266 + i * 19));
-      ctx.font = '';
-      ctx.setFillStyle('#8C857A');
-      ctx.setFontSize(9);
-      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, 266 + (qrows.length - 1) * 19 + 16);
-    }
-
-    // 淡墨分隔细线
-    ctx.setFillStyle('rgba(70, 58, 45, 0.10)');
-    ctx.fillRect(36, 316, W - 72, 1);
-
-    // 落款区：太阳码/二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
-    const cy = 330;
-    const cx = 24;
-    if (share.codeImg) {
-      // 官方小程序码（圆形白底）就绪：直接绘制，微信扫一扫直达当前页
-      ctx.drawImage(share.codeImg, cx, cy, CODE_SIZE, CODE_SIZE);
-    } else {
-      // 本地编码兜底：零依赖普通二维码，内容为页内路径文本
-      try {
-        const qr = encode(share.qrText);
-        const count = qr.getModuleCount();
-        const m = 4;
-        const cell = Math.floor((CODE_SIZE - m * 2) / count);
-        const off = Math.round((CODE_SIZE - cell * count) / 2);
-        ctx.setFillStyle(INK);
-        for (let r = 0; r < count; r += 1) {
-          for (let c = 0; c < count; c += 1) {
-            if (qr.isDark(r, c)) {
-              ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
-            }
-          }
-        }
-      } catch (e) { /* 码文本异常时留白 */ }
-    }
-
-    ctx.setTextAlign('left');
-    ctx.setFillStyle(INK);
-    ctx.setFontSize(11);
-    ctx.fillText(share.dateText || '', 90, cy + 22);
-    ctx.setFillStyle('#8C857A');
-    ctx.setFontSize(10);
-    ctx.fillText(share.lunarText || '', 90, cy + 42);
-
-    // 「史载」朱砂印（assets/seal.png，114×197 竖长按比例）
-    const sealH = 52;
-    const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage('/assets/seal.png', W - RIB - 14 - sealW, cy - 2, sealW, sealH);
-
-    // 品牌行
-    ctx.setTextAlign('center');
-    ctx.setFillStyle('#8C857A');
-    ctx.setFontSize(10);
-    ctx.fillText('阅史记 · 一页一页读历史', W / 2, H - 24);
-
-    ctx.draw();
-  } catch (e) {
-    console.error('qrshare drawPoster:', e);
-    // 绘制异常降级：面板切预置静态卡片图（保持完整视觉，见 tools/gen_share_fallback.py）
-    if (page && page.setData) page.setData({ 'share.fallback': true });
-    if (wx.showToast) wx.showToast({ title: '已切换备用卡片', icon: 'none' });
-  }
+  });
 }
 
 // 写入相册（授权被拒则引导去设置，回来自动重试一次）
@@ -7537,7 +7632,9 @@ function writeAlbum(filePath) {
   });
 }
 
-// 导出海报 → 保存到相册；导出失败或 canvas 已降级时，改保存预置兜底图
+// 导出海报 → 保存到相册；导出失败或 canvas 已降级时，改保存预置兜底图。
+// 2d canvas 导出传节点本身，按缓冲原生分辨率出图（1170×1908）。
+// 节点被重建过（缓冲尺寸不符）时先重设缓冲并重画一帧再导出，避免导出空白。
 function save(page) {
   const share = page.data.share;
   if (!share || !share.open) return;
@@ -7546,12 +7643,21 @@ function save(page) {
     return;
   }
 
-  wx.canvasToTempFilePath({
-    canvasId: CANVAS_ID,
-    destWidth: W * 3, // 3 倍分辨率导出，避免保存图发虚
-    destHeight: H * 3,
-    success: (res) => writeAlbum(res.tempFilePath),
-    fail: () => saveFallback(page)
+  getCanvasNode(page, (node) => {
+    try {
+      if (node.width !== BW || node.height !== BH) {
+        const ctx = frameCanvas(node);
+        preloadPosterImgs(page, share);
+        paintPoster(ctx, share);
+      }
+    } catch (e) { /* 重画失败仍按当前缓冲导出，导出失败有兜底 */ }
+    wx.canvasToTempFilePath({
+      canvas: node,
+      destWidth: BW,
+      destHeight: BH,
+      success: (res) => writeAlbum(res.tempFilePath),
+      fail: () => saveFallback(page)
+    });
   });
 }
 
@@ -7587,9 +7693,9 @@ function saveFallback(page) {
 }
 
 module.exports = {
-  open, close, save, saveFallback, drawPoster, encode, qrTextOf, loadImg,
-  dailyQuote, lunarText, dateText,
-  FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H
+  open, close, save, saveFallback, drawPoster, attachCanvas, encode, qrTextOf,
+  dailyQuote, lunarText, dateText, resetImgs,
+  FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H, SCALE
 };
 
 });
@@ -8374,7 +8480,7 @@ Page('project://pages/event/event.js', {
 });
 
 });
-__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{event}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <view class=\"top-center\">\n        <text class=\"top-title\">事件</text>\n        <view class=\"top-seal\">\n          <text class=\"seal-char\">{{seal}}</text>\n        </view>\n      </view>\n    </view>\n\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"e-copy\">\n        <text class=\"e-year\">{{event.yearText}}</text>\n        <text class=\"e-title\">{{event.title}}</text>\n        <view class=\"e-meta\">\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\n            <text>{{event.era}}</text>\n          </view>\n          <text class=\"e-tags\">{{event.tags}}</text>\n        </view>\n      </view>\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\n        <text>{{event.desc}}</text>\n      </view>\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\n      <text class=\"section-title\">其时其人</text>\n    </view>\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\n      <view\n        wx:for=\"{{relatedPersons}}\"\n        wx:key=\"id\"\n        class=\"p-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goPerson\"\n      >\n        <view class=\"p-thumb-wrap\">\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\n          <image\n            wx:if=\"{{item.img !== item.fallback}}\"\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\n            src=\"{{item.img}}\"\n            mode=\"aspectFill\"\n            bindload=\"onThumbLoad\"\n            binderror=\"onThumbErr\"\n            data-id=\"{{item.id}}\"\n          ></image>\n        </view>\n        <view class=\"p-info\">\n          <text class=\"p-name\">{{item.name}}</text>\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\n          <text class=\"p-roles\">{{item.roles}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\n        <text>回时间轴</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{event.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
+__register('/pages/event/event.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{event}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <view class=\"top-center\">\n        <text class=\"top-title\">事件</text>\n        <view class=\"top-seal\">\n          <text class=\"seal-char\">{{seal}}</text>\n        </view>\n      </view>\n    </view>\n\n    <view class=\"head-card {{event.mode === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"e-copy\">\n        <text class=\"e-year\">{{event.yearText}}</text>\n        <text class=\"e-title\">{{event.title}}</text>\n        <view class=\"e-meta\">\n          <view class=\"era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}\">\n            <text>{{event.era}}</text>\n          </view>\n          <text class=\"e-tags\">{{event.tags}}</text>\n        </view>\n      </view>\n      <view class=\"e-fig\" wx:if=\"{{headImg}}\">\n        <image class=\"e-fig-img\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para lead\" wx:if=\"{{event.desc}}\">\n        <text>{{event.desc}}</text>\n      </view>\n      <view class=\"para\" wx:for=\"{{event.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{relatedPersons.length}}\">\n      <text class=\"section-title\">其时其人</text>\n    </view>\n    <view class=\"p-list\" wx:if=\"{{relatedPersons.length}}\">\n      <view\n        wx:for=\"{{relatedPersons}}\"\n        wx:key=\"id\"\n        class=\"p-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goPerson\"\n      >\n        <view class=\"p-thumb-wrap\">\n          <image class=\"p-thumb-bg\" src=\"{{item.fallback}}\" mode=\"aspectFit\"></image>\n          <image\n            wx:if=\"{{item.img !== item.fallback}}\"\n            class=\"p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}\" lazy-load\n            src=\"{{item.img}}\"\n            mode=\"aspectFill\"\n            bindload=\"onThumbLoad\"\n            binderror=\"onThumbErr\"\n            data-id=\"{{item.id}}\"\n          ></image>\n        </view>\n        <view class=\"p-info\">\n          <text class=\"p-name\">{{item.name}}</text>\n          <text class=\"p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.dates}}</text>\n          <text class=\"p-roles\">{{item.roles}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"goTimeline\">\n        <text>回时间轴</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{event.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
 __register('/pages/event/event.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  padding: 0 10rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\n  overflow: hidden;\n  transition: transform 0.12s ease, background 0.12s ease;\n}\n\n.back-pressed {\n  transform: scale(0.97);\n  background: rgba(244, 236, 224, 0.96);\n}\n\n.back-icon {\n  position: relative;\n  width: 32rpx;\n  height: 20rpx;\n  flex: 0 0 32rpx;\n}\n\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  border-radius: 1rpx;\n  transform: rotate(45deg);\n}\n\n.back-shaft {\n  position: absolute;\n  left: 7rpx;\n  top: 9rpx;\n  width: 22rpx;\n  height: 2rpx;\n  border-radius: 2rpx;\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\n}\n\n.back-divider {\n  width: 1rpx;\n  height: 18rpx;\n  margin: 0 10rpx 0 5rpx;\n  background: rgba(138, 106, 62, 0.20);\n  flex: 0 0 1rpx;\n}\n\n.back-label {\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 24rpx;\n  line-height: 1;\n  letter-spacing: 0.08em;\n  text-indent: 0.08em;\n  color: #6B5A33;\n  white-space: nowrap;\n}\n\n.top-center {\n  position: absolute;\n  left: 50%;\n  transform: translateX(-50%);\n  top: 0;\n  bottom: 0;\n  display: flex;\n  align-items: center;\n  gap: 12rpx;\n}\n\n.top-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C857A;\n}\n\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\n.top-seal {\n  width: 44rpx;\n  height: 48rpx;\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\n  border: 2rpx solid #8B4513;\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\n  /* 透明底色，让宣纸透出 */\n  background: transparent;\n  /* 轻微旋转，模拟手工盖印的不规则 */\n  transform: rotate(-3deg);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  /* 外发光模拟印泥洇散 */\n  box-shadow:\n    0 0 4rpx rgba(139, 69, 19, 0.12),\n    0 0 10rpx rgba(139, 69, 19, 0.06);\n}\n\n.seal-char {\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\n  font-size: 22rpx;\n  font-weight: bold;\n  /* 朱砂印泥色（同「史载」印章） */\n  color: #8B4513;\n  /* 篆书效果：紧凑字距 */\n  letter-spacing: 0.02em;\n  /* 文字描边增强篆刻感 */\n  text-shadow:\n    0 0 1rpx #8B4513,\n    0 0 2rpx rgba(139, 69, 19, 0.25);\n  line-height: 1;\n  /* 轻微压缩，模拟篆书方正感 */\n  transform: scaleX(0.92);\n}\n\n.head-card {\n  position: relative;\n  display: flex;\n  align-items: stretch;\n  gap: 26rpx;\n  margin-top: 26rpx;\n  padding: 30rpx;\n  border-radius: 38rpx;\n  overflow: hidden;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n}\n\n.e-copy {\n  position: relative;\n  z-index: 1;\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}\n\n.e-fig {\n  width: 200rpx;\n  height: 200rpx;\n  flex: 0 0 200rpx;\n  align-self: center;\n  border-radius: 24rpx;\n  overflow: hidden;\n  background: #F3EFE6;\n  border: 4rpx solid #FFFDF8;\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10);\n}\n\n.e-fig-img {\n  width: 100%;\n  height: 100%;\n  display: block;\n  filter: saturate(0.82) brightness(1.02);\n}\n\n.head-card.head-modern {\n  border-top-color: rgba(126, 154, 154, 0.6);\n}\n\n.e-year {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #A9825E;\n}\n\n.head-modern .e-year {\n  color: #7E9A9A;\n}\n\n.e-title {\n  display: block;\n  margin-top: 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(50rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  line-height: 1.25;\n  color: #1F1D19;\n}\n\n.e-meta {\n  margin-top: 22rpx;\n  display: flex;\n  align-items: center;\n  gap: 18rpx;\n}\n\n.era-chip {\n  display: inline-flex;\n  align-items: center;\n  height: 44rpx;\n  padding: 0 20rpx;\n  border-radius: 22rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A9825E;\n}\n\n.era-chip.chip-modern {\n  border-color: rgba(126, 154, 154, 0.45);\n  color: #7E9A9A;\n}\n\n.e-tags {\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #8C857A;\n}\n\n.body-card {\n  margin-top: 22rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.para {\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.85;\n  letter-spacing: 0.02em;\n  color: #2C2924;\n}\n\n.para + .para {\n  margin-top: 22rpx;\n}\n\n.para.lead {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(25rpx * var(--fs, 1));\n  color: #1F1D19;\n  margin-bottom: 22rpx;\n  padding-bottom: 20rpx;\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\n}\n\n.section-head {\n  margin-top: 34rpx;\n}\n\n.section-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #1F1D19;\n}\n\n.p-list {\n  margin-top: 18rpx;\n}\n\n.p-card {\n  display: flex;\n  align-items: center;\n  gap: 22rpx;\n  margin-bottom: 16rpx;\n  padding: 24rpx 26rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.p-thumb-wrap {\n  position: relative;\n  width: 104rpx;\n  height: 104rpx;\n  flex: 0 0 104rpx;\n  border-radius: 20rpx;\n  overflow: hidden;\n  background: #F3EFE6;\n  border: 4rpx solid #FFFDF8;\n  box-shadow: 0 6rpx 16rpx rgba(90, 70, 50, 0.10);\n}\n\n/* 底层默认图（本地时代细部，秒出）；上层远端专属图加载完淡入。\n   aspectFill：任意比例远端图等比缩放铺满裁切，不拉伸变形。 */\n.p-thumb-bg,\n.p-thumb-img {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  display: block;\n  filter: saturate(0.86) brightness(1.02);\n}\n\n.p-thumb-img {\n  opacity: 0;\n  transition: opacity 0.28s ease;\n}\n\n.p-thumb-img.on {\n  opacity: 1;\n}\n\n.p-info {\n  flex: 1;\n  min-width: 0;\n}\n\n.p-name {\n  display: block;\n  margin-bottom: 4rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(28rpx * var(--fs, 1));\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.p-dates {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #A9825E;\n}\n\n.p-dates.accent-modern {\n  color: #7E9A9A;\n}\n\n.p-roles {\n  display: block;\n  margin-top: 6rpx;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #5F5A52;\n}\n\n.rel-arrow {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 32rpx;\n  color: #A39A8E;\n}\n\n.foot-actions {\n  margin-top: 30rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.ghost-btn {\n  flex: 1;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n.ghost-btn.on {\n  border-color: rgba(163, 74, 62, 0.45);\n  background: rgba(163, 74, 62, 0.06);\n  color: #A34A3E;\n}\n\n.ghost-btn.on.on-modern {\n  border-color: rgba(126, 154, 154, 0.5);\n  background: rgba(126, 154, 154, 0.08);\n  color: #5F7E7E;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n"; });
 __register('/pages/person/person.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
@@ -8510,7 +8616,7 @@ Page('project://pages/person/person.js', {
 });
 
 });
-__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{person}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">人物</text>\n      <view class=\"top-seal\">\n        <text class=\"seal-char\">{{seal}}</text>\n      </view>\n    </view>\n\n    <view class=\"head-card\">\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      <view class=\"p-veil\"></view>\n      <view class=\"p-copy\">\n        <text class=\"p-name\">{{person.name}}</text>\n        <view class=\"p-meta\">\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\n          <text class=\"p-dot\">·</text>\n          <text class=\"p-roles\">{{person.roles}}</text>\n        </view>\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\n          <text>{{person.era}}</text>\n        </view>\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\n          <text class=\"quote-mark\">“</text>\n          <text class=\"quote\">{{person.quote}}</text>\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\n        </view>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\n      <text class=\"section-title\">生平际会 · 相关史事</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\n      <view\n        wx:for=\"{{related}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{person.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
+__register('/pages/person/person.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{person}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">人物</text>\n      <view class=\"top-seal\">\n        <text class=\"seal-char\">{{seal}}</text>\n      </view>\n    </view>\n\n    <view class=\"head-card\">\n      <image class=\"p-bg\" wx:if=\"{{headImg}}\" src=\"{{headImg}}\" mode=\"aspectFit\" binderror=\"onHeadImgErr\"></image>\n      <view class=\"p-veil\"></view>\n      <view class=\"p-copy\">\n        <text class=\"p-name\">{{person.name}}</text>\n        <view class=\"p-meta\">\n          <text class=\"p-dates {{accent === 'modern' ? 'accent-modern' : ''}}\">{{person.dates}}</text>\n          <text class=\"p-dot\">·</text>\n          <text class=\"p-roles\">{{person.roles}}</text>\n        </view>\n        <view class=\"era-chip {{accent === 'modern' ? 'chip-modern' : ''}}\">\n          <text>{{person.era}}</text>\n        </view>\n        <view class=\"quote-block\" wx:if=\"{{person.quote}}\">\n          <text class=\"quote-mark\">“</text>\n          <text class=\"quote\">{{person.quote}}</text>\n          <text class=\"quote-src\">——{{person.quoteSource}}</text>\n        </view>\n      </view>\n    </view>\n\n    <view class=\"body-card\">\n      <view class=\"para\" wx:for=\"{{person.details}}\" wx:key=\"*this\">\n        <text>{{item}}</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{related.length}}\">\n      <text class=\"section-title\">生平际会 · 相关史事</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{related.length}}\">\n      <view\n        wx:for=\"{{related}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{accent === 'modern' && item.mode === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <image class=\"rel-thumb\" wx:if=\"{{item.img}}\" src=\"{{item.img}}\" mode=\"aspectFill\" lazy-load binderror=\"onRelImgErr\" data-id=\"{{item.id}}\"></image>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn {{collected ? (accent === 'modern' ? 'on on-modern' : 'on') : ''}}\" bindtap=\"toggleCollect\">\n        <text>{{collected ? '✓ 已收藏此人物' : '收藏此人物'}}</text>\n      </view>\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{person.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
 __register('/pages/person/person.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  padding: 0 10rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\n  overflow: hidden;\n  transition: transform 0.12s ease, background 0.12s ease;\n}\n\n.back-pressed {\n  transform: scale(0.97);\n  background: rgba(244, 236, 224, 0.96);\n}\n\n.back-icon {\n  position: relative;\n  width: 32rpx;\n  height: 20rpx;\n  flex: 0 0 32rpx;\n}\n\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  border-radius: 1rpx;\n  transform: rotate(45deg);\n}\n\n.back-shaft {\n  position: absolute;\n  left: 7rpx;\n  top: 9rpx;\n  width: 22rpx;\n  height: 2rpx;\n  border-radius: 2rpx;\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\n}\n\n.back-divider {\n  width: 1rpx;\n  height: 18rpx;\n  margin: 0 10rpx 0 5rpx;\n  background: rgba(138, 106, 62, 0.20);\n  flex: 0 0 1rpx;\n}\n\n.back-label {\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 24rpx;\n  line-height: 1;\n  letter-spacing: 0.08em;\n  text-indent: 0.08em;\n  color: #6B5A33;\n  white-space: nowrap;\n}\n\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C857A;\n}\n\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\n.top-seal {\n  position: absolute;\n  right: 200rpx;\n  top: 0;\n  bottom: 0;\n  margin: auto 0;\n  width: 44rpx;\n  height: 48rpx;\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\n  border: 2rpx solid #8B4513;\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\n  /* 透明底色，让宣纸透出 */\n  background: transparent;\n  /* 轻微旋转，模拟手工盖印的不规则 */\n  transform: rotate(-3deg);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  /* 外发光模拟印泥洇散 */\n  box-shadow:\n    0 0 4rpx rgba(139, 69, 19, 0.12),\n    0 0 10rpx rgba(139, 69, 19, 0.06);\n}\n\n.seal-char {\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\n  font-size: 22rpx;\n  font-weight: bold;\n  /* 朱砂印泥色（同「史载」印章） */\n  color: #8B4513;\n  /* 篆书效果：紧凑字距 */\n  letter-spacing: 0.02em;\n  /* 文字描边增强篆刻感 */\n  text-shadow:\n    0 0 1rpx #8B4513,\n    0 0 2rpx rgba(139, 69, 19, 0.25);\n  line-height: 1;\n  /* 轻微压缩，模拟篆书方正感 */\n  transform: scaleX(0.92);\n}\n\n.head-card {\n  position: relative;\n  margin-top: 26rpx;\n  padding: 40rpx 34rpx 34rpx;\n  border-radius: 38rpx;\n  overflow: hidden;\n  background: #FCFBF8;\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n}\n\n.p-bg {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.46;\n  filter: saturate(0.6) brightness(1.04);\n}\n\n.p-veil {\n  position: absolute;\n  left: 0;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0.36) 0%, rgba(252, 251, 248, 0.78) 48%, rgba(252, 251, 248, 0.95) 100%);\n}\n\n.p-copy {\n  position: relative;\n  z-index: 2;\n}\n\n.p-name {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(64rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  line-height: 1.2;\n  color: #1F1D19;\n}\n\n.p-meta {\n  margin-top: 16rpx;\n  display: flex;\n  align-items: center;\n  gap: 14rpx;\n}\n\n.p-dates {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(24rpx * var(--fs, 1));\n  letter-spacing: 0.04em;\n  color: #A9825E;\n}\n\n.p-dates.accent-modern {\n  color: #7E9A9A;\n}\n\n.p-dot {\n  color: #8C857A;\n}\n\n.p-roles {\n  font-size: calc(24rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #5F5A52;\n}\n\n.era-chip {\n  margin-top: 22rpx;\n  display: inline-flex;\n  align-items: center;\n  height: 44rpx;\n  padding: 0 20rpx;\n  border-radius: 22rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.35);\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A9825E;\n}\n\n.era-chip.chip-modern {\n  border-color: rgba(126, 154, 154, 0.45);\n  color: #7E9A9A;\n}\n\n.quote-block {\n  margin-top: 28rpx;\n  padding: 26rpx 26rpx 24rpx;\n  border-left: 4rpx solid rgba(163, 74, 62, 0.4);\n  background: rgba(252, 251, 248, 0.72);\n  border-radius: 0 24rpx 24rpx 0;\n}\n\n.quote-mark {\n  font-family: \"KaiTi\", \"STKaiti\", serif;\n  font-size: 40rpx;\n  line-height: 0.6;\n  color: #A39A8E;\n}\n\n.quote {\n  display: block;\n  margin-top: 8rpx;\n  font-family: \"KaiTi\", \"STKaiti\", serif;\n  font-size: calc(28rpx * var(--fs, 1));\n  line-height: 1.7;\n  color: #1F1D19;\n}\n\n.quote-src {\n  display: block;\n  margin-top: 12rpx;\n  font-family: \"KaiTi\", \"STKaiti\", serif;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #8C857A;\n  text-align: right;\n}\n\n.body-card {\n  margin-top: 22rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.para {\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.85;\n  letter-spacing: 0.02em;\n  color: #2C2924;\n}\n\n.para + .para {\n  margin-top: 22rpx;\n}\n\n.section-head {\n  margin-top: 34rpx;\n}\n\n.section-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #1F1D19;\n}\n\n.rel-list {\n  margin-top: 18rpx;\n}\n\n.rel-card {\n  display: flex;\n  align-items: center;\n  gap: 20rpx;\n  margin-bottom: 16rpx;\n  padding: 24rpx 26rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.rel-year {\n  flex: 0 0 auto;\n  white-space: nowrap;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  color: #A9825E;\n}\n\n.rel-year.accent-modern {\n  color: #7E9A9A;\n}\n\n.rel-body {\n  flex: 1;\n  min-width: 0;\n}\n\n.rel-title {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.rel-desc {\n  display: block;\n  margin-top: 6rpx;\n  font-size: calc(20rpx * var(--fs, 1));\n  line-height: 1.55;\n  color: #5F5A52;\n}\n\n.rel-thumb {\n  width: 80rpx;\n  height: 80rpx;\n  flex: 0 0 80rpx;\n  display: block;\n  border-radius: 18rpx;\n  background: #F3EFE6;\n  border: 1rpx solid rgba(70, 58, 45, 0.08);\n  filter: saturate(0.88) brightness(1.01);\n}\n\n.rel-arrow {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 32rpx;\n  color: #A39A8E;\n}\n\n.foot-actions {\n  margin-top: 30rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.ghost-btn {\n  flex: 1;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n.ghost-btn.on {\n  border-color: rgba(163, 74, 62, 0.45);\n  background: rgba(163, 74, 62, 0.06);\n  color: #A34A3E;\n}\n\n.ghost-btn.on.on-modern {\n  border-color: rgba(126, 154, 154, 0.5);\n  background: rgba(126, 154, 154, 0.08);\n  color: #5F7E7E;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n"; });
 __register('/pages/period/period.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
@@ -8666,7 +8772,7 @@ Page('project://pages/period/period.js', {
 });
 
 });
-__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{period}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">朝代</text>\n      <view class=\"top-seal\">\n        <text class=\"seal-char\">{{seal}}</text>\n      </view>\n    </view>\n\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"hero-band\">\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\n        <view class=\"hero-shade\"></view>\n        <view class=\"hero-copy\">\n          <text class=\"p-name\">{{period.name}}</text>\n          <text class=\"p-years\">{{period.yearText}}</text>\n        </view>\n        <text class=\"hero-title\">{{period.title}}</text>\n      </view>\n      <text class=\"p-desc\">{{period.desc}}</text>\n    </view>\n\n    <view class=\"body-card\" wx:if=\"{{span}}\">\n      <view class=\"para\">\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\n        <text>进时间轴看这个时代的脉络</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\n      <text class=\"section-title\">这个时代的史事</text>\n      <text class=\"section-count\">{{events.length}} 条</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\n      <view\n        wx:for=\"{{events}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{period.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
+__register('/pages/period/period.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\" wx:if=\"{{period}}\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">朝代</text>\n      <view class=\"top-seal\">\n        <text class=\"seal-char\">{{seal}}</text>\n      </view>\n    </view>\n\n    <view class=\"head-card {{period.id === 'modern' ? 'head-modern' : ''}}\">\n      <view class=\"hero-band\">\n        <image class=\"hero-img\" src=\"{{period.img}}\" mode=\"aspectFill\"></image>\n        <view class=\"hero-shade\"></view>\n        <view class=\"hero-copy\">\n          <text class=\"p-name\">{{period.name}}</text>\n          <text class=\"p-years\">{{period.yearText}}</text>\n        </view>\n        <text class=\"hero-title\">{{period.title}}</text>\n      </view>\n      <text class=\"p-desc\">{{period.desc}}</text>\n    </view>\n\n    <view class=\"body-card\" wx:if=\"{{span}}\">\n      <view class=\"para\">\n        <text>{{span}}，共录史事 {{events.length}} 条；点击下方条目可看正文与史料。</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\" wx:if=\"{{!events.length}}\">\n      <view class=\"time-btn\" bindtap=\"goTimeline\">\n        <text>进时间轴看这个时代的脉络</text>\n      </view>\n    </view>\n\n    <view class=\"section-head\" wx:if=\"{{events.length}}\">\n      <text class=\"section-title\">这个时代的史事</text>\n      <text class=\"section-count\">{{events.length}} 条</text>\n    </view>\n    <view class=\"rel-list\" wx:if=\"{{events.length}}\">\n      <view\n        wx:for=\"{{events}}\"\n        wx:key=\"id\"\n        class=\"rel-card\"\n        data-id=\"{{item.id}}\"\n        bindtap=\"goEvent\"\n      >\n        <text class=\"rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}\">{{item.yearText}}</text>\n        <view class=\"rel-body\">\n          <text class=\"rel-title\">{{item.title}}</text>\n          <text class=\"rel-desc\">{{item.desc}}</text>\n        </view>\n        <text class=\"rel-arrow\">›</text>\n      </view>\n    </view>\n\n    <view class=\"foot-actions\">\n      <view class=\"ghost-btn\" bindtap=\"openShare\">\n        <text>共此卷</text>\n      </view>\n    </view>\n\n    <view class=\"source-line\">史料 · {{period.source}}</view>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
 __register('/pages/period/period.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  padding: 0 10rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\n  overflow: hidden;\n  transition: transform 0.12s ease, background 0.12s ease;\n}\n\n.back-pressed {\n  transform: scale(0.97);\n  background: rgba(244, 236, 224, 0.96);\n}\n\n.back-icon {\n  position: relative;\n  width: 32rpx;\n  height: 20rpx;\n  flex: 0 0 32rpx;\n}\n\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  border-radius: 1rpx;\n  transform: rotate(45deg);\n}\n\n.back-shaft {\n  position: absolute;\n  left: 7rpx;\n  top: 9rpx;\n  width: 22rpx;\n  height: 2rpx;\n  border-radius: 2rpx;\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\n}\n\n.back-divider {\n  width: 1rpx;\n  height: 18rpx;\n  margin: 0 10rpx 0 5rpx;\n  background: rgba(138, 106, 62, 0.20);\n  flex: 0 0 1rpx;\n}\n\n.back-label {\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 24rpx;\n  line-height: 1;\n  letter-spacing: 0.08em;\n  text-indent: 0.08em;\n  color: #6B5A33;\n  white-space: nowrap;\n}\n\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C857A;\n}\n\n/* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */\n.top-seal {\n  position: absolute;\n  right: 200rpx;\n  top: 0;\n  bottom: 0;\n  margin: auto 0;\n  width: 44rpx;\n  height: 48rpx;\n  /* 不规则边框：用多重边框模拟篆刻刀痕的参差感 */\n  border: 2rpx solid #8B4513;\n  border-radius: 6rpx 10rpx 8rpx 12rpx;\n  /* 透明底色，让宣纸透出 */\n  background: transparent;\n  /* 轻微旋转，模拟手工盖印的不规则 */\n  transform: rotate(-3deg);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  /* 外发光模拟印泥洇散 */\n  box-shadow:\n    0 0 4rpx rgba(139, 69, 19, 0.12),\n    0 0 10rpx rgba(139, 69, 19, 0.06);\n}\n\n.seal-char {\n  font-family: \"KaiTi\", \"STKaiti\", \"FangSong\", \"SimSun\", serif;\n  font-size: 22rpx;\n  font-weight: bold;\n  /* 朱砂印泥色（同「史载」印章） */\n  color: #8B4513;\n  /* 篆书效果：紧凑字距 */\n  letter-spacing: 0.02em;\n  /* 文字描边增强篆刻感 */\n  text-shadow:\n    0 0 1rpx #8B4513,\n    0 0 2rpx rgba(139, 69, 19, 0.25);\n  line-height: 1;\n  /* 轻微压缩，模拟篆书方正感 */\n  transform: scaleX(0.92);\n}\n\n.head-card {\n  margin-top: 26rpx;\n  padding: 24rpx 24rpx 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n}\n\n.head-card.head-modern {\n  border-top-color: rgba(126, 154, 154, 0.6);\n}\n\n.hero-band {\n  position: relative;\n  height: 300rpx;\n  border-radius: 30rpx;\n  overflow: hidden;\n}\n\n.hero-img {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  display: block;\n}\n\n.hero-shade {\n  position: absolute;\n  left: 0;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));\n}\n\n.hero-copy {\n  position: absolute;\n  left: 28rpx;\n  bottom: 24rpx;\n  z-index: 2;\n}\n\n.p-name {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(52rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  line-height: 1.1;\n  color: #FCFBF8;\n}\n\n.p-years {\n  display: block;\n  margin-top: 10rpx;\n  font-size: calc(21rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: rgba(252, 251, 248, 0.86);\n}\n\n.hero-title {\n  position: absolute;\n  right: 24rpx;\n  bottom: 24rpx;\n  z-index: 2;\n  height: 44rpx;\n  padding: 0 18rpx;\n  display: inline-flex;\n  align-items: center;\n  border-radius: 22rpx;\n  background: rgba(252, 251, 248, 0.92);\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n.p-desc {\n  display: block;\n  margin-top: 24rpx;\n  padding: 0 10rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.7;\n  letter-spacing: 0.02em;\n  color: #5F5A52;\n}\n\n.body-card {\n  margin-top: 22rpx;\n  padding: 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.para {\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.85;\n  letter-spacing: 0.02em;\n  color: #2C2924;\n}\n\n.para + .para {\n  margin-top: 22rpx;\n}\n\n.para.lead {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(25rpx * var(--fs, 1));\n  color: #1F1D19;\n}\n\n.section-head {\n  margin-top: 34rpx;\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n}\n\n.section-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #1F1D19;\n}\n\n.section-count {\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #8C857A;\n}\n\n.rel-list {\n  margin-top: 18rpx;\n}\n\n.rel-card {\n  display: flex;\n  align-items: center;\n  gap: 22rpx;\n  margin-bottom: 16rpx;\n  padding: 24rpx 26rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.rel-year {\n  flex: 0 0 auto;\n  white-space: nowrap;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(21rpx * var(--fs, 1));\n  letter-spacing: 0.02em;\n  color: #A9825E;\n}\n\n.rel-year.accent-modern {\n  color: #7E9A9A;\n}\n\n.rel-body {\n  flex: 1;\n  min-width: 0;\n}\n\n.rel-title {\n  display: block;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(25rpx * var(--fs, 1));\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.rel-desc {\n  display: block;\n  margin-top: 8rpx;\n  font-size: calc(20rpx * var(--fs, 1));\n  line-height: 1.6;\n  color: #8C857A;\n}\n\n.rel-arrow {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: 32rpx;\n  color: #A39A8E;\n}\n\n.source-line {\n  margin-top: 30rpx;\n  font-size: calc(19rpx * var(--fs, 1));\n  letter-spacing: 0.03em;\n  color: #A39A8E;\n}\n\n.foot-actions {\n  margin-top: 30rpx;\n}\n\n.time-btn {\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n\n/* 底部操作行（分享，与 event 页 ghost-btn 同款） */\n.foot-actions {\n  margin-top: 30rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.ghost-btn {\n  flex: 1;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 38rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n}\n"; });
 __register('/pages/search/search.js', function (require, module, exports) {
 const hd = require('../../utils/historyData.js');
@@ -9775,7 +9881,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
 });
 
 });
-__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <view class=\"head-cover-wrap\">\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n          <view class=\"head-cover-fade\"></view>\n        </view>\n        <view class=\"head-body\">\n          <view class=\"head-row\">\n            <view class=\"head-copy\">\n              <text class=\"head-kicker\">{{kicker}}</text>\n              <text class=\"head-title\">{{item.title}}</text>\n            </view>\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\n            </view>\n          </view>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view class=\"fav-row\">\n        <view class=\"fav-btn {{collected ? 'on' : ''}}\" bindtap=\"toggleCollect\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>\n        </view>\n        <view class=\"fav-btn\" bindtap=\"openShare\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>共此卷</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\n              <text class=\"section-label\">{{item.label}}</text>\n              <text class=\"section-rule\"></text>\n            </view>\n            <text\n              wx:for=\"{{item.paras}}\"\n              wx:key=\"id\"\n              class=\"section-para\"\n            >{{item.text}}</text>\n          </view>\n        </view>\n\n        <block wx:elif=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\n        <view class=\"facts-head\">\n          <text class=\"facts-title\">资料卡</text>\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\n        </view>\n        <view class=\"fact-grid\">\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\n            <text class=\"fact-value\">{{item.value}}</text>\n          </view>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 阅史记资料库</view>\n    </block>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else canvas-id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
+__register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\n        <view class=\"back-icon\">\n          <view class=\"back-chevron\"></view>\n          <view class=\"back-shaft\"></view>\n        </view>\n        <view class=\"back-divider\"></view>\n        <text class=\"back-label\">返回</text>\n      </view>\n      <text class=\"top-title\">资料库</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\n    </view>\n\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\n      <text class=\"state-title\">正在打开资料</text>\n      <text class=\"state-desc\">首次加载需要片刻。</text>\n    </view>\n\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\n      <text class=\"state-title\">{{error}}</text>\n      <text class=\"state-action\">点此重试</text>\n    </view>\n\n    <block wx:else>\n      <view class=\"head-card\">\n        <view class=\"head-cover-wrap\">\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\"></image>\n          <view class=\"head-cover-fade\"></view>\n        </view>\n        <view class=\"head-body\">\n          <view class=\"head-row\">\n            <view class=\"head-copy\">\n              <text class=\"head-kicker\">{{kicker}}</text>\n              <text class=\"head-title\">{{item.title}}</text>\n            </view>\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\n            </view>\n          </view>\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\n        </view>\n      </view>\n\n      <view class=\"fav-row\">\n        <view class=\"fav-btn {{collected ? 'on' : ''}}\" bindtap=\"toggleCollect\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>\n        </view>\n        <view class=\"fav-btn\" bindtap=\"openShare\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\n          <text>共此卷</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\n          <text>{{item.summary}}</text>\n        </view>\n\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\n              <text class=\"section-label\">{{item.label}}</text>\n              <text class=\"section-rule\"></text>\n            </view>\n            <text\n              wx:for=\"{{item.paras}}\"\n              wx:key=\"id\"\n              class=\"section-para\"\n            >{{item.text}}</text>\n          </view>\n        </view>\n\n        <block wx:elif=\"{{showBody}}\">\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\n            <view wx:else class=\"para\">\n              <text>{{item.text}}</text>\n            </view>\n          </block>\n        </block>\n\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\n          <text class=\"trans-title\">译文</text>\n          <text class=\"trans-text\">{{item.translation}}</text>\n        </view>\n      </view>\n\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\n        <view class=\"facts-head\">\n          <text class=\"facts-title\">资料卡</text>\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\n        </view>\n        <view class=\"fact-grid\">\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\n            <text class=\"fact-value\">{{item.value}}</text>\n          </view>\n        </view>\n      </view>\n\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 阅史记资料库</view>\n    </block>\n\n  </view>\n\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\n      <view class=\"ss-panel\">\n        <view class=\"ss-grip\"></view>\n        <view class=\"ss-head\">\n          <text class=\"ss-title\">共此卷</text>\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\n        </view>\n        <view class=\"ss-qr-wrap\">\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\n          <canvas wx:else type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n        </view>\n        <view class=\"ss-actions\">\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\n        </view>\n      </view>\n    </view>\n</view>\n"; });
 __register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg {\n  position: fixed;\n  left: 0;\n  top: 0;\n  z-index: 0;\n  width: 100%;\n  height: 100%;\n  opacity: 0.96;\n}\n\n.screen {\n  position: relative;\n  z-index: 2;\n  padding: 0 46rpx 120rpx;\n}\n\n.topbar {\n  position: relative;\n  margin-top: 88rpx;\n  height: 76rpx;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n\n.back {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  padding: 0 10rpx;\n  border-radius: 28rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\n  overflow: hidden;\n  transition: transform 0.12s ease, background 0.12s ease;\n}\n\n.back-pressed {\n  transform: scale(0.97);\n  background: rgba(244, 236, 224, 0.96);\n}\n\n.back-icon {\n  position: relative;\n  width: 32rpx;\n  height: 20rpx;\n  flex: 0 0 32rpx;\n}\n\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  border-radius: 1rpx;\n  transform: rotate(45deg);\n}\n\n.back-shaft {\n  position: absolute;\n  left: 7rpx;\n  top: 9rpx;\n  width: 22rpx;\n  height: 2rpx;\n  border-radius: 2rpx;\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\n}\n\n.back-divider {\n  width: 1rpx;\n  height: 18rpx;\n  margin: 0 10rpx 0 5rpx;\n  background: rgba(138, 106, 62, 0.20);\n  flex: 0 0 1rpx;\n}\n\n.back-label {\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\n  font-size: 24rpx;\n  line-height: 1;\n  letter-spacing: 0.08em;\n  text-indent: 0.08em;\n  color: #6B5A33;\n  white-space: nowrap;\n}\n\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  max-width: 360rpx;\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #8C857A;\n}\n\n.top-seal {\n  position: absolute;\n  right: 200rpx;\n  top: 0;\n  bottom: 0;\n  margin: auto 0;\n  width: 44rpx;\n  height: 50rpx;\n  display: block;\n}\n\n.head-card {\n  margin-top: 28rpx;\n  padding: 0;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\n  overflow: hidden;\n}\n\n.head-cover-wrap {\n  position: relative;\n  height: 160rpx;\n  background: #E8E2D6;\n  overflow: hidden;\n}\n\n.head-cover {\n  display: block;\n  width: 100%;\n  height: 100%;\n}\n\n.head-cover-fade {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  height: 54rpx;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\n}\n\n.head-body {\n  padding: 28rpx 34rpx 32rpx;\n}\n\n/* 条目画片：右侧装裱小画（匹配主站专属图或资料库自抓图），无图时整行退化为纯文字 */\n.head-row {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 22rpx;\n}\n\n.head-copy {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.head-fig {\n  flex: 0 0 auto;\n  width: 164rpx;\n  height: 164rpx;\n  padding: 10rpx;\n  box-sizing: border-box;\n  border-radius: 12rpx;\n  background: #FFFFFF;\n  border: 1rpx solid rgba(169, 130, 94, 0.28);\n  box-shadow: 0 10rpx 22rpx rgba(90, 70, 50, 0.08);\n}\n\n.head-fig-img {\n  width: 100%;\n  height: 100%;\n  border-radius: 6rpx;\n  background: #F3EFE6;\n}\n\n.head-kicker {\n  display: inline-block;\n  padding: 5rpx 13rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\n  border-radius: 999rpx;\n  background: #F7F2E9;\n  font-size: calc(16rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #8C6A45;\n}\n\n.head-title {\n  display: block;\n  margin-top: 16rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(40rpx * var(--fs, 1));\n  line-height: 1.42;\n  letter-spacing: 0.04em;\n  color: #1F1D19;\n}\n\n.head-meta {\n  display: block;\n  margin-top: 18rpx;\n  padding-top: 16rpx;\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\n  font-size: calc(19rpx * var(--fs, 1));\n  line-height: 1.5;\n  color: #8C857A;\n}\n\n.body-card {\n  margin-top: 20rpx;\n  padding: 32rpx 32rpx 34rpx;\n  border-radius: 34rpx;\n  background: #FCFBF8;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\n}\n\n.sections {\n  display: block;\n}\n\n.section {\n  margin-bottom: 30rpx;\n}\n\n.section:last-child {\n  margin-bottom: 0;\n}\n\n.section-head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 14rpx;\n}\n\n.section-label {\n  flex: none;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.12em;\n  color: #A34A3E;\n}\n\n.section-rule {\n  display: block;\n  flex: 1;\n  height: 1rpx;\n  margin-left: 14rpx;\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\n}\n\n.section-para {\n  display: block;\n  margin-bottom: 16rpx;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.9;\n  letter-spacing: 0.015em;\n  color: #2C2924;\n  text-align: justify;\n}\n\n.section-para:last-child {\n  margin-bottom: 0;\n}\n\n.section.verse .section-para {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 2;\n  color: #1F1D19;\n}\n\n.section.note .section-para {\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.82;\n  color: #5F5A52;\n}\n\n.lead {\n  margin-bottom: 26rpx;\n  padding: 20rpx 22rpx;\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\n  border-radius: 0 18rpx 18rpx 0;\n  background: #F7F2E9;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.75;\n  color: #5F5A52;\n}\n\n.para {\n  margin-bottom: 22rpx;\n  font-size: calc(23rpx * var(--fs, 1));\n  line-height: 1.9;\n  letter-spacing: 0.015em;\n  color: #2C2924;\n  text-align: justify;\n}\n\n.para:last-child {\n  margin-bottom: 0;\n}\n\n.para-head {\n  display: block;\n  margin: 30rpx 0 14rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n  color: #A34A3E;\n}\n\n.para-head:first-child {\n  margin-top: 0;\n}\n\n.translation {\n  margin-top: 28rpx;\n  padding-top: 24rpx;\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\n}\n\n.trans-title {\n  display: block;\n  margin-bottom: 10rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #A9825E;\n}\n\n.trans-text {\n  display: block;\n  font-size: calc(22rpx * var(--fs, 1));\n  line-height: 1.85;\n  color: #5F5A52;\n}\n\n.facts {\n  margin-top: 22rpx;\n  padding: 26rpx 30rpx 20rpx;\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\n  border-radius: 28rpx;\n  background: #F3EFE6;\n}\n\n.facts-head {\n  display: flex;\n  align-items: baseline;\n  justify-content: space-between;\n  margin-bottom: 8rpx;\n}\n\n.facts-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(22rpx * var(--fs, 1));\n  letter-spacing: 0.1em;\n  color: #6B5A33;\n}\n\n.facts-count {\n  font-size: calc(16rpx * var(--fs, 1));\n  color: #A39A8E;\n}\n\n.fact-grid {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0 -8rpx;\n}\n\n.fact-item {\n  box-sizing: border-box;\n  width: 50%;\n  min-width: 0;\n  padding: 10rpx 8rpx;\n}\n\n.fact-item.wide {\n  width: 100%;\n}\n\n.fact-key {\n  display: block;\n  font-size: calc(16rpx * var(--fs, 1));\n  letter-spacing: 0.08em;\n  color: #A39A8E;\n}\n\n.fact-value {\n  display: block;\n  margin-top: 3rpx;\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.55;\n  color: #3A342C;\n}\n\n.source-line {\n  margin-top: 28rpx;\n  padding: 18rpx 22rpx;\n  border-radius: 20rpx;\n  background: rgba(243, 239, 230, 0.58);\n  font-size: calc(17rpx * var(--fs, 1));\n  line-height: 1.6;\n  letter-spacing: 0.03em;\n  color: #8C857A;\n}\n\n.state-card {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 12rpx;\n  margin-top: 24rpx;\n  padding: 70rpx 30rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n  text-align: center;\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\n}\n\n.state-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  color: #5F5A52;\n}\n\n.state-desc {\n  font-size: calc(18rpx * var(--fs, 1));\n  line-height: 1.6;\n  color: #A39A8E;\n}\n\n.state-action {\n  margin-top: 4rpx;\n  font-size: calc(20rpx * var(--fs, 1));\n  color: #A34A3E;\n}\n\n/* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */\n.fav-row {\n  margin-top: 20rpx;\n  display: flex;\n  gap: 16rpx;\n}\n\n.fav-btn {\n  flex: 1;\n  height: 72rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\n  border-radius: 36rpx;\n  background: rgba(252, 251, 248, 0.6);\n  font-size: calc(23rpx * var(--fs, 1));\n  letter-spacing: 0.05em;\n  color: #5F5A52;\n  transition: transform 0.18s ease;\n}\n\n.fav-btn.on {\n  border-color: rgba(163, 74, 62, 0.45);\n  background: rgba(163, 74, 62, 0.06);\n  color: #A34A3E;\n}\n\n.fav-pressed {\n  transform: scale(0.98);\n}\n"; });
 
 __register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\n  background: #F6F1EA;\n  color: #1F1D19;\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\n  -webkit-font-smoothing: antialiased;\n}\n\nview, text, image {\n  box-sizing: border-box;\n}\n\n.serif {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n}\n\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\n.tabbar {\n  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 10;\n  min-height: 128rpx;\n  padding: 16rpx 20rpx 0;\n  padding-bottom: constant(safe-area-inset-bottom);\n  padding-bottom: env(safe-area-inset-bottom);\n  display: flex;\n  background: rgba(250, 248, 243, 0.96);\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\n}\n\n.tab {\n  flex: 1;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 10rpx;\n  font-size: 20rpx;\n  letter-spacing: 0.03em;\n  color: #7B746A;\n}\n\n.tab-icon {\n  width: 44rpx;\n  height: 44rpx;\n  display: block;\n  opacity: 0.52;\n}\n\n.tab.active {\n  color: #211E1A;\n}\n\n.tab.active .tab-icon {\n  opacity: 1;\n}\n\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\n.fs-s { --fs: 0.9; }\n.fs-m { --fs: 1; }\n.fs-l { --fs: 1.14; }\n.fs-xl { --fs: 1.28; }\n\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\n@media (max-width: 360px) {\n  .page .top-seal { display: none; }\n  .page .top-title { left: 56%; }\n}\n\n/* 分享面板（详情页通用，utils/qrshare.js；视觉对齐 profile 的 info sheet） */\n.ss-layer {\n  position: fixed;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  z-index: 120;\n}\n\n.ss-mask {\n  position: absolute;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  background: rgba(31, 29, 25, 0.3);\n  animation: ssFade 0.18s ease both;\n}\n\n.ss-panel {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  max-height: 86vh;\n  overflow-y: auto;\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\n  background: #FCFBF8;\n  border-radius: 42rpx 42rpx 0 0;\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\n  animation: ssUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\n}\n\n.ss-grip {\n  width: 66rpx;\n  height: 6rpx;\n  margin: 4rpx auto 14rpx;\n  border-radius: 3rpx;\n  background: #E6E0D4;\n}\n\n.ss-head {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 6rpx 8rpx 16rpx;\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\n}\n\n.ss-title {\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(33rpx * var(--fs, 1));\n  letter-spacing: 0.07em;\n  color: #1F1D19;\n}\n\n.ss-close {\n  font-size: 40rpx;\n  line-height: 1;\n  padding: 6rpx 12rpx;\n  color: #8C857A;\n}\n\n.ss-qr-wrap {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  margin-bottom: 34rpx;\n}\n\n.ss-canvas {\n  width: 260px;\n  height: 424px;\n  border-radius: 20rpx;\n  background: #FFFFFF;\n  border: 1px solid rgba(70, 58, 45, 0.12);\n}\n\n\n/* open-type=\"share\" 的原生 button 与普通 view 按钮同款 reset；\n   两枚按钮同一行等宽，风格对齐返回胶囊（暖纸渐变 + 赭金细边 + 内高光 + 楷体字） */\n.ss-actions {\n  display: flex;\n  gap: 16rpx;\n  margin-top: 4rpx;\n  margin-bottom: 8rpx;\n}\n\n.ss-btn {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: auto;\n  height: 78rpx;\n  margin: 0;\n  padding: 0;\n  border-radius: 39rpx;\n  font-family: \"Kaiti SC\", \"STKaiti\", \"KaiTi\", serif;\n  font-size: calc(26rpx * var(--fs, 1));\n  letter-spacing: 0.14em;\n  line-height: 1;\n  box-sizing: border-box;\n}\n\n.ss-btn::after {\n  border: none;\n}\n\n.ss-btn-primary {\n  background: linear-gradient(180deg, #2C2822, #1F1D19);\n  color: #F6F1EA;\n  border: 1rpx solid rgba(190, 150, 90, 0.45);\n  box-shadow: inset 0 1rpx 0 rgba(246, 241, 234, 0.16), 0 6rpx 16rpx rgba(31, 29, 25, 0.18);\n}\n\n.ss-btn-ghost {\n  background: linear-gradient(180deg, #F3EADA, #EFE2CC);\n  color: #5F5A52;\n  border: 1rpx solid rgba(150, 110, 60, 0.34);\n  box-shadow: inset 0 1rpx 0 rgba(255, 252, 246, 0.65);\n}\n\n@keyframes ssFade {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n@keyframes ssUp {\n  from { transform: translateY(42%); opacity: 0.4; }\n  to { transform: translateY(0); opacity: 1; }\n}\n"; });

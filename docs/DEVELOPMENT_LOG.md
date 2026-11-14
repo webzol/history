@@ -2106,3 +2106,17 @@ miniprogram/data/history.js
 - selftest：canvas mock getImageInfo 加 wxacode URL 分支（codeFail 开关）+ wx.request 加 idx 清单桩；新增 37 断言——scene 编解码 round-trip（含超限 hash、非法拒绝）、mergeScene 透传/补参、codeUrlOf 四页分组、altCodeUrl、resolveIndex 命中/缓存/未命中、person 页扫码 onLoad 等价、drawPoster 双分支（码图 drawImage / 本地二维码模块填充）。
 - 验证：`node tools/gen_wxacode.js --dry` 清单 39,280 张与资料库统计逐项吻合；`node tools/selftest.js` PASS 1940 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包。
 - 遗留：① 用户需在 GitHub Secrets 配 `WX_APPSECRET` 并手动触发 workflow 完成真码生成（首跑按日志提示完成管理员确认）；② 真机扫海报太阳码验收四类页面直达（重点抽验 figures/emperors 超限 hash 条目与 cards 分类条目）；③ 主包余量仅 7KB，新增主包内容前必须先核对体积；④ 数据下线的码图需 `--prune` 清理（workflow 默认不带）。
+
+## 2026-11-14 · 分享海报高清化：canvas 2d 迁移 + 宣纸纹理统一
+
+- 需求：用户反馈海报模糊、文字与界面元素需高清；背景要与小程序整体一致用宣纸。
+- **模糊根因**：旧版 canvas 的绘制缓冲 = 元素 CSS 尺寸 × 设备像素比，随设备浮动——低像素比设备/工具上 260×424 缓冲被 3 倍拉伸导出成 780px，必然发虚。
+- **canvas 2d 迁移（utils/qrshare.js 重构）**：`type="2d"` + 固定 4.5 倍缓冲（1170×1908，与 dpr 无关），全部绘制坐标按 260×424 逻辑书写、`ctx.scale(4.5)` 一次放大；导出传节点本身按缓冲原生分辨率（相册里 1170×1908 全高清）。旧 API 的 setFillStyle/setFontSize/setTextAlign → fillStyle/font/textAlign 属性（fontSize 并入 font 字符串，字体栈与 app.wxss 同源：标题宋体/名句楷体），删除 ctx.draw()（2d 即时渲染）。
+- **节点获取改为每次绘制重新查询**：`getCanvasNode`（SelectorQuery node）→ `frameCanvas`（设缓冲+scale）。不做跨绘制缓存——真机 wx:if 节点持久、查询开销可忽略；**harness 的 setData 是整页 innerHTML 重建，canvas 元素会被换掉**，缓存节点会画到已分离元素上（曾致预览白板）。save() 同样查询节点，缓冲尺寸不符时先重画一帧再导出，避免导出空白。
+- **图像装载**：2d drawImage 需要 image 对象 → `loadCanvasImg` 走 `canvas.createImage()`（本地图/远端图均支持，不受域名白名单限制），模块级按 src 缓存（失败记 ok:false 不重试）+ `resetImgs` 供测试重置；题图/太阳码/印章/宣纸/兜底卷首五类图统一走它。绘制中只读缓存（`peekImg`），加载统一在 `preloadPosterImgs` 预取步骤发起、就绪后触发下一轮重绘——消除"同步加载回调→递归重绘"导致的同帧多层互相覆盖。
+- **宣纸纹理统一**：卷面先铺 #F6F1EA 底色，再 aspectFill 居中裁切绘入与全站页面同源的 `assets/paper-bg.jpg`（clip 防溢出）——海报卷面与各页 `<image class="paper-bg">` 同一张图同一铺法，零新增资产零体积成本。
+- **四页 wxml**：`<canvas canvas-id>` → `<canvas type="2d" id>`（person/event/period/archive-detail）。
+- **mock/harness 升级**：selftest 的 createCanvasContext 旧桩 → createSelectorQuery + mock 节点（计数 ctx：fillRect→fills/fillText→texts/drawImage→images 逐次更新 mockPoster，2d 无 draw()）+ createImage 同步 onload（netFail 远端失败 / codeFail 太阳码失败开关）；canvasToTempFilePath 桩改校验 {canvas} 签名。浏览器 harness 桥从「旧 API→DOM canvas」改为「SelectorQuery→真实 canvas 节点 + createImage 包装原生 Image（实例上拦截 src 做仓库路径映射；包装对象会被原生 drawImage 拒绝，曾致预览降级）」。
+- **兜底图 2× 重生成——评估后跳过**：share-cover-fallback 1.7× 放大可接受；主包余量仅 7KB 且本机无 KaiTi 字体（Songti 代替会改变定稿视觉），收益不抵风险。
+- 验证：`node tools/selftest.js` PASS 1940 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；`preview_shots.js` 35 张全过——浏览器实测海报：立轴/宣纸纹理（像素方差确认）/题图 contain/楷体名句/二维码/史载印全部正确，canvas 缓冲 1170×1908 零报错；主包 2044KB / 2048KB（余量 4KB）。
+- 遗留：① 真机核对 4.5 倍缓冲的绘制性能与导出清晰度（低端机首绘 1170×1908 内存约 9MB，可接受）；② 主包余量仅 4KB——新增主包内容前必须先核对体积；③ 太阳码图就绪后海报自动由本地二维码切换为太阳码（Actions 码图合入后生效）。
