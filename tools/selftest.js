@@ -111,6 +111,7 @@ const wx = {
       moveTo() { return this; },
       lineTo() { return this; },
       quadraticCurveTo() { return this; },
+      arc() { return this; },
       closePath() { return this; },
       fill() { return this; },
       fillRect() { fills += 1; return this; },
@@ -125,13 +126,14 @@ const wx = {
       }
     };
   },
-  // 远端题图走 getImageInfo（不受域名白名单限制）：netFail 开关控制失败场景
+  // 题图统一走 getImageInfo（contain 展示需要宽高）：netFail 开关控制远端失败场景
   getImageInfo(opts) {
-    if (mockQr.netFail) {
+    const src = (opts && opts.src) || '';
+    if (mockQr.netFail && src.indexOf('http') === 0) {
       if (opts.fail) opts.fail({ errMsg: 'getImageInfo:fail' });
       return;
     }
-    if (opts.success) opts.success({ path: 'tmp://img.png', width: 360, height: 360 });
+    if (opts.success) opts.success({ path: src.indexOf('http') === 0 ? 'tmp://img.png' : src, width: 480, height: 320 });
   },
   canvasToTempFilePath(opts) {
     if (mockQr.exportFail) {

@@ -99,6 +99,7 @@
         moveTo: function (x, y) { if (ctx) ctx.moveTo(x, y); return this; },
         lineTo: function (x, y) { if (ctx) ctx.lineTo(x, y); return this; },
         quadraticCurveTo: function (cpx, cpy, x, y) { if (ctx) ctx.quadraticCurveTo(cpx, cpy, x, y); return this; },
+        arc: function (x, y, r, a0, a1) { if (ctx) ctx.arc(x, y, r, a0, a1); return this; },
         closePath: function () { if (ctx) ctx.closePath(); return this; },
         fill: function () { if (ctx) ctx.fill(); return this; },
         fillRect: function (x, y, w, h) { if (ctx) ctx.fillRect(x, y, w, h); return this; },
@@ -129,10 +130,14 @@
       }
       return ret;
     },
-    // 远端题图走 getImageInfo（qrshare 用，不受域名白名单限制）：映射仓库本地文件
+    // 题图统一走 getImageInfo（contain 需要宽高）：远端专属图映射仓库本地文件
     getImageInfo: function (o) {
       var url = (o && o.src) || '';
       var rel = url.split('/miniprogram/')[1];
+      if (url.indexOf('http') !== 0) {
+        if (o && o.success) o.success({ path: url, width: 480, height: 320 });
+        return;
+      }
       if (rel) {
         if (o && o.success) o.success({ path: '../../miniprogram/' + rel, width: 360, height: 360 });
         return;

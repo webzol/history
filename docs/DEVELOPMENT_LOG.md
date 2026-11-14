@@ -2077,3 +2077,14 @@ miniprogram/data/history.js
 - 体积：主包 2029→2039KB（余量 9KB，2 倍分辨率控制住体积；3 倍版曾 13.5KB）。
 - 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`node tools/build_preview.js` 重打包；35 张截图全过；兜底图视觉单独核对。
 - 遗留：主包余量 9KB——新增主包资产前必须先核对体积（见 AGENTS 体积预算条款）。
+
+## 2026-11-14 · 海报改版立轴挂画：人物图完整展示 + 底部虚化渐隐 + 绫边天地杆
+
+- 需求：更古风；人物图不要变形，改成完整展示 + 底部虚化的状态；海报边缘做出卷轴质感。
+- **立轴挂画形态（drawPoster 重排）**：天杆/地杆（深木色横杆，地杆两端轴头圆点 `ctx.arc`）+ 左右绫边（暗褐绢色 12px + 内侧赭金线）+ 宣纸卷面（236px 宽）——传统立轴结构。
+- **人物图完整展示不变形**：drawCover 从 cover 裁中带改为 **contain 完整展示**（`scale = min(dw/iw, dh/ih)` 居中），人物全身可见；`loadImg` 统一走 getImageInfo 拿真实宽高（本地图/远端图都支持），imgFallback 回调同步带宽高。
+- **底部虚化渐隐**：题图下缘 24 行逐行覆盖宣纸色（rgba alpha 0→0.95 递增，旧 canvas 无渐变 API 的替代实现），图片底部融入卷面——同人物页头卡「暖白渐隐」语言。
+- 内容区坐标整体适配卷面（236 宽），落款/印章/透背字对齐绫边内缘。
+- mock 补齐：selftest/harness 的 canvas mock 加 `arc`（轴头依赖；漏加曾致绘制中断）。
+- 验证：`node tools/selftest.js` PASS 1903 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；截图核对——立轴形态/人物完整/渐隐/按钮同行全部正确。
+- 遗留：真机核对 24 行渐隐的渲染平滑度（若出现条纹可改为图片蒙版方案）。

@@ -21,7 +21,6 @@ const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
 const CANVAS_ID = 'ssQrCanvas';
 const W = 260;
 const H = 424;
-const IMG_H = 140; // 题图高度
 const CODE_SIZE = 54; // 二维码边长
 const INK = '#1F1D19';
 
@@ -96,16 +95,22 @@ function wrapText(s, size, maxW, lines) {
   return rows;
 }
 
-// 装载图片：本地路径原样回调；远端 URL 走 getImageInfo——不受 downloadFile 域名白名单
-// 限制，无需公众平台配置，零开通可用；顺带拿到真实宽高用于精准 cover 裁剪。失败回调 null。
+// 装载图片：统一走 getImageInfo 拿真实宽高（contain 展示需要；本地图/远端图都支持，
+// 且 getImageInfo 不受 downloadFile 域名白名单限制，零配置）。失败回调 null。
 function loadImg(src, cb) {
   if (!src) { cb(null); return; }
-  if (src.indexOf('http') !== 0) { cb(src); return; }
-  if (typeof wx.getImageInfo !== 'function') { cb(null); return; }
+  if (typeof wx.getImageInfo !== 'function') {
+    // 无 getImageInfo 环境：本地路径仍可直接画（drawCover 走估计尺寸）
+    cb(src.indexOf('http') !== 0 ? src : null);
+    return;
+  }
   wx.getImageInfo({
     src,
     success: (res) => cb(res.path || null, res.width || 0, res.height || 0),
-    fail: () => cb(null)
+    fail: () => {
+      // 远端失败彻底回退 null；本地路径失败也直画兜底（估计尺寸）
+      cb(src.indexOf('http') !== 0 ? src : null);
+    }
   });
 }
 
@@ -143,9 +148,9 @@ function open(page) {
         return;
       }
       if (payload.imgFallback) {
-        loadImg(payload.imgFallback, (local2) => {
+        loadImg(payload.imgFallback, (local2, w2, h2) => {
           if (page.data.share.open && local2) {
-            page.setData({ 'share.imgLocal': local2, 'share.imgW': 0, 'share.imgH': 0 });
+            page.setData({ 'share.imgLocal': local2, 'share.imgW': w2 || 0, 'share.imgH': h2 || 0 });
             drawPoster(page);
           }
         });
@@ -181,108 +186,115 @@ function drawPoster(page) {
   try {
     const ctx = wx.createCanvasContext(CANVAS_ID);
 
-    // 卷轴形态：顶/底深木墨色轴杆（纯色分段模拟圆柱高光，旧 canvas 无渐变 API）
-    const drawRod = (y) => {
+    // 立轴挂画形态：天杆 / 地杆（深木色横杆）+ 左右绫边（暗褐绢色 + 内金线）+ 宣纸卷面
+    const drawBar = (y, h) => {
       ctx.setFillStyle('#2E2820');
-      ctx.fillRect(0, y, W, 8);
+      ctx.fillRect(0, y, W, h);
       ctx.setFillStyle('rgba(246, 241, 234, 0.20)');
       ctx.fillRect(0, y + 1, W, 1);
-      ctx.setFillStyle('rgba(0, 0, 0, 0.28)');
-      ctx.fillRect(0, y + 6, W, 2);
-      // 两端轴头
-      ctx.setFillStyle('#1B1712');
-      ctx.fillRect(0, y, 4, 8);
-      ctx.fillRect(W - 4, y, 4, 8);
+      ctx.setFillStyle('rgba(0, 0, 0, 0.30)');
+      ctx.fillRect(0, y + h - 2, W, 2);
     };
-    drawRod(0);
-    drawRod(H - 8);
+    drawBar(0, 12);
+    drawBar(H - 12, 12);
+    // 地杆两端轴头（立轴地杆出头）
+    ctx.setFillStyle('#1B1712');
+    ctx.beginPath();
+    ctx.arc(3, H - 6, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(W - 3, H - 6, 5, 0, Math.PI * 2);
+    ctx.fill();
 
-    // 宣纸底（轴杆之间）
+    // 左右绫边 + 内金线
+    const RIB = 12;
+    ctx.setFillStyle('#463C30');
+    ctx.fillRect(0, 12, RIB, H - 24);
+    ctx.fillRect(W - RIB, 12, RIB, H - 24);
+    ctx.setFillStyle('rgba(190, 150, 90, 0.35)');
+    ctx.fillRect(RIB - 1, 12, 1, H - 24);
+    ctx.fillRect(W - RIB, 12, 1, H - 24);
+
+    // 宣纸卷面
     ctx.setFillStyle('#F6F1EA');
-    ctx.fillRect(0, 8, W, H - 16);
+    ctx.fillRect(RIB, 12, W - RIB * 2, H - 24);
 
-    // 题图贴顶（当前页相关图；远端图加载失败回退 share.imgFallback 本地朝代画，
-    // 再失败画占位底，保证最顶部始终是相关图）——卷首展开图
+    // 卷面右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('rgba(31, 29, 25, 0.055)');
+    ctx.font = '16px "Kaiti SC", "STKaiti", "KaiTi", serif';
+    '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - RIB - 12, 178 + i * 21));
+    ctx.font = '';
+
+    // 卷首画：当前页相关图**完整展示不裁切**（contain），底部虚化渐隐融入卷面
+    // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
+    const dx = RIB + 14, dy = 22, dw = W - RIB * 2 - 28, dh = 108;
     const drawCover = (src) => {
-      // 按真实宽高裁中带（cover；优先 getImageInfo 宽高，未知尺寸的远端专属图按 360×360 估计）
       const iw = share.imgW || (/\/data\/img\//.test(src) ? 360 : 0);
       const ih = share.imgH || (/\/data\/img\//.test(src) ? 360 : 0);
-      const dy = 8, dw = W, dh = IMG_H - 8;
       if (iw > 0 && ih > 0) {
-        const ratio = dw / dh;
-        let sw = iw;
-        let sh = Math.round(iw / ratio);
-        if (sh > ih) {
-          sh = ih;
-          sw = Math.round(ih * ratio);
-        }
-        const sx = Math.round((iw - sw) / 2);
-        const sy = Math.round((ih - sh) / 2);
-        ctx.drawImage(src, sx, sy, sw, sh, 0, dy, dw, dh);
+        const scale = Math.min(dw / iw, dh / ih);
+        const dw2 = Math.round(iw * scale);
+        const dh2 = Math.round(ih * scale);
+        ctx.drawImage(src, Math.round(dx + (dw - dw2) / 2), Math.round(dy + (dh - dh2) / 2), dw2, dh2);
       } else {
-        ctx.drawImage(src, 0, dy, dw, dh);
+        ctx.drawImage(src, dx, dy, dw, dh);
       }
     };
     if (share.imgLocal) {
       drawCover(share.imgLocal);
     } else {
       // 全链路（远端 + imgFallback）都未取到时，画预置卷首兜底图（tools/gen_share_fallback.py 生成）
-      ctx.drawImage(FALLBACK_COVER, 0, 8, W, IMG_H - 8);
+      ctx.drawImage(FALLBACK_COVER, dx, dy, dw, dh);
     }
-
-    // 朱砂界格线：压题图底 + 底部轴杆上缘
-    ctx.setFillStyle('rgba(163, 74, 62, 0.55)');
-    ctx.fillRect(0, IMG_H, W, 1.5);
-    ctx.fillRect(24, H - 20, W - 48, 1.5);
-
-    // 背景历史文字：右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
-    ctx.setTextAlign('center');
-    ctx.setFillStyle('rgba(31, 29, 25, 0.055)');
-    ctx.font = '17px "Kaiti SC", "STKaiti", "KaiTi", serif';
-    '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - 15, 176 + i * 22));
-    ctx.font = '';
+    // 题图底部虚化渐隐：逐行覆盖宣纸色（alpha 0→0.95），人物完整不裁切且下缘融入卷面
+    const fadeY = dy + dh - 24;
+    for (let i = 0; i < 24; i += 1) {
+      ctx.setFillStyle('rgba(246, 241, 234, ' + ((i / 24) * 0.95).toFixed(3) + ')');
+      ctx.fillRect(dx, fadeY + i, dw, 1);
+    }
 
     // kicker（朱砂小字）
     ctx.setTextAlign('center');
     ctx.setFillStyle('#A34A3E');
     ctx.setFontSize(10);
-    ctx.fillText(share.kicker, W / 2, IMG_H + 24);
+    ctx.fillText(share.kicker, W / 2, 164);
 
     // 标题（宋体大字，最多一行）
     ctx.setFillStyle(INK);
     ctx.font = 'bold 19px "Songti SC", "STSong", "SimSun", serif';
-    ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 50);
+    ctx.fillText(clipText(share.title, 19, 208, true), W / 2, 190);
     ctx.font = '';
 
     // 摘要（淡墨，最多两行）
     ctx.setFillStyle('#5F5A52');
     ctx.setFontSize(11);
-    const rows = wrapText(share.desc, 11, W - 56, 2);
-    rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 72 + i * 17));
+    const rows = wrapText(share.desc, 11, 196, 2);
+    rows.forEach((row, i) => ctx.fillText(row, W / 2, 212 + i * 17));
 
     // 淡墨分隔细线
     ctx.setFillStyle('rgba(70, 58, 45, 0.14)');
-    ctx.fillRect(40, IMG_H + 106, W - 80, 1);
+    ctx.fillRect(36, 248, W - 72, 1);
 
     // 每日名句（楷体，最多两行）+ 出处
     if (share.quote) {
       ctx.setFillStyle('#3B3731');
       ctx.font = '12px "Kaiti SC", "STKaiti", "KaiTi", serif';
-      const qrows = wrapText(share.quote, 12, W - 56, 2);
-      qrows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 126 + i * 19));
+      const qrows = wrapText(share.quote, 12, 196, 2);
+      qrows.forEach((row, i) => ctx.fillText(row, W / 2, 266 + i * 19));
       ctx.font = '';
       ctx.setFillStyle('#8C857A');
       ctx.setFontSize(9);
-      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, IMG_H + 126 + (qrows.length - 1) * 19 + 16);
+      ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, 266 + (qrows.length - 1) * 19 + 16);
     }
 
     // 淡墨分隔细线
     ctx.setFillStyle('rgba(70, 58, 45, 0.10)');
-    ctx.fillRect(40, IMG_H + 172, W - 80, 1);
+    ctx.fillRect(36, 316, W - 72, 1);
 
     // 落款区：二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
-    const cy = IMG_H + 186;
-    const cx = 30;
+    const cy = 330;
+    const cx = 24;
     try {
       const qr = encode(share.qrText);
       const count = qr.getModuleCount();
@@ -302,15 +314,15 @@ function drawPoster(page) {
     ctx.setTextAlign('left');
     ctx.setFillStyle(INK);
     ctx.setFontSize(11);
-    ctx.fillText(share.dateText || '', 96, cy + 22);
+    ctx.fillText(share.dateText || '', 90, cy + 22);
     ctx.setFillStyle('#8C857A');
     ctx.setFontSize(10);
-    ctx.fillText(share.lunarText || '', 96, cy + 42);
+    ctx.fillText(share.lunarText || '', 90, cy + 42);
 
     // 「史载」朱砂印（assets/seal.png，114×197 竖长按比例）
     const sealH = 52;
     const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage('/assets/seal.png', W - 24 - sealW, cy - 2, sealW, sealH);
+    ctx.drawImage('/assets/seal.png', W - RIB - 14 - sealW, cy - 2, sealW, sealH);
 
     // 品牌行
     ctx.setTextAlign('center');
