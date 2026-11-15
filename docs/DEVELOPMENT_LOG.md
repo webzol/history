@@ -2120,3 +2120,11 @@ miniprogram/data/history.js
 - **兜底图 2× 重生成——评估后跳过**：share-cover-fallback 1.7× 放大可接受；主包余量仅 7KB 且本机无 KaiTi 字体（Songti 代替会改变定稿视觉），收益不抵风险。
 - 验证：`node tools/selftest.js` PASS 1940 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；`preview_shots.js` 35 张全过——浏览器实测海报：立轴/宣纸纹理（像素方差确认）/题图 contain/楷体名句/二维码/史载印全部正确，canvas 缓冲 1170×1908 零报错；主包 2044KB / 2048KB（余量 4KB）。
 - 遗留：① 真机核对 4.5 倍缓冲的绘制性能与导出清晰度（低端机首绘 1170×1908 内存约 9MB，可接受）；② 主包余量仅 4KB——新增主包内容前必须先核对体积；③ 太阳码图就绪后海报自动由本地二维码切换为太阳码（Actions 码图合入后生效）。
+
+## 2026-11-15 · 海报定稿「无码纯卡片」：移除二维码/太阳码绘制
+
+- 需求：用户定稿「取消二维码只要卡片」——海报不再绘制任何码（太阳码与本地编码二维码都不画），只保留卡片本体。
+- **qrshare.js 瘦身**：删除太阳码装载链（startCodeChain/codeImg）与本地二维码绘制分支（encode/qrTextOf），`utils/qrcode.js`（qrcode-generator@1.4.4，38KB）随之整体移出主包并删除文件；落款区改为「公历/农历日期（左）+『史载』朱砂印（右）」，日期从 x=90 移到 x=36 对齐分隔线。`utils/wxacode.js` 与四页 onLoad 的 `mergeScene` 扫码进入支持**保留**（历史流传的太阳码仍可扫入）；Actions 太阳码生成链路（workflow + gen_wxacode.js）保留但已无 UI 消费方，不需要时可删 `.github/workflows/wxacode.yml` + `tools/gen_wxacode.js` 停用。
+- selftest：断言随码废弃 8 条（qrText×3、二维码模块填充、太阳码 drawImage 分支×4），改为「基础绘制层 fills>30 + 题图/印章 images≥2 + 转发 path 与 sharePayload 同源」；新增「海报无码定稿：面板不再有 codeImg/qrText 状态」断言；mock 清理 codeFail 开关。
+- 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；preview_shots 35 张全过——海报无码、日期落款左移对齐、宣纸纹理/题图/名句/印章全部正确；主包 2044→2005KB（余量 4→43KB）。
+- 遗留：真机核对无码版海报视觉与保存导出；若确认永久不要太阳码可删除 Actions 链路（workflow、gen_wxacode.js、GitHub Secrets 里的 WX_APPSECRET）。

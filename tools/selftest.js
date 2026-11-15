@@ -13,12 +13,11 @@ const qrshare = require(path.join(ROOT, 'utils', 'qrshare.js'));
 
 // 分享面板 mock 状态：ops/fills=绘制填充次数 texts=文字绘制 images=图片绘制
 // saved=成功保存次数 denied=相册授权被拒 netFail=远端图失败 exportFail=canvas 导出失败
-// codeFail=太阳码图失败（默认 true，本地仓库通常无码图 → 海报走本地二维码兜底）
-const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [], codeFail: true };
+const mockQr = { ops: 0, saved: 0, denied: false, netFail: false, exportFail: false, fsWrites: [] };
 const mockPoster = { fills: 0, texts: 0, images: 0 };
 
 // mock canvas 2d 节点（canvas type="2d"）：getContext 返回计数 ctx，
-// createImage 同步 onload（netFail 模拟远端图失败、codeFail 模拟太阳码图失败，本地路径始终可画）
+// createImage 同步 onload（netFail 模拟远端图失败，本地路径始终可画）
 function makeMockCanvasNode() {
   const counts = { fills: 0, texts: 0, images: 0 };
   const sync = () => {
@@ -57,8 +56,7 @@ function makeMockCanvasNode() {
         set(v) {
           img._src = v;
           const remoteFail = mockQr.netFail && typeof v === 'string' && v.indexOf('http') === 0;
-          const codeFail = mockQr.codeFail && typeof v === 'string' && v.indexOf('/data/img/wxacode/') >= 0;
-          if (remoteFail || codeFail) {
+          if (remoteFail) {
             if (img.onerror) img.onerror();
           } else if (img.onload) {
             img.onload();
@@ -289,13 +287,12 @@ function assertSharePanel(page, cfg, tag) {
   ok(page.data.share.quoteSource.length > 0, `${tag}名句含出处`);
   ok(page.data.share.lunarText.indexOf('农历') === 0, `${tag}海报含农历日期（${page.data.share.lunarText}）`);
   ok(page.data.share.dateText.indexOf('年') > 0, `${tag}海报含公历日期`);
-  ok(page.data.share.qrText.indexOf('阅史记：') === 0, `${tag}二维码以「阅史记：」路径文本开头`);
-  ok(page.data.share.qrText.indexOf(cfg.pathTail) > 0, `${tag}二维码含页内路径 ${cfg.pathTail}`);
   qrshare.drawPoster(page);
   ok(mockPoster.texts >= 8, `${tag}海报含 kicker/标题/摘要/名句/出处/日期/品牌文字层`);
-  ok(mockPoster.fills > 200, `${tag}海报二维码有模块填充`);
+  ok(mockPoster.fills > 30, `${tag}海报有基础绘制层（轴杆/绫边/纸底/渐隐/细线）`);
+  ok(mockPoster.images >= 2, `${tag}海报含题图与「史载」印`);
   const msg = page.onShareAppMessage();
-  ok(msg.path === page.data.share.qrText.slice(4), `${tag}转发 path 与二维码内容路径一致`);
+  ok(msg.path === page.sharePayload().path, `${tag}转发 path 与 sharePayload 同源`);
   mockQr.saved = 0;
   page.saveQr();
   ok(mockQr.saved === 1, `${tag}保存分享卡片到相册`);
@@ -2088,38 +2085,13 @@ console.log('== 太阳码 wxacode ==');
   p.onLoad({ scene: 'p=su-shi' });
   eq(p.data.person.name, '苏轼', '太阳码扫码进入等价 ?id=');
 
-  // 海报分支：太阳码就绪 → drawImage；未就绪 → 本地二维码逐模块填充
-  // （mock exec 每次返回全新节点，计数即"单帧"语义）
-  const fakePage = {
-    data: {
-      share: {
-        open: true, kicker: '人物 · 西汉', title: '汉武帝', desc: '雄才大略的帝王', img: '', imgLocal: '',
-        quote: '犯强汉者虽远必诛', quoteSource: '《汉书》', dateText: '2026年11月14日', lunarText: '农历丙午年 十月初六',
-        qrText: '阅史记：/pages/person/person?id=han-wudi', codeImg: ''
-      }
-    }
-  };
-  qrshare.drawPoster(fakePage);
-  ok(mockPoster.fills > 200, '无太阳码 → 本地二维码模块填充兜底');
-  ok(mockPoster.images >= 2, '无太阳码 → 题图+印章仍绘制');
-  fakePage.data.share.codeImg = 'tmp://suncode.jpg';
-  qrshare.drawPoster(fakePage);
-  ok(mockPoster.images >= 3, '太阳码就绪 → drawImage 绘制码图');
-  ok(mockPoster.fills < 100, '太阳码就绪 → 不再逐模块填充');
-
-  // 面板集成：mock 码图就绪后 openShare 同步装载 codeImg（createImage 桩同步 onload）
-  mockQr.codeFail = false;
+  // 海报不带任何码（2026-11-15 定稿「只要卡片」）：面板里没有 codeImg/qrText 状态
   const person = pages.person;
   person.onLoad({ id: 'han-wudi' });
   person.openShare();
   qrshare.attachCanvas(person);
-  ok(person.data.share.codeImg === wxacode.codeUrlOf('/pages/person/person?id=han-wudi'), '码图就绪 → 面板装载太阳码图');
-  person.closeShare();
-  qrshare.resetImgs(); // 清缓存：codeFail 切换后模拟「未缓存过码图」的真实首开
-  mockQr.codeFail = true;
-  person.openShare();
-  qrshare.attachCanvas(person);
-  ok(person.data.share.codeImg === '', '码图取不到 → 保持空走本地二维码兜底');
+  ok(person.data.share.codeImg === undefined && person.data.share.qrText === undefined, '海报无码定稿：面板不再有 codeImg/qrText 状态');
+  ok(mockPoster.images >= 2, '海报仍含题图与「史载」印');
   person.closeShare();
 })();
 

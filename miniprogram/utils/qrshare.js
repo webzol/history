@@ -1,4 +1,4 @@
-// 分享面板：分享卡片海报（宣纸纹理 + 立轴题图 + 页面内容摘要 + 太阳码）+ 保存相册，纯前端实现。
+// 分享面板：分享卡片海报（宣纸纹理 + 立轴题图 + 页面内容摘要 + 每日名句落款）+ 保存相册，纯前端实现。
 //
 // 渲染架构（2026-11-14 高清化）：canvas 2d API（type="2d"），固定 4.5 倍缓冲（1170×1908，
 // 与设备像素比无关）——所有绘制坐标仍按 260×424 逻辑尺寸书写，ctx.scale(4.5) 一次放大；
@@ -7,18 +7,17 @@
 // 每次绘制都重新查询 canvas 节点并整幅重画（width 赋值会重置画布状态，正好配合全幅重绘）：
 // 真机 wx:if 节点持久、查询开销可忽略；harness 整页重渲染后也能拿到新元素。
 //
-// 卡片太阳码：Actions 预生成走 jsDelivr（utils/wxacode.js），扫码直达当前页；
-// 码图取不到自动回退本地编码二维码（qrcode.js，内容为页内路径文本），零劣化。
+// 卡片不带任何二维码/小程序码（2026-11-15 定稿「只要卡片」，qrcode.js 随之移出主包）；
+// 好友直达分享走「转寄好友」微信原生卡片。扫码进入支持保留在 utils/wxacode.js（mergeScene），
+// 历史流传的太阳码仍可扫入对应详情页。
 //
 // 页面接入约定：
 //   1. data 里初始化 share: { open: false }
 //   2. 页面提供 sharePayload()，返回 { kicker, title, desc, img, path }
 //      img 为海报题图（本地图 /assets/... 或远端图 URL 均可）
 //   3. Page 方法 openShare/closeShare/saveQr 各一行委托本模块
-const qrcode = require('./qrcode.js');
 const solarlunar = require('./solarlunar.js');
 const hd = require('./historyData.js');
-const wxacode = require('./wxacode.js');
 
 // 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
@@ -34,7 +33,6 @@ const H = 424;
 const SCALE = 4.5;
 const BW = Math.round(W * SCALE); // 缓冲 1170
 const BH = Math.round(H * SCALE); // 缓冲 1908
-const CODE_SIZE = 54; // 太阳码/二维码边长
 const INK = '#1F1D19';
 const PAPER = '#F6F1EA';
 
@@ -71,20 +69,6 @@ function lunarText(now) {
 function dateText(now) {
   const d = now || new Date();
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-}
-
-// 二维码编码（typeNumber 0 = 自动版本；中文走 UTF-8 字节模式，纠错 M）
-function encode(text) {
-  const qr = qrcode(0, 'M');
-  qr.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
-  qr.addData(text, 'Byte');
-  qr.make();
-  return qr;
-}
-
-// 二维码文本：零依赖方案——编码页内路径文本，扫码可读「这是哪个页面」。
-function qrTextOf(path) {
-  return `阅史记：${path || '/pages/home/home'}`;
 }
 
 // 中英文混排宽度估算（与旧版一致，折行结果保持稳定）
@@ -178,14 +162,13 @@ function peekImg(src) {
 }
 
 // 绘制前预取海报需要的全部图：缓存未命中的发起异步装载，就绪后触发下一轮重绘。
-// 真机：首绘只有纸底/本地码，图陆续就绪逐次补绘收敛；同步 mock 环境：当轮即可全部命中。
+// 真机：首绘只有纸底，图陆续就绪逐次补绘收敛；同步 mock 环境：当轮即可全部命中。
 function preloadPosterImgs(page, share) {
   const srcs = [
     PAPER_BG,
     share.imgLocal || FALLBACK_COVER,
     share.imgLocal ? FALLBACK_COVER : '', // 题图装载中先备好兜底卷首
-    '/assets/seal.png',
-    share.codeImg || ''
+    '/assets/seal.png'
   ];
   srcs.forEach((src) => {
     if (!src || imgCache[src]) return;
@@ -202,10 +185,8 @@ function resetImgs() {
 
 function open(page) {
   const payload = (typeof page.sharePayload === 'function' && page.sharePayload()) || {};
-  const path = payload.path || '/pages/home/home';
   const quote = dailyQuote();
 
-  page.__qrPath = path;
   page.__qrPayload = payload;
   page.setData({
     share: {
@@ -218,22 +199,19 @@ function open(page) {
       quote: quote ? quote.quote : '',
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
-      lunarText: lunarText(),
-      qrText: qrTextOf(path),
-      codeImg: ''   // 太阳码图源（jsDelivr 就绪后重绘；空则画本地编码二维码）
+      lunarText: lunarText()
     }
   });
 
-  // canvas 由 wx:if 挂载，稍等渲染后首绘（先纸底 + 兜底卷首 + 本地码，图就绪各自补绘）。
+  // canvas 由 wx:if 挂载，稍等渲染后首绘（先纸底 + 兜底卷首，题图就绪后补绘）。
   // 远端题图失败时回退 imgFallback（本地朝代画），保证顶部始终是当前相关图。
-  setTimeout(() => attachCanvas(page, payload, path), 120);
+  setTimeout(() => attachCanvas(page, payload), 120);
 }
 
-// 首绘 + 启动题图/太阳码装载链（open 的延迟回调；测试里可同步调用）
-function attachCanvas(page, payload, path) {
+// 首绘 + 启动题图装载链（open 的延迟回调；测试里可同步调用）
+function attachCanvas(page, payload) {
   drawPoster(page);
   startCoverChain(page, payload || page.__qrPayload);
-  startCodeChain(page, path || page.__qrPath);
 }
 
 // 题图装载链：远端专属图 → imgFallback（本地朝代画）→ 都失败则画预置卷首兜底图
@@ -256,25 +234,6 @@ function startCoverChain(page, payload) {
     });
   };
   trySrc(primary);
-}
-
-// 太阳码装载链：主域名 → 备用域名重试一次 → 都失败保持本地编码二维码
-function startCodeChain(page, path) {
-  const codeUrl = wxacode.codeUrlOf(path);
-  if (!codeUrl) return;
-  const trySrc = (url) => {
-    if (!url) return;
-    loadCanvasImg(page, url, (img) => {
-      if (!page.data.share.open) return;
-      if (img) {
-        page.setData({ 'share.codeImg': url });
-        drawPoster(page);
-        return;
-      }
-      trySrc(wxacode.altCodeUrl(url));
-    });
-  };
-  trySrc(codeUrl);
 }
 
 function close(page) {
@@ -396,39 +355,15 @@ function paintPoster(ctx, share) {
   ctx.fillStyle = 'rgba(70, 58, 45, 0.10)';
   ctx.fillRect(36, 316, W - 72, 1);
 
-  // 落款区：太阳码/二维码（左）+ 公历/农历日期（中）+「史载」朱砂印（右）
+  // 落款区：公历/农历日期（左）+「史载」朱砂印（右）——卡片不带二维码（2026-11-15 定稿）
   const cy = 330;
-  const cx = 24;
-  const codeImg = peekImg(share.codeImg);
-  if (codeImg) {
-    // 官方小程序码（圆形白底）就绪：直接绘制，微信扫一扫直达当前页
-    ctx.drawImage(codeImg, cx, cy, CODE_SIZE, CODE_SIZE);
-  } else {
-    // 本地编码兜底：零依赖普通二维码，内容为页内路径文本
-    try {
-      const qr = encode(share.qrText);
-      const count = qr.getModuleCount();
-      const m = 4;
-      const cell = Math.floor((CODE_SIZE - m * 2) / count);
-      const off = Math.round((CODE_SIZE - cell * count) / 2);
-      ctx.fillStyle = INK;
-      for (let r = 0; r < count; r += 1) {
-        for (let c = 0; c < count; c += 1) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect(cx + off + c * cell, cy + off + r * cell, cell + 0.3, cell + 0.3);
-          }
-        }
-      }
-    } catch (e) { /* 码文本异常时留白 */ }
-  }
-
   ctx.textAlign = 'left';
   ctx.fillStyle = INK;
   ctx.font = '11px ' + SANS;
-  ctx.fillText(share.dateText || '', 90, cy + 22);
+  ctx.fillText(share.dateText || '', 36, cy + 22);
   ctx.fillStyle = '#8C857A';
   ctx.font = '10px ' + SANS;
-  ctx.fillText(share.lunarText || '', 90, cy + 42);
+  ctx.fillText(share.lunarText || '', 36, cy + 42);
 
   // 「史载」朱砂印（assets/seal.png，114×197 竖长按比例）
   const seal = peekImg('/assets/seal.png');
@@ -555,7 +490,7 @@ function saveFallback(page) {
 }
 
 module.exports = {
-  open, close, save, saveFallback, drawPoster, attachCanvas, encode, qrTextOf,
+  open, close, save, saveFallback, drawPoster, attachCanvas,
   dailyQuote, lunarText, dateText, resetImgs,
   FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H, SCALE
 };
