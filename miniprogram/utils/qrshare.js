@@ -240,65 +240,46 @@ function close(page) {
   page.setData({ 'share.open': false });
 }
 
-// 海报：宣纸卷轴风——宣纸纹理卷面 + 天地轴杆绫边 + 装裱题图 + 楷体名句 + 码/日期落款 + 「史载」朱砂印。
+// 海报：宣纸笺风（2026-11-15 去边框定稿）——整张宣纸纹理 + 古风文字背景（座右铭竖列 + 透背字）
+// + 装裱题图 + 楷体名句 + 日期落款 + 「史载」朱砂印，与各页宣纸背景同一视觉语言。
 // 纯绘制函数：图一律经 peekImg 读缓存（缺图由预取触发下一轮重绘补上），本函数不含任何异步。
 function paintPoster(ctx, share) {
-  // 立轴挂画形态：天杆 / 地杆（深木色横杆）+ 左右绫边（暗褐绢色 + 内金线）+ 宣纸卷面
-  const drawBar = (y, h) => {
-    ctx.fillStyle = '#2E2820';
-    ctx.fillRect(0, y, W, h);
-    ctx.fillStyle = 'rgba(246, 241, 234, 0.20)';
-    ctx.fillRect(0, y + 1, W, 1);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.30)';
-    ctx.fillRect(0, y + h - 2, W, 2);
-  };
-  drawBar(0, 12);
-  drawBar(H - 12, 12);
-  // 地杆两端轴头（立轴地杆出头）
-  ctx.fillStyle = '#1B1712';
-  ctx.beginPath();
-  ctx.arc(3, H - 6, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(W - 3, H - 6, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 左右绫边 + 内金线
-  const RIB = 12;
-  ctx.fillStyle = '#463C30';
-  ctx.fillRect(0, 12, RIB, H - 24);
-  ctx.fillRect(W - RIB, 12, RIB, H - 24);
-  ctx.fillStyle = 'rgba(190, 150, 90, 0.35)';
-  ctx.fillRect(RIB - 1, 12, 1, H - 24);
-  ctx.fillRect(W - RIB, 12, 1, H - 24);
-
-  // 宣纸卷面：先铺底色，再 aspectFill 居中裁切绘入与全站同源的宣纸纹理（clip 防溢出）
-  const tw = W - RIB * 2;
-  const th = H - 24;
+  // 整张宣纸：先铺底色，再 aspectFill 居中裁切绘入与全站同源的宣纸纹理（clip 防溢出）
   ctx.fillStyle = PAPER;
-  ctx.fillRect(RIB, 12, tw, th);
+  ctx.fillRect(0, 0, W, H);
   const paper = peekImg(PAPER_BG);
   if (paper && paper.width && paper.height) {
-    const s = Math.max(tw / paper.width, th / paper.height);
+    const s = Math.max(W / paper.width, H / paper.height);
     const pw = paper.width * s;
     const ph = paper.height * s;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(RIB, 12, tw, th);
+    ctx.rect(0, 0, W, H);
     ctx.clip();
-    ctx.drawImage(paper, RIB + (tw - pw) / 2, 12 + (th - ph) / 2, pw, ph);
+    ctx.drawImage(paper, (W - pw) / 2, (H - ph) / 2, pw, ph);
     ctx.restore();
   }
 
-  // 卷面右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
+  // 古风文字背景一：右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(31, 29, 25, 0.055)';
   ctx.font = '16px ' + KAI;
-  '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - RIB - 12, 178 + i * 21));
+  '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - 12, 178 + i * 21));
+
+  // 古风文字背景二：左缘竖排座右铭「一卷千年 · 灯下阅史」（古籍竖读右起两列，淡墨）
+  ctx.fillStyle = 'rgba(31, 29, 25, 0.075)';
+  ctx.font = '15px ' + KAI;
+  '一卷千年'.split('').forEach((ch, i) => ctx.fillText(ch, W - 30, 174 + i * 20));
+  '灯下阅史'.split('').forEach((ch, i) => ctx.fillText(ch, W - 50, 174 + i * 20));
+
+  // 古风文字背景三：题图下方朱砂小印意界格——「史」字淡朱砂大水印压名句区右侧
+  ctx.fillStyle = 'rgba(163, 74, 62, 0.05)';
+  ctx.font = '96px ' + KAI;
+  ctx.fillText('史', W - 74, 322);
 
   // 卷首画：当前页相关图**完整展示不裁切**（contain），底部虚化渐隐融入卷面
   // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
-  const dx = RIB + 14, dy = 22, dw = W - RIB * 2 - 28, dh = 108;
+  const dx = 14, dy = 22, dw = W - 28, dh = 108;
   const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
   if (cover) {
     const iw = cover.width || 0;
@@ -370,7 +351,7 @@ function paintPoster(ctx, share) {
   if (seal) {
     const sealH = 52;
     const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage(seal, W - RIB - 14 - sealW, cy - 2, sealW, sealH);
+    ctx.drawImage(seal, W - 14 - sealW, cy - 2, sealW, sealH);
   }
 
   // 品牌行

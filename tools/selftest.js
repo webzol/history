@@ -289,7 +289,7 @@ function assertSharePanel(page, cfg, tag) {
   ok(page.data.share.dateText.indexOf('年') > 0, `${tag}海报含公历日期`);
   qrshare.drawPoster(page);
   ok(mockPoster.texts >= 8, `${tag}海报含 kicker/标题/摘要/名句/出处/日期/品牌文字层`);
-  ok(mockPoster.fills > 30, `${tag}海报有基础绘制层（轴杆/绫边/纸底/渐隐/细线）`);
+  ok(mockPoster.fills > 20, `${tag}海报有基础绘制层（纸底/渐隐/细线）`);
   ok(mockPoster.images >= 2, `${tag}海报含题图与「史载」印`);
   const msg = page.onShareAppMessage();
   ok(msg.path === page.sharePayload().path, `${tag}转发 path 与 sharePayload 同源`);

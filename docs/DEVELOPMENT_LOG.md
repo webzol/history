@@ -2134,3 +2134,12 @@ miniprogram/data/history.js
 - 需求：海报定稿无码后，用户在「保持现状/删除链路/停用触发」三选一里选**停用触发**。
 - `.github/workflows/wxacode.yml` 的 `on:` 触发块（push paths + workflow_dispatch）整段注释，workflow 不再自动/手动运行；`tools/gen_wxacode.js` 与 `utils/wxacode.js` 原样保留。重新启用：取消注释并 push（secret `WX_APPSECRET` 与 89503 管理员确认流程照旧）。
 - AGENTS.md 太阳码条目同步更新。无需跑 selftest（无小程序代码改动）。
+
+## 2026-11-15 · 海报去边框定稿：整张宣纸 + 古风文字背景
+
+- 需求：用户要求「海报边框取消，跟当前程序一样使用宣纸背景，增加一些文字背景进去看着有古风特色」。
+- **去边框（paintPoster 重排）**：删除立轴形态的天/地木杆、地杆轴头、左右绫边与内金线；宣纸改为**整张全幅**（底色 + `assets/paper-bg.jpg` aspectFill 全画布，与各页背景同一张图同一铺法）；题图/水印/印章坐标同步去 RIB 偏移（题图 x=14 宽 232，右缘水印 x=W-12，印章 x=W-14-w）。
+- **古风文字背景三组（2026-11-15 定稿新增）**：①右缘竖排「阅史记」淡墨透背字（原有，去框后 x 调整）；②右缘增两列竖排座右铭「一卷千年」「灯下阅史」（Kaiti 15px，alpha 0.075，古籍竖读右起与「阅史记」连成一组）；③「史」字 96px 淡朱砂大水印（alpha 0.05）压名句区右侧。
+- selftest：fills 阈值随去框调整（>30→>20，纸底/渐隐/细线共 27 次）。
+- 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；preview_shots 35 张全过；浏览器实测——无边框宣纸、三列古风竖字、「史」水印、日期落款、史载印全部正确；主包 2005KB 不变。
+- 遗留：①兜底静态卡（share-fallback.jpg）仍带旧卷轴杆视觉，仅在 canvas 异常降级时出现；本机无 KaiTi 字体（改用 Songti 会变定稿视觉）+ 主包余量 43KB，重新生成需权衡；②真机核对文字背景在 4.5 倍缓冲下的淡墨层次。
