@@ -2128,3 +2128,9 @@ miniprogram/data/history.js
 - selftest：断言随码废弃 8 条（qrText×3、二维码模块填充、太阳码 drawImage 分支×4），改为「基础绘制层 fills>30 + 题图/印章 images≥2 + 转发 path 与 sharePayload 同源」；新增「海报无码定稿：面板不再有 codeImg/qrText 状态」断言；mock 清理 codeFail 开关。
 - 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；preview_shots 35 张全过——海报无码、日期落款左移对齐、宣纸纹理/题图/名句/印章全部正确；主包 2044→2005KB（余量 4→43KB）。
 - 遗留：真机核对无码版海报视觉与保存导出；若确认永久不要太阳码可删除 Actions 链路（workflow、gen_wxacode.js、GitHub Secrets 里的 WX_APPSECRET）。
+
+## 2026-11-15 · 停用太阳码 Actions 触发（链路脚本保留）
+
+- 需求：海报定稿无码后，用户在「保持现状/删除链路/停用触发」三选一里选**停用触发**。
+- `.github/workflows/wxacode.yml` 的 `on:` 触发块（push paths + workflow_dispatch）整段注释，workflow 不再自动/手动运行；`tools/gen_wxacode.js` 与 `utils/wxacode.js` 原样保留。重新启用：取消注释并 push（secret `WX_APPSECRET` 与 89503 管理员确认流程照旧）。
+- AGENTS.md 太阳码条目同步更新。无需跑 selftest（无小程序代码改动）。
