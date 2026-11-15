@@ -2143,3 +2143,11 @@ miniprogram/data/history.js
 - selftest：fills 阈值随去框调整（>30→>20，纸底/渐隐/细线共 27 次）。
 - 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；`node tools/build_preview.js` 重打包；preview_shots 35 张全过；浏览器实测——无边框宣纸、三列古风竖字、「史」水印、日期落款、史载印全部正确；主包 2005KB 不变。
 - 遗留：①兜底静态卡（share-fallback.jpg）仍带旧卷轴杆视觉，仅在 canvas 异常降级时出现；本机无 KaiTi 字体（改用 Songti 会变定稿视觉）+ 主包余量 43KB，重新生成需权衡；②真机核对文字背景在 4.5 倍缓冲下的淡墨层次。
+
+## 2026-11-15 · 海报题图重设计：装裱式画心（用户反馈「图片感觉不太好」）
+
+- 需求：用户觉得海报顶部图片观感不好，要求再设计。旧版题图 contain 直接画在宣纸上，方图/横图留白两侧，像「图浮在纸上」。
+- **装裱式重设计（paintPoster）**：暖白裱底卡（#FCFBF8，18,16 起 224×132 圆角 8）+ 墨色外框线（rgba 墨 0.16）+ 朱砂内框线（rgba 朱砂 0.22，双线装裱语言）+ 画心 contain 完整展示（28,24 起 204×116，不变形不裁切）——contain 留白成为装裱留白；删除原底部虚化渐隐（裱框取代其过渡职能）。新增 `roundRectPath` 助手（quadraticCurveTo 模拟 arcTo，兼容旧 webview）。
+- selftest：mock ctx 补 stroke()（漏加曾致绘制中断被 catch 降级）；fills 断言改 >= 3（纸底/装裱/分隔细线）。
+- 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；build_preview 重打包；preview_shots 35 张全过，苏轼题图入裱、古风文字背景、日期/印章视觉核对正确。
+- 遗留：真机核对裱框线宽（逻辑 1px × 4.5 缓冲）渲染粗细；兜底静态卡仍带旧卷轴视觉（同前条遗留）。

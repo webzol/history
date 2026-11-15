@@ -243,6 +243,21 @@ function close(page) {
 // 海报：宣纸笺风（2026-11-15 去边框定稿）——整张宣纸纹理 + 古风文字背景（座右铭竖列 + 透背字）
 // + 装裱题图 + 楷体名句 + 日期落款 + 「史载」朱砂印，与各页宣纸背景同一视觉语言。
 // 纯绘制函数：图一律经 peekImg 读缓存（缺图由预取触发下一轮重绘补上），本函数不含任何异步。
+
+// 圆角矩形路径（quadraticCurveTo 模拟 arcTo，兼容旧 webview）
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 function paintPoster(ctx, share) {
   // 整张宣纸：先铺底色，再 aspectFill 居中裁切绘入与全站同源的宣纸纹理（clip 防溢出）
   ctx.fillStyle = PAPER;
@@ -277,9 +292,19 @@ function paintPoster(ctx, share) {
   ctx.font = '96px ' + KAI;
   ctx.fillText('史', W - 74, 322);
 
-  // 卷首画：当前页相关图**完整展示不裁切**（contain），底部虚化渐隐融入卷面
+  // 卷首装裱（2026-11-15 重设计）：暖白裱底 + 墨色外框线 + 朱砂内框线，画心 contain
+  // 完整展示不变形——contain 留白成为装裱留白，不再"图浮在纸上"。
   // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
-  const dx = 14, dy = 22, dw = W - 28, dh = 108;
+  ctx.fillStyle = '#FCFBF8';
+  roundRectPath(ctx, 18, 16, 224, 132, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(70, 58, 45, 0.16)';
+  roundRectPath(ctx, 18.5, 16.5, 223, 131, 8);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(163, 74, 62, 0.22)';
+  roundRectPath(ctx, 24, 22, 212, 120, 5);
+  ctx.stroke();
+  const dx = 28, dy = 24, dw = 204, dh = 116;
   const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
   if (cover) {
     const iw = cover.width || 0;
@@ -292,12 +317,6 @@ function paintPoster(ctx, share) {
     } else {
       ctx.drawImage(cover, dx, dy, dw, dh);
     }
-  }
-  // 题图底部虚化渐隐：逐行覆盖宣纸色（alpha 0→0.95），人物完整不裁切且下缘融入卷面
-  const fadeY = dy + dh - 24;
-  for (let i = 0; i < 24; i += 1) {
-    ctx.fillStyle = 'rgba(246, 241, 234, ' + ((i / 24) * 0.95).toFixed(3) + ')';
-    ctx.fillRect(dx, fadeY + i, dw, 1);
   }
 
   // kicker（朱砂小字）
