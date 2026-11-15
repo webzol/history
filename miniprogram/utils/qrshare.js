@@ -25,16 +25,19 @@ const FALLBACK_IMG = '/assets/share-fallback.jpg';
 const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
 // 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
 const PAPER_BG = '/assets/paper-bg.jpg';
+// 底部水墨山水带（千里江山图，低透明度晕染，仿参考稿底部淡山水）
+const LANDSCAPE_BG = '/assets/paintings/landscape.jpg';
 
-// 海报逻辑尺寸（px，与 app.wxss .ss-canvas 一致）与高清倍率
+// 海报逻辑尺寸（px，260×563 与参考稿 1125×2436 同比例）与高清倍率
 const CANVAS_ID = 'ssQrCanvas';
 const W = 260;
-const H = 424;
+const H = 563;
 const SCALE = 4.5;
 const BW = Math.round(W * SCALE); // 缓冲 1170
 const BH = Math.round(H * SCALE); // 缓冲 1908
 const INK = '#1F1D19';
 const PAPER = '#F6F1EA';
+const CINNABAR = '#A34A3E'; // 朱砂（品牌题字/kicker/画名签）
 
 // 字体栈：与 app.wxss 同源（标题宋体 / 名句楷体 / 其余默认黑体系）
 const KAI = '"Kaiti SC", "STKaiti", "KaiTi", serif';
@@ -168,7 +171,8 @@ function preloadPosterImgs(page, share) {
     PAPER_BG,
     share.imgLocal || FALLBACK_COVER,
     share.imgLocal ? FALLBACK_COVER : '', // 题图装载中先备好兜底卷首
-    '/assets/seal.png'
+    '/assets/seal.png',
+    LANDSCAPE_BG
   ];
   srcs.forEach((src) => {
     if (!src || imgCache[src]) return;
@@ -240,8 +244,9 @@ function close(page) {
   page.setData({ 'share.open': false });
 }
 
-// 海报：宣纸笺风（2026-11-15 去边框定稿）——整张宣纸纹理 + 古风文字背景（座右铭竖列 + 透背字）
-// + 装裱题图 + 楷体名句 + 日期落款 + 「史载」朱砂印，与各页宣纸背景同一视觉语言。
+// 海报：仿参考稿 1:1 版式（2026-11-15）——顶部朱砂品牌题字 + 大幅圆角卷首画（含朱砂画名签）
+// + 两侧古风竖排文字 + 史事 kicker（双侧短线）+ 大标题 + 摘要 + 名句卡（含「史载」印）
+// + 日历日期落款 + 底部淡彩山水晕染。整张宣纸纹理打底，无任何二维码。
 // 纯绘制函数：图一律经 peekImg 读缓存（缺图由预取触发下一轮重绘补上），本函数不含任何异步。
 
 // 圆角矩形路径（quadraticCurveTo 模拟 arcTo，兼容旧 webview）
@@ -258,15 +263,20 @@ function roundRectPath(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// 竖排文字列（逐字 fillText，楷体/宋体淡墨）
+function vtext(ctx, text, x, y0, step) {
+  String(text).split('').forEach((ch, i) => ctx.fillText(ch, x, y0 + i * step));
+}
+
 function paintPoster(ctx, share) {
-  // 整张宣纸：先铺底色，再 aspectFill 居中裁切绘入与全站同源的宣纸纹理（clip 防溢出）
+  // 整张宣纸打底：底色 + aspectFill 纹理（clip 防溢出）
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
   const paper = peekImg(PAPER_BG);
   if (paper && paper.width && paper.height) {
-    const s = Math.max(W / paper.width, H / paper.height);
-    const pw = paper.width * s;
-    const ph = paper.height * s;
+    const ps = Math.max(W / paper.width, H / paper.height);
+    const pw = paper.width * ps;
+    const ph = paper.height * ps;
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, W, H);
@@ -275,109 +285,147 @@ function paintPoster(ctx, share) {
     ctx.restore();
   }
 
-  // 古风文字背景一：右缘竖排「阅史记」淡墨透背字（宣纸透背书法质感）
-  ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(31, 29, 25, 0.055)';
-  ctx.font = '16px ' + KAI;
-  '阅史记'.split('').forEach((ch, i) => ctx.fillText(ch, W - 12, 178 + i * 21));
-
-  // 古风文字背景二：左缘竖排座右铭「一卷千年 · 灯下阅史」（古籍竖读右起两列，淡墨）
-  ctx.fillStyle = 'rgba(31, 29, 25, 0.075)';
-  ctx.font = '15px ' + KAI;
-  '一卷千年'.split('').forEach((ch, i) => ctx.fillText(ch, W - 30, 174 + i * 20));
-  '灯下阅史'.split('').forEach((ch, i) => ctx.fillText(ch, W - 50, 174 + i * 20));
-
-  // 古风文字背景三：题图下方朱砂小印意界格——「史」字淡朱砂大水印压名句区右侧
-  ctx.fillStyle = 'rgba(163, 74, 62, 0.05)';
-  ctx.font = '96px ' + KAI;
-  ctx.fillText('史', W - 74, 322);
-
-  // 卷首装裱（2026-11-15 重设计）：暖白裱底 + 墨色外框线 + 朱砂内框线，画心 contain
-  // 完整展示不变形——contain 留白成为装裱留白，不再"图浮在纸上"。
-  // （远端图加载失败回退 share.imgFallback 本地朝代画，再失败画预置卷首兜底图）
-  ctx.fillStyle = '#FCFBF8';
-  roundRectPath(ctx, 18, 16, 224, 132, 8);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(70, 58, 45, 0.16)';
-  roundRectPath(ctx, 18.5, 16.5, 223, 131, 8);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(163, 74, 62, 0.22)';
-  roundRectPath(ctx, 24, 22, 212, 120, 5);
-  ctx.stroke();
-  const dx = 28, dy = 24, dw = 204, dh = 116;
-  const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
-  if (cover) {
-    const iw = cover.width || 0;
-    const ih = cover.height || 0;
-    if (iw > 0 && ih > 0) {
-      const scale = Math.min(dw / iw, dh / ih);
-      const dw2 = Math.round(iw * scale);
-      const dh2 = Math.round(ih * scale);
-      ctx.drawImage(cover, Math.round(dx + (dw - dw2) / 2), Math.round(dy + (dh - dh2) / 2), dw2, dh2);
-    } else {
-      ctx.drawImage(cover, dx, dy, dw, dh);
+  // 底部淡彩山水晕染带（画在内容之下：低透明度 + 顶缘纸色渐隐融入宣纸）
+  const landscape = peekImg(LANDSCAPE_BG);
+  if (landscape && landscape.width && landscape.height) {
+    const by = 368;
+    const bh = H - by;
+    const ls = Math.max(W / landscape.width, bh / landscape.height);
+    const lw2 = landscape.width * ls;
+    const lh2 = landscape.height * ls;
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.beginPath();
+    ctx.rect(0, by, W, bh);
+    ctx.clip();
+    ctx.drawImage(landscape, (W - lw2) / 2, by + (bh - lh2) / 2, lw2, lh2);
+    ctx.restore();
+    // 顶缘 24 行纸色渐隐，山水上缘不生硬
+    ctx.fillStyle = PAPER;
+    for (let i = 0; i < 24; i += 1) {
+      ctx.globalAlpha = 1 - i / 24;
+      ctx.fillRect(0, by + i, W, 1);
     }
+    ctx.globalAlpha = 1;
   }
 
-  // kicker（朱砂小字）
+  // 顶部品牌题字「阅史记」+ 朱砂小横线
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#A34A3E';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText(share.kicker, W / 2, 164);
+  ctx.fillStyle = CINNABAR;
+  ctx.font = 'bold 17px ' + SONG;
+  ctx.fillText('阅史记', W / 2, 30);
+  ctx.fillRect(W / 2 - 7, 36, 14, 2);
 
-  // 标题（宋体大字，最多一行）
+  // 卷首画大幅圆角卡：纸白卡底 + 画心 cover 裁切铺满（不变形只裁边）+ 左上朱砂画名签
+  ctx.fillStyle = '#FCFBF8';
+  roundRectPath(ctx, 29, 42, 202, 166, 6);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(70, 58, 45, 0.14)';
+  roundRectPath(ctx, 29.5, 42.5, 201, 165, 6);
+  ctx.stroke();
+  const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
+  if (cover && cover.width && cover.height) {
+    const ix = 33, iy = 46, iw2 = 194, ih2 = 158;
+    const cs = Math.max(iw2 / cover.width, ih2 / cover.height);
+    const cw2 = cover.width * cs;
+    const ch2 = cover.height * cs;
+    ctx.save();
+    roundRectPath(ctx, ix, iy, iw2, ih2, 4);
+    ctx.clip();
+    ctx.drawImage(cover, ix + (iw2 - cw2) / 2, iy + (ih2 - ch2) / 2, cw2, ch2);
+    ctx.restore();
+    // 朱砂画名签（竖排白字，取标题前 4 字）
+    const chipText = String(share.title || '').replace(/[，。！？、\s·]/g, '').slice(0, 4) || '阅史记';
+    const chars = chipText.split('');
+    ctx.fillStyle = CINNABAR;
+    roundRectPath(ctx, 40, 62, 12, 10 + chars.length * 8, 3);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(252, 251, 248, 0.95)';
+    ctx.font = '7px ' + SANS;
+    chars.forEach((ch, i) => ctx.fillText(ch, 46, 70 + i * 8));
+  }
+
+  // 两侧古风竖排（右：读史可以明智 / 知古可以鉴今；左：以史为鉴 / 与古为新）
+  ctx.fillStyle = 'rgba(122, 114, 100, 0.62)';
+  ctx.font = '8px ' + SONG;
+  vtext(ctx, '读史可以明智', 252, 46, 11);
+  vtext(ctx, '知古可以鉴今', 241, 46, 11);
+  vtext(ctx, '以史为鉴', 20, 58, 11);
+  vtext(ctx, '与古为新', 9.5, 58, 11);
+
+  // 史事 kicker（朱砂）+ 两侧短线
+  ctx.textAlign = 'center';
+  ctx.fillStyle = CINNABAR;
+  ctx.font = '11px ' + SONG;
+  ctx.fillText(share.kicker, W / 2, 226);
+  let kw = 0;
+  if (typeof ctx.measureText === 'function') {
+    kw = ctx.measureText(share.kicker).width;
+  } else {
+    share.kicker.split('').forEach((ch) => { kw += charW(ch, 11); });
+  }
+  ctx.fillRect(W / 2 - kw / 2 - 20, 222.5, 14, 1.5);
+  ctx.fillRect(W / 2 + kw / 2 + 6, 222.5, 14, 1.5);
+
+  // 大标题（宋体特大，最多一行）
   ctx.fillStyle = INK;
-  ctx.font = 'bold 19px ' + SONG;
-  ctx.fillText(clipText(share.title, 19, 208, true), W / 2, 190);
+  ctx.font = 'bold 24px ' + SONG;
+  ctx.fillText(clipText(share.title, 24, 224, true), W / 2, 254);
 
   // 摘要（淡墨，最多两行）
   ctx.fillStyle = '#5F5A52';
-  ctx.font = '11px ' + SANS;
-  const rows = wrapText(share.desc, 11, 196, 2);
-  rows.forEach((row, i) => ctx.fillText(row, W / 2, 212 + i * 17));
+  ctx.font = '10.5px ' + SANS;
+  const rows = wrapText(share.desc, 10.5, 208, 2);
+  rows.forEach((row, i) => ctx.fillText(row, W / 2, 280 + i * 16));
 
-  // 淡墨分隔细线
-  ctx.fillStyle = 'rgba(70, 58, 45, 0.14)';
-  ctx.fillRect(36, 248, W - 72, 1);
-
-  // 每日名句（楷体，最多两行）+ 出处
+  // 名句卡：纸白圆角卡 + 楷体名句 + 出处 +「史载」朱砂印（右）
+  ctx.fillStyle = '#FCFBF8';
+  roundRectPath(ctx, 10, 306, 240, 56, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(70, 58, 45, 0.10)';
+  roundRectPath(ctx, 10.5, 306.5, 239, 55, 8);
+  ctx.stroke();
   if (share.quote) {
     ctx.fillStyle = '#3B3731';
-    ctx.font = '12px ' + KAI;
-    const qrows = wrapText(share.quote, 12, 196, 2);
-    qrows.forEach((row, i) => ctx.fillText(row, W / 2, 266 + i * 19));
+    ctx.font = '13px ' + KAI;
+    const qrows = wrapText(share.quote, 13, 150, 2);
+    qrows.forEach((row, i) => ctx.fillText(row, 112, 324 + i * 17));
     ctx.fillStyle = '#8C857A';
     ctx.font = '9px ' + SANS;
-    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, 266 + (qrows.length - 1) * 19 + 16);
+    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', 112, 324 + (qrows.length - 1) * 17 + 16);
+  }
+  const seal = peekImg('/assets/seal.png');
+  if (seal) {
+    const sealH = 30;
+    const sealW = Math.round(sealH * 114 / 197);
+    ctx.drawImage(seal, 210, 319, sealW, sealH);
   }
 
-  // 淡墨分隔细线
-  ctx.fillStyle = 'rgba(70, 58, 45, 0.10)';
-  ctx.fillRect(36, 316, W - 72, 1);
-
-  // 落款区：公历/农历日期（左）+「史载」朱砂印（右）——卡片不带二维码（2026-11-15 定稿）
-  const cy = 330;
+  // 日期落款：手绘日历小图标 + 公历/农历（压在山水晕染带上，与参考稿一致）
+  ctx.strokeStyle = '#5F5A52';
+  roundRectPath(ctx, 92, 374, 11, 11, 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(92, 378);
+  ctx.lineTo(103, 378);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(95, 372.5);
+  ctx.lineTo(95, 375.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(100, 372.5);
+  ctx.lineTo(100, 375.5);
+  ctx.stroke();
+  ctx.fillStyle = '#5F5A52';
+  ctx.fillRect(94.5, 380.5, 3, 3);
   ctx.textAlign = 'left';
   ctx.fillStyle = INK;
   ctx.font = '11px ' + SANS;
-  ctx.fillText(share.dateText || '', 36, cy + 22);
+  ctx.fillText(share.dateText || '', 108, 383);
   ctx.fillStyle = '#8C857A';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText(share.lunarText || '', 36, cy + 42);
-
-  // 「史载」朱砂印（assets/seal.png，114×197 竖长按比例）
-  const seal = peekImg('/assets/seal.png');
-  if (seal) {
-    const sealH = 52;
-    const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage(seal, W - 14 - sealW, cy - 2, sealW, sealH);
-  }
-
-  // 品牌行
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#8C857A';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText('阅史记 · 一页一页读历史', W / 2, H - 24);
+  ctx.font = '9.5px ' + SANS;
+  ctx.fillText(share.lunarText || '', 108, 397);
 }
 
 function drawPoster(page) {
