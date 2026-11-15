@@ -5885,25 +5885,28 @@ function paintPoster(ctx, share) {
     ctx.restore();
   }
 
-  // 底部淡彩山水晕染带（画在内容之下：低透明度 + 顶缘纸色渐隐融入宣纸）
+  // 底部水墨山水带（画在内容之下，仿参考稿日期以下的整段山水）：
+  // 源裁切千里江山图右段山势最密集区，alpha 0.32 + 顶缘 36 行纸色渐隐融入宣纸
   const landscape = peekImg(LANDSCAPE_BG);
   if (landscape && landscape.width && landscape.height) {
-    const by = 368;
+    const by = 370;
     const bh = H - by;
-    const ls = Math.max(W / landscape.width, bh / landscape.height);
-    const lw2 = landscape.width * ls;
-    const lh2 = landscape.height * ls;
+    const sx = 300, sw2 = 420; // 右段山势密集区（源像素）
+    const sh2 = landscape.height;
+    const ls = Math.max(W / sw2, bh / sh2);
+    const lw2 = sw2 * ls;
+    const lh2 = sh2 * ls;
     ctx.save();
-    ctx.globalAlpha = 0.16;
+    ctx.globalAlpha = 0.32;
     ctx.beginPath();
     ctx.rect(0, by, W, bh);
     ctx.clip();
-    ctx.drawImage(landscape, (W - lw2) / 2, by + (bh - lh2) / 2, lw2, lh2);
+    ctx.drawImage(landscape, sx, 0, sw2, sh2, (W - lw2) / 2, by + (bh - lh2) / 2, lw2, lh2);
     ctx.restore();
-    // 顶缘 24 行纸色渐隐，山水上缘不生硬
+    // 顶缘 36 行纸色渐隐，山水上缘不生硬
     ctx.fillStyle = PAPER;
-    for (let i = 0; i < 24; i += 1) {
-      ctx.globalAlpha = 1 - i / 24;
+    for (let i = 0; i < 36; i += 1) {
+      ctx.globalAlpha = 1 - i / 36;
       ctx.fillRect(0, by + i, W, 1);
     }
     ctx.globalAlpha = 1;
