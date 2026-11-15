@@ -5625,8 +5625,9 @@ const FALLBACK_IMG = '/assets/share-fallback.jpg';
 const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
 // 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
 const PAPER_BG = '/assets/paper-bg.jpg';
-// 底部水墨山水带（千里江山图，低透明度晕染，仿参考稿底部淡山水）
-const LANDSCAPE_BG = '/assets/paintings/landscape.jpg';
+// 海报参考底图（阅史记题字/顶部山水/底部群山均已烧在图内，1440×2560→936×1664 q58）
+// 走 jsDelivr 远端（主包零成本，data/img/poster/ 与其他配图同模式）；离线未装载时回退纸底纹理
+const POSTER_BG = 'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/poster/poster-bg.jpg';
 
 // 海报逻辑尺寸（px，260×563 与参考稿 1125×2436 同比例）与高清倍率
 const CANVAS_ID = 'ssQrCanvas';
@@ -5772,7 +5773,7 @@ function preloadPosterImgs(page, share) {
     share.imgLocal || FALLBACK_COVER,
     share.imgLocal ? FALLBACK_COVER : '', // 题图装载中先备好兜底卷首
     '/assets/seal.png',
-    LANDSCAPE_BG
+    POSTER_BG
   ];
   srcs.forEach((src) => {
     if (!src || imgCache[src]) return;
@@ -5885,39 +5886,19 @@ function paintPoster(ctx, share) {
     ctx.restore();
   }
 
-  // 底部水墨山水带（画在内容之下，仿参考稿日期以下的整段山水）：
-  // 源裁切千里江山图右段山势最密集区，alpha 0.32 + 顶缘 36 行纸色渐隐融入宣纸
-  const landscape = peekImg(LANDSCAPE_BG);
-  if (landscape && landscape.width && landscape.height) {
-    const by = 370;
-    const bh = H - by;
-    const sx = 300, sw2 = 420; // 右段山势密集区（源像素）
-    const sh2 = landscape.height;
-    const ls = Math.max(W / sw2, bh / sh2);
-    const lw2 = sw2 * ls;
-    const lh2 = sh2 * ls;
+  // 参考底图整幅覆盖：阅史记题字/顶部山水/底部群山已烧在图内（离线未装载时保持上纸底）
+  const posterBg = peekImg(POSTER_BG);
+  if (posterBg && posterBg.width && posterBg.height) {
+    const bs = Math.max(W / posterBg.width, H / posterBg.height);
+    const bw = posterBg.width * bs;
+    const bh = posterBg.height * bs;
     ctx.save();
-    ctx.globalAlpha = 0.32;
     ctx.beginPath();
-    ctx.rect(0, by, W, bh);
+    ctx.rect(0, 0, W, H);
     ctx.clip();
-    ctx.drawImage(landscape, sx, 0, sw2, sh2, (W - lw2) / 2, by + (bh - lh2) / 2, lw2, lh2);
+    ctx.drawImage(posterBg, (W - bw) / 2, (H - bh) / 2, bw, bh);
     ctx.restore();
-    // 顶缘 36 行纸色渐隐，山水上缘不生硬
-    ctx.fillStyle = PAPER;
-    for (let i = 0; i < 36; i += 1) {
-      ctx.globalAlpha = 1 - i / 36;
-      ctx.fillRect(0, by + i, W, 1);
-    }
-    ctx.globalAlpha = 1;
   }
-
-  // 顶部品牌题字「阅史记」+ 朱砂小横线
-  ctx.textAlign = 'center';
-  ctx.fillStyle = CINNABAR;
-  ctx.font = 'bold 17px ' + SONG;
-  ctx.fillText('阅史记', W / 2, 30);
-  ctx.fillRect(W / 2 - 7, 36, 14, 2);
 
   // 卷首画大幅圆角卡：纸白卡底 + 画心 cover 裁切铺满（不变形只裁边）+ 左上朱砂画名签
   ctx.fillStyle = '#FCFBF8';
@@ -5960,75 +5941,79 @@ function paintPoster(ctx, share) {
   ctx.textAlign = 'center';
   ctx.fillStyle = CINNABAR;
   ctx.font = '11px ' + SONG;
-  ctx.fillText(share.kicker, W / 2, 226);
+  ctx.fillText(share.kicker, W / 2, 296);
   let kw = 0;
   if (typeof ctx.measureText === 'function') {
     kw = ctx.measureText(share.kicker).width;
   } else {
     share.kicker.split('').forEach((ch) => { kw += charW(ch, 11); });
   }
-  ctx.fillRect(W / 2 - kw / 2 - 20, 222.5, 14, 1.5);
-  ctx.fillRect(W / 2 + kw / 2 + 6, 222.5, 14, 1.5);
+  ctx.fillRect(W / 2 - kw / 2 - 20, 292.5, 14, 1.5);
+  ctx.fillRect(W / 2 + kw / 2 + 6, 292.5, 14, 1.5);
 
   // 大标题（宋体特大，最多一行）
   ctx.fillStyle = INK;
   ctx.font = 'bold 24px ' + SONG;
-  ctx.fillText(clipText(share.title, 24, 224, true), W / 2, 254);
+  ctx.fillText(clipText(share.title, 24, 224, true), W / 2, 324);
 
   // 摘要（淡墨，最多两行）
   ctx.fillStyle = '#5F5A52';
   ctx.font = '10.5px ' + SANS;
   const rows = wrapText(share.desc, 10.5, 208, 2);
-  rows.forEach((row, i) => ctx.fillText(row, W / 2, 280 + i * 16));
+  rows.forEach((row, i) => ctx.fillText(row, W / 2, 350 + i * 16));
 
   // 名句卡：纸白圆角卡 + 楷体名句 + 出处 +「史载」朱砂印（右）
   ctx.fillStyle = '#FCFBF8';
-  roundRectPath(ctx, 10, 306, 240, 56, 8);
+  roundRectPath(ctx, 10, 368, 240, 56, 8);
   ctx.fill();
   ctx.strokeStyle = 'rgba(70, 58, 45, 0.10)';
-  roundRectPath(ctx, 10.5, 306.5, 239, 55, 8);
+  roundRectPath(ctx, 10.5, 368.5, 239, 55, 8);
   ctx.stroke();
   if (share.quote) {
     ctx.fillStyle = '#3B3731';
     ctx.font = '13px ' + KAI;
     const qrows = wrapText(share.quote, 13, 150, 2);
-    qrows.forEach((row, i) => ctx.fillText(row, 112, 324 + i * 17));
+    qrows.forEach((row, i) => ctx.fillText(row, 112, 386 + i * 17));
     ctx.fillStyle = '#8C857A';
     ctx.font = '9px ' + SANS;
-    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', 112, 324 + (qrows.length - 1) * 17 + 16);
+    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', 112, 386 + (qrows.length - 1) * 17 + 16);
   }
   const seal = peekImg('/assets/seal.png');
   if (seal) {
     const sealH = 30;
     const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage(seal, 210, 319, sealW, sealH);
+    ctx.drawImage(seal, 210, 381, sealW, sealH);
   }
 
-  // 日期落款：手绘日历小图标 + 公历/农历（压在山水晕染带上，与参考稿一致）
+  // 底部落款（压在底图群山上）：日历小图标 + 公历/农历 + 品牌行
   ctx.strokeStyle = '#5F5A52';
-  roundRectPath(ctx, 92, 374, 11, 11, 2);
+  roundRectPath(ctx, 92, 498, 11, 11, 2);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(92, 378);
-  ctx.lineTo(103, 378);
+  ctx.moveTo(92, 502);
+  ctx.lineTo(103, 502);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(95, 372.5);
-  ctx.lineTo(95, 375.5);
+  ctx.moveTo(95, 496.5);
+  ctx.lineTo(95, 499.5);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(100, 372.5);
-  ctx.lineTo(100, 375.5);
+  ctx.moveTo(100, 496.5);
+  ctx.lineTo(100, 499.5);
   ctx.stroke();
   ctx.fillStyle = '#5F5A52';
-  ctx.fillRect(94.5, 380.5, 3, 3);
+  ctx.fillRect(94.5, 504.5, 3, 3);
   ctx.textAlign = 'left';
   ctx.fillStyle = INK;
   ctx.font = '11px ' + SANS;
-  ctx.fillText(share.dateText || '', 108, 383);
+  ctx.fillText(share.dateText || '', 108, 507);
   ctx.fillStyle = '#8C857A';
   ctx.font = '9.5px ' + SANS;
-  ctx.fillText(share.lunarText || '', 108, 397);
+  ctx.fillText(share.lunarText || '', 108, 521);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#6E6A61';
+  ctx.font = '10px ' + SANS;
+  ctx.fillText('阅史记 · 一页一页读历史', W / 2, 549);
 }
 
 function drawPoster(page) {
