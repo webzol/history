@@ -2196,3 +2196,11 @@ miniprogram/data/history.js
 - **加固（代码）**：`utils/privacy.js` 的可用性检测去掉 `wx.canIUse('button.open-type.agreePrivacyAuthorization')` 一票否决。canIUse 数据文件随基础库更新、可能漏报新版 open-type，一旦误判 return，`initialized` 恒为 false、`activate` 又会置 `checked=true`，**整条自定义弹窗链路被静默禁用**（正是真机无弹框且无报错的形态）。改为只判断 `wx.getPrivacySetting`/`wx.onNeedPrivacyAuthorization` 是否为函数（二者与原生同意按钮同为 2.32.3 起支持）。同时给 `getPrivacySetting` 的 success/fail 加 `[privacy]` 日志，便于真机上直接区分"已同意"与"未声明"。
 - 验证：`node tools/privacy_selftest.js` PASS 14 / FAIL 0（新增两条：缺接口时不注册监听；不依赖 canIUse）；`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；重建预览 bundle。
 - 遗留（真机侧，代码层已无可做项）：①后台声明与审核状态需 TD 确认（补充声明约 5 分钟生效；开发版/体验版绑定的是「提审版本」声明，与现网声明入口不同，需分别确认）；②真机基础库需 ≥2.32.3；③如曾点「拒绝」，微信侧可能短时间内抑制再次触发，需删除小程序重进或「清除授权数据」复测。
+
+## 2026-11-16 · 后台隐私指引审核通过，落实真机验证
+
+- 公众平台「用户隐私保护指引」审核通过（提审 13:52 / 审核 14:07）。此前定位的「真机不弹框＝后台未声明」根因随之解除，代码侧无需改动。
+- 复核首次进入弹框逻辑（`utils/privacy.js` 的 `activate` → `getPrivacySetting` → `needAuthorization` 为真才 `show()`）：逻辑正确，首次进入会弹，**只要该微信号没有同意过**。若测试机此前已同意（或点过同意），`needAuthorization=false` 不再弹——这是微信平台既定行为，需删除小程序重进或换未同意账号才能复现，非代码缺陷。
+- 文档同步：`docs/PRIVACY_SETUP.md` 后台声明段标记已完成（保留「提审入口 vs 现网入口」待确认项），「真机不弹排查」清单把「已同意」上调为首位、把「未声明」下调并标注已排除；`AGENTS.md` 隐私条目更新。
+- 验证：仅文档变更；`node tools/privacy_selftest.js` PASS 14 / FAIL 0，逻辑未动。
+- 遗留：①TD 确认本次通过的是现网入口还是提审入口（两者独立，发版前都要有）；②真机（未同意账号）确认首次弹窗、同意后不再弹、保存海报前拒绝/同意两条路径。
