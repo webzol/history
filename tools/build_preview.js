@@ -55,10 +55,16 @@ parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
 parts.push(wrapJs('utils/solarlunar.js', read('utils/solarlunar.js')));
 parts.push(wrapJs('utils/wxacode.js', read('utils/wxacode.js')));
 parts.push(wrapJs('utils/qrshare.js', read('utils/qrshare.js')));
+parts.push(wrapJs('utils/privacy.js', read('utils/privacy.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>
     `__register('/${modPath}', function (require, module, exports) { module.exports = ${JSON.stringify(text)}; });`;
+
+['js', 'wxml', 'wxss'].forEach((ext) => {
+  const modPath = `components/privacy-popup/index.${ext}`;
+  parts.push(ext === 'js' ? wrapJs(modPath, read(modPath)) : stringMod(modPath, read(modPath)));
+});
 
 // pages
 const pageBundle = {};

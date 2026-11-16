@@ -16,6 +16,8 @@
     return cfg;
   };
   window.App = window.Page;
+  var PRIVACY_CFG;
+  window.Component = function (cfg) { PRIVACY_CFG = cfg; };
 
   // ---------------------------------------------------------------------------
   // tiny CommonJS
@@ -52,6 +54,10 @@
   var navStack = [];
   var CURRENT;
   var OVERLAY_ROOT;
+  var privacyView;
+  var privacyHost;
+  var privacyNeeded = false;
+  var privacyListener;
 
   function pathOf(name) { return '/pages/' + name + '/' + name; }
   function parseQuery(q) {
@@ -72,6 +78,20 @@
 
   var storage = {};
   var wx = {
+    canIUse: function () { return true; },
+    onNeedPrivacyAuthorization: function (listener) { privacyListener = listener; },
+    getPrivacySetting: function (o) {
+      o.success({ needAuthorization: privacyNeeded, privacyContractName: '《阅史记小程序用户隐私保护指引》' });
+    },
+    openPrivacyContract: function () { drawModal({ title: '隐私保护指引', content: '此处为网页预览。微信内将打开公众平台配置的正式隐私保护指引。', showCancel: false }); },
+    requirePrivacyAuthorize: function (o) {
+      if (!privacyNeeded) { o.success(); return; }
+      privacyListener(function (res) {
+        if (res.event === 'agree') { privacyNeeded = false; o.success(); }
+        else if (res.event === 'disagree' && o.fail) o.fail({ errMsg: 'requirePrivacyAuthorize:fail privacy permission is not authorized' });
+      });
+    },
+    saveImageToPhotosAlbum: function (o) { if (o.success) o.success({}); },
     setStorageSync: function (k, v) { storage[k] = v; },
     getStorageSync: function (k) { return k in storage ? storage[k] : ''; },
     removeStorageSync: function (k) { delete storage[k]; },
@@ -296,6 +316,10 @@
   }
 
   function openPage(name, query, how) {
+    if (privacyView) {
+      PRIVACY_CFG.lifetimes.detached.call(privacyView);
+      privacyView = null;
+    }
     var inst = instantiate(name);
     var rec = { name: name, query: query, inst: inst };
     if (how === 'replace') navStack[navStack.length - 1] = rec;
@@ -303,6 +327,28 @@
     CURRENT = inst;
     if (inst.onLoad) inst.onLoad(query || {});
     renderPage(inst);
+    req('/components/privacy-popup/index.js');
+    privacyView = { cfg: PRIVACY_CFG.methods, data: deepClone(PRIVACY_CFG.data) };
+    privacyView.setData = function (patch) {
+      Object.assign(privacyView.data, patch);
+      renderPrivacy();
+    };
+    PRIVACY_CFG.pageLifetimes.show.call(privacyView);
+    renderPrivacy();
+  }
+
+  function renderPrivacy() {
+    if (!privacyView) return;
+    if (!privacyHost) {
+      privacyHost = document.createElement('div');
+      document.getElementById('phone').appendChild(privacyHost);
+      var style = document.createElement('style');
+      style.textContent = rwpx(req('/components/privacy-popup/index.wxss'));
+      document.head.appendChild(style);
+    }
+    privacyHost.innerHTML = '';
+    var ast = parseWXML(req('/components/privacy-popup/index.wxml'));
+    renderChildren(ast, privacyHost, makeScope(privacyView, {}), privacyView);
   }
 
   // ---------------------------------------------------------------------------
@@ -459,6 +505,7 @@
   }
 
   function makeEl(node, scope, inst) {
+    if (node.tag === 'privacy-popup') return null; // 独立宿主模拟原生组件生命周期
     var el;
     if (node.tag === 'w-block') el = document.createElement('w-block');
     else if (node.tag === 'image') el = document.createElement('img');
@@ -521,6 +568,8 @@
         el.setAttribute('class', out);
       } else if (key === 'id') {
         el.setAttribute('id', out);
+      } else if (node.tag === 'scroll-view' && key === 'scroll-y') {
+        el.style.overflowY = 'auto';
       } else if (node.tag === 'image' && key === 'src') {
         el.setAttribute('src', out.replace(/^\/assets\//, '../../miniprogram/assets/'));
       } else if (node.tag === 'image' && key === 'mode') {
@@ -545,8 +594,10 @@
       if (!/^bind/.test(key) || typeof attrs[key] !== 'string') return;
       var handler = attrs[key];
       var fn = inst.cfg[handler];
-      if (key === 'bindtap') {
+      if (key === 'bindtap' || key === 'bindagreeprivacyauthorization') {
         el.addEventListener('click', function () {
+          // 网页只模拟事件；真实小程序必须由微信原生授权按钮触发。
+          if (key === 'bindagreeprivacyauthorization') privacyNeeded = false;
           if (fn) fn.call(inst, { currentTarget: { dataset: el.__dataset } });
         });
       } else if (node.tag === 'input' && key === 'bindinput') {
@@ -721,6 +772,7 @@
       fit();
       window.addEventListener('resize', fit);
     }
+    privacyNeeded = query.privacy === '1';
     openPage(pageName, query, 'replace');
     if (CURRENT && CURRENT.onShow && query.shot !== 'reentry') CURRENT.onShow();
     ensureTabShell();

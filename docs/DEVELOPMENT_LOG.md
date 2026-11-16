@@ -2176,3 +2176,23 @@ miniprogram/data/history.js
 - selftest：断言随版式调整（fills≥5 宣纸/界格/装裱/细线、images≥2 题图+史载印）。
 - 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；validate 通过；build_preview 重打包；preview_shots 35 张全过——宣纸底/界格线/装裱题图/名句/落款/品牌行与初版逐项对位。
 - 遗留：真机核对 424 高画布与导出清晰度（2d 固定缓冲 1170×1908 不受本次回退影响）。
+
+## 2026-11-16 · 微信隐私提示与海报保存授权
+
+- 需求：根据微信《用户隐私保护指引》完善通知与官方开发指南，增加隐私提示弹窗。
+- 新增全页面共用原生组件 `components/privacy-popup/`，13 页全部挂载，包括分享直达的详情页。暖白圆角卡、朱砂同意按钮、既有史载小印；字号跟随设置，正文滚动，按钮在正文外固定可达。我的页新增正式指引入口。
+- `utils/privacy.js` 在应用启动时只注册一次 `onNeedPrivacyAuthorization`，避免覆盖式监听被常驻 tab 抢占。首次查询微信 `getPrivacySetting`，仅待授权时提示；同意仅由 `agreePrivacyAuthorization` 原生事件同步，不以本地 storage 记录代替平台状态。
+- 拒绝仍允许普通阅读，同会话切页不重复打扰；保存海报统一先 `requirePrivacyAuthorize`，拒绝仅取消保存，同意后继续。隐私拒绝不误导至相册设置。多个待授权请求合并响应，换页/卸载结算旧回调；先 resolve 再卸载同意按钮。异步初查防止覆盖用户刚作出的拒绝。
+- 网页 harness 新增原生组件生命周期与授权模拟，`?privacy=1` 可预览待同意状态。截图新增 36 首页、37 小屏特大字号详情、38 拒绝后继续阅读，共 38 张。
+- 验证：`node tools/selftest.js` PASS 1932 / FAIL 0；`node tools/privacy_selftest.js` 13 组通过（含真实海报保存调用链）；13 页静态校验通过；38 张截图生成并核对新弹窗。浏览器实测「拒绝 → 正常阅读 → 共此卷 → 保存再次提示 → 同意模拟保存成功」。
+- 后台待办：TD 在公众平台现网与提审版本的隐私指引中声明「使用你的相册（仅写入）权限」，用途为保存用户主动生成的分享海报；如实填写主体与联系方式。代码弹窗无法替代后台声明，详见 `docs/PRIVACY_SETUP.md`。本轮未操作后台或部署发版。
+- 遗留：微信开发者工具/真机核对原生授权事件、正式隐私指引打开后返回、相册授权及小屏滚动；当前平台真实同意状态无法由网页验证。
+- 工作区保护：开工前已有 archive-list WXML/WXSS 的两处未提交调整；保留且不并入本次提交，生成预览 bundle 也排除这些预存改动。
+
+## 2026-11-16 · 真机隐私弹框不出现排查与加固
+
+- 反馈：真机（开发者工具/体验版）上隐私弹框不出现，网页预览与自测均正常。
+- **根因定位（官方文档）**：`wx.getPrivacySetting` 的 `needAuthorization` 有四种取值——未在「MP 后台-设置-服务内容声明-用户隐私保护指引」声明隐私收集类型 → **false**；已声明且已同意 → false；已声明且未同意 → true；已同意后又新增类型 → true。据此，真机不弹框且日志 `needAuthorization=false`，**在没有"已同意"的前提下即等于后台未声明**，代码无法绕过，必须先由 TD 在公众平台声明「使用你的相册（仅写入）权限」（见 `docs/PRIVACY_SETUP.md`）。此外 `onNeedPrivacyAuthorization` 只在真正调用隐私接口/组件、且微信侧无同意记录时才触发，不会因进入页面而触发——首次弹窗依赖 `getPrivacySetting` 主动查询这条路径。
+- **加固（代码）**：`utils/privacy.js` 的可用性检测去掉 `wx.canIUse('button.open-type.agreePrivacyAuthorization')` 一票否决。canIUse 数据文件随基础库更新、可能漏报新版 open-type，一旦误判 return，`initialized` 恒为 false、`activate` 又会置 `checked=true`，**整条自定义弹窗链路被静默禁用**（正是真机无弹框且无报错的形态）。改为只判断 `wx.getPrivacySetting`/`wx.onNeedPrivacyAuthorization` 是否为函数（二者与原生同意按钮同为 2.32.3 起支持）。同时给 `getPrivacySetting` 的 success/fail 加 `[privacy]` 日志，便于真机上直接区分"已同意"与"未声明"。
+- 验证：`node tools/privacy_selftest.js` PASS 14 / FAIL 0（新增两条：缺接口时不注册监听；不依赖 canIUse）；`node tools/selftest.js` PASS 1932 / FAIL 0；`python tools/validate_miniprogram.py` 通过；重建预览 bundle。
+- 遗留（真机侧，代码层已无可做项）：①后台声明与审核状态需 TD 确认（补充声明约 5 分钟生效；开发版/体验版绑定的是「提审版本」声明，与现网声明入口不同，需分别确认）；②真机基础库需 ≥2.32.3；③如曾点「拒绝」，微信侧可能短时间内抑制再次触发，需删除小程序重进或「清除授权数据」复测。

@@ -3,6 +3,7 @@
 // 同时预热资料库自抓图清单（170KB JSON，7 天缓存；主包 2MB 上限后移出，见 utils/archiveArt.js）
 const hd = require('./utils/historyData.js');
 const archiveArt = require('./utils/archiveArt.js');
+const privacy = require('./utils/privacy.js');
 
 App({
   globalData: {
@@ -10,6 +11,7 @@ App({
   },
 
   onLaunch() {
+    privacy.init();
     setTimeout(() => {
       try {
         hd.refresh(() => {});

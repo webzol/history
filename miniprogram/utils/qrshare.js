@@ -375,11 +375,19 @@ function drawPoster(page) {
 
 // 写入相册（授权被拒则引导去设置，回来自动重试一次）
 function writeAlbum(filePath) {
+  require('./privacy.js').authorize(() => saveAlbum(filePath));
+}
+
+function saveAlbum(filePath) {
   wx.saveImageToPhotosAlbum({
     filePath,
     success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
     fail: (err) => {
       const msg = (err && err.errMsg) || '';
+      if (/privacy/.test(msg) || (err && err.errno === 104)) {
+        wx.showToast({ title: '已取消保存，可继续阅读', icon: 'none' });
+        return;
+      }
       if (msg.indexOf('auth') < 0 && msg.indexOf('deny') < 0) {
         wx.showToast({ title: '保存失败', icon: 'none' });
         return;

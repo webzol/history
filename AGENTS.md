@@ -1,6 +1,6 @@
 # 史页 · 开发交接说明（先读我）
 
-**最后更新：2026-11-13（Asia/Shanghai）**
+**最后更新：2026-11-16（Asia/Shanghai）**
 
 ## 0. 一句话
 
@@ -9,6 +9,8 @@
 > **品牌更名（2026-11-11 起）**：产品名由「史页」更名为「**阅史记**」——首页字标、页面内文案、全部分享标题均已使用「阅史记」；本文档与内部存储 key（`shige_*`）仍沿用旧名「史页」作为历史称呼，**新增面向用户的文案一律写「阅史记」**。
 
 当前已有：
+
+- **微信隐私提示（2026-11-16）**：全部 13 页挂载 `components/privacy-popup/`；`utils/privacy.js` 统一监听授权事件。首次按微信 `getPrivacySetting` 提示，原生同意按钮同步状态；暂不同意仍可阅读，保存海报前再 `requirePrivacyAuthorize`。不以本地缓存冒充同意。我的页提供正式隐私指引入口。**TD 需在公众平台声明「使用你的相册（仅写入）权限」**，见 `docs/PRIVACY_SETUP.md`；代码弹窗不能替代后台声明。新增 `node tools/privacy_selftest.js`（14 组），预览增加 `?privacy=1`，截图总数 38 张。**弹窗不出现排查**：`getPrivacySetting.needAuthorization=false` 有两种含义——已同意，**或后台未声明隐私收集类型**（官方文档：未声明即返回 false），真机不弹多半是后者，代码无法绕过，须先在公众平台声明；`utils/privacy.js` 已打 `[privacy]` 日志便于区分。检测不再依赖 `wx.canIUse`（其数据文件可能漏报新版 open-type，误判会静默禁用整条弹窗链路），改为判断 `wx.getPrivacySetting`/`wx.onNeedPrivacyAuthorization` 是否为函数。
 
 - 高保真网页首页：`ui/reference/home-v3.html`
 - 原生小程序（13 页全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 89 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）；热更数据在 `utils/remote.js` 内存缓存（首读 storage，稳态切页零 IO 零 stringify，「清除缓存」会 resetMemory）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。**首页两条「今日」内容均为每日随机（2026-10-25）**：`api.pickDaily` 以公历月日为种子做确定性抽取——同一天所有用户看到同一条、隔天自动换，不是每次点击重随机。「今日史事」hero 卡在日期库 16 组匹配日按库显示（真实历史今天），其余日子从全部 100 史事里每日随机抽一条（不再固定回退 dailyFallback，抽取异常才兜底）；60s 板块精选也从「固定取第一条有描述的」改为每日随机。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。

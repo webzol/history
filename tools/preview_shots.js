@@ -54,7 +54,10 @@ const targets = [
   ['32-person-share-se', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`, VIEWPORT_SE],
   ['33-period-share-se', `period?shot=1&id=han&s=${esc('click:.foot-actions .ghost-btn')}`, VIEWPORT_SE],
   ['34-person-share-max', `person?shot=1&id=su-shi&s=${esc('click:.foot-actions .ghost-btn:nth-child(2)')}`, VIEWPORT_MAX],
-  ['35-archive-share-max', `archive-detail?shot=1&kind=cards&type=12&shard=00&title=${esc('诸子百家名句赏析')}&id=hc-12-00001&s=${esc('click:.fav-btn:nth-child(2)')}`, VIEWPORT_MAX]
+  ['35-archive-share-max', `archive-detail?shot=1&kind=cards&type=12&shard=00&title=${esc('诸子百家名句赏析')}&id=hc-12-00001&s=${esc('click:.fav-btn:nth-child(2)')}`, VIEWPORT_MAX],
+  ['36-privacy-home', 'home?shot=1&privacy=1'],
+  ['37-privacy-detail-xl', 'person?shot=1&id=su-shi&privacy=1&font=xl', VIEWPORT_SE],
+  ['38-privacy-declined', `home?shot=1&privacy=1&s=${esc('click:.privacy-decline')}`]
 ];
 
 let miss = 0;

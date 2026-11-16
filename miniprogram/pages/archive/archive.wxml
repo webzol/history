@@ -78,3 +78,5 @@
     <view class="note">资料为原型整理内容，仅作阅读与内容迁移；正式发布前请逐条核对史实与授权。</view>
   </view>
 </view>
+
+<privacy-popup></privacy-popup>

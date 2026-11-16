@@ -1,0 +1,23 @@
+<view class="privacy-layer fs-{{fontClass}}" wx:if="{{visible}}" catchtouchmove="noop">
+  <view class="privacy-mask"></view>
+  <view class="privacy-card" role="dialog" aria-label="隐私保护提示" aria-modal="true">
+    <view class="privacy-heading">
+      <view>
+        <text class="privacy-brand">阅史记 · 一页一页读历史</text>
+        <text class="privacy-title">隐私保护提示</text>
+      </view>
+      <image class="privacy-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+    <scroll-view class="privacy-body" scroll-y="{{true}}">
+      <text class="privacy-paragraph">感谢你使用阅史记。请先阅读并了解我们的隐私保护指引。</text>
+      <text class="privacy-paragraph">当你选择将分享海报保存到相册时，我们会申请相册写入权限，仅用于保存你选定的海报。</text>
+      <text class="privacy-paragraph">收藏、浏览足迹和阅读设置保存在当前设备。随机头像与昵称由程序生成，无需获取微信头像或昵称。</text>
+      <text class="privacy-contract" bindtap="onOpenContract" role="link">{{contractName}}</text>
+      <text class="privacy-note">暂不同意也可继续阅读；保存海报时会再次征询你的同意。</text>
+    </scroll-view>
+    <view class="privacy-actions">
+      <button class="privacy-button privacy-decline" bindtap="onDecline">暂不同意</button>
+      <button class="privacy-button privacy-agree" id="privacy-agree-button" open-type="agreePrivacyAuthorization" bindagreeprivacyauthorization="onAgree">同意并继续</button>
+    </view>
+  </view>
+</view>

@@ -91,6 +91,10 @@ Page({
     wx.navigateTo({ url: '/pages/search/search' });
   },
 
+  onPrivacy() {
+    require('../../utils/privacy.js').openContract();
+  },
+
   onAllFoots() {
     wx.navigateTo({ url: '/pages/footprints/footprints' });
   },

@@ -118,6 +118,10 @@
         <text class="menu-label">关于阅史记</text>
         <text class="menu-arrow">›</text>
       </view>
+      <view class="menu-row" bindtap="onPrivacy">
+        <text class="menu-label">隐私保护指引</text>
+        <text class="menu-arrow">›</text>
+      </view>
       <view class="menu-row last" bindtap="onClearCache">
         <text class="menu-label">清除缓存</text>
         <text class="menu-arrow">›</text>
@@ -150,3 +154,5 @@
   </view>
 
 </view>
+
+<privacy-popup></privacy-popup>

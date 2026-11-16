@@ -399,6 +399,10 @@
   color: #A34A3E;
 }
 
+.state-pressed {
+  opacity: 0.72;
+}
+
 /* 首屏加载：淡墨环形 spinner + 列表骨架屏 */
 .loading-card {
   gap: 16rpx;

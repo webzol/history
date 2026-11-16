@@ -1,0 +1,106 @@
+.privacy-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  box-sizing: border-box;
+}
+.privacy-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 29, 25, 0.38);
+}
+.privacy-card {
+  position: relative;
+  width: 100%;
+  max-width: 654rpx;
+  padding: 38rpx 34rpx 32rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(140, 133, 122, 0.18);
+  border-radius: 40rpx;
+  background: #FCFBF8;
+  box-shadow: 0 12rpx 36rpx rgba(31, 29, 25, 0.08);
+}
+.privacy-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #E8E1D7;
+}
+.privacy-brand, .privacy-title, .privacy-paragraph, .privacy-note, .privacy-contract {
+  display: block;
+}
+.privacy-brand {
+  color: #8C857A;
+  font-size: calc(21rpx * var(--fs, 1));
+  line-height: 1.6;
+}
+.privacy-title {
+  margin-top: 10rpx;
+  color: #1F1D19;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(38rpx * var(--fs, 1));
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+}
+.privacy-seal {
+  flex-shrink: 0;
+  width: 66rpx;
+  height: 78rpx;
+}
+.privacy-body {
+  height: 46vh;
+  margin: 22rpx 0 28rpx;
+}
+.privacy-paragraph {
+  margin-bottom: 16rpx;
+  color: #5F5A52;
+  font-size: calc(26rpx * var(--fs, 1));
+  line-height: 1.8;
+}
+.privacy-contract {
+  padding: 6rpx 0;
+  color: #A34A3E;
+  font-size: calc(26rpx * var(--fs, 1));
+  line-height: 1.8;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.privacy-note {
+  margin-top: 16rpx;
+  color: #8C857A;
+  font-size: calc(23rpx * var(--fs, 1));
+  line-height: 1.7;
+}
+.privacy-actions {
+  display: flex;
+  gap: 18rpx;
+}
+.privacy-button {
+  border: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 82rpx;
+  margin: 0;
+  padding: 18rpx 10rpx;
+  border-radius: 24rpx;
+  font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+  font-size: calc(26rpx * var(--fs, 1));
+  line-height: 1.4;
+}
+.privacy-button::after { border: 0; }
+.privacy-decline {
+  color: #5F5A52;
+  background: #F0ECE5;
+}
+.privacy-agree {
+  color: #FCFBF8;
+  background: #A34A3E;
+}
