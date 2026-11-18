@@ -13,6 +13,10 @@ const CACHE_PREFIX = 'shige_tih_';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6h（成功结果）
 const FAIL_TTL = 30 * 60 * 1000; // 30min（失败冷却：429/断网后一段时间内不再发请求）
 
+// 页面常驻时可能在同一请求返回前多次触发 onShow。合并同一天的请求，
+// 避免并发打到上游，也避免多个回调重复写缓存。
+const inflight = Object.create(null);
+
 function dateKey(date) {
   const d = date || new Date();
   return `${d.getMonth() + 1}-${d.getDate()}`;
@@ -91,6 +95,16 @@ function fetchTodayInHistory(cb) {
     if (typeof cb === 'function') cb(new Error('request unavailable'));
     return;
   }
+  if (inflight[day]) {
+    if (typeof cb === 'function') inflight[day].push(cb);
+    return;
+  }
+  inflight[day] = typeof cb === 'function' ? [cb] : [];
+  const finish = (err, items) => {
+    const callbacks = inflight[day] || [];
+    delete inflight[day];
+    callbacks.forEach((done) => done(err, items));
+  };
   wx.request({
     url: SOURCE,
     method: 'GET',
@@ -100,15 +114,15 @@ function fetchTodayInHistory(cb) {
       if (!items.length) {
         // 非 200 / 空数据（含 429 限流）：写失败冷却，板块自动隐藏
         writeFail(day);
-        if (typeof cb === 'function') cb(new Error('empty payload'));
+        finish(new Error('empty payload'));
         return;
       }
       writeCache(day, items);
-      if (typeof cb === 'function') cb(null, items);
+      finish(null, items);
     },
     fail: () => {
       writeFail(day);
-      if (typeof cb === 'function') cb(new Error('request fail'));
+      finish(new Error('request fail'));
     }
   });
 }
