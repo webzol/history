@@ -13,6 +13,14 @@
       {
         "value": "data/img",
         "type": "folder"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "assets/paintings/SOURCES.md",
+        "type": "file"
       }
     ],
     "include": []

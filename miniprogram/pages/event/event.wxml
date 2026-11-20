@@ -55,7 +55,7 @@
         bindtap="goPerson"
       >
         <view class="p-thumb-wrap">
-          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit"></image>
+          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit" lazy-load></image>
           <image
             wx:if="{{item.img !== item.fallback}}"
             class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}" lazy-load

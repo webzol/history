@@ -2221,3 +2221,18 @@ miniprogram/data/history.js
 **待验证**
 
 - 微信开发者工具与真机网络环境下的连续 onShow 和并发请求表现。
+
+## 2026-11-21 · 例行回归：全链路自测 + 数据完整性对比 + 包体积余量修复
+
+- 背景：`git pull` 远端无新提交（HEAD=f8dfbdd「今日接口请求去重」），按交接说明跑全链路验证，并对数据完整性与访问速度做对比检查。
+- **全链路验证结果**：`node tools/selftest.js` PASS 1932 / FAIL 0；`node tools/privacy_selftest.js` PASS 14 / FAIL 0；`python tools/validate_miniprogram.py` 通过；重建 preview bundle 后 38 张截图全过。
+- **数据完整性对比（重写 `tools/content_audit.py`）**：
+  - 旧版用正则扫 `history.js` 源码，在 history-extra.js 并入种子后**只覆盖 41 事件 / 23 人物**，与真实数据量（100/89/24）脱节，工具已失效。
+  - 新版改为 node require 种子数据全量审计：①事件/人物/朝代 details、desc、source 字段齐备性；②重复 id；③事件 era 必须命中朝代名或近现代别名（规则与 `pages/period/period.js` 的 `MODERN_ERAS`/`PERIOD_ERAS` 一致，晚清并入清页收录）；④人物 `relatedEvents`、日期库 `daily`/`dailyFallback.eventId` 引用存在性；⑤**新增 history.js ↔ history.json 逐键一致性对比**（改种子忘记 `node tools/build_data_json.js` 即报错，退出码 1，可直接挂 CI）。
+  - 本次对比结果：PASS——100 事件 / 89 人物 / 24 朝代 / 2 专题 / 16 日期组全部齐备，引用无悬空；种子与远端热更 JSON 数据本体一致（重建仅 `meta.builtAt` 时间戳变化，不提交噪音）。
+- **性能 / 包体积**：
+  - 主包复核 **2027.3KB / 2048KB，余量仅 20.7KB**（隐私组件落地后再收紧，逼近上限）。
+  - 发现 `README.md`（4.1KB）与 `assets/paintings/SOURCES.md`（11KB）两个**非运行时文件被计入上传体积**；加入 `project.config.json` 的 `packOptions.ignore` 后主包降至 **2012.3KB，余量 35.7KB**。
+  - 列表行图 lazy-load 全站复查：person/event/favorites/footprints/profile/discover 均已合规；补上 event.wxml「其时其人」行兜底缩略图 `p-thumb-bg` 的漏项。
+  - 访问速度链路复核（无需改动）：今日 60s API 已做请求去重 + 天级 6h 缓存；app.js onLaunch 3s 预热远端热更 JSON；资料库 head.json 首屏 + 4 并发补齐 + 残缺索引不写缓存；搜索用预建小写 haystack 索引。
+- 遗留：主包余量 35.7KB 仍偏紧，后续往主包加数据/素材前先复核体积；真机项（隐私弹窗首弹、海报清晰度、请求去重的弱网表现）沿用前几轮记录。
