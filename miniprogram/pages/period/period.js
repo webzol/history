@@ -77,20 +77,29 @@ Page({
       return eras.indexOf(event.era) >= 0 ||
         (period.id === 'modern' && MODERN_ERAS.indexOf(event.era) >= 0);
     };
-    const events = history.events
+    const sorted = history.events
       .filter(inPeriod)
       .sort((a, b) => a.year - b.year);
 
     // 时代脉络：以收录史事的首尾年份概括跨度，统一「公元前/公元」写法
     const span = (() => {
-      if (!events.length) return '';
-      const y0 = events[0].year;
-      const y1 = events[events.length - 1].year;
-      if (events.length === 1) return y0 < 0 ? `公元前${-y0}年` : `公元${y0}年`;
+      if (!sorted.length) return '';
+      const y0 = sorted[0].year;
+      const y1 = sorted[sorted.length - 1].year;
+      if (sorted.length === 1) return y0 < 0 ? `公元前${-y0}年` : `公元${y0}年`;
       if (y0 < 0 && y1 < 0) return `公元前${-y0}–前${-y1}年`;
       if (y0 < 0) return `公元前${-y0}–公元${y1}年`;
       return `公元${y0}–${y1}年`;
     })();
+
+    // 行卡只取展示字段（纪年/标题/一句概述），details 正文不进 setData（year 供排序断言）
+    const events = sorted.map((item) => ({
+      id: item.id,
+      year: item.year,
+      yearText: item.yearText,
+      title: item.title,
+      desc: item.desc
+    }));
 
     this.setData({
       period: { ...period, ...meta },

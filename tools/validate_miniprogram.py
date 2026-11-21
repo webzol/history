@@ -86,13 +86,41 @@ def main():
         if checker.stack:
             errors.append(f"{wxml.name}: unclosed tags {checker.stack}")
 
+    # 主包体积预算：微信上传上限 2MB，packOptions.ignore 的文件不计入。
+    # 往主包加数据/素材后跑这条，避免临近上限才被发现（2026-11-21 起纳入常规校验）。
+    config = json.loads((ROOT / "project.config.json").read_text(encoding="utf-8"))
+    ignore_rules = (config.get("packOptions") or {}).get("ignore") or []
+    budget_kb = 2048
+
+    def is_ignored(rel):
+        rel = rel.replace("\\", "/")
+        for rule in ignore_rules:
+            value = rule.get("value", "").replace("\\", "/").rstrip("/")
+            if value and (rel == value or rel.startswith(value + "/")):
+                return True
+        return False
+
+    total = 0
+    for path in ROOT.rglob("*"):
+        if path.is_file() and not is_ignored(str(path.relative_to(ROOT))):
+            total += path.stat().st_size
+    size_kb = total / 1024
+    if size_kb > budget_kb:
+        errors.append(
+            f"main package {size_kb:.1f}KB exceeds WeChat upload limit {budget_kb}KB "
+            "- remove files or add packOptions.ignore entries"
+        )
+
     if errors:
         print("FAIL")
         for error in errors:
             print(" -", error)
         raise SystemExit(1)
 
-    print(f"OK: {len(app['pages'])} pages, JSON/assets/WXML checks passed.")
+    print(
+        f"OK: {len(app['pages'])} pages, main package {size_kb:.1f}KB / {budget_kb}KB, "
+        "JSON/assets/WXML checks passed."
+    )
 
 
 if __name__ == "__main__":

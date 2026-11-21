@@ -2236,3 +2236,18 @@ miniprogram/data/history.js
   - 列表行图 lazy-load 全站复查：person/event/favorites/footprints/profile/discover 均已合规；补上 event.wxml「其时其人」行兜底缩略图 `p-thumb-bg` 的漏项。
   - 访问速度链路复核（无需改动）：今日 60s API 已做请求去重 + 天级 6h 缓存；app.js onLaunch 3s 预热远端热更 JSON；资料库 head.json 首屏 + 4 并发补齐 + 残缺索引不写缓存；搜索用预建小写 haystack 索引。
 - 遗留：主包余量 35.7KB 仍偏紧，后续往主包加数据/素材前先复核体积；真机项（隐私弹窗首弹、海报清晰度、请求去重的弱网表现）沿用前几轮记录。
+
+## 2026-11-21 · 性能深化：setData 载荷瘦身（5 页）+ 死资产清理 + 体积预算纳入常规校验
+
+- 背景：继续上一轮的优化方向，做一轮更深的静态分析（未引用资产 / wx:key / setData 载荷 / 加载链路），只落地有实测收益且可回归验证的改动。
+- **setData 载荷瘦身（本次核心收益）**：列表类 setData 曾用 `...item` 全量展开或直接透传完整数据对象，把每条 3–4 段的 `details` 正文也跨 JS↔native 桥序列化给视图层，而行模板根本不渲染正文。逐页交叉核对 WXML 实际引用的字段集合后精简：
+  - `timeline.js`：古代 32.0KB → **15.7KB（-51%）**、近现代 9.0KB → **3.5KB（-61%）**；时代带（eraName/eraRange/eraList）改为在全量排序数组上先推导再瘦身（推导依赖 era，瘦身 map 不再携带）；行卡保留 `year` 数字供 selftest 排序断言。
+  - `period.js`：清 6.9KB → **1.5KB（-78%）**；span 跨度计算同样改为 map 前基于全量数组。
+  - `person.js` 相关史事：0.5KB → 0.1KB（保留 mode 供近现代配色）。
+  - `event.js` 其时其人：人物 details/quote 不再进 setData（保留 img/fallback 供 altArt 失败重试链路）。
+  - `discover.js`：朝代卡砍掉朝代简介 desc（保留 title——PERIOD_META 无此字段，原靠 `...item` 带入）；精选史事单条瘦身。
+  - 载荷数字为 JSON 字符长度；实际桥上传输为 UTF-8，中文字节再放大，收益略高于上述比例。
+- **死资产清理**：`assets/icons/search.png`（2.3KB）/ `menu.png`（0.3KB）在全仓源码、tools 复现链路、tabBar 配置中零引用（首页 2026-10-19 移除搜索/菜单入口后的遗留），已 `git rm`。未引用资产复查：thumbs/avatars 为动态路径拼接（目录前缀兜底匹配），全部在用，不可删。
+- **体积预算纳入常规校验**：`tools/validate_miniprogram.py` 新增主包体积检查（按 `packOptions.ignore` 计算非排除文件总量，超 2048KB 即 FAIL，OK 行输出当前体积）——「加素材前先核对体积」从口头约定固化为退出码。当前 **2011.1KB / 2048KB，余量 36.9KB**。
+- **验证**：`node tools/selftest.js` PASS 1932 / FAIL 0（首轮 7 条断言失败——timeline/period 断言依赖 data.events[].year 与 era 推导，按上述调整后全过）；`privacy_selftest` 14/0；validate 通过（含新体积行）；重建 bundle 后 38 张截图全过。
+- 遗留：真机核对时间轴切换流畅度；主包余量仍偏紧（图片素材占 1438KB，若再需空间可评估 paintings 部分图转远端 data/img 模式，但会引入首屏网络依赖，未动）。

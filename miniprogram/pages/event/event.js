@@ -52,7 +52,11 @@ Page({
         (person.relatedEvents || []).indexOf(event.id) >= 0
       )
       .map((person, index) => ({
-        ...person,
+        // 「其时其人」行只展示姓名/生卒/身份 + 行图；人物 details 不进 setData
+        id: person.id,
+        name: person.name,
+        dates: person.dates,
+        roles: person.roles,
         img: personImageThumb(person.id, person.era, index),
         fallback: personThumb(person.era, index)
       }));

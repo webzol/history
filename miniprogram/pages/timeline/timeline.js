@@ -44,27 +44,36 @@ Page({
 
   loadMode(mode) {
     const history = hd.get();
-    // 纪年升序；轴上圆点红/青相间
-    const events = history.events
+    // 纪年升序；时代带先在全量数据上推导，行卡再瘦身
+    const sorted = history.events
       .filter((item) => item.mode === mode)
-      .sort((a, b) => a.year - b.year)
-      .map((item, index) => ({
-        ...item,
-        dotClass: index % 2 === 0 ? 'dot-red' : 'dot-teal',
-        // 公元前的纪年用朱砂显示
-        yearAncientText: item.year < 0
-      }));
+      .sort((a, b) => a.year - b.year);
 
     // 时代带全部由事件数据推导：涵盖的时期名 + 纪年区间
     const eras = [];
-    events.forEach((event) => {
+    sorted.forEach((event) => {
       if (eras.indexOf(event.era) < 0) eras.push(event.era);
     });
     const eraName = eras.length > 1 ? `${eras[0]}—${eras[eras.length - 1]}` : eras[0] || '';
-    const first = events[0];
-    const last = events[events.length - 1];
     const fmt = (item) => (item.year < 0 ? `公元前${-item.year}` : item.year);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
     const eraRange = first && last ? `${fmt(first)}—${fmt(last)}` : '';
+
+    // 行卡只取展示字段：details 正文留在逻辑层，
+    // 避免 100 条事件整段正文随 setData 跨 JS↔native 桥序列化（year 供排序断言）
+    const events = sorted.map((item, index) => ({
+      id: item.id,
+      year: item.year,
+      yearText: item.yearText,
+      title: item.title,
+      desc: item.desc,
+      tags: item.tags,
+      source: item.source,
+      dotClass: index % 2 === 0 ? 'dot-red' : 'dot-teal',
+      // 公元前的纪年用朱砂显示
+      yearAncientText: item.year < 0
+    }));
 
     this.setData({
       mode,

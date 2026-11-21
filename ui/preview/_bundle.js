@@ -6491,27 +6491,36 @@ Page('project://pages/timeline/timeline.js', {
 
   loadMode(mode) {
     const history = hd.get();
-    // 纪年升序；轴上圆点红/青相间
-    const events = history.events
+    // 纪年升序；时代带先在全量数据上推导，行卡再瘦身
+    const sorted = history.events
       .filter((item) => item.mode === mode)
-      .sort((a, b) => a.year - b.year)
-      .map((item, index) => ({
-        ...item,
-        dotClass: index % 2 === 0 ? 'dot-red' : 'dot-teal',
-        // 公元前的纪年用朱砂显示
-        yearAncientText: item.year < 0
-      }));
+      .sort((a, b) => a.year - b.year);
 
     // 时代带全部由事件数据推导：涵盖的时期名 + 纪年区间
     const eras = [];
-    events.forEach((event) => {
+    sorted.forEach((event) => {
       if (eras.indexOf(event.era) < 0) eras.push(event.era);
     });
     const eraName = eras.length > 1 ? `${eras[0]}—${eras[eras.length - 1]}` : eras[0] || '';
-    const first = events[0];
-    const last = events[events.length - 1];
     const fmt = (item) => (item.year < 0 ? `公元前${-item.year}` : item.year);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
     const eraRange = first && last ? `${fmt(first)}—${fmt(last)}` : '';
+
+    // 行卡只取展示字段：details 正文留在逻辑层，
+    // 避免 100 条事件整段正文随 setData 跨 JS↔native 桥序列化（year 供排序断言）
+    const events = sorted.map((item, index) => ({
+      id: item.id,
+      year: item.year,
+      yearText: item.yearText,
+      title: item.title,
+      desc: item.desc,
+      tags: item.tags,
+      source: item.source,
+      dotClass: index % 2 === 0 ? 'dot-red' : 'dot-teal',
+      // 公元前的纪年用朱砂显示
+      yearAncientText: item.year < 0
+    }));
 
     this.setData({
       mode,
@@ -6588,20 +6597,26 @@ Page('project://pages/discover/discover.js', {
       figuresText: fmt(meta.stats.figures),
       eventsText: fmt(meta.stats.events)
     };
+    // 朝代卡只取展示字段（名称/称号/题图/年代），朝代简介 desc 不进 setData
     const periods = history.periods
       .filter((item) => PERIOD_META[item.id])
       .map((item) => ({
-        ...item,
+        id: item.id,
+        name: item.name,
+        title: item.title,
         ...PERIOD_META[item.id],
         isModern: item.id === 'modern'
       }));
+    const lastEvent = history.events[history.events.length - 1];
 
     this.setData({
       periods,
       era: history.topics.find((item) => item.id === 'tang'),
       modern: history.topics.find((item) => item.id === 'modern-china'),
-      // 精选史事只展示一条（最新史事），与「今日史事」单条精选版式呼应
-      picks: [history.events[history.events.length - 1]],
+      // 精选史事只展示一条（最新史事），与「今日史事」单条精选版式呼应；行卡只取展示字段
+      picks: lastEvent
+        ? [{ id: lastEvent.id, mode: lastEvent.mode, yearText: lastEvent.yearText, title: lastEvent.title, desc: lastEvent.desc }]
+        : [],
       archive
     });
   },
@@ -6927,7 +6942,11 @@ Page('project://pages/event/event.js', {
         (person.relatedEvents || []).indexOf(event.id) >= 0
       )
       .map((person, index) => ({
-        ...person,
+        // 「其时其人」行只展示姓名/生卒/身份 + 行图；人物 details 不进 setData
+        id: person.id,
+        name: person.name,
+        dates: person.dates,
+        roles: person.roles,
         img: personImageThumb(person.id, person.era, index),
         fallback: personThumb(person.era, index)
       }));
@@ -7076,10 +7095,18 @@ Page('project://pages/person/person.js', {
       return;
     }
 
+    // 相关史事行只取展示字段（纪年/标题/一句概述/行图/近现代色），details 不进 setData
     const related = (person.relatedEvents || [])
       .map((id) => history.events.find((event) => event.id === id))
       .filter(Boolean)
-      .map((event) => ({ ...event, img: eventImage(event.id, event.era) }));
+      .map((event) => ({
+        id: event.id,
+        mode: event.mode,
+        yearText: event.yearText,
+        title: event.title,
+        desc: event.desc,
+        img: eventImage(event.id, event.era)
+      }));
 
     this.setData({
       person,
@@ -7242,20 +7269,29 @@ Page('project://pages/period/period.js', {
       return eras.indexOf(event.era) >= 0 ||
         (period.id === 'modern' && MODERN_ERAS.indexOf(event.era) >= 0);
     };
-    const events = history.events
+    const sorted = history.events
       .filter(inPeriod)
       .sort((a, b) => a.year - b.year);
 
     // 时代脉络：以收录史事的首尾年份概括跨度，统一「公元前/公元」写法
     const span = (() => {
-      if (!events.length) return '';
-      const y0 = events[0].year;
-      const y1 = events[events.length - 1].year;
-      if (events.length === 1) return y0 < 0 ? `公元前${-y0}年` : `公元${y0}年`;
+      if (!sorted.length) return '';
+      const y0 = sorted[0].year;
+      const y1 = sorted[sorted.length - 1].year;
+      if (sorted.length === 1) return y0 < 0 ? `公元前${-y0}年` : `公元${y0}年`;
       if (y0 < 0 && y1 < 0) return `公元前${-y0}–前${-y1}年`;
       if (y0 < 0) return `公元前${-y0}–公元${y1}年`;
       return `公元${y0}–${y1}年`;
     })();
+
+    // 行卡只取展示字段（纪年/标题/一句概述），details 正文不进 setData（year 供排序断言）
+    const events = sorted.map((item) => ({
+      id: item.id,
+      year: item.year,
+      yearText: item.yearText,
+      title: item.title,
+      desc: item.desc
+    }));
 
     this.setData({
       period: { ...period, ...meta },

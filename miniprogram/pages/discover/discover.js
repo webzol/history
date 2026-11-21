@@ -47,20 +47,26 @@ Page({
       figuresText: fmt(meta.stats.figures),
       eventsText: fmt(meta.stats.events)
     };
+    // 朝代卡只取展示字段（名称/称号/题图/年代），朝代简介 desc 不进 setData
     const periods = history.periods
       .filter((item) => PERIOD_META[item.id])
       .map((item) => ({
-        ...item,
+        id: item.id,
+        name: item.name,
+        title: item.title,
         ...PERIOD_META[item.id],
         isModern: item.id === 'modern'
       }));
+    const lastEvent = history.events[history.events.length - 1];
 
     this.setData({
       periods,
       era: history.topics.find((item) => item.id === 'tang'),
       modern: history.topics.find((item) => item.id === 'modern-china'),
-      // 精选史事只展示一条（最新史事），与「今日史事」单条精选版式呼应
-      picks: [history.events[history.events.length - 1]],
+      // 精选史事只展示一条（最新史事），与「今日史事」单条精选版式呼应；行卡只取展示字段
+      picks: lastEvent
+        ? [{ id: lastEvent.id, mode: lastEvent.mode, yearText: lastEvent.yearText, title: lastEvent.title, desc: lastEvent.desc }]
+        : [],
       archive
     });
   },

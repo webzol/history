@@ -47,10 +47,18 @@ Page({
       return;
     }
 
+    // 相关史事行只取展示字段（纪年/标题/一句概述/行图/近现代色），details 不进 setData
     const related = (person.relatedEvents || [])
       .map((id) => history.events.find((event) => event.id === id))
       .filter(Boolean)
-      .map((event) => ({ ...event, img: eventImage(event.id, event.era) }));
+      .map((event) => ({
+        id: event.id,
+        mode: event.mode,
+        yearText: event.yearText,
+        title: event.title,
+        desc: event.desc,
+        img: eventImage(event.id, event.era)
+      }));
 
     this.setData({
       person,
