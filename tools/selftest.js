@@ -353,11 +353,11 @@ global.wx = wx;
 
 function instantiate(cfg, name) {
   const page = Object.assign({ __name: name, data: JSON.parse(JSON.stringify(cfg.data || {})) }, cfg);
-  // setData：顶层键整键替换 + 支持 'a.b.c' 点路径（与真机 setData 行为一致）
+  // setData：支持 'a.b.c' 与 'rows[0]' 路径（与真机 setData 行为一致）
   Object.defineProperty(page, 'setData', {
     value(patch, cb) {
       Object.keys(patch).forEach((key) => {
-        const path = key.split('.');
+        const path = key.replace(/\[(\d+)\]/g, '.$1').split('.');
         let node = page.data;
         for (let i = 0; i < path.length - 1; i++) {
           if (node[path[i]] === undefined || typeof node[path[i]] !== 'object') node[path[i]] = {};
@@ -464,7 +464,7 @@ console.log('== 数据完整性 ==');
   ok(reIds('wang-shouren').indexOf('ningwang-1519') >= 0, '王守仁反查 平宁王之乱');
   ok(reIds('qi-jiguang').indexOf('taizhou-1561') >= 0, '戚继光反查 台州大捷');
   ok(reIds('lin-zexu').indexOf('humen-1839') >= 0 && reIds('lin-zexu').indexOf('opium-war-1840') >= 0, '林则徐反查 销烟+鸦片战争');
-  ok(reIds('cao-xueqin').indexOf('hongloumeng-1754') >= 0, '曹雪芹反查 红楼梦成书');
+  ok(reIds('cao-xueqin').indexOf('hongloumeng-1754') >= 0, '曹雪芹反查 石头记甲戌再评');
   ok(reIds('li-hongzhang').indexOf('yangwu-1861') >= 0, '李鸿章反查 洋务运动');
   ok(reIds('zeng-guofan').indexOf('taiping-1851') >= 0 && reIds('zuo-zongtang').indexOf('xinjiang-1878') >= 0,
     '曾国藩/左宗棠反查 太平天国/收复新疆');
@@ -571,6 +571,16 @@ console.log('== 首页 ==');
   eq(p.data.hero.eventId, expectedId, `今日(${today}) hero：纪念日按日期库，其余每日随机`);
   p.apply();
   eq(p.data.hero.eventId, expectedId, '同一天重复 apply 精选不变（确定性）');
+  [
+    [4, 17, 'jiawu-1894', '公元1895年，清政府与日本签订《马关条约》。'],
+    [8, 29, 'opium-war-1840', '公元1842年，清政府与英国签订《南京条约》。'],
+    [10, 19, 'yuanmingyuan-1860', '公元1860年，英军继续焚烧圆明园。']
+  ].forEach(([month, day, id, desc]) => {
+    p.apply(new Date(2026, month - 1, day));
+    eq(p.data.hero.eventId, id, `${month}月${day}日继续跳转关联史事`);
+    eq(p.data.hero.desc, desc, `${month}月${day}日显示当天的年份与历史节点`);
+  });
+  p.apply();
   eq(p.data.era.title, '盛唐气象', 'era 来自 topics');
   eq(p.data.modern.shortTitle, '百年中国', 'modern 来自 topics');
 
@@ -1211,15 +1221,99 @@ console.log('== 资料库 ==');
   detail.onLoad({ kind: 'figures', id: 'hf-song4chao2_su1shi4', title: '历代人物' });
   ok(detail.data.art === remotePersonImg('su-shi'), '详情页 onLoad 装配条目画片');
 
-  // head 空闲预取：覆盖全部 22 个栏目入口（9 cards + 13 section）；已缓存栏目不重复请求
   const entryCount = (archive.groups || []).reduce((sum, group) => sum + (group.items || []).length, 0);
   eq(entryCount, 22, '资料库共 22 个栏目入口');
-  const beforePrefetch = wxLog.length;
-  archive.prefetchHeads();
-  ok(
-    wxLog.slice(beforePrefetch).some((entry) => entry.kind === 'request' && /emperors\/head\.json$/.test(entry.url)),
-    '空闲预取覆盖未缓存栏目 head'
-  );
+  const beforeIdle = wxLog.length;
+  const setTimeoutReal = global.setTimeout;
+  try {
+    global.setTimeout = (fn) => { fn(); return 0; };
+    archive.onShow();
+  } finally {
+    global.setTimeout = setTimeoutReal;
+  }
+  ok(!wxLog.slice(beforeIdle).some((entry) => entry.kind === 'request'), '资料库首页空闲浏览不发栏目请求');
+
+  // 跨进程保留 head 元数据；旧缓存中的完整索引仍兼容固定列数组。
+  apkMod.prefetchHead('emperors', '');
+  delete require.cache[require.resolve(apkPath)];
+  const restarted = require(apkPath);
+  const afterRestart = wxLog.length;
+  const warm = [];
+  restarted.load('emperors', '', (err, items, info) => warm.push({ err, items, info }));
+  eq(warm[0].info.total, 373, '重启后缓存 head 保留栏目总数');
+  eq(warm[0].items.length, 200, '重启后从缓存交付 head 首屏');
+  eq(warm[warm.length - 1].items.length, 373, '重启后继续补齐目录');
+  ok(!wxLog.slice(afterRestart).some((entry) => /emperors\/head\.json$/.test(entry.url)), '重启后无需重复下载 head');
+
+  try {
+    global.setTimeout = (fn) => { fn(); return 0; };
+    mockRequest.apkFail = (rel) => rel === 'dynasty/head.json';
+    restarted.load('dynasty', '', (err, items, info) => {
+      ok(!err && items.length === 29 && !info.partial, 'head 不可用时，旧版整份索引回退成功');
+    });
+  } finally {
+    mockRequest.apkFail = null;
+    global.setTimeout = setTimeoutReal;
+  }
+
+  storage.shige_apk_v3_poems_fu_index_json = {
+    at: Date.now(),
+    items: JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'apk', 'poems', 'fu', 'index.json'), 'utf8'))
+  };
+  const beforeLegacy = wxLog.length;
+  restarted.load('poems-fu', '', (err, items) => {
+    ok(!err && items.length === 27 && items.every((item) => item.id && item.title), '旧版完整索引缓存规范化为展示行');
+  });
+  eq(wxLog.length, beforeLegacy, '旧版完整索引缓存可以离线使用');
+
+  list.onLoad({ kind: 'emperors' });
+  list.onInput({ detail: { value: '高从诲' } });
+  const corrected = list.data.shown.find((item) => item.id === 'hem-0050-wu3dai4shi2guo2_gao1cong2hui4');
+  ok(corrected && corrected.title === '高从诲', '用更正后的姓名可搜到原条目');
+  detail.onLoad({ kind: 'emperors', id: 'hem-0050-wu3dai4shi2guo2_gao1cong2hui4', shard: '00' });
+  ok(detail.data.showSections && detail.data.item.source.includes('南平世家'), '修订条目保留旧链接并展示正文及出处');
+
+  const requestReal = wx.request;
+  const heldParts = [];
+  try {
+    wx.request = (opts) => {
+      if (/\/events\/part-\d+\.json$/.test(opts.url)) heldParts.push(opts);
+      else requestReal(opts);
+    };
+    list.onLoad({ kind: 'events' });
+  } finally {
+    wx.request = requestReal;
+  }
+  eq(heldParts.length, 3, '史事栏目首屏后并发请求三块');
+  eq(list.data.shown.length, 60, '分块在途时可读首屏');
+  list.onReachBottom();
+  eq(list.data.shown.length, 120, '分块在途时可以翻已经载入的条目');
+  const eventsIndex = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'apk', 'events', 'index.json'), 'utf8'));
+  const keyword = eventsIndex.slice(400).find((row) => !eventsIndex.slice(0, 400).some((earlier) => earlier.slice(1, 4).join(' ').includes(row[1])))[1];
+  list.onInput({ detail: { value: keyword } });
+  ok(!list.data.empty && list.data.resultCount === 0, '分块在途时无匹配不显示已检索完毕');
+  requestReal(heldParts[2]);
+  requestReal(heldParts[0]);
+  try {
+    global.setTimeout = (fn) => { fn(); return 0; };
+    mockRequest.apkFail = (rel) => rel === 'events/part-2.json';
+    requestReal(heldParts[1]);
+  } finally {
+    global.setTimeout = setTimeoutReal;
+    mockRequest.apkFail = null;
+  }
+  ok(list.data.stalled && list.all.length === 400, '重试耗尽时保持连续前缀并允许点按重试');
+  ok(!storage.shige_apk_v3_events_index_json, '重试耗尽时不缓存残缺索引');
+  const beforeRetry = wxLog.length;
+  list.retry();
+  const retried = wxLog.slice(beforeRetry).filter((event) => event.kind === 'request');
+  eq(retried.length, 1, '点按重试复用已成功的分块');
+  ok(retried.some((event) => /events\/part-2\.json$/.test(event.url)), '只重新下载失败分块');
+  ok(!list.data.partial && !list.data.stalled && list.all.length === 705, '点按重试后目录补齐');
+  ok(list.data.shown.some((item) => item.title === keyword), '分块补齐后自动更新当前搜索结果');
+  eq(list.data.resultCount, list.data.shown.length, '搜索结果翻页按实际匹配数计算');
+  list.onReachBottom();
+  eq(list.limit, 60, '搜索结果已全部显示时滚动不再增加分页');
 })();
 
 // ---------------------------------------------------------------------------
@@ -1475,9 +1569,9 @@ console.log('== 事件详情 ==');
   eq(p.data.thumbLoaded[thumbP.id], true, '其时其人：图片 load 后标记淡入');
 
   p.onLoad({ id: 'han-wudi' });
-  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'huo-qubing', 'sima-qian'], '汉武事件反查列出汉武帝/张骞/卫青/霍去病/司马迁');
+  eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'sima-qian'], '汉武帝即位时霍去病尚未出生');
   eq(p.data.headImg, '/assets/eventart/han-wudi.jpg', '事件头卡：汉武帝即位用专属事件图');
-  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 5, '其时其人：4 位人物整幅画 + 1 位远端画像 = 5 张不同图');
+  eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：四位人物各有不同配图');
 
   p.onLoad({ id: 'qidan-916' });
   eq(p.data.headImg, remoteEventImg('qidan-916') || '/assets/paintings/liao.jpg', '事件头卡：契丹建国优先专属图，否则辽画');

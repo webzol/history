@@ -93,12 +93,12 @@ function cacheKey(file) {
   return CACHE_PREFIX + file.replace(/[^\w]/g, '_');
 }
 
-function readCache(file) {
+function readCache(file, parse = parsePayload) {
   try {
     const hit = wx.getStorageSync(cacheKey(file));
-    if (!hit || !hit.at || !Array.isArray(hit.items)) return null;
+    if (!hit || !hit.at) return null;
     if (Date.now() - hit.at > CACHE_TTL) return null;
-    return hit.items;
+    return parse(hit.items);
   } catch (e) {
     return null;
   }
@@ -169,17 +169,18 @@ function writeCache(file, items) {
   }
 }
 
-function parsePayload(data) {
-  if (Array.isArray(data)) return data;
-  if (typeof data === 'string') {
-    try {
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : null;
-    } catch (e) {
-      return null;
-    }
+function parseJson(data) {
+  if (typeof data !== 'string') return data;
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return null;
   }
-  return null;
+}
+
+function parsePayload(data) {
+  const parsed = parseJson(data);
+  return Array.isArray(parsed) ? parsed : null;
 }
 
 // 索引是固定列数组 [id, title, meta, summary, shard]；同时兼容旧对象数组。
@@ -195,7 +196,11 @@ function normalizeIndex(data) {
   }));
 }
 
-function loadFile(file, cb) {
+function parseIndex(payload) {
+  return normalizeIndex(parsePayload(payload));
+}
+
+function loadFile(file, cb, parse = parsePayload) {
   if (!file) {
     if (typeof cb === 'function') cb(new Error('unknown file'));
     return;
@@ -204,14 +209,14 @@ function loadFile(file, cb) {
     if (typeof cb === 'function') cb(null, memory[file]);
     return;
   }
-  const cached = readCache(file);
+  if (inflight[file]) {
+    inflight[file].push(cb);
+    return;
+  }
+  const cached = readCache(file, parse);
   if (cached) {
     memory[file] = cached;
     if (typeof cb === 'function') cb(null, cached);
-    return;
-  }
-  if (inflight[file]) {
-    inflight[file].push(cb);
     return;
   }
   inflight[file] = [cb];
@@ -241,7 +246,7 @@ function loadFile(file, cb) {
           done(new Error('http ' + res.statusCode));
           return;
         }
-        const items = parsePayload(res && res.data);
+        const items = parse(res && res.data);
         if (!items) {
           if (left > 0) {
             setTimeout(() => attempt(left - 1), 600);
@@ -267,102 +272,21 @@ function loadFile(file, cb) {
 }
 
 function loadIndex(kind, type, cb) {
-  const file = indexFileFor(kind, type);
-  loadFile(file, (err, data) => {
-    if (err) {
-      if (typeof cb === 'function') cb(err);
-      return;
-    }
-    const items = normalizeIndex(data);
-    if (!items) {
-      if (typeof cb === 'function') cb(new Error('bad index'));
-      return;
-    }
-    if (typeof cb === 'function') cb(null, items);
-  });
+  loadFile(indexFileFor(kind, type), cb, parseIndex);
 }
 
-// 首屏轻量包：head.json = { total, step, parts, items }（items 与 index.json 同构的固定列数组）。
-// 只在内存/缓存里存 normalize 后的 head 对象。
+// 保留分块元数据，冷启动从本地读取 head 时也能补齐目录。
+function parseHead(payload) {
+  const raw = parseJson(payload);
+  if (!raw || !Array.isArray(raw.items)) return null;
+  const { total, step, parts } = raw;
+  if (!Number.isInteger(total) || total < 0 || !Number.isInteger(step) || step < 1 ||
+    raw.items.length !== Math.min(total, step) || parts !== Math.ceil((total - raw.items.length) / step)) return null;
+  return { total, step, parts, items: normalizeIndex(raw.items) };
+}
+
 function loadHead(kind, type, cb) {
-  const file = headFileFor(kind, type);
-  if (!file) {
-    if (typeof cb === 'function') cb(new Error('unknown dir'));
-    return;
-  }
-  const hit = memory[file] || (() => {
-    const cached = readCache(file);
-    if (cached) memory[file] = cached;
-    return cached;
-  })();
-  if (hit) {
-    if (typeof cb === 'function') cb(null, hit);
-    return;
-  }
-  if (inflight[file]) {
-    inflight[file].push(cb);
-    return;
-  }
-  inflight[file] = [cb];
-  const done = (err, head) => {
-    const list = inflight[file] || [];
-    delete inflight[file];
-    list.forEach((fn) => {
-      if (typeof fn === 'function') fn(err, head);
-    });
-  };
-  if (typeof wx.request !== 'function') {
-    done(new Error('request unavailable'));
-    return;
-  }
-  const attempt = (left) => {
-    wx.request({
-      url: BASE + file,
-      method: 'GET',
-      timeout: 15000,
-      success: (res) => {
-        if (res && res.statusCode >= 400) {
-          if (left > 0) {
-            setTimeout(() => attempt(left - 1), 600);
-            return;
-          }
-          done(new Error('http ' + res.statusCode));
-          return;
-        }
-        const data = res && res.data;
-        const raw =
-          data && typeof data === 'object' && !Array.isArray(data)
-            ? data
-            : null;
-        const items = raw ? normalizeIndex(raw.items) : null;
-        if (!raw || !items || !Array.isArray(raw.items) || !raw.items.length) {
-          if (left > 0) {
-            setTimeout(() => attempt(left - 1), 600);
-            return;
-          }
-          done(new Error('bad head'));
-          return;
-        }
-        const head = {
-          total: raw.total || items.length,
-          step: raw.step || 200,
-          parts: raw.parts || 0,
-          items
-        };
-        memory[file] = head;
-        writeCache(file, head.items);
-        done(null, head);
-      },
-      fail: () => {
-        if (left > 0) {
-          setTimeout(() => attempt(left - 1), 600);
-          return;
-        }
-        done(new Error('request fail'));
-      }
-    });
-  };
-  attempt(1);
+  loadFile(headFileFor(kind, type), cb, parseHead);
 }
 
 // head 首屏回调后，后台补齐剩余分块并合并成完整索引。
@@ -384,32 +308,24 @@ function fetchParts(kind, type, head, done) {
   assembling[file] = [done];
 
   const rows = new Array(head.parts);
+  let list = head.items;
+  let prefix = 0;
   let remaining = []; // 本轮待拉分块序号（最小序号优先，尽快推进连续前缀）
   let failed = []; // 本轮失败分块
   let active = 0;
   let round = 0;
   for (let n = 1; n <= head.parts; n += 1) remaining.push(n);
 
-  const contiguous = () => {
-    let k = 0;
-    while (k < head.parts && rows[k]) k += 1;
-    return k;
-  };
-
-  const emit = (complete) => {
-    const k = contiguous();
-    const list = normalizeIndex(head.items.concat(...rows.slice(0, k)));
-    const loaded =
-      head.items.length + rows.slice(0, k).reduce((sum, r) => sum + r.length, 0);
+  const emit = (complete, stalled = false) => {
     if (complete) {
       memory[file] = list;
       writeCache(file, list);
     }
     const subs = assembling[file] || [];
-    if (complete) delete assembling[file];
+    if (complete || stalled) delete assembling[file];
     subs.forEach((fn) => {
       if (typeof fn === 'function') {
-        fn(null, list, { partial: !complete, total: head.total, loaded });
+        fn(null, list, { partial: !complete, total: head.total, loaded: list.length, stalled });
       }
     });
   };
@@ -419,9 +335,10 @@ function fetchParts(kind, type, head, done) {
       emit(true);
       return;
     }
-    // 有失败分块：先把「head + 连续前缀」交付出去（列表无断层、立即可读），再退避重试
-    emit(false);
-    if (round >= PART_RETRY_DELAYS.length) return; // 重试轮用尽：保持 partial，下次进入页面自动再补
+    if (round >= PART_RETRY_DELAYS.length) {
+      emit(false, true);
+      return;
+    }
     const delay = PART_RETRY_DELAYS[round];
     round += 1;
     remaining = failed;
@@ -430,25 +347,28 @@ function fetchParts(kind, type, head, done) {
   };
 
   const worker = () => {
-    if (!remaining.length) {
-      if (!active) settle();
-      return;
-    }
-    const n = Math.min.apply(null, remaining);
-    remaining = remaining.filter((x) => x !== n);
+    if (!remaining.length) return;
+    const n = remaining.shift();
+    const size = Math.min(head.step, head.total - head.items.length - (n - 1) * head.step);
     active += 1;
     loadFile(partFileFor(kind, type, n), (err, data) => {
       active -= 1;
-      if (err || !Array.isArray(data)) {
+      if (err) {
         failed.push(n);
       } else {
-        // part 文件是固定列数组行，必须先规范化成对象，否则与 head 的对象行拼接后
-        // 200 条以后全部没有 .id/.title，搜索/翻页/按 id 找详情都会失效
-        rows[n - 1] = normalizeIndex(data) || [];
-        if (contiguous() >= n) emit(false); // 新块接上连续前缀 → 立刻交付，列表平滑生长
+        rows[n - 1] = data;
+        const start = prefix;
+        while (rows[prefix]) prefix += 1;
+        if (prefix > start) {
+          list = list.concat(...rows.slice(start, prefix));
+          if (prefix < head.parts) emit(false);
+        }
       }
       if (!remaining.length && !active) settle();
       else worker();
+    }, (payload) => {
+      const items = parsePayload(payload);
+      return items && items.length === size ? normalizeIndex(items) : null;
     });
   };
 
@@ -527,22 +447,22 @@ function find(kind, type, id, shard, cb) {
 //    后台并行拉 part-N.json：每接上一块「连续前缀」就回调一次（partial=true, info.loaded=已载入条数），
 //    全部到齐后回调完整索引（partial=false）并写缓存；失败分块退避重试，绝不合并出带洞数据。
 // 3) head.json 不可用（旧数据未拆分/请求失败）→ 回退拉整份 index.json。
+function cachedIndex(file) {
+  if (!file) return null;
+  return memory[file] || (memory[file] = readCache(file, parseIndex));
+}
+
 function load(kind, type, cb) {
   const file = indexFileFor(kind, type);
-  if (memory[file]) {
-    if (typeof cb === 'function') cb(null, memory[file], { partial: false });
-    return;
-  }
-  const cached = readCache(file);
+  const cached = cachedIndex(file);
   if (cached) {
-    memory[file] = cached;
     if (typeof cb === 'function') cb(null, cached, { partial: false });
     return;
   }
   loadHead(kind, type, (err, head) => {
-    if (err || !head || !head.items || !head.items.length) {
+    if (err) {
       loadIndex(kind, type, (err2, items) => {
-        if (typeof cb === 'function') cb(err2 || err || new Error('bad index'), items, { partial: false });
+        if (typeof cb === 'function') cb(err2, items, { partial: false });
       });
       return;
     }
@@ -558,30 +478,20 @@ function load(kind, type, cb) {
       writeCache(file, head.items);
       return;
     }
-    fetchParts(kind, type, head, (err2, list, info) => {
-      if (typeof cb === 'function') {
-        cb(err2, list, {
-          partial: !!(info && info.partial),
-          total: head.total,
-          loaded: (info && info.loaded) || 0
-        });
-      }
-    });
+    fetchParts(kind, type, head, cb);
   });
 }
 
 // 预取：只为提前写入内存与本地缓存，失败静默（列表/详情真正加载时会走同一套缓存）。
-// 首屏提速关键在「点击之前」就发请求——资料库首页空闲预取各栏目 head，
-// 点击入口时再触发一次（已缓存则瞬间返回），转场动画期间请求已在路上。
+// 点击后在转场期间请求目标栏目，避免与其他栏目的请求抢占并发。
 function prefetchHead(kind, type) {
+  if (cachedIndex(indexFileFor(kind, type))) return;
   loadHead(kind, type, () => {});
 }
 
 function prefetchShard(kind, type, shard) {
   const file = shardFileFor(kind, type, shard);
-  if (!file) return;
-  if (memory[file] || readCache(file)) return;
-  loadFile(file, () => {});
+  if (file) loadFile(file, () => {});
 }
 
 module.exports = {

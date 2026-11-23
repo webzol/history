@@ -27,6 +27,7 @@ Page({
     shown: [],
     total: 0,
     totalText: '0',
+    resultCount: 0,
     loadedText: '0',
     loading: true,
     partial: false,
@@ -46,21 +47,30 @@ Page({
     const searchPlaceholder = isPoem ? '搜索篇名 / 作者 / 朝代' : `在${title}中搜索`;
     this.limit = PAGE_SIZE;
     this.all = [];
+    this.haystack = [];
+    this.filtered = [];
     this.setData({
       kind,
       type,
       pageTitle: title,
       searchPlaceholder,
       cover: archiveImages.cover(kind, type),
-      coverMeta: '正在加载',
-      loading: true,
-      error: ''
+      keyword: '',
+      shown: [],
+      resultCount: 0,
+      partial: false,
+      empty: false,
+      coverMeta: '正在加载'
     });
     this.fetch();
   },
 
   onShow() {
     font.apply(this);
+  },
+
+  onUnload() {
+    this.requestId += 1;
   },
 
   fallbackTitle(kind, type) {
@@ -74,118 +84,99 @@ Page({
   },
 
   fetch() {
-    this.totalAll = 0;
-    this.haystack = null;
-    this._lastLoaded = 0;
-    this.setData({
-      loading: true,
-      error: '',
-      empty: false,
-      partial: false,
-      stalled: false,
-      shown: [],
-      total: 0,
-      totalText: '0',
-      loadedText: '0',
-      coverMeta: '正在加载'
-    });
-    // apk.load 渐进回调：先 head 轻量包（partial）渲染首屏，
-    // 后台每接上一块连续分块就再回调一次（列表平滑生长、无断层），
-    // 全部到齐后带完整索引回调（partial=false）。
+    const requestId = (this.requestId || 0) + 1;
+    this.requestId = requestId;
+    this.setData({ loading: !this.data.partial, error: '', stalled: false });
     apk.load(this.data.kind, this.data.type, (err, items, info) => {
-      if (err || !items || !items.length) {
-        this.all = [];
-        this.haystack = null;
-        this._lastLoaded = 0;
+      if (requestId !== this.requestId) return;
+      if (err) {
         this.setData({
           loading: false,
           error: '资料加载失败，请检查网络后重试',
-          empty: false,
-          partial: false,
-          stalled: false,
-          loadedText: '0',
           coverMeta: '加载失败'
         });
         return;
       }
-      this.all = items;
-      this.buildIndex(items);
-      this.totalAll = (info && info.total) || items.length;
-      const partial = !!(info && info.partial);
-      const loaded = (info && info.loaded) || items.length;
-      // partial 且载入量较上次回调没有增长 → 分块补齐受阻（限流/断网），提示点按重试
-      const stalled = partial && loaded <= (this._lastLoaded || 0);
-      this._lastLoaded = partial ? loaded : 0;
-      this.setData({
+      const start = this.all.length;
+      if (items.length > start) {
+        this.all = items;
+        this.buildIndex(items, start);
+        this.filterItems(this.data.keyword, start);
+      }
+      const total = info.total || items.length;
+      const totalText = fmt(total);
+      this.updateShown({
         loading: false,
         error: '',
-        partial,
-        stalled,
-        loadedText: fmt(loaded)
+        partial: info.partial,
+        stalled: !!info.stalled,
+        loadedText: fmt(this.all.length),
+        total,
+        totalText,
+        coverMeta: `${totalText} 条`,
+        empty: this.filtered.length === 0 && !info.partial
       });
-      this.applyFilter();
     });
   },
 
-  // 预生成小写检索串：按键过滤零拼串零分配，万级条目（13,287 辞条）也不卡输入
-  buildIndex(items) {
-    this.haystack = items.map((item) =>
-      `${item.title || ''} ${item.meta || ''} ${item.summary || ''}`.toLowerCase()
-    );
+  // 分块补齐时只处理追加的条目；关键字变化时复用已有检索串。
+  buildIndex(items, start) {
+    for (let i = start; i < items.length; i += 1) {
+      const { title, meta, summary } = items[i];
+      this.haystack.push(`${title || ''} ${meta || ''} ${summary || ''}`.toLowerCase());
+    }
   },
 
-  applyFilter() {
-    const kw = (this.data.keyword || '').trim().toLowerCase();
-    // 列表索引只保留标题/分类/摘要；全文不再下载，避免首屏拉整类正文。
-    let list;
-    if (!kw) {
-      list = this.all;
+  filterItems(keyword, start) {
+    const kw = keyword.trim().toLowerCase();
+    for (let i = start; i < this.all.length; i += 1) {
+      if (!kw || this.haystack[i].includes(kw)) this.filtered.push(this.all[i]);
+    }
+  },
+
+  updateShown(patch, replace = false) {
+    const count = Math.min(this.limit, this.filtered.length);
+    if (replace || (!this.data.shown.length && count)) {
+      patch.shown = this.filtered.slice(0, count);
     } else {
-      const hay = this.haystack || [];
-      const src = this.all;
-      list = [];
-      for (let i = 0; i < src.length; i++) {
-        if ((hay[i] || '').indexOf(kw) >= 0) list.push(src[i]);
+      for (let i = this.data.shown.length; i < count; i += 1) {
+        patch[`shown[${i}]`] = this.filtered[i];
       }
     }
-    this.filtered = list;
-    // 目录总数用 head 包的全量 total；partial 时底部提示完整目录载入中
-    const total = this.totalAll || list.length;
-    this.setData({
-      shown: list.slice(0, this.limit),
-      total,
-      totalText: fmt(total),
-      coverMeta: `${fmt(total)} 条`,
-      empty: list.length === 0 && !this.data.partial
-    });
+    if (this.data.resultCount !== this.filtered.length) patch.resultCount = this.filtered.length;
+    if (Object.keys(patch).length) this.setData(patch);
+  },
+
+  applyFilter(keyword) {
+    this.limit = PAGE_SIZE;
+    this.filtered = [];
+    this.filterItems(keyword, 0);
+    this.updateShown({
+      keyword,
+      empty: this.filtered.length === 0 && !this.data.partial && !this.data.loading && !this.data.error
+    }, true);
   },
 
   onInput(e) {
-    this.limit = PAGE_SIZE;
-    this.setData({ keyword: (e.detail && e.detail.value) || '' });
-    this.applyFilter();
+    this.applyFilter((e.detail && e.detail.value) || '');
   },
 
   clearKeyword() {
-    this.limit = PAGE_SIZE;
-    this.setData({ keyword: '' });
-    this.applyFilter();
+    this.applyFilter('');
   },
 
   onMore() {
+    if (this.data.loading || this.data.error || this.data.shown.length >= this.filtered.length) return;
     this.limit += PAGE_SIZE;
-    this.setData({ shown: (this.filtered || []).slice(0, this.limit) });
+    this.updateShown({});
   },
 
-  // 滚到底自动追加下一批（本地切片，瞬时完成）；加载中/出错/完整目录载入中/已到底不触发
   onReachBottom() {
-    if (this.data.loading || this.data.error || this.data.partial) return;
-    if (!this.data.total || this.data.shown.length >= this.data.total) return;
     this.onMore();
   },
 
   retry() {
-    this.fetch();
+    if (this.data.stalled || this.data.error) this.fetch();
   },
 
   onItem(e) {

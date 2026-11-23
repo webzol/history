@@ -26,6 +26,8 @@
 
 ## 1. 建议阅读顺序
 
+2026-11-23 回归更新：`python tools/content_audit.py` 同时核对主库纪年与关联、热更 JSON，以及资料库 22 栏目的目录、分块和详情。今日史事可以用 `daily` 条目的 `year` 与 `desc` 单独描述当天节点，跳转仍使用 `eventId`。资料库只在点击时预取目标栏目首屏或目标详情分卷。`head.json` 缓存保留分块元数据，补齐耗尽后点按可复用已下载分块继续加载。
+
 1. `AGENTS.md`（本文件）
 2. `docs/DEVELOPMENT_LOG.md`（开发日志、决策、待办）
 3. `docs/UI_REFERENCE_STYLE.md`（当前视觉规范）

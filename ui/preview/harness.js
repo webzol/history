@@ -292,9 +292,9 @@
     var cfg = PAGE_CFG['project://' + modPath.slice(1)];
     var inst = { name: name, cfg: cfg, data: deepClone(cfg.data || {}) };
     inst.setData = function (patch, cb) {
-      // 支持 'a.b.c' 点路径（与真机 setData 行为一致，utils/qrshare.js 依赖）
+      // 支持 'a.b.c' 与 'rows[0]' 路径（与真机 setData 行为一致）
       Object.keys(patch).forEach(function (k) {
-        var segs = k.split('.');
+        var segs = k.replace(/\[(\d+)\]/g, '.$1').split('.');
         var node = inst.data;
         for (var i = 0; i < segs.length - 1; i++) {
           if (node[segs[i]] === undefined || typeof node[segs[i]] !== 'object') node[segs[i]] = {};

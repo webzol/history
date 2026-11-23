@@ -35,9 +35,8 @@ Page({
     }
   },
 
-  apply() {
+  apply(now = new Date()) {
     const history = hd.get();
-    const now = new Date();
     const month = now.getMonth() + 1;
     const day = now.getDate();
 
@@ -45,12 +44,11 @@ Page({
     // api.pickDaily 以公历月日为种子从全部史事确定性抽一条，同一天所有用户看到同一条、隔天自动换，
     // 不再固定回退一条（随机抽取异常时仍回退 dailyFallback 兜底）
     const matched = history.daily.find((item) => item.month === month && item.day === day);
-    const picked = matched ? null : api.pickDaily(history.events);
+    const picked = matched ? null : api.pickDaily(history.events, api.dateKey(now));
     const daily = matched || (picked ? { eventId: picked.id } : history.dailyFallback);
     const dailyEvent = history.events.find((item) => item.id === daily.eventId);
-    const hero = dailyEvent
-      ? { eventId: dailyEvent.id, title: '今日史事', desc: `${dailyEvent.yearText}，${dailyEvent.desc}` }
-      : { eventId: daily.eventId, title: '今日史事', desc: daily.desc || '' };
+    const desc = daily.desc || (dailyEvent ? `${dailyEvent.yearText}，${dailyEvent.desc}` : '');
+    const hero = { eventId: daily.eventId, title: '今日史事', desc: daily.year ? `公元${daily.year}年，${desc}` : desc };
     const era = history.topics.find((item) => item.id === 'tang');
     const modern = history.topics.find((item) => item.id === 'modern-china');
 
