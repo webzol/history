@@ -1,0 +1,25 @@
+<view wx:if="{{notice.kind === 'modal'}}" class="feedback-layer fs-{{fontClass}}" catchtouchmove="noop">
+  <view class="feedback-card" role="dialog" aria-label="{{notice.title}}">
+    <view class="feedback-head">
+      <text class="feedback-title">{{notice.title}}</text>
+      <image class="feedback-seal" src="/assets/seal.png" mode="aspectFit"></image>
+    </view>
+    <text wx:if="{{notice.content}}" class="feedback-content">{{notice.content}}</text>
+    <view class="feedback-actions">
+      <button wx:if="{{notice.cancelText}}" class="feedback-button feedback-cancel" hover-class="feedback-pressed" bindtap="onCancel">{{notice.cancelText}}</button>
+      <button class="feedback-button feedback-confirm" hover-class="feedback-pressed" bindtap="onConfirm">{{notice.confirmText}}</button>
+    </view>
+  </view>
+</view>
+<view wx:elif="{{notice.kind === 'loading'}}" class="feedback-layer fs-{{fontClass}}" catchtap="noop" catchtouchmove="noop">
+  <view class="feedback-pill" aria-live="polite">
+    <view class="feedback-spinner"></view>
+    <text>{{notice.title}}</text>
+  </view>
+</view>
+<view wx:elif="{{notice.kind === 'toast'}}" class="feedback-toast fs-{{fontClass}}" aria-live="polite">
+  <view class="feedback-pill">
+    <text wx:if="{{notice.icon === 'success'}}" class="feedback-tick">✓</text>
+    <text>{{notice.title}}</text>
+  </view>
+</view>

@@ -1,3 +1,4 @@
+const feedback = require('../../utils/feedback.js');
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
@@ -277,7 +278,7 @@ Page({
       }
     });
     this.setData({ collected: on });
-    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
+    feedback.toast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   // 条目画片（远端图）加载失败 → 换备用 jsDelivr 域名重试一次；再失败置空隐藏画片（露出纯文字版式）

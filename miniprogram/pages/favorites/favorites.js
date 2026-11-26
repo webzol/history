@@ -1,3 +1,4 @@
+const feedback = require('../../utils/feedback.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const altArt = require('../../utils/eraImages.js').altArt;
@@ -57,7 +58,7 @@ Page({
 
   onClear() {
     if (!this.data.favCount) return;
-    wx.showModal({
+    feedback.modal({
       title: '清空收藏',
       content: '将移除全部收藏，是否继续？',
       confirmText: '清空',
@@ -65,7 +66,7 @@ Page({
         if (!res.confirm) return;
         store.clearFavorites();
         this.load();
-        wx.showToast({ title: '已清空收藏', icon: 'none' });
+        feedback.toast({ title: '已清空收藏', icon: 'none' });
       }
     });
   },

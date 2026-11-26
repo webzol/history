@@ -648,6 +648,59 @@ console.log('== 首页 ==');
 // 3. timeline
 // ---------------------------------------------------------------------------
 
+console.log('== 四季装饰与页面提示 ==');
+
+(function () {
+  const { seasonFor } = require(path.join(ROOT, 'utils/identity.js'));
+  [
+    [1, 31, 'winter'], [2, 3, 'winter'], [2, 4, 'spring'],
+    [5, 4, 'spring'], [5, 5, 'summer'], [8, 6, 'summer'],
+    [8, 7, 'autumn'], [11, 6, 'autumn'], [11, 7, 'winter']
+  ].forEach(([month, day, season]) => {
+    eq(seasonFor(new Date(2026, month - 1, day)).key, season, `2026/${month}/${day} 按立季日切换装饰`);
+  });
+
+  const feedback = require(path.join(ROOT, 'utils/feedback.js'));
+  let config;
+  global.Component = (cfg) => { config = cfg; };
+  require(path.join(ROOT, 'components/feedback-popup/index.js'));
+  delete global.Component;
+  function makeView() {
+    return Object.assign({
+      data: { ...config.data },
+      setData(patch) { Object.assign(this.data, patch); }
+    }, config.methods);
+  }
+  const first = makeView();
+  const second = makeView();
+  const choices = [];
+  const modal = { title: '清空收藏', success: ({ confirm }) => choices.push(confirm) };
+  config.pageLifetimes.show.call(first);
+  feedback.modal(modal);
+  eq(first.data.notice.kind, 'modal', '确认框由页面内组件承接');
+  first.onCancel();
+  eq(choices, [false], '点击取消只回调一次且不确认');
+  feedback.modal(modal);
+  feedback.toast({ title: '后台消息' });
+  eq(first.data.notice.title, '清空收藏', '后台提示不覆盖待确认操作');
+  first.onConfirm();
+  first.onConfirm();
+  eq(choices, [false, true], '重复点击确认不会再次执行操作');
+  feedback.loading({ title: '检查更新' });
+  eq(first.data.notice.kind, 'loading', '加载状态由页面组件承接');
+  feedback.hideLoading();
+  eq(first.data.notice.kind, '', '完成时收起加载层');
+  feedback.modal(modal);
+  config.pageLifetimes.hide.call(first);
+  config.pageLifetimes.show.call(second);
+  feedback.toast({ title: '旧页请求已完成' }, first);
+  first.onConfirm();
+  eq([first.data.notice.kind, second.data.notice.kind, choices.length], ['', '', 2], '切页丢弃旧页提示与未确认操作');
+  feedback.toast({ title: '已收藏' });
+  eq(second.data.notice.title, '已收藏', '新页面仍可收到自己的短提示');
+  config.lifetimes.detached.call(second);
+})();
+
 console.log('== 时间轴 ==');
 
 (function () {

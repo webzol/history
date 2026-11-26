@@ -1,3 +1,4 @@
+const feedback = require('./feedback.js');
 // 分享面板：分享卡片海报（宣纸纹理 + 立轴题图 + 页面内容摘要 + 每日名句落款）+ 保存相册，纯前端实现。
 //
 // 渲染架构（2026-11-14 高清化）：canvas 2d API（type="2d"），固定 4.5 倍缓冲（1170×1908，
@@ -358,6 +359,7 @@ function drawPoster(page) {
   const share = page.data.share;
   if (!share || !share.open) return; // 面板已关
   if (typeof wx.createSelectorQuery !== 'function') return; // 无环境静默跳过
+  const host = feedback.current();
 
   getCanvasNode(page, (node) => {
     try {
@@ -368,31 +370,31 @@ function drawPoster(page) {
       console.error('qrshare drawPoster:', e);
       // 绘制异常降级：面板切预置静态卡片图（保持完整视觉，见 tools/gen_share_fallback.py）
       if (page && page.setData) page.setData({ 'share.fallback': true });
-      if (wx.showToast) wx.showToast({ title: '已切换备用卡片', icon: 'none' });
+      feedback.toast({ title: '已切换备用卡片', icon: 'none' }, host);
     }
   });
 }
 
 // 写入相册（授权被拒则引导去设置，回来自动重试一次）
-function writeAlbum(filePath) {
-  require('./privacy.js').authorize(() => saveAlbum(filePath));
+function writeAlbum(filePath, host) {
+  require('./privacy.js').authorize(() => saveAlbum(filePath, host), host);
 }
 
-function saveAlbum(filePath) {
+function saveAlbum(filePath, host) {
   wx.saveImageToPhotosAlbum({
     filePath,
-    success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+    success: () => feedback.toast({ title: '已保存到相册', icon: 'success' }, host),
     fail: (err) => {
       const msg = (err && err.errMsg) || '';
       if (/privacy/.test(msg) || (err && err.errno === 104)) {
-        wx.showToast({ title: '已取消保存，可继续阅读', icon: 'none' });
+        feedback.toast({ title: '已取消保存，可继续阅读', icon: 'none' }, host);
         return;
       }
       if (msg.indexOf('auth') < 0 && msg.indexOf('deny') < 0) {
-        wx.showToast({ title: '保存失败', icon: 'none' });
+        feedback.toast({ title: '保存失败', icon: 'none' }, host);
         return;
       }
-      wx.showModal({
+      feedback.modal({
         title: '需要相册权限',
         content: '请在设置中允许「保存到相册」',
         confirmText: '去设置',
@@ -401,12 +403,12 @@ function saveAlbum(filePath) {
           wx.openSetting({
             success: (setting) => {
               if (setting && setting.authSetting && setting.authSetting['scope.writePhotosAlbum']) {
-                writeAlbum(filePath);
+                writeAlbum(filePath, host);
               }
             }
           });
         }
-      });
+      }, host);
     }
   });
 }
@@ -417,8 +419,9 @@ function saveAlbum(filePath) {
 function save(page) {
   const share = page.data.share;
   if (!share || !share.open) return;
+  const host = feedback.current();
   if (share.fallback || typeof wx.canvasToTempFilePath !== 'function') {
-    saveFallback(page);
+    saveFallback(page, host);
     return;
   }
 
@@ -434,17 +437,17 @@ function save(page) {
       canvas: node,
       destWidth: BW,
       destHeight: BH,
-      success: (res) => writeAlbum(res.tempFilePath),
-      fail: () => saveFallback(page)
+      success: (res) => writeAlbum(res.tempFilePath, host),
+      fail: () => saveFallback(page, host)
     });
   });
 }
 
 // 兜底保存：把包内静态卡片图（FALLBACK_IMG）经用户目录转存到相册。
 // saveImageToPhotosAlbum 不接受代码包路径，须用 FileSystemManager 中转。
-function saveFallback(page) {
+function saveFallback(page, host = feedback.current()) {
   if (typeof wx.getFileSystemManager !== 'function' || !wx.env || !wx.env.USER_DATA_PATH) {
-    wx.showToast({ title: '暂不支持保存备用卡片', icon: 'none' });
+    feedback.toast({ title: '暂不支持保存备用卡片', icon: 'none' }, host);
     return;
   }
   const fsm = wx.getFileSystemManager();
@@ -459,13 +462,13 @@ function saveFallback(page) {
         fsm.writeFile({
           filePath: dst,
           data: res.data,
-          success: () => writeAlbum(dst),
-          fail: () => wx.showToast({ title: '保存失败', icon: 'none' })
+          success: () => writeAlbum(dst, host),
+          fail: () => feedback.toast({ title: '保存失败', icon: 'none' }, host)
         });
       },
       fail: () => {
         if (i + 1 < tryPaths.length) attempt(i + 1);
-        else wx.showToast({ title: '备用卡片不可用', icon: 'none' });
+        else feedback.toast({ title: '备用卡片不可用', icon: 'none' }, host);
       }
     });
   })(0);

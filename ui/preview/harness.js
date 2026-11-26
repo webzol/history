@@ -16,8 +16,8 @@
     return cfg;
   };
   window.App = window.Page;
-  var PRIVACY_CFG;
-  window.Component = function (cfg) { PRIVACY_CFG = cfg; };
+  var COMPONENT_CFG = {};
+  window.Component = function (file, cfg) { COMPONENT_CFG[file] = cfg; };
 
   // ---------------------------------------------------------------------------
   // tiny CommonJS
@@ -54,8 +54,8 @@
   var navStack = [];
   var CURRENT;
   var OVERLAY_ROOT;
-  var privacyView;
-  var privacyHost;
+  var popupTypes = ['feedback-popup', 'privacy-popup'];
+  var popups = {};
   var privacyNeeded = false;
   var privacyListener;
 
@@ -217,9 +217,11 @@
     },
     navigateBack: function (o) {
       if (navStack.length > 1) {
+        hidePopups();
         navStack.pop();
         CURRENT = navStack[navStack.length - 1].inst;
         renderPage(CURRENT);
+        showPopups();
         if (o.success) o.success({});
       } else if (o.fail) {
         o.fail(new Error('no page to back'));
@@ -316,10 +318,7 @@
   }
 
   function openPage(name, query, how) {
-    if (privacyView) {
-      PRIVACY_CFG.lifetimes.detached.call(privacyView);
-      privacyView = null;
-    }
+    hidePopups();
     var inst = instantiate(name);
     var rec = { name: name, query: query, inst: inst };
     if (how === 'replace') navStack[navStack.length - 1] = rec;
@@ -327,28 +326,43 @@
     CURRENT = inst;
     if (inst.onLoad) inst.onLoad(query || {});
     renderPage(inst);
-    req('/components/privacy-popup/index.js');
-    privacyView = { cfg: PRIVACY_CFG.methods, data: deepClone(PRIVACY_CFG.data) };
-    privacyView.setData = function (patch) {
-      Object.assign(privacyView.data, patch);
-      renderPrivacy();
-    };
-    PRIVACY_CFG.pageLifetimes.show.call(privacyView);
-    renderPrivacy();
+    showPopups();
   }
 
-  function renderPrivacy() {
-    if (!privacyView) return;
-    if (!privacyHost) {
-      privacyHost = document.createElement('div');
-      document.getElementById('phone').appendChild(privacyHost);
-      var style = document.createElement('style');
-      style.textContent = rwpx(req('/components/privacy-popup/index.wxss'));
-      document.head.appendChild(style);
-    }
-    privacyHost.innerHTML = '';
-    var ast = parseWXML(req('/components/privacy-popup/index.wxml'));
-    renderChildren(ast, privacyHost, makeScope(privacyView, {}), privacyView);
+  function hidePopups() {
+    popupTypes.forEach(function (name) {
+      var popup = popups[name];
+      if (!popup || !popup.view) return;
+      popup.cfg.lifetimes.detached.call(popup.view);
+      popup.view = null;
+      popup.host.innerHTML = '';
+    });
+  }
+
+  function showPopups() {
+    popupTypes.forEach(function (name) {
+      var popup = popups[name];
+      if (!popup) {
+        var base = '/components/' + name + '/index';
+        req(base + '.js');
+        var host = document.createElement('div');
+        document.getElementById('phone').appendChild(host);
+        var style = document.createElement('style');
+        style.textContent = rwpx(req(base + '.wxss'));
+        document.head.appendChild(style);
+        popup = { host: host, cfg: COMPONENT_CFG[base + '.js'], ast: parseWXML(req(base + '.wxml')) };
+        popups[name] = popup;
+      }
+      var view = { cfg: popup.cfg.methods, data: deepClone(popup.cfg.data) };
+      function draw() {
+        popup.host.innerHTML = '';
+        renderChildren(popup.ast, popup.host, makeScope(view, {}), view);
+      }
+      view.setData = function (patch) { Object.assign(view.data, patch); draw(); };
+      popup.view = view;
+      popup.cfg.pageLifetimes.show.call(view);
+      draw();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -505,7 +519,7 @@
   }
 
   function makeEl(node, scope, inst) {
-    if (node.tag === 'privacy-popup') return null; // 独立宿主模拟原生组件生命周期
+    if (popupTypes.indexOf(node.tag) >= 0) return null; // 独立宿主模拟原生组件生命周期
     var el;
     if (node.tag === 'w-block') el = document.createElement('w-block');
     else if (node.tag === 'image') el = document.createElement('img');

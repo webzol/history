@@ -1,3 +1,4 @@
+const feedback = require('../../utils/feedback.js');
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
@@ -99,7 +100,7 @@ Page({
     if (!this.data.event) return;
     const on = store.toggleFavorite('event', this.data.event.id);
     this.setData({ collected: on });
-    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
+    feedback.toast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   goBack() {

@@ -1,3 +1,4 @@
+const feedback = require('./feedback.js');
 // 隐私同意状态以微信为准；不使用本地 storage 代替平台授权。
 const BUTTON_ID = 'privacy-agree-button';
 const DEFAULT_CONTRACT = '《阅史记小程序用户隐私保护指引》';
@@ -80,16 +81,17 @@ function detach(view) {
 }
 
 function openContract() {
+  const host = feedback.current();
   if (typeof wx.openPrivacyContract !== 'function') {
-    wx.showToast({ title: '请升级微信后查看隐私指引', icon: 'none' });
+    feedback.toast({ title: '请升级微信后查看隐私指引', icon: 'none' }, host);
     return;
   }
   wx.openPrivacyContract({
-    fail() { wx.showToast({ title: '隐私指引暂不可用，请稍后重试', icon: 'none' }); }
+    fail() { feedback.toast({ title: '隐私指引暂不可用，请稍后重试', icon: 'none' }, host); }
   });
 }
 
-function authorize(onAgree) {
+function authorize(onAgree, host = feedback.current()) {
   if (typeof wx.requirePrivacyAuthorize !== 'function') {
     // 老基础库由原有相册权限流程处理，不伪造微信隐私同意状态。
     onAgree();
@@ -100,10 +102,10 @@ function authorize(onAgree) {
     fail(err) {
       const msg = (err && err.errMsg) || '';
       const unavailable = (err && err.errno === 112) || /not declared|banned/.test(msg);
-      wx.showToast({
+      feedback.toast({
         title: unavailable ? '暂无法保存，请稍后重试' : '已取消保存，可继续阅读',
         icon: 'none'
-      });
+      }, host);
     }
   });
 }

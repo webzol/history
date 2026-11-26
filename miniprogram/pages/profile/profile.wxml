@@ -5,9 +5,15 @@
       <text class="brand">我的</text>
     </view>
 
-    <view class="head-card">
-      <view class="avatar-wrap" bindtap="onRerollIdentity">
+    <view class="head-card season-{{season.key}}">
+      <view class="season-art" aria-hidden="true">
+        <view class="season-stem"></view>
+        <view class="season-motif"></view>
+        <view class="season-motif season-motif-small"></view>
+      </view>
+      <view class="avatar-wrap" bindtap="onRerollIdentity" aria-label="换一位史客">
         <image class="avatar" src="{{identity.avatar}}" mode="aspectFill"></image>
+        <text wx:if="{{season.label}}" class="avatar-season">{{season.label}}</text>
       </view>
       <view class="head-info">
         <view class="nick-row">
@@ -155,4 +161,5 @@
 
 </view>
 
+<feedback-popup></feedback-popup>
 <privacy-popup></privacy-popup>

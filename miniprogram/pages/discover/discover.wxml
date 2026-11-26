@@ -92,4 +92,5 @@
 
 </view>
 
+<feedback-popup></feedback-popup>
 <privacy-popup></privacy-popup>

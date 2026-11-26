@@ -26,7 +26,10 @@ function environment(options = {}) {
   if (options.noListener) delete wx.onNeedPrivacyAuthorization;
   if (options.noSetting) delete wx.getPrivacySetting;
   const mod = { exports: {} };
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'utils/privacy.js'), 'utf8'), { wx, module: mod });
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'utils/privacy.js'), 'utf8'), {
+    wx, module: mod,
+    require() { return { current: () => null, toast: wx.showToast }; }
+  });
   const privacy = mod.exports;
   let cfg;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'components/privacy-popup/index.js'), 'utf8'), {

@@ -1,8 +1,27 @@
 // 「我的」页随机身份：历史风格昵称 + 头像变体（本地存储，可换一换）
 // 头像由 tools/gen_avatars.py 生成（手绘史官参数化变体），勿手改清单。
 const KEY = 'shige_identity';
+const calendar = require('./solarlunar.js');
 
 const AVATAR_COUNT = 20;
+
+const SEASONS = [
+  { key: 'winter', label: '冬', month: 11, term: 21, fallback: 7 },
+  { key: 'autumn', label: '秋', month: 8, term: 15, fallback: 7 },
+  { key: 'summer', label: '夏', month: 5, term: 9, fallback: 5 },
+  { key: 'spring', label: '春', month: 2, term: 3, fallback: 4 }
+];
+
+function seasonFor(date = new Date()) {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const { key, label } = SEASONS.find((season) => {
+    if (month !== season.month) return month > season.month;
+    const term = calendar.getTerm(date.getFullYear(), season.term);
+    return day >= (term > 0 ? term : season.fallback);
+  }) || SEASONS[0];
+  return { key, label };
+}
 
 // 字号式昵称：前字 × 号尾，读起来像古人自号（听松居士 / 锄月山人 / 青简先生…）
 const NICK_A = [
@@ -56,4 +75,4 @@ function reroll() {
   return fresh;
 }
 
-module.exports = { KEY, AVATAR_COUNT, NICK_A, NICK_B, MOTTOS, avatarPath, allAvatars, get, reroll };
+module.exports = { KEY, AVATAR_COUNT, NICK_A, NICK_B, MOTTOS, avatarPath, allAvatars, get, reroll, seasonFor };

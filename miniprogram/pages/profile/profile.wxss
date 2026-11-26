@@ -38,10 +38,13 @@
 
 /* 用户头卡 */
 .head-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   margin-top: 22rpx;
   padding: 34rpx;
   border-radius: 38rpx;
-  background: #FCFBF8;
+  background: linear-gradient(106deg, #FCFBF8 55%, var(--season-wash, #FCFBF8));
   box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);
   display: flex;
   align-items: center;
@@ -49,25 +52,116 @@
 }
 
 .avatar-wrap {
+  position: relative;
+  flex: 0 0 112rpx;
   width: 112rpx;
   height: 112rpx;
   border-radius: 50%;
-  overflow: hidden;
   background: #F3EFE6;
   border: 4rpx solid #FFFDF8;
-  box-shadow: 0 8rpx 20rpx rgba(90, 70, 50, 0.12);
+  box-shadow: 0 0 0 2rpx var(--season-line, #E8E1D7), 0 8rpx 20rpx rgba(90, 70, 50, 0.12);
 }
 
 .avatar {
   width: 100%;
   height: 100%;
   display: block;
+  border-radius: 50%;
+}
+
+.avatar-season {
+  position: absolute;
+  right: -7rpx;
+  bottom: -6rpx;
+  width: 37rpx;
+  height: 37rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid #FCFBF8;
+  border-radius: 50%;
+  color: #FCFBF8;
+  background: var(--season-ink, #6D645A);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: calc(21rpx * var(--fs, 1));
+  line-height: 1;
 }
 
 .head-info {
+  position: relative;
   flex: 1;
   min-width: 0;
 }
+
+.season-spring { --season-wash: #F3F2E6; --season-line: #D0D4B8; --season-ink: #586744; }
+.season-summer { --season-wash: #E8F0EB; --season-line: #B6CAC1; --season-ink: #456660; }
+.season-autumn { --season-wash: #F3E7D5; --season-line: #DAC19A; --season-ink: #795136; }
+.season-winter { --season-wash: #E9EFF0; --season-line: #B9CAD0; --season-ink: #45616B; }
+
+.season-art {
+  position: absolute;
+  right: 12rpx;
+  bottom: -15rpx;
+  width: 170rpx;
+  height: 108rpx;
+  pointer-events: none;
+  opacity: 0.68;
+}
+
+.season-stem, .season-motif { position: absolute; }
+.season-stem {
+  width: 112rpx;
+  height: 45rpx;
+  bottom: 11rpx;
+  right: 10rpx;
+  border-top: 2rpx solid var(--season-line);
+  border-radius: 60% 0 0;
+  transform: rotate(-27deg);
+}
+
+.season-motif { right: 44rpx; bottom: 27rpx; width: 49rpx; height: 38rpx; }
+.season-motif-small { right: 7rpx; bottom: 42rpx; transform: scale(0.65) rotate(28deg); }
+
+/* 桃花、荷叶、银杏与雪枝沿卡片右下角留白展开。 */
+.season-spring .season-motif {
+  background: radial-gradient(ellipse at 50% 53%, #B88268 7%, transparent 10%),
+    radial-gradient(ellipse at 49% 24%, #E2A997 0 19%, transparent 22%),
+    radial-gradient(ellipse at 27% 60%, #E4BAA9 0 20%, transparent 23%),
+    radial-gradient(ellipse at 69% 61%, #DFAD9E 0 20%, transparent 23%),
+    radial-gradient(ellipse at 50% 75%, #E8BFAD 0 17%, transparent 20%);
+}
+
+.season-summer .season-motif {
+  border-radius: 58% 44% 52% 38%;
+  background: radial-gradient(ellipse at 44% 65%, #7DA99B 0 6%, transparent 9%),
+    repeating-conic-gradient(from 8deg at 44% 65%, #A1C4B5 0 16deg, #BBD3C9 16deg 39deg);
+  transform: rotate(-18deg);
+}
+
+.season-summer .season-motif-small { transform: scale(0.63) rotate(24deg); }
+.season-summer .season-stem { transform: rotate(-5deg); border-radius: 50%; border-bottom: 2rpx solid var(--season-line); }
+
+.season-autumn .season-motif {
+  border-radius: 80% 80% 14% 14%;
+  background: repeating-conic-gradient(from -47deg at 50% 100%, #CF9F5E 0 7deg, #E0BD84 7deg 18deg);
+  transform: rotate(-31deg);
+}
+
+.season-autumn .season-motif-small { transform: scale(0.64) rotate(23deg); }
+.season-winter .season-art {
+  background: radial-gradient(circle at 28% 39%, #A5BBC4 0 2rpx, transparent 3rpx),
+    radial-gradient(circle at 54% 24%, #AAC1CA 0 3rpx, transparent 4rpx),
+    radial-gradient(circle at 86% 29%, #94ACB8 0 2rpx, transparent 3rpx),
+    radial-gradient(circle at 80% 48%, #FAFDFF 0 5rpx, transparent 7rpx);
+}
+
+.season-winter .season-motif {
+  border-top: 3rpx solid #FCFDFF;
+  border-radius: 80% 0 0;
+  transform: rotate(-34deg);
+}
+
+.season-winter .season-motif-small { transform: scale(0.68) rotate(19deg); }
 
 .nick-row {
   display: flex;

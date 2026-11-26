@@ -1,3 +1,4 @@
+const feedback = require('../../utils/feedback.js');
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
@@ -26,12 +27,13 @@ Page({
     fontOptions: font.OPTIONS,
     fontKey: 'm',
     fontClass: 'm',
-    identity: { avatar: '/assets/avatar-scholar.jpg', nick: '阅史客', motto: '以千年为卷轴，读万古事' }
+    identity: { avatar: '/assets/avatars/avatar-01.jpg', nick: '阅史客', motto: '以千年为卷轴，读万古事' },
+    season: { key: '', label: '' }
   },
 
   onLoad() {
     this.doStats();
-    this.setData({ identity: identity.get() });
+    this.setData({ identity: identity.get(), season: identity.seasonFor() });
   },
 
   onRerollIdentity() {
@@ -42,7 +44,7 @@ Page({
     this.setTab();
     this.doStats();
     font.apply(this);
-    this.setData({ fontKey: store.getFontKey() });
+    this.setData({ fontKey: store.getFontKey(), season: identity.seasonFor() });
     hd.refresh((changed) => {
       if (changed) this.doStats();
     });
@@ -108,32 +110,33 @@ Page({
     const saved = store.setFontKey(key);
     this.setData({ fontKey: saved, fontClass: saved });
     const opt = font.OPTIONS.find((x) => x.key === saved);
-    wx.showToast({ title: `字号：${opt ? opt.label : '标准'}`, icon: 'none' });
+    feedback.toast({ title: `字号：${opt ? opt.label : '标准'}`, icon: 'none' });
   },
 
   // 检查内容更新：purge jsDelivr 缓存 → 绕过本地缓存强制拉取
   onCheckUpdate() {
     if (this.data.updating) return;
+    const host = feedback.current();
     this.setData({ updating: true });
-    wx.showLoading({ title: '检查更新', mask: true });
+    feedback.loading({ title: '检查更新', mask: true }, host);
     hd.refresh((changed, err) => {
       this.setData({ updating: false });
-      wx.hideLoading();
+      feedback.hideLoading(host);
       if (err) {
-        wx.showToast({ title: '暂无网络，稍后再试', icon: 'none' });
+        feedback.toast({ title: '暂无网络，稍后再试', icon: 'none' }, host);
         return;
       }
       if (changed) {
         const meta = hd.get().meta || {};
         this.onShow(); // 重算统计与收藏/足迹解析
-        wx.showToast({
+        feedback.toast({
           title: meta.builtAt ? `已更新 · ${meta.builtAt}` : '已更新至最新内容',
           icon: 'none',
           duration: 2600
-        });
+        }, host);
         return;
       }
-      wx.showToast({ title: '内容已是最新', icon: 'none' });
+      feedback.toast({ title: '内容已是最新', icon: 'none' }, host);
     }, { fresh: true });
   },
 
@@ -173,7 +176,7 @@ Page({
   onFavLongPress(e) {
     const { type, id } = e.currentTarget.dataset;
     if (!store.isFavorite(type, id)) return;
-    wx.showModal({
+    feedback.modal({
       title: '移出收藏',
       content: '确定将这条内容移出收藏？',
       confirmText: '移出',
@@ -181,7 +184,7 @@ Page({
         if (!res.confirm) return;
         store.toggleFavorite(type, id);
         this.onShow();
-        wx.showToast({ title: '已移出收藏', icon: 'none' });
+        feedback.toast({ title: '已移出收藏', icon: 'none' });
       }
     });
   },
@@ -203,16 +206,16 @@ Page({
   },
 
   onClearCache() {
-    wx.showModal({
+    feedback.modal({
       title: '清除缓存',
-      content: '只清空本地临时缓存；收藏与浏览足迹会一并清除。',
+      content: '将清除本地缓存，以及收藏、浏览足迹、阅读设置和史客身份。',
       confirmText: '清除',
       success: (res) => {
         if (!res.confirm) return;
         wx.clearStorageSync();
         require('../../utils/remote.js').resetMemory();
         this.onShow();
-        wx.showToast({ title: '已清除', icon: 'success' });
+        feedback.toast({ title: '已清除', icon: 'success' });
       }
     });
   }

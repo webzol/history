@@ -35,6 +35,7 @@
   },
   "style": "v2",
   "usingComponents": {
+    "feedback-popup": "/components/feedback-popup/index",
     "privacy-popup": "/components/privacy-popup/index"
   },
   "sitemapLocation": "sitemap.json"

@@ -1,3 +1,4 @@
+const feedback = require('../../utils/feedback.js');
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
@@ -76,7 +77,7 @@ Page({
     if (!this.data.person) return;
     const on = store.toggleFavorite('person', this.data.person.id);
     this.setData({ collected: on });
-    wx.showToast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
+    feedback.toast({ title: on ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
   // 远端专属图加载失败 → 换备用 jsDelivr 域名重试一次；再失败则隐藏该图（头卡露纸底/行图隐藏）

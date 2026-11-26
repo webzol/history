@@ -23,6 +23,9 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
       // Page(/App( 各文件仅一处调用（已核实）；把模块路径绑进配置便于浏览器端注册
       code = code.replace(/\b(Page|App)\(\s*\{/, (m, kind) => `${kind}('project://${modPath}', {`);
     }
+    if (/^components\/[\w-]+\/index\.js$/.test(modPath)) {
+      code = source.replace(/\bComponent\(\s*\{/, `Component('/${modPath}', {`);
+    }
     return `__register('/${modPath}', function (require, module, exports) {\n${code}\n});`;
   }
 
@@ -56,14 +59,17 @@ parts.push(wrapJs('utils/solarlunar.js', read('utils/solarlunar.js')));
 parts.push(wrapJs('utils/wxacode.js', read('utils/wxacode.js')));
 parts.push(wrapJs('utils/qrshare.js', read('utils/qrshare.js')));
 parts.push(wrapJs('utils/privacy.js', read('utils/privacy.js')));
+parts.push(wrapJs('utils/feedback.js', read('utils/feedback.js')));
 parts.push('');
 
   const stringMod = (modPath, text) =>
     `__register('/${modPath}', function (require, module, exports) { module.exports = ${JSON.stringify(text)}; });`;
 
-['js', 'wxml', 'wxss'].forEach((ext) => {
-  const modPath = `components/privacy-popup/index.${ext}`;
-  parts.push(ext === 'js' ? wrapJs(modPath, read(modPath)) : stringMod(modPath, read(modPath)));
+['feedback-popup', 'privacy-popup'].forEach((component) => {
+  ['js', 'wxml', 'wxss'].forEach((ext) => {
+    const modPath = `components/${component}/index.${ext}`;
+    parts.push(ext === 'js' ? wrapJs(modPath, read(modPath)) : stringMod(modPath, read(modPath)));
+  });
 });
 
 // pages
