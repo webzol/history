@@ -178,7 +178,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .tih-featured {
@@ -215,7 +215,7 @@
 
 .tag-e { background: #F1E8DD; color: #5F5A52; }
 .tag-b { background: #EEF0F0; color: #5F5A52; }
-.tag-d { background: #F0F0F1; color: #8C857A; }
+.tag-d { background: #F0F0F1; color: #6D645A; }
 
 .tih-name {
   display: block;
@@ -233,7 +233,7 @@
   margin-top: 8rpx;
   font-size: calc(22rpx * var(--fs, 1));
   line-height: calc(34rpx * var(--fs, 1));
-  color: #8C857A;
+  color: #6D645A;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -243,7 +243,7 @@
   border-top: 1rpx solid rgba(31, 29, 25, 0.05);
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .section-head {
@@ -263,7 +263,7 @@
 .section-link {
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .era-row {
@@ -353,7 +353,7 @@
   display: block;
   font-size: calc(15rpx * var(--fs, 1));
   letter-spacing: 0.12em;
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .modern-title {
@@ -386,7 +386,7 @@
   font-size: calc(26rpx * var(--fs, 1));
   line-height: 1.1;
   letter-spacing: 0.03em;
-  color: #A9BCC4;
+  color: #4A6667;
 }
 
 .modern-dash {
@@ -456,7 +456,7 @@
   font-size: 40rpx;
   line-height: 1;
   padding: 6rpx 12rpx;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .sheet-list {
@@ -490,7 +490,7 @@
   display: block;
   margin-top: 6rpx;
   font-size: calc(20rpx * var(--fs, 1));
-  color: #8C857A;
+  color: #6D645A;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -498,7 +498,7 @@
 
 .sheet-row-arrow {
   font-size: 30rpx;
-  color: #C9C2B6;
+  color: #6D645A;
 }
 
 .sheet-cancel {

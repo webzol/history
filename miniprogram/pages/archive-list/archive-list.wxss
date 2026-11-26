@@ -109,7 +109,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.06em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .top-seal {
@@ -139,11 +139,12 @@
 .search-icon {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .search-input {
   flex: 1;
+  min-width: 0;
   min-width: 0;
   height: 78rpx;
   font-size: calc(22rpx * var(--fs, 1));
@@ -151,18 +152,7 @@
 }
 
 .ph {
-  color: #B4AA9C;
-}
-
-.search-clear {
-  width: 40rpx;
-  height: 40rpx;
-  line-height: 40rpx;
-  text-align: center;
-  border-radius: 50%;
-  background: #F1ECE2;
-  font-size: 26rpx;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .cover-card {
@@ -187,7 +177,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, rgba(26, 24, 20, 0.82) 0%, rgba(26, 24, 20, 0.52) 60%, rgba(26, 24, 20, 0.14) 100%);
+  background: linear-gradient(90deg, rgba(26, 24, 20, 0.86) 0%, rgba(26, 24, 20, 0.64) 66%, rgba(26, 24, 20, 0.25) 100%);
 }
 
 .cover-copy {
@@ -201,7 +191,7 @@
   display: block;
   font-size: calc(15rpx * var(--fs, 1));
   letter-spacing: 0.14em;
-  color: rgba(252, 251, 248, 0.78);
+  color: #FCFBF8;
 }
 
 .cover-title {
@@ -221,7 +211,7 @@
   display: block;
   margin-top: 3rpx;
   font-size: calc(16rpx * var(--fs, 1));
-  color: rgba(252, 251, 248, 0.76);
+  color: #FCFBF8;
 }
 
 .list-head {
@@ -234,7 +224,7 @@
 .list-count {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(24rpx * var(--fs, 1));
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .list-hint {
@@ -243,7 +233,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: calc(17rpx * var(--fs, 1));
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .item-list {
@@ -285,7 +275,7 @@
   margin-top: 6rpx;
   font-size: calc(17rpx * var(--fs, 1));
   line-height: 1.45;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .item-summary {
@@ -303,7 +293,7 @@
   flex: 0 0 auto;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #C0B6A8;
+  color: #6D645A;
 }
 
 .state-card {
@@ -328,7 +318,7 @@
 .state-desc {
   font-size: calc(18rpx * var(--fs, 1));
   line-height: 1.6;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .state-action {
@@ -360,7 +350,7 @@
 .more-hint {
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #B4AA9C;
+  color: #6D645A;
 }
 
 .end {
@@ -368,7 +358,7 @@
   text-align: center;
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #B4AA9C;
+  color: #6D645A;
 }
 
 /* 完整目录后台载入提示（head 首屏已渲染、分块补齐中） */
@@ -392,11 +382,15 @@
 .loading-more-text {
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .loading-more.stalled .loading-more-text {
   color: #A34A3E;
+}
+
+.loading-more.stalled {
+  min-height: 44px;
 }
 
 .state-pressed {

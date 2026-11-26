@@ -109,7 +109,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.06em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .top-seal {
@@ -199,7 +199,7 @@
   background: #F7F2E9;
   font-size: calc(16rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #8C6A45;
+  color: #7D5A3B;
 }
 
 .head-title {
@@ -219,7 +219,7 @@
   border-top: 1rpx dashed rgba(169, 130, 94, 0.24);
   font-size: calc(19rpx * var(--fs, 1));
   line-height: 1.5;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .body-card {
@@ -341,7 +341,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(22rpx * var(--fs, 1));
   letter-spacing: 0.1em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .trans-text {
@@ -375,7 +375,7 @@
 
 .facts-count {
   font-size: calc(16rpx * var(--fs, 1));
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .fact-grid {
@@ -399,7 +399,7 @@
   display: block;
   font-size: calc(16rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .fact-value {
@@ -418,7 +418,7 @@
   font-size: calc(17rpx * var(--fs, 1));
   line-height: 1.6;
   letter-spacing: 0.03em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .state-card {
@@ -443,7 +443,7 @@
 .state-desc {
   font-size: calc(18rpx * var(--fs, 1));
   line-height: 1.6;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .state-action {

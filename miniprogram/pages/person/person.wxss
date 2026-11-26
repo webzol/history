@@ -105,7 +105,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 /* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */
@@ -204,15 +204,15 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(24rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .p-dates.accent-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .p-dot {
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .p-roles {
@@ -231,12 +231,12 @@
   border: 1rpx solid rgba(169, 130, 94, 0.35);
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.06em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .era-chip.chip-modern {
   border-color: rgba(126, 154, 154, 0.45);
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .quote-block {
@@ -251,7 +251,7 @@
   font-family: "KaiTi", "STKaiti", serif;
   font-size: 40rpx;
   line-height: 0.6;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .quote {
@@ -268,7 +268,7 @@
   margin-top: 12rpx;
   font-family: "KaiTi", "STKaiti", serif;
   font-size: calc(20rpx * var(--fs, 1));
-  color: #8C857A;
+  color: #6D645A;
   text-align: right;
 }
 
@@ -322,11 +322,11 @@
   white-space: nowrap;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(22rpx * var(--fs, 1));
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .rel-year.accent-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .rel-body {
@@ -364,7 +364,7 @@
 .rel-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .foot-actions {
@@ -396,12 +396,12 @@
 .ghost-btn.on.on-modern {
   border-color: rgba(126, 154, 154, 0.5);
   background: rgba(126, 154, 154, 0.08);
-  color: #5F7E7E;
+  color: #4A6667;
 }
 
 .source-line {
   margin-top: 30rpx;
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #A39A8E;
+  color: #6D645A;
 }

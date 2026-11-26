@@ -133,7 +133,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #A38B63;
+  color: #785D3D;
 }
 
 /* 北宋旁的小立印：同款印章图 */
@@ -165,7 +165,7 @@
   font-size: calc(19rpx * var(--fs, 1));
   line-height: 1.7;
   letter-spacing: 0.06em;
-  color: #A38B63;
+  color: #785D3D;
 }
 
 .era-meta-value {
@@ -196,7 +196,7 @@
 
 .era-sep {
   margin: 0 6rpx;
-  color: #B8A58C;
+  color: #785D3D;
 }
 
 /* 沿竖线挂卡的事件列表 */
@@ -219,6 +219,20 @@
 .event-item {
   position: relative;
   margin-bottom: 30rpx;
+}
+
+.timeline-more {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-left: 56rpx;
+  border-radius: 30rpx;
+  background: #FCFBF8;
+  color: #6B5A33;
+  font-size: calc(24rpx * var(--fs, 1));
 }
 
 .dot {
@@ -285,7 +299,7 @@
   margin-top: 12rpx;
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .event-source {
@@ -294,6 +308,6 @@
   font-family: "KaiTi", "STKaiti", serif;
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.02em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 

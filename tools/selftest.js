@@ -656,11 +656,22 @@ console.log('== 时间轴 ==');
 
   p.onLoad({});
   eq(p.data.mode, 'ancient', '默认古代');
-  eq(p.data.events.length, 82, '古代 82 条事件');
-  ok(p.data.events.every((e, i, arr) => i === 0 || arr[i - 1].year <= e.year), '古代按纪年升序');
-  ok(p.data.events[0].id === 'xia-establish' && p.data.events[p.data.events.length - 1].id === 'humen-1839',
+  eq(p.data.groups.map((group) => group.items.length), [24], '古代首屏只渲染一组');
+  ok(p.data.hasMore, '古代首屏可以继续加载');
+  p.onReachBottom();
+  eq(p.data.groups.map((group) => group.items.length), [24, 24], '滚动到底仅追加一组');
+  p.loadMode('ancient');
+  eq(p.data.groups.length, 2, '同模式更新保留已展开的范围');
+  p.onMore();
+  p.onReachBottom();
+  p.onMore();
+  eq(p.data.groups.map((group) => group.items.length), [24, 24, 24, 10], '全部 82 条按组渲染且末尾不重复');
+  ok(!p.data.hasMore, '全部展开后隐藏加载入口');
+  const events = p.data.groups.flatMap((group) => group.items);
+  ok(events.every((e, i) => i === 0 || events[i - 1].year <= e.year), '古代按纪年升序');
+  ok(events[0].id === 'xia-establish' && events[events.length - 1].id === 'humen-1839',
     '古代时间轴首尾为夏建立/虎门销烟');
-  eq(p.data.events[0].dotClass, 'dot-red', '轴上首点红');
+  ok(events.every((event, i) => event.dotClass === (i % 2 === 0 ? 'dot-red' : 'dot-teal')), '各组连接处也保持圆点交替');
   eq(p.data.eraName, '夏—清', '时代带名来自数据推导');
   ok(p.data.eraCount === 23 && p.data.eraRange === '公元前2070—1839' &&
     p.data.eraList.slice(0, 6).join(' · ') === '夏 · 商 · 西周 · 春秋 · 战国 · 秦' &&
@@ -669,7 +680,7 @@ console.log('== 时间轴 ==');
 
   p.onLoad({ mode: 'modern' });
   eq(p.data.mode, 'modern', 'mode 参数近现代');
-  eq(p.data.events.length, 18, '近现代 18 条事件');
+  eq(p.data.groups.map((group) => group.items.length), [18], '近现代一组收录 18 条事件');
   eq(p.data.eraName, '晚清—新中国', '近现代时代带名推导');
   ok(p.data.eraCount === 3 && p.data.eraRange === '1840—1978' && p.data.eraList.indexOf('新中国') >= 0,
     '近现代时代带覆盖 1978 与新中国');
@@ -680,6 +691,7 @@ console.log('== 时间轴 ==');
 
   tap(p, 'switchMode', { mode: 'ancient' });
   eq(p.data.mode, 'ancient', '切换回古代');
+  eq(p.data.groups.length, 1, '返回古代时从首组开始');
 
   tap(p, 'onEvent', { id: 'chanyuan-1005' });
   eq(last('navigateTo').url, '/pages/event/event?id=chanyuan-1005', '事件卡 → 事件详情');

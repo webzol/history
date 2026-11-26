@@ -42,25 +42,22 @@
 
     <view class="event-list">
       <view class="rail"></view>
-      <view
-        wx:for="{{events}}"
-        wx:key="id"
-        class="event-item"
-        data-id="{{item.id}}"
-        bindtap="onEvent"
-      >
-        <text class="dot {{item.dotClass}}"></text>
-        <view class="event-card">
-          <view class="event-head">
-            <text class="event-year {{item.yearAncientText ? 'year-red' : ''}}">{{item.yearText}}</text>
-            <text class="event-title">{{item.title}}</text>
+      <view wx:for="{{groups}}" wx:for-item="group" wx:key="start" class="event-group">
+        <view wx:for="{{group.items}}" wx:key="id" class="event-item" data-id="{{item.id}}" bindtap="onEvent">
+          <text class="dot {{item.dotClass}}"></text>
+          <view class="event-card">
+            <view class="event-head">
+              <text class="event-year {{item.yearAncientText ? 'year-red' : ''}}">{{item.yearText}}</text>
+              <text class="event-title">{{item.title}}</text>
+            </view>
+            <text class="event-desc">{{item.desc}}</text>
+            <text class="event-tags">{{item.tags}}</text>
+            <text class="event-source">（史料 · {{item.source}}）</text>
           </view>
-          <text class="event-desc">{{item.desc}}</text>
-          <text class="event-tags">{{item.tags}}</text>
-          <text class="event-source">（史料 · {{item.source}}）</text>
         </view>
       </view>
     </view>
+    <view wx:if="{{hasMore}}" class="timeline-more" bindtap="onMore">加载更多史事</view>
   </view>
 </view>
 

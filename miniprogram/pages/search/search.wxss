@@ -106,7 +106,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .top-seal {
@@ -140,6 +140,7 @@
 
 .search-input {
   flex: 1;
+  min-width: 0;
   height: 64rpx;
   font-size: calc(28rpx * var(--fs, 1));
   letter-spacing: 0.02em;
@@ -147,15 +148,8 @@
 }
 
 .ph {
-  color: #B9B2A6;
+  color: #6D645A;
   letter-spacing: 0.04em;
-}
-
-.search-clear {
-  padding: 0 8rpx;
-  font-size: 34rpx;
-  line-height: 1;
-  color: #B9B2A6;
 }
 
 .search-btn {
@@ -172,7 +166,7 @@
   margin-top: 20rpx;
   font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #B9B2A6;
+  color: #6D645A;
 }
 
 /* 分组标题 */
@@ -193,7 +187,7 @@
 .section-count {
   font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.06em;
-  color: #B9B2A6;
+  color: #6D645A;
 }
 
 /* 热门标签 */
@@ -251,17 +245,17 @@
   margin-top: 8rpx;
   font-size: calc(21rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .row-sub.sub-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .row-arrow {
   font-size: 34rpx;
   line-height: 1;
-  color: #C8C1B4;
+  color: #6D645A;
 }
 
 /* 空结果 */
@@ -283,5 +277,5 @@
   margin-top: 16rpx;
   font-size: calc(22rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #B9B2A6;
+  color: #6D645A;
 }

@@ -105,7 +105,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .hero {
@@ -122,7 +122,7 @@
   display: block;
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.14em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .hero-title {
@@ -168,7 +168,7 @@
   display: block;
   margin-top: 4rpx;
   font-size: calc(17rpx * var(--fs, 1));
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .section-head {
@@ -187,7 +187,7 @@
 
 .section-link {
   font-size: calc(18rpx * var(--fs, 1));
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .group-list {
@@ -219,7 +219,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.06em;
-  color: #B9A98F;
+  color: #785D3D;
 }
 
 .group-cover {
@@ -252,7 +252,7 @@
 .group-meta {
   margin-left: 12rpx;
   font-size: calc(17rpx * var(--fs, 1));
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .group-desc {
@@ -260,7 +260,7 @@
   margin-top: 5rpx;
   font-size: calc(18rpx * var(--fs, 1));
   line-height: 1.45;
-  color: #8C857A;
+  color: #6D645A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -270,7 +270,7 @@
   flex: none;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(24rpx * var(--fs, 1));
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .group-chevron {
@@ -279,7 +279,7 @@
   margin-left: 8rpx;
   text-align: center;
   font-size: 30rpx;
-  color: #C0B6A8;
+  color: #6D645A;
   transition: transform 0.2s ease;
 }
 
@@ -319,7 +319,7 @@
   margin-top: 4rpx;
   font-size: calc(17rpx * var(--fs, 1));
   line-height: 1.45;
-  color: #8C857A;
+  color: #6D645A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -330,7 +330,7 @@
   margin-left: 16rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(21rpx * var(--fs, 1));
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .entry-arrow {
@@ -338,7 +338,7 @@
   margin-left: 8rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 28rpx;
-  color: #C0B6A8;
+  color: #6D645A;
 }
 
 .note {
@@ -348,5 +348,5 @@
   background: rgba(243, 239, 230, 0.7);
   font-size: calc(17rpx * var(--fs, 1));
   line-height: 1.7;
-  color: #A39A8E;
+  color: #6D645A;
 }

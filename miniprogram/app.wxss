@@ -13,6 +13,26 @@ view, text, image {
   font-family: "Songti SC", "STSong", "SimSun", serif;
 }
 
+.section-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 44px;
+  min-height: 44px;
+  padding-left: 12rpx;
+}
+
+.search-clear {
+  flex: 0 0 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: #6D645A;
+  font-size: 34rpx;
+}
+
 /* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */
 .tabbar {
   position: fixed;
@@ -128,7 +148,7 @@ view, text, image {
   font-size: 40rpx;
   line-height: 1;
   padding: 6rpx 12rpx;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .ss-qr-wrap {

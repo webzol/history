@@ -68,7 +68,7 @@
   display: block;
   font-size: calc(16rpx * var(--fs, 1));
   letter-spacing: 0.12em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .archive-entry-title {
@@ -85,7 +85,7 @@
   margin-top: 7rpx;
   font-size: calc(17rpx * var(--fs, 1));
   line-height: 1.5;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .archive-entry-badge {
@@ -107,14 +107,14 @@
   display: block;
   margin-top: 2rpx;
   font-size: calc(15rpx * var(--fs, 1));
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .archive-entry-arrow {
   flex: 0 0 auto;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #C0B6A8;
+  color: #6D645A;
 }
 
 .section-head {
@@ -134,7 +134,7 @@
 .section-link {
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 /* 朝代卡（2 列，按数据条数自动换行） */
@@ -169,7 +169,7 @@
   right: 0;
   bottom: 0;
   top: 0;
-  background: linear-gradient(180deg, rgba(246, 241, 234, 0.06) 40%, rgba(31, 27, 22, 0.55));
+  background: linear-gradient(180deg, rgba(31, 27, 22, 0) 32%, rgba(31, 27, 22, 0.78));
 }
 
 .dyn-copy {
@@ -193,7 +193,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: rgba(255, 248, 239, 0.78);
+  color: #FFF8EF;
 }
 
 .dyn-title {
@@ -204,14 +204,14 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: rgba(31, 27, 22, 0.72);
-  background: rgba(252, 251, 248, 0.72);
+  color: #5F5A52;
+  background: #FCFBF8;
   padding: 6rpx 14rpx;
   border-radius: 16rpx;
 }
 
 .dyn-card.dyn-modern .dyn-title {
-  color: rgba(126, 154, 154, 0.95);
+  color: #4A6667;
 }
 
 /* 专题卡（盛唐气象复用首页视觉语言） */
@@ -274,7 +274,7 @@
   z-index: 2;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(36rpx * var(--fs, 1));
-  color: rgba(31, 27, 22, 0.45);
+  color: #6D645A;
 }
 
 .modern-card {
@@ -302,7 +302,7 @@
   display: block;
   font-size: calc(15rpx * var(--fs, 1));
   letter-spacing: 0.12em;
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .modern-title {
@@ -334,7 +334,7 @@
   font-size: calc(26rpx * var(--fs, 1));
   line-height: 1.1;
   letter-spacing: 0.03em;
-  color: #A9BCC4;
+  color: #4A6667;
 }
 
 .modern-dash {
@@ -365,11 +365,11 @@
   flex: 0 0 130rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(22rpx * var(--fs, 1));
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .pick-year-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .pick-body {
@@ -396,6 +396,6 @@
 .pick-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #A39A8E;
+  color: #6D645A;
 }
 

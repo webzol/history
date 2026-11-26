@@ -89,7 +89,7 @@
   margin-top: 10rpx;
   font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .nick-refresh {
@@ -145,13 +145,13 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(44rpx * var(--fs, 1));
   line-height: 1;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .stat-label {
   font-size: calc(20rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 /* 阅读设置 */
@@ -179,7 +179,7 @@
 .pref-note {
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .seg {
@@ -255,13 +255,13 @@
   margin-right: 14rpx;
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.04em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .menu-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 30rpx;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 /* 收藏 / 足迹列表 */
@@ -281,7 +281,7 @@
   display: block;
   font-size: calc(24rpx * var(--fs, 1));
   line-height: calc(38rpx * var(--fs, 1));
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .list-head {
@@ -301,7 +301,7 @@
 .list-count {
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .list-row {
@@ -346,24 +346,24 @@
   margin-top: 6rpx;
   font-size: calc(18rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .row-sub.sub-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .row-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 30rpx;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .row-when {
   flex: 0 0 auto;
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.02em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 /* 足迹折叠：只展示前三条，查看更多进独立页 */
@@ -385,14 +385,14 @@
 .fold-count {
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .fold-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 30rpx;
   line-height: 1;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 /* 信息弹层（与首页磁贴弹层同风格） */
@@ -455,7 +455,7 @@
   font-size: 40rpx;
   line-height: 1;
   padding: 6rpx 12rpx;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .info-body {
@@ -520,7 +520,7 @@
 .footer-label {
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.24em;
-  color: #A39A8E;
+  color: #6D645A;
   padding-left: 0.24em;
 }
 
@@ -538,6 +538,6 @@
 .footer-copy {
   font-size: calc(17rpx * var(--fs, 1));
   letter-spacing: 0.14em;
-  color: #B3ABA0;
+  color: #6D645A;
 }
 

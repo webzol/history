@@ -105,7 +105,7 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 /* 古法篆刻印章 —— 不规则边框 + 透明底 + 朱砂文字 */
@@ -281,7 +281,7 @@
 .section-count {
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.05em;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .rel-list {
@@ -305,11 +305,11 @@
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(21rpx * var(--fs, 1));
   letter-spacing: 0.02em;
-  color: #A9825E;
+  color: #7D5A3B;
 }
 
 .rel-year.accent-modern {
-  color: #7E9A9A;
+  color: #4A6667;
 }
 
 .rel-body {
@@ -330,20 +330,20 @@
   margin-top: 8rpx;
   font-size: calc(20rpx * var(--fs, 1));
   line-height: 1.6;
-  color: #8C857A;
+  color: #6D645A;
 }
 
 .rel-arrow {
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 32rpx;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .source-line {
   margin-top: 30rpx;
   font-size: calc(19rpx * var(--fs, 1));
   letter-spacing: 0.03em;
-  color: #A39A8E;
+  color: #6D645A;
 }
 
 .foot-actions {

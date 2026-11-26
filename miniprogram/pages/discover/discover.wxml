@@ -44,7 +44,7 @@
 
     <view class="section-head">
       <text class="section-title">专题长卷</text>
-      <text class="section-link" bindtap="goTimeband" data-mode="ancient">进时间轴 ›</text>
+      <view class="section-link section-action" bindtap="goTimeband" data-mode="ancient">进时间轴 ›</view>
     </view>
     <view class="era-card" data-mode="ancient" bindtap="goTimeline">
       <image class="era-bg" src="/assets/tang-bg.jpg" mode="aspectFill"></image>
@@ -70,7 +70,7 @@
 
     <view class="section-head">
       <text class="section-title">精选史事</text>
-      <text class="section-link" bindtap="goTimeline" data-mode="modern">近现代起读 ›</text>
+      <view class="section-link section-action" bindtap="goTimeline" data-mode="modern">近现代起读 ›</view>
     </view>
     <view class="pick-list">
       <view

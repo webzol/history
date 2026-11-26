@@ -27,7 +27,7 @@
         bindinput="onInput"
         bindconfirm="onSearch"
       />
-      <text wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</text>
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" aria-label="清空搜索">×</view>
       <text class="search-btn" bindtap="onSearch">搜索</text>
     </view>
 

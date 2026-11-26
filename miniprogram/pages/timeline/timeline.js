@@ -1,6 +1,7 @@
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const PAGE_SIZE = 24;
 
 Page({
   data: {
@@ -9,7 +10,8 @@ Page({
     eraRange: '',
     eraList: [],
     eraCount: 0,
-    events: [],
+    groups: [],
+    hasMore: false,
     fontClass: 'm'
   },
 
@@ -75,13 +77,32 @@ Page({
       yearAncientText: item.year < 0
     }));
 
+    const visibleGroups = mode === this.data.mode ? Math.max(1, this.data.groups.length) : 1;
+    this.eventGroups = [];
+    for (let start = 0; start < events.length; start += PAGE_SIZE) {
+      this.eventGroups.push({ start, items: events.slice(start, start + PAGE_SIZE) });
+    }
     this.setData({
       mode,
-      events,
+      groups: this.eventGroups.slice(0, visibleGroups),
+      hasMore: this.eventGroups.length > visibleGroups,
       eraName,
       eraRange,
       eraList: eras,
       eraCount: eras.length
+    });
+  },
+
+  onReachBottom() {
+    this.onMore();
+  },
+
+  onMore() {
+    if (!this.data.hasMore) return;
+    const index = this.data.groups.length;
+    this.setData({
+      [`groups[${index}]`]: this.eventGroups[index],
+      hasMore: index + 1 < this.eventGroups.length
     });
   },
 
