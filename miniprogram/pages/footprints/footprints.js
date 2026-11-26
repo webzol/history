@@ -35,7 +35,7 @@ Page({
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/profile/profile' })
+      fail: () => wx.switchTab({ url: '/pages/profile/profile' })
     });
   },
 

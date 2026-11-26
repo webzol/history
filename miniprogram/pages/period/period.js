@@ -66,7 +66,7 @@ Page({
     const period = history.periods.find((item) => item.id === this.curId);
     if (!period) {
       if (!redirectOnMiss) return;
-      wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
       return;
     }
 
@@ -111,7 +111,7 @@ Page({
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/home/home' })
+      fail: () => wx.switchTab({ url: '/pages/home/home' })
     });
   },
 

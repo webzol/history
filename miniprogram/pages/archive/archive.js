@@ -137,7 +137,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   },
 
   onToggle(e) {

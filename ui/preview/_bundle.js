@@ -6838,7 +6838,7 @@ Page('project://pages/event/event.js', {
     const event = hd.get().events.find((item) => item.id === this.curId);
     if (!event) {
       if (!redirectOnMiss) return;
-      wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
       return;
     }
 
@@ -6902,7 +6902,7 @@ Page('project://pages/event/event.js', {
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/home/home' })
+      fail: () => wx.switchTab({ url: '/pages/home/home' })
     });
   },
 
@@ -6999,7 +6999,7 @@ Page('project://pages/person/person.js', {
     const person = history.persons.find((item) => item.id === this.curId);
     if (!person) {
       if (!redirectOnMiss) return;
-      wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
       return;
     }
 
@@ -7051,7 +7051,7 @@ Page('project://pages/person/person.js', {
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/home/home' })
+      fail: () => wx.switchTab({ url: '/pages/home/home' })
     });
   },
 
@@ -7166,7 +7166,7 @@ Page('project://pages/period/period.js', {
     const period = history.periods.find((item) => item.id === this.curId);
     if (!period) {
       if (!redirectOnMiss) return;
-      wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
       return;
     }
 
@@ -7211,7 +7211,7 @@ Page('project://pages/period/period.js', {
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/home/home' })
+      fail: () => wx.switchTab({ url: '/pages/home/home' })
     });
   },
 
@@ -7437,7 +7437,7 @@ Page('project://pages/search/search.js', {
   },
 
   goBack() {
-    wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   }
 });
 
@@ -7482,7 +7482,7 @@ Page('project://pages/footprints/footprints.js', {
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/profile/profile' })
+      fail: () => wx.switchTab({ url: '/pages/profile/profile' })
     });
   },
 
@@ -7566,7 +7566,7 @@ Page('project://pages/favorites/favorites.js', {
 
   goBack() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/profile/profile' })
+      fail: () => wx.switchTab({ url: '/pages/profile/profile' })
     });
   },
 
@@ -7755,7 +7755,7 @@ Page('project://pages/archive/archive.js', {
   },
 
   goBack() {
-    wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/home/home' }) });
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   },
 
   onToggle(e) {

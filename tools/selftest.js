@@ -1470,7 +1470,7 @@ console.log('== 人物详情 ==');
 
   resetWifiStack();
   p.onLoad({ id: 'nope' });
-  eq(last('redirectTo').url, '/pages/home/home', '未知人物回退首页');
+  eq(last('switchTab').url, '/pages/home/home', '未知人物回退首页');
 
   p.onLoad({ id: 'su-shi' });
   tap(p, 'goEvent', { id: 'jingkang-1127' });
@@ -1542,13 +1542,39 @@ console.log('== 朝代详情 ==');
   resetWifiStack();
 
   p.onLoad({ id: 'nope' });
-  eq(last('redirectTo').url, '/pages/home/home', '未知朝代回退首页');
+  eq(last('switchTab').url, '/pages/home/home', '未知朝代回退首页');
   resetWifiStack();
 })();
 
 // ---------------------------------------------------------------------------
 // 7. event
 // ---------------------------------------------------------------------------
+
+console.log('== 分享直达返回 ==');
+for (const [name, fallback, method] of [
+  ['event', 'home', 'switchTab'],
+  ['person', 'home', 'switchTab'],
+  ['period', 'home', 'switchTab'],
+  ['archive-detail', 'archive', 'redirectTo'],
+  ['archive-list', 'archive', 'redirectTo'],
+  ['archive', 'home', 'switchTab'],
+  ['search', 'home', 'switchTab'],
+  ['favorites', 'profile', 'switchTab'],
+  ['footprints', 'profile', 'switchTab']
+]) {
+  resetWifiStack();
+  navStack[0] = name;
+  wxLog.length = 0;
+  tap(pages[name], 'goBack');
+  eq(last(method)?.url, `/pages/${fallback}/${fallback}`, `${name} 无上一页时返回指定入口`);
+
+  navStack[0] = 'fixture';
+  navStack.push(name);
+  wxLog.length = 0;
+  tap(pages[name], 'goBack');
+  eq(navStack, ['fixture'], `${name} 有上一页时正常返回`);
+  eq(wxLog.length, 0, `${name} 有上一页时不触发兜底跳转`);
+}
 
 console.log('== 事件详情 ==');
 
@@ -1614,7 +1640,7 @@ console.log('== 事件详情 ==');
 
   resetWifiStack();
   p.onLoad({ id: 'nope' });
-  eq(last('redirectTo').url, '/pages/home/home', '未知事件回退首页');
+  eq(last('switchTab').url, '/pages/home/home', '未知事件回退首页');
 })();
 
 // ---------------------------------------------------------------------------
@@ -1768,7 +1794,7 @@ console.log('== 搜索 ==');
   wxLog.length = 0;
   resetWifiStack();
   p.goBack();
-  eq(last('redirectTo').url, '/pages/home/home', '搜索页无栈返回 → 回首页');
+  eq(last('switchTab').url, '/pages/home/home', '搜索页无栈返回 → 回首页');
 
   // 顶栏返回（有栈场景已在前文 navigateTo 后保留栈）
   resetWifiStack();
