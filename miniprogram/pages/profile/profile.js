@@ -28,7 +28,8 @@ Page({
     fontKey: 'm',
     fontClass: 'm',
     identity: { avatar: '/assets/avatars/avatar-01.jpg', nick: '阅史客', motto: '以千年为卷轴，读万古事' },
-    season: { key: '', label: '' }
+    season: { key: '', label: '' },
+    identityMotion: false
   },
 
   onLoad() {
@@ -41,10 +42,18 @@ Page({
   },
 
   onShow() {
+    this.refreshView({ identityMotion: true });
+  },
+
+  onHide() {
+    this.setData({ identityMotion: false });
+  },
+
+  refreshView(patch = {}) {
     this.setTab();
     this.doStats();
     font.apply(this);
-    this.setData({ fontKey: store.getFontKey(), season: identity.seasonFor() });
+    this.setData({ fontKey: store.getFontKey(), season: identity.seasonFor(), ...patch });
     hd.refresh((changed) => {
       if (changed) this.doStats();
     });
@@ -128,7 +137,7 @@ Page({
       }
       if (changed) {
         const meta = hd.get().meta || {};
-        this.onShow(); // 重算统计与收藏/足迹解析
+        this.refreshView();
         feedback.toast({
           title: meta.builtAt ? `已更新 · ${meta.builtAt}` : '已更新至最新内容',
           icon: 'none',
@@ -183,7 +192,7 @@ Page({
       success: (res) => {
         if (!res.confirm) return;
         store.toggleFavorite(type, id);
-        this.onShow();
+        this.refreshView();
         feedback.toast({ title: '已移出收藏', icon: 'none' });
       }
     });
@@ -214,7 +223,7 @@ Page({
         if (!res.confirm) return;
         wx.clearStorageSync();
         require('../../utils/remote.js').resetMemory();
-        this.onShow();
+        this.refreshView();
         feedback.toast({ title: '已清除', icon: 'success' });
       }
     });

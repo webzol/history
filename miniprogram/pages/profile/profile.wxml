@@ -5,7 +5,7 @@
       <text class="brand">我的</text>
     </view>
 
-    <view class="head-card season-{{season.key}}">
+    <view class="head-card season-{{season.key}} {{identityMotion ? 'identity-enter' : ''}}">
       <view class="season-art" aria-hidden="true">
         <view class="season-stem"></view>
         <view class="season-motif"></view>

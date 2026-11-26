@@ -108,6 +108,36 @@
   opacity: 0.68;
 }
 
+.identity-enter .avatar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -6rpx;
+  border: 3rpx solid var(--season-ink, #6D645A);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: avatar-ring-in 500ms ease-out;
+}
+
+.identity-enter .season-art {
+  animation: season-art-in 700ms ease-out;
+}
+
+@keyframes avatar-ring-in {
+  0%, 100% { opacity: 0; }
+  40% { opacity: 0.52; }
+}
+
+@keyframes season-art-in {
+  from { opacity: 0; transform: translateY(7rpx); }
+  to { opacity: 0.68; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .identity-enter .avatar-wrap::before,
+  .identity-enter .season-art { animation: none; }
+}
+
 .season-stem, .season-motif { position: absolute; }
 .season-stem {
   width: 112rpx;

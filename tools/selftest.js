@@ -826,6 +826,13 @@ console.log('== 我的 ==' );
   tap(eventP, 'toggleCollect');
 
   p.onShow();
+  eq(p.data.identityMotion, true, '进入我的页启用身份卡入场动画');
+  p.onHide();
+  eq(p.data.identityMotion, false, '离开我的页移除身份卡动画类');
+  p.refreshView();
+  eq(p.data.identityMotion, false, '后台刷新数据不会触发入场动画');
+  p.onShow();
+  eq(p.data.identityMotion, true, '返回我的页重新启用入场动画');
   eq(p.data.favs.length, 2, '收藏列表两条');
   eq(p.data.favs[0].id, 'xinhai-1911', '最新收藏在前');
   ok(p.data.favs.some((x) => x.id === 'su-shi' && x.type === 'person'), '收藏含人物');
