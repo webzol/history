@@ -32,7 +32,10 @@ function makeMockCanvasNode() {
     textAlign: '',
     globalAlpha: 1,
     measureText(t) { return { width: String(t).length * 7 }; },
+    createLinearGradient() { return { addColorStop() {} }; },
     scale() {},
+    setTransform() {},
+    translate() {},
     save() {},
     restore() {},
     beginPath() {},
@@ -2360,6 +2363,35 @@ console.log('== 朋友圈分享 ==');
     eq(selected(receiver), selected(source), `${name} 从朋友圈参数打开同一内容`);
   });
 })();
+
+{
+  const ctx = makeMockCanvasNode().getContext('2d');
+  const rows = [];
+  ctx.measureText = function (label) {
+    const size = Number(/([\d.]+)px/.exec(this.font)?.[1]);
+    return { width: Array.from(label).length * size };
+  };
+  ctx.fillText = function (label, x, y) {
+    rows.push({ label, x, y, width: this.measureText(label).width });
+  };
+  qrshare.paintPoster(ctx, {
+    kicker: '阅史记 · 资料库',
+    title: '这是一条用来验证题名折行和省略效果的长资料标题',
+    desc: '这是一段用于验证分享卡摘要换行的内容。'.repeat(4),
+    quote: '这是一段用于验证分享卡印刷版心的名句。'.repeat(4),
+    quoteSource: '《一份用来验证落款窄列和出处对齐的长篇史料》',
+    dateText: '2026年11月27日', lunarText: '农历丙午年 十月十九'
+  }, () => null);
+  const title = rows.filter((row) => row.y >= 172 && row.y < 200);
+  eq(title.length, 2, '海报长标题最多两行');
+  ok(title[1].label.endsWith('…'), '海报长标题溢出在第二行留省略号');
+  ok(rows.filter((row) => row.x === 130).every((row) => row.width <= 191), '居中文字不越出版心');
+  eq(rows.filter((row) => row.y >= 342).map((row) => row.x), [50, 50, 50], '公历、农历和品牌在左侧同列');
+  rows.length = 0;
+  const quote = '料敌合变，出奇无穷，声震天下。';
+  qrshare.paintPoster(ctx, { title: '夏', quote }, () => null);
+  eq(rows.filter((row) => row.y >= 283 && row.y <= 297).map((row) => row.label), [quote], '参考图题句完整排在一行');
+}
 
 // ---------------------------------------------------------------------------
 // 汇总

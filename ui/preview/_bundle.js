@@ -5581,11 +5581,10 @@ const feedback = require('./feedback.js');
 // 分享面板：分享卡片海报（宣纸纹理 + 立轴题图 + 页面内容摘要 + 每日名句落款）+ 保存相册，纯前端实现。
 //
 // 渲染架构（2026-11-14 高清化）：canvas 2d API（type="2d"），固定 4.5 倍缓冲（1170×1908，
-// 与设备像素比无关）——所有绘制坐标仍按 260×424 逻辑尺寸书写，ctx.scale(4.5) 一次放大；
+// 与设备像素比无关）——所有绘制坐标按 260×424 逻辑尺寸书写，每帧重设 4.5 倍变换；
 // 导出按缓冲原生分辨率，相册里 1170×1908 全高清。旧版 canvas 的缓冲尺寸随设备 dpr 浮动，
 // 低像素比设备上 3 倍拉伸导出发虚，是本次迁移的直接原因。
-// 每次绘制都重新查询 canvas 节点并整幅重画（width 赋值会重置画布状态，正好配合全幅重绘）：
-// 真机 wx:if 节点持久、查询开销可忽略；harness 整页重渲染后也能拿到新元素。
+// 每次重新查询节点，缓冲尺寸有变化时才重设。真机可复用同一块缓冲，预览可找到新挂载的节点。
 //
 // 卡片不带任何二维码/小程序码（2026-11-15 定稿「只要卡片」，qrcode.js 随之移出主包）；
 // 好友直达分享走「转寄好友」微信原生卡片。扫码进入支持保留在 utils/wxacode.js（mergeScene），
@@ -5601,8 +5600,8 @@ const hd = require('./historyData.js');
 
 // 兜底固定图（canvas 绘制失败/导出失败时展示与保存，tools/gen_share_fallback.py 生成）
 const FALLBACK_IMG = '/assets/share-fallback.jpg';
-// 题图兜底：当前页相关图全链路取不到时的卷首画
-const FALLBACK_COVER = '/assets/share-cover-fallback.jpg';
+// 题图兜底：复用首页宫阙，离线也能显示画心。
+const FALLBACK_COVER = '/assets/palace.jpg';
 // 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
 const PAPER_BG = '/assets/paper-bg.jpg';
 
@@ -5613,15 +5612,15 @@ const H = 424;
 const SCALE = 4.5;
 const BW = Math.round(W * SCALE); // 缓冲 1170
 const BH = Math.round(H * SCALE); // 缓冲 1908
-const INK = '#1F1D19';
-const PAPER = '#F6F1EA';
-const CINNABAR = '#A34A3E'; // 朱砂（界格线/kicker）
-const IMG_H = 140; // 题图装裱区高度（宣纸笺初版尺寸）
+const INK = '#4C3C2D';
+const PAPER = '#F4EEE4';
+const CARD = '#F9F3E9';
+const MUTED = '#746456';
+const CINNABAR = '#943B30';
 
-// 字体栈：与 app.wxss 同源（标题宋体 / 名句楷体 / 其余默认黑体系）
+// 主标题和名句用楷体，落款用宋体。
 const KAI = '"Kaiti SC", "STKaiti", "KaiTi", serif';
 const SONG = '"Songti SC", "STSong", "SimSun", serif';
-const SANS = '"PingFang SC", "Noto Sans SC", sans-serif';
 
 // 图片对象缓存（createImage 按 src 复用；ok:false 记失败，避免重复请求）
 const imgCache = {};
@@ -5653,38 +5652,45 @@ function dateText(now) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-// 中英文混排宽度估算（与旧版一致，折行结果保持稳定）
-function charW(ch, size) {
-  return /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/.test(ch) ? size : size * 0.56;
-}
-
-// 截断到 maxW 宽；ellipsis=true 时末尾加省略号
-function clipText(s, size, maxW, ellipsis) {
-  let w = 0;
-  for (let i = 0; i < s.length; i += 1) {
-    const cw = charW(s[i], size);
-    if (w + cw > maxW) return ellipsis ? s.slice(0, i) + '…' : s.slice(0, i);
-    w += cw;
-  }
-  return s;
-}
-
-// 按宽折行（最多 lines 行，末行截断加省略号）
-function wrapText(s, size, maxW, lines) {
+// 按画布实际字体测量中文、数字和混排。末行留出省略号，不挤出版心。
+function wrapText(ctx, text, width, limit) {
+  const chars = Array.from(String(text || '').trim().replace(/\s+/g, ' '));
   const rows = [];
-  let rest = String(s || '');
-  for (let i = 0; i < lines && rest; i += 1) {
-    const last = i === lines - 1;
-    const row = clipText(rest, size, maxW, last);
-    rows.push(row);
-    rest = row.slice(-1) === '…' ? '' : rest.slice(row.length);
+  for (let start = 0; start < chars.length && rows.length < limit;) {
+    let end = start + 1;
+    let row = chars[start];
+    while (end < chars.length && ctx.measureText(row + chars[end]).width <= width) {
+      row += chars[end];
+      end += 1;
+    }
+    if (end < chars.length && rows.length === limit - 1) {
+      while (end > start && ctx.measureText(chars.slice(start, end).join('') + '…').width > width) end -= 1;
+      rows.push(chars.slice(start, end).join('') + '…');
+      break;
+    }
+    if (end < chars.length) {
+      // 优先在靠近行尾的断句处折行，收尾标点不单独落到下一行。
+      const bound = Math.max(start + 1, end - 3);
+      let pause = end - 1;
+      while (pause >= bound && !/[，。！？：；、]/.test(chars[pause])) pause -= 1;
+      if (pause >= bound) end = pause + 1;
+      else if (end > start + 1 && /^[，。！？：；、）》」』]$/.test(chars[end])) end -= 1;
+    }
+    rows.push(chars.slice(start, end).join('').trim());
+    start = end;
   }
   return rows;
 }
 
+function drawLines(ctx, text, width, limit, y, lineHeight) {
+  const rows = wrapText(ctx, text, width, limit);
+  rows.forEach((row, index) => ctx.fillText(row, W / 2, y + index * lineHeight));
+  return rows.length;
+}
+
 // 查询 2d canvas 节点（每次绘制/装载/导出都重新查询，wx:if 重挂载与 harness 重渲染后仍有效）
-function getCanvasNode(page, cb) {
-  if (typeof wx.createSelectorQuery !== 'function') return;
+function getCanvasNode(page, cb, onMissing = () => {}) {
+  if (typeof wx.createSelectorQuery !== 'function') return onMissing();
   wx.createSelectorQuery()
     .in(page)
     .select('#' + CANVAS_ID)
@@ -5692,16 +5698,16 @@ function getCanvasNode(page, cb) {
     .exec((res) => {
       const node = res && res[0] && res[0].node;
       if (node && typeof node.getContext === 'function') cb(node);
+      else onMissing();
     });
 }
 
-// 建画布帧：设固定缓冲 → getContext → scale(4.5)，返回就绪的 2d ctx。
-// 对 width 赋值会重置画布全部状态，正好配合 paintPoster 的整幅重绘。
+// 题图补绘时复用高清缓冲，由整幅宣纸底覆盖上一帧。
 function frameCanvas(node) {
-  node.width = BW;
-  node.height = BH;
+  if (node.width !== BW) node.width = BW;
+  if (node.height !== BH) node.height = BH;
   const ctx = node.getContext('2d');
-  ctx.scale(SCALE, SCALE);
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   return ctx;
 }
 
@@ -5714,25 +5720,29 @@ function loadCanvasImg(page, src, cb) {
   }
   const hit = imgCache[src];
   if (hit) {
-    cb(hit.ok ? hit.img : null);
+    if (hit.callbacks) hit.callbacks.push(cb);
+    else cb(hit.ok ? hit.img : null);
     return;
   }
+  const pending = { callbacks: [cb] };
+  imgCache[src] = pending;
+  const finish = (img, remember = true) => {
+    if (imgCache[src] === pending) {
+      if (remember) imgCache[src] = { ok: !!img, img };
+      else delete imgCache[src];
+    }
+    pending.callbacks.forEach((done) => done(img));
+  };
   getCanvasNode(page, (node) => {
     if (typeof node.createImage !== 'function') {
-      cb(null);
+      finish(null);
       return;
     }
     const img = node.createImage();
-    img.onload = () => {
-      imgCache[src] = { ok: true, img };
-      cb(img);
-    };
-    img.onerror = () => {
-      imgCache[src] = { ok: false, img: null };
-      cb(null);
-    };
+    img.onload = () => finish(img);
+    img.onerror = () => finish(null);
     img.src = src;
-  });
+  }, () => finish(null, false));
 }
 
 // 绘制中只读缓存取图（不触发加载/重绘——加载统一在 drawPoster 的预取步骤完成，
@@ -5754,8 +5764,8 @@ function preloadPosterImgs(page, share) {
   ];
   srcs.forEach((src) => {
     if (!src || imgCache[src]) return;
-    loadCanvasImg(page, src, () => {
-      if (page.data.share && page.data.share.open) drawPoster(page);
+    loadCanvasImg(page, src, (img) => {
+      if (img && page.data.share && page.data.share.open) drawPoster(page);
     });
   });
 }
@@ -5787,7 +5797,9 @@ function open(page) {
 
   // canvas 由 wx:if 挂载，稍等渲染后首绘（先纸底 + 兜底卷首，题图就绪后补绘）。
   // 远端题图失败时回退 imgFallback（本地朝代画），保证顶部始终是当前相关图。
-  setTimeout(() => attachCanvas(page, payload), 120);
+  setTimeout(() => {
+    if (page.__qrPayload === payload && page.data.share.open) attachCanvas(page, payload);
+  }, 120);
 }
 
 // 首绘 + 启动题图装载链（open 的延迟回调；测试里可同步调用）
@@ -5806,7 +5818,7 @@ function startCoverChain(page, payload) {
       return;
     }
     loadCanvasImg(page, src, (img) => {
-      if (!page.data.share.open) return;
+      if (!page.data.share.open || page.__qrPayload !== payload) return;
       if (img) {
         page.setData({ 'share.imgLocal': src });
         drawPoster(page);
@@ -5822,116 +5834,241 @@ function close(page) {
   page.setData({ 'share.open': false });
 }
 
-// 海报：宣纸笺初版 1:1 还原（2026-11-15 定稿回退）——宣纸底 + 界格朱砂线 + 装裱式题图
-// + 楷体名句 + 日期落款 + 「史载」朱砂印 + 品牌行，无码（延续无码定稿）。
-// 纯绘制函数：图一律经 peekImg 读缓存（缺图由预取触发下一轮重绘补上），本函数不含任何异步。
-
-// 圆角矩形路径（quadraticCurveTo 模拟 arcTo，兼容旧 webview）
+// 圆角路径兼容微信 2D Canvas 和浏览器预览。
 function roundRectPath(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.quadraticCurveTo(x, y, x, y + r);
+  ctx.lineTo(x, y + h - r);
+  ctx.quadraticCurveTo(x, y + h, x + r, y + h);
+  ctx.lineTo(x + w - r, y + h);
+  ctx.quadraticCurveTo(x + w, y + h, x + w, y + h - r);
+  ctx.lineTo(x + w, y + r);
+  ctx.quadraticCurveTo(x + w, y, x + w - r, y);
   ctx.closePath();
 }
 
-function paintPoster(ctx, share) {
-  // 宣纸底
+function drawCropped(ctx, img, x, y, width, height) {
+  const scale = Math.max(width / img.width, height / img.height);
+  const sw = width / scale;
+  const sh = height / scale;
+  ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, width, height);
+}
+
+function washMountains(ctx, top, color, mirrored) {
+  ctx.save();
+  ctx.translate(mirrored ? W : 0, top);
+  if (mirrored) ctx.scale(-1, 1);
+  const wash = ctx.createLinearGradient(0, 12, 0, 56);
+  wash.addColorStop(0, color);
+  wash.addColorStop(0.55, color);
+  wash.addColorStop(1, 'rgba(174, 143, 106, 0)');
+  ctx.fillStyle = wash;
+  ctx.beginPath();
+  ctx.moveTo(0, 32);
+  ctx.quadraticCurveTo(9, 14, 20, 17);
+  ctx.quadraticCurveTo(28, 7, 38, 15);
+  ctx.lineTo(51, 26);
+  ctx.quadraticCurveTo(64, 18, 78, 34);
+  ctx.quadraticCurveTo(90, 35, 106, 51);
+  ctx.lineTo(0, 56);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCloudRule(ctx) {
+  const y = 262;
+  const x = W / 2;
+  ctx.fillStyle = '#DECAB5';
+  ctx.fillRect(36, y, 80, 0.55);
+  ctx.fillRect(W - 116, y, 80, 0.55);
+  ctx.strokeStyle = '#B99B7E';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(x - 11, y);
+  ctx.quadraticCurveTo(x - 7, y - 3, x - 5, y - 1.5);
+  ctx.quadraticCurveTo(x, y - 8, x + 5, y - 1.5);
+  ctx.quadraticCurveTo(x + 7, y - 3, x + 11, y);
+  ctx.quadraticCurveTo(x + 7, y + 3, x + 4, y + 2);
+  ctx.quadraticCurveTo(x, y + 6, x - 4, y + 2);
+  ctx.quadraticCurveTo(x - 7, y + 3, x - 11, y);
+  ctx.moveTo(x - 6, y + 1);
+  ctx.quadraticCurveTo(x - 2, y - 3, x - 2, y + 1);
+  ctx.moveTo(x + 6, y + 1);
+  ctx.quadraticCurveTo(x + 2, y - 3, x + 2, y + 1);
+  ctx.stroke();
+}
+
+function drawFooterIcon(ctx, type, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#A8876A';
+  ctx.fillStyle = '#A8876A';
+  ctx.lineWidth = 0.65;
+  if (type === 'date') {
+    roundRectPath(ctx, 0.5, 1.2, 8.0, 7.2, 0.9);
+    ctx.moveTo(1, 3.4);
+    ctx.lineTo(8, 3.4);
+    ctx.moveTo(2.7, 0.2);
+    ctx.lineTo(2.7, 2.4);
+    ctx.moveTo(6.2, 0.2);
+    ctx.lineTo(6.2, 2.4);
+    ctx.stroke();
+    ctx.fillRect(2.6, 4.8, 1, 0.9);
+    ctx.fillRect(4.1, 4.8, 1, 0.9);
+    ctx.fillRect(5.6, 4.8, 1, 0.9);
+  } else if (type === 'lunar') {
+    ctx.beginPath();
+    ctx.arc(4.4, 4.4, 3.8, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(4.4, 0.6);
+    ctx.quadraticCurveTo(2, 2.5, 4.4, 4.4);
+    ctx.quadraticCurveTo(6.8, 6.3, 4.4, 8.2);
+    ctx.stroke();
+    ctx.fillRect(5.2, 2.1, 0.9, 0.9);
+    ctx.fillRect(2.7, 5.7, 0.9, 0.9);
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(0.5, 1.4);
+    ctx.quadraticCurveTo(2.2, 0.6, 4.4, 2.2);
+    ctx.quadraticCurveTo(6.6, 0.6, 8.3, 1.4);
+    ctx.lineTo(8.3, 7.7);
+    ctx.quadraticCurveTo(6.6, 7.1, 4.4, 8.5);
+    ctx.quadraticCurveTo(2.2, 7.1, 0.5, 7.7);
+    ctx.closePath();
+    ctx.moveTo(4.4, 2.2);
+    ctx.lineTo(4.4, 8.1);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function paintPoster(ctx, share, getImage = peekImg) {
+  const paper = getImage(PAPER_BG);
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
-
-  // 顶/底界格朱砂细线
-  ctx.fillStyle = 'rgba(163, 74, 62, 0.55)';
-  ctx.fillRect(24, 18, W - 48, 1.5);
-  ctx.fillRect(24, H - 16, W - 48, 1.5);
-
-  // 题图装裱：暖白裱底（圆角）+ 画心 cover 裁中铺满（不变形）
-  ctx.fillStyle = '#FCFBF8';
-  roundRectPath(ctx, 16, 28, W - 32, 130, 6);
-  ctx.fill();
-  const dx = 24, dy = 36, dw = W - 48, dh = 114;
-  const cover = (share.imgLocal && peekImg(share.imgLocal)) || peekImg(FALLBACK_COVER);
-  if (cover && cover.width && cover.height) {
-    const cs = Math.max(dw / cover.width, dh / cover.height);
-    const cw = cover.width * cs;
-    const ch = cover.height * cs;
+  if (paper && paper.width && paper.height) {
     ctx.save();
-    roundRectPath(ctx, dx, dy, dw, dh, 4);
-    ctx.clip();
-    ctx.drawImage(cover, dx + (dw - cw) / 2, dy + (dh - ch) / 2, cw, ch);
+    ctx.globalAlpha = 0.32;
+    drawCropped(ctx, paper, 0, 0, W, H);
     ctx.restore();
-  } else {
-    // 首绘画心未就绪：米色占位画心（下一轮重绘换兜底卷首图）
-    ctx.fillStyle = '#EFE9DD';
-    ctx.fillRect(dx, dy, dw, dh);
-    ctx.fillStyle = '#B9AE9E';
-    ctx.font = '13px ' + SANS;
-    ctx.textAlign = 'center';
-    ctx.fillText('阅史记', W / 2, dy + 62);
   }
+  washMountains(ctx, 9, 'rgba(174, 143, 106, 0.09)', false);
+  washMountains(ctx, 356, 'rgba(174, 143, 106, 0.12)', true);
 
-  // kicker（朱砂小字）
+  ctx.save();
+  ctx.shadowColor = 'rgba(111, 80, 48, 0.16)';
+  ctx.shadowBlur = 45;
+  ctx.shadowOffsetY = 18;
+  ctx.fillStyle = '#FCF8F1';
+  roundRectPath(ctx, 16, 40, 228, 349, 11);
+  ctx.fill();
+  ctx.restore();
+
+  const x = 21.5, y = 45, width = 217, height = 339;
+  ctx.save();
+  roundRectPath(ctx, x, y, width, height, 7);
+  ctx.clip();
+  ctx.fillStyle = CARD;
+  ctx.fillRect(x, y, width, height);
+  if (paper && paper.width && paper.height) {
+    ctx.globalAlpha = 0.2;
+    drawCropped(ctx, paper, x, y, width, height);
+    ctx.globalAlpha = 1;
+  }
+  washMountains(ctx, 343, 'rgba(179, 141, 104, 0.10)', true);
+
+  const cover = (share.imgLocal && getImage(share.imgLocal)) || getImage(FALLBACK_COVER);
+  if (cover && cover.width && cover.height) {
+    ctx.globalAlpha = 0.86;
+    drawCropped(ctx, cover, x, y, width, 109);
+    ctx.globalAlpha = 1;
+  }
+  const fade = ctx.createLinearGradient(0, 108, 0, 154);
+  fade.addColorStop(0, 'rgba(249, 243, 233, 0)');
+  fade.addColorStop(0.58, 'rgba(249, 243, 233, 0.76)');
+  fade.addColorStop(1, CARD);
+  ctx.fillStyle = fade;
+  ctx.fillRect(x, 108, width, 46);
+
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#A34A3E';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText(share.kicker, W / 2, IMG_H + 44);
-
-  // 标题（宋体大字，最多一行）
-  ctx.fillStyle = INK;
-  ctx.font = 'bold 19px ' + SONG;
-  ctx.fillText(clipText(share.title, 19, W - 48, true), W / 2, IMG_H + 70);
-
-  // 摘要（淡墨，最多两行）
-  ctx.fillStyle = '#5F5A52';
-  ctx.font = '11px ' + SANS;
-  const rows = wrapText(share.desc, 11, W - 56, 2);
-  rows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 92 + i * 17));
-
-  // 淡墨分隔细线
-  ctx.fillStyle = 'rgba(70, 58, 45, 0.14)';
-  ctx.fillRect(40, IMG_H + 124, W - 80, 1);
-
-  // 每日名句（楷体，最多两行）+ 出处
-  if (share.quote) {
-    ctx.fillStyle = '#3B3731';
-    ctx.font = '12px ' + KAI;
-    const qrows = wrapText(share.quote, 12, W - 56, 2);
-    qrows.forEach((row, i) => ctx.fillText(row, W / 2, IMG_H + 144 + i * 19));
-    ctx.fillStyle = '#8C857A';
-    ctx.font = '9px ' + SANS;
-    ctx.fillText(share.quoteSource ? `—— ${share.quoteSource}` : '', W / 2, IMG_H + 144 + (qrows.length - 1) * 19 + 16);
+  ctx.textBaseline = 'middle';
+  ctx.font = '11px ' + KAI;
+  const kicker = wrapText(ctx, share.kicker, 144, 1)[0] || '';
+  if (kicker) {
+    const gap = ctx.measureText(kicker).width / 2 + 9;
+    ctx.fillStyle = '#CF9484';
+    ctx.fillRect(W / 2 - gap - 24, 151, 24, 0.5);
+    ctx.fillRect(W / 2 + gap, 151, 24, 0.5);
+    ctx.fillStyle = CINNABAR;
+    ctx.fillText(kicker, W / 2, 151);
   }
 
-  // 淡墨分隔细线
-  ctx.fillStyle = 'rgba(70, 58, 45, 0.10)';
-  ctx.fillRect(40, IMG_H + 190, W - 80, 1);
+  const title = share.title || '阅史记';
+  const shortTitle = Array.from(title).length <= 2;
+  let size = shortTitle ? 43 : 29;
+  ctx.font = 'bold ' + size + 'px ' + KAI;
+  if (!shortTitle && ctx.measureText(title).width > 183) {
+    size = ctx.measureText(title).width * 22 / 29 > 376 ? 19 : 22;
+    ctx.font = 'bold ' + size + 'px ' + KAI;
+  }
+  const titleRows = wrapText(ctx, title, 188, 2);
+  if (shortTitle) {
+    ctx.strokeStyle = 'rgba(173, 136, 98, 0.095)';
+    ctx.lineWidth = 7.5;
+    ctx.beginPath();
+    ctx.arc(W / 2, 185, 28, -1.05, 4.96);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(184, 145, 105, 0.08)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(W / 2, 185, 32, 1.7, 4.25);
+    ctx.stroke();
+  }
+  ctx.fillStyle = INK;
+  titleRows.forEach((row, index) => ctx.fillText(row, W / 2, 185 + (index - (titleRows.length - 1) / 2) * (size + 3)));
 
-  // 落款区：公历/农历日期（左）+「史载」朱砂印（右）——无码定稿
-  const cy = IMG_H + 204;
+  ctx.font = '12px ' + KAI;
+  drawLines(ctx, share.desc, 178, 2, 224, 18);
+  drawCloudRule(ctx);
+
+  ctx.fillStyle = INK;
+  ctx.font = '12.5px ' + KAI;
+  const quote = share.quote || '';
+  const quoteWidth = ctx.measureText(quote).width;
+  if (quoteWidth > 191 && quoteWidth * 11 / 12.5 <= 191) ctx.font = '11px ' + KAI;
+  const quoteLines = drawLines(ctx, quote, 191, 2, 283, 14);
+  if (quoteLines && share.quoteSource) {
+    ctx.fillStyle = MUTED;
+    ctx.font = '9.4px ' + SONG;
+    drawLines(ctx, '—— ' + share.quoteSource, 178, 1, quoteLines === 1 ? 304 : 312, 0);
+  }
+
+  ctx.fillStyle = '#E4D5C5';
+  ctx.fillRect(27.5, 326, 205, 0.55);
   ctx.textAlign = 'left';
-  ctx.fillStyle = INK;
-  ctx.font = '11px ' + SANS;
-  ctx.fillText(share.dateText || '', 30, cy + 22);
-  ctx.fillStyle = '#8C857A';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText(share.lunarText || '', 30, cy + 42);
-  const seal = peekImg('/assets/seal.png');
-  if (seal) {
-    const sealH = 52;
-    const sealW = Math.round(sealH * 114 / 197);
-    ctx.drawImage(seal, W - 24 - sealW, cy - 2, sealW, sealH);
-  }
+  ctx.font = '9.3px ' + SONG;
+  const footer = [
+    ['date', share.dateText, 342, INK],
+    ['lunar', share.lunarText, 357, MUTED],
+    ['book', '阅史记 · 一页一页读历史', share.dateText ? 372 : 357, MUTED]
+  ];
+  footer.forEach(([icon, label, baseline, color]) => {
+    if (!label) return;
+    drawFooterIcon(ctx, icon, 34, baseline - 4.5);
+    ctx.fillStyle = color;
+    ctx.fillText(label, 50, baseline);
+  });
 
-  // 品牌行
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#8C857A';
-  ctx.font = '10px ' + SANS;
-  ctx.fillText('阅史记 · 一页一页读历史', W / 2, H - 24);
+  const seal = getImage('/assets/seal.png');
+  if (seal && seal.width && seal.height) {
+    const sealH = 40;
+    const sealW = sealH * seal.width / seal.height;
+    ctx.drawImage(seal, 229 - sealW, 334, sealW, sealH);
+  }
+  ctx.restore();
 }
 
 function drawPoster(page) {
@@ -6019,7 +6156,7 @@ function save(page) {
       success: (res) => writeAlbum(res.tempFilePath, host),
       fail: () => saveFallback(page, host)
     });
-  });
+  }, () => saveFallback(page, host));
 }
 
 // 兜底保存：把包内静态卡片图（FALLBACK_IMG）经用户目录转存到相册。
@@ -6055,7 +6192,7 @@ function saveFallback(page, host = feedback.current()) {
 
 module.exports = {
   open, close, save, saveFallback, drawPoster, attachCanvas,
-  dailyQuote, lunarText, dateText, resetImgs,
+  dailyQuote, lunarText, dateText, resetImgs, paintPoster,
   FALLBACK_IMG, CANVAS_ID, CANVAS_SIZE: W, CANVAS_HEIGHT: H, SCALE
 };
 
@@ -8683,5 +8820,5 @@ Page('project://pages/archive-detail/archive-detail.js', {
 __register('/pages/archive-detail/archive-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back\" bindtap=\"goBack\" hover-class=\"back-pressed\" hover-stay-time=\"80\">\r\n        <view class=\"back-icon\">\r\n          <view class=\"back-chevron\"></view>\r\n          <view class=\"back-shaft\"></view>\r\n        </view>\r\n        <view class=\"back-divider\"></view>\r\n        <text class=\"back-label\">返回</text>\r\n      </view>\r\n      <text class=\"top-title\">资料库</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\"></image>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"state-card\">\r\n      <text class=\"state-title\">正在打开资料</text>\r\n      <text class=\"state-desc\">首次加载需要片刻。</text>\r\n    </view>\r\n\r\n    <view wx:elif=\"{{error}}\" class=\"state-card error\" bindtap=\"retry\">\r\n      <text class=\"state-title\">{{error}}</text>\r\n      <text class=\"state-action\">点此重试</text>\r\n    </view>\r\n\r\n    <block wx:else>\r\n      <view class=\"head-card\">\r\n        <view class=\"head-cover-wrap\">\r\n          <image class=\"head-cover\" src=\"{{cover}}\" mode=\"aspectFill\" binderror=\"onCoverErr\"></image>\r\n          <view class=\"head-cover-fade\"></view>\r\n        </view>\r\n        <view class=\"head-body\">\r\n          <view class=\"head-row\">\r\n            <view class=\"head-copy\">\r\n              <text class=\"head-kicker\">{{kicker}}</text>\r\n              <text class=\"head-title\">{{item.title}}</text>\r\n            </view>\r\n            <view wx:if=\"{{art}}\" class=\"head-fig\">\r\n              <image class=\"head-fig-img\" src=\"{{art}}\" mode=\"aspectFit\" binderror=\"onArtErr\"></image>\r\n            </view>\r\n          </view>\r\n          <text wx:if=\"{{showMeta}}\" class=\"head-meta\">{{item.meta}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view class=\"fav-row\">\r\n        <view class=\"fav-btn {{collected ? 'on' : ''}}\" bindtap=\"toggleCollect\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\r\n          <text>{{collected ? '✓ 已收藏' : '收藏此资料'}}</text>\r\n        </view>\r\n        <view class=\"fav-btn\" bindtap=\"openShare\" hover-class=\"fav-pressed\" hover-stay-time=\"80\">\r\n          <text>共此卷</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{showLead || showSections || showBody || showTranslation}}\" class=\"body-card\">\r\n        <view wx:if=\"{{showLead}}\" class=\"lead\">\r\n          <text>{{item.summary}}</text>\r\n        </view>\r\n\r\n        <view wx:if=\"{{showSections}}\" class=\"sections\">\r\n          <view wx:for=\"{{sections}}\" wx:key=\"id\" class=\"section {{item.tone}}\">\r\n            <view wx:if=\"{{item.label}}\" class=\"section-head\">\r\n              <text class=\"section-label\">{{item.label}}</text>\r\n              <text class=\"section-rule\"></text>\r\n            </view>\r\n            <text\r\n              wx:for=\"{{item.paras}}\"\r\n              wx:key=\"id\"\r\n              class=\"section-para\"\r\n            >{{item.text}}</text>\r\n          </view>\r\n        </view>\r\n\r\n        <block wx:elif=\"{{showBody}}\">\r\n          <block wx:for=\"{{blocks}}\" wx:key=\"id\">\r\n            <text wx:if=\"{{item.kind === 'heading'}}\" class=\"para-head\">{{item.text}}</text>\r\n            <view wx:else class=\"para\">\r\n              <text>{{item.text}}</text>\r\n            </view>\r\n          </block>\r\n        </block>\r\n\r\n        <view wx:if=\"{{showTranslation}}\" class=\"translation\">\r\n          <text class=\"trans-title\">译文</text>\r\n          <text class=\"trans-text\">{{item.translation}}</text>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{factRows.length}}\" class=\"facts\">\r\n        <view class=\"facts-head\">\r\n          <text class=\"facts-title\">资料卡</text>\r\n          <text class=\"facts-count\">{{factRows.length}} 项</text>\r\n        </view>\r\n        <view class=\"fact-grid\">\r\n          <view wx:for=\"{{factRows}}\" wx:key=\"id\" class=\"fact-item {{item.wide ? 'wide' : ''}}\">\r\n            <text wx:if=\"{{item.key}}\" class=\"fact-key\">{{item.key}}</text>\r\n            <text class=\"fact-value\">{{item.value}}</text>\r\n          </view>\r\n        </view>\r\n      </view>\r\n\r\n      <view wx:if=\"{{item.source}}\" class=\"source-line\">来源：{{item.source}} · 阅史记资料库</view>\r\n    </block>\r\n\r\n  </view>\r\n\r\n    <view class=\"ss-layer\" wx:if=\"{{share.open}}\">\r\n      <view class=\"ss-mask\" bindtap=\"closeShare\"></view>\r\n      <view class=\"ss-panel\">\r\n        <view class=\"ss-grip\"></view>\r\n        <view class=\"ss-head\">\r\n          <text class=\"ss-title\">共此卷</text>\r\n          <text class=\"ss-close\" bindtap=\"closeShare\">×</text>\r\n        </view>\r\n        <view class=\"ss-qr-wrap\">\r\n          <image wx:if=\"{{share.fallback}}\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFill\"></image>\r\n          <canvas wx:else type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n        </view>\r\n        <view class=\"ss-actions\">\r\n          <button class=\"ss-btn ss-btn-primary\" open-type=\"share\">转 寄 好 友</button>\r\n          <view class=\"ss-btn ss-btn-ghost\" bindtap=\"saveQr\">保 存 卡 片</view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n</view>\r\n\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\n"; });
 __register('/pages/archive-detail/archive-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg {\r\n  position: fixed;\r\n  left: 0;\r\n  top: 0;\r\n  z-index: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  opacity: 0.96;\r\n}\r\n\r\n.screen {\r\n  position: relative;\r\n  z-index: 2;\r\n  padding: 0 46rpx 120rpx;\r\n}\r\n\r\n.topbar {\r\n  position: relative;\r\n  margin-top: 88rpx;\r\n  height: 76rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n}\r\n\r\n.back {\r\n  position: relative;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  padding: 0 10rpx;\r\n  border-radius: 28rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95) 0%, rgba(249, 244, 235, 0.88) 100%);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.78);\r\n  overflow: hidden;\r\n  transition: transform 0.12s ease, background 0.12s ease;\r\n}\r\n\r\n.back-pressed {\r\n  transform: scale(0.97);\r\n  background: rgba(244, 236, 224, 0.96);\r\n}\r\n\r\n.back-icon {\r\n  position: relative;\r\n  width: 32rpx;\r\n  height: 20rpx;\r\n  flex: 0 0 32rpx;\r\n}\r\n\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  border-radius: 1rpx;\r\n  transform: rotate(45deg);\r\n}\r\n\r\n.back-shaft {\r\n  position: absolute;\r\n  left: 7rpx;\r\n  top: 9rpx;\r\n  width: 22rpx;\r\n  height: 2rpx;\r\n  border-radius: 2rpx;\r\n  background: linear-gradient(90deg, rgba(138, 106, 62, 0.92), rgba(138, 106, 62, 0.62));\r\n}\r\n\r\n.back-divider {\r\n  width: 1rpx;\r\n  height: 18rpx;\r\n  margin: 0 10rpx 0 5rpx;\r\n  background: rgba(138, 106, 62, 0.20);\r\n  flex: 0 0 1rpx;\r\n}\r\n\r\n.back-label {\r\n  font-family: \"KaiTi\", \"STKaiti\", \"Songti SC\", serif;\r\n  font-size: 24rpx;\r\n  line-height: 1;\r\n  letter-spacing: 0.08em;\r\n  text-indent: 0.08em;\r\n  color: #6B5A33;\r\n  white-space: nowrap;\r\n}\r\n\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  max-width: 360rpx;\r\n  overflow: hidden;\r\n  white-space: nowrap;\r\n  text-overflow: ellipsis;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #6D645A;\r\n}\r\n\r\n.top-seal {\r\n  position: absolute;\r\n  right: 200rpx;\r\n  top: 0;\r\n  bottom: 0;\r\n  margin: auto 0;\r\n  width: 44rpx;\r\n  height: 50rpx;\r\n  display: block;\r\n}\r\n\r\n.head-card {\r\n  margin-top: 28rpx;\r\n  padding: 0;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  border-top: 6rpx solid rgba(169, 130, 94, 0.55);\r\n  box-shadow: 0 20rpx 46rpx rgba(90, 70, 50, 0.06);\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover-wrap {\r\n  position: relative;\r\n  height: 160rpx;\r\n  background: #E8E2D6;\r\n  overflow: hidden;\r\n}\r\n\r\n.head-cover {\r\n  display: block;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n\r\n.head-cover-fade {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  height: 54rpx;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), #FCFBF8);\r\n}\r\n\r\n.head-body {\r\n  padding: 28rpx 34rpx 32rpx;\r\n}\r\n\r\n/* 条目画片：右侧装裱小画（匹配主站专属图或资料库自抓图），无图时整行退化为纯文字 */\r\n.head-row {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  justify-content: space-between;\r\n  gap: 22rpx;\r\n}\r\n\r\n.head-copy {\r\n  flex: 1 1 auto;\r\n  min-width: 0;\r\n}\r\n\r\n.head-fig {\r\n  flex: 0 0 auto;\r\n  width: 164rpx;\r\n  height: 164rpx;\r\n  padding: 10rpx;\r\n  box-sizing: border-box;\r\n  border-radius: 12rpx;\r\n  background: #FFFFFF;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.28);\r\n  box-shadow: 0 10rpx 22rpx rgba(90, 70, 50, 0.08);\r\n}\r\n\r\n.head-fig-img {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 6rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.head-kicker {\r\n  display: inline-block;\r\n  padding: 5rpx 13rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.2);\r\n  border-radius: 999rpx;\r\n  background: #F7F2E9;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #7D5A3B;\r\n}\r\n\r\n.head-title {\r\n  display: block;\r\n  margin-top: 16rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(40rpx * var(--fs, 1));\r\n  line-height: 1.42;\r\n  letter-spacing: 0.04em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.head-meta {\r\n  display: block;\r\n  margin-top: 18rpx;\r\n  padding-top: 16rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.24);\r\n  font-size: calc(19rpx * var(--fs, 1));\r\n  line-height: 1.5;\r\n  color: #6D645A;\r\n}\r\n\r\n.body-card {\r\n  margin-top: 20rpx;\r\n  padding: 32rpx 32rpx 34rpx;\r\n  border-radius: 34rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);\r\n}\r\n\r\n.sections {\r\n  display: block;\r\n}\r\n\r\n.section {\r\n  margin-bottom: 30rpx;\r\n}\r\n\r\n.section:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section-head {\r\n  display: flex;\r\n  align-items: center;\r\n  margin-bottom: 14rpx;\r\n}\r\n\r\n.section-label {\r\n  flex: none;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.12em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.section-rule {\r\n  display: block;\r\n  flex: 1;\r\n  height: 1rpx;\r\n  margin-left: 14rpx;\r\n  background: linear-gradient(90deg, rgba(169, 130, 94, 0.28), rgba(169, 130, 94, 0));\r\n}\r\n\r\n.section-para {\r\n  display: block;\r\n  margin-bottom: 16rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.section-para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.section.verse .section-para {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 2;\r\n  color: #1F1D19;\r\n}\r\n\r\n.section.note .section-para {\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.82;\r\n  color: #5F5A52;\r\n}\r\n\r\n.lead {\r\n  margin-bottom: 26rpx;\r\n  padding: 20rpx 22rpx;\r\n  border-left: 5rpx solid rgba(169, 130, 94, 0.55);\r\n  border-radius: 0 18rpx 18rpx 0;\r\n  background: #F7F2E9;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.75;\r\n  color: #5F5A52;\r\n}\r\n\r\n.para {\r\n  margin-bottom: 22rpx;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.9;\r\n  letter-spacing: 0.015em;\r\n  color: #2C2924;\r\n  text-align: justify;\r\n}\r\n\r\n.para:last-child {\r\n  margin-bottom: 0;\r\n}\r\n\r\n.para-head {\r\n  display: block;\r\n  margin: 30rpx 0 14rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n  color: #A34A3E;\r\n}\r\n\r\n.para-head:first-child {\r\n  margin-top: 0;\r\n}\r\n\r\n.translation {\r\n  margin-top: 28rpx;\r\n  padding-top: 24rpx;\r\n  border-top: 1rpx dashed rgba(169, 130, 94, 0.35);\r\n}\r\n\r\n.trans-title {\r\n  display: block;\r\n  margin-bottom: 10rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #7D5A3B;\r\n}\r\n\r\n.trans-text {\r\n  display: block;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  line-height: 1.85;\r\n  color: #5F5A52;\r\n}\r\n\r\n.facts {\r\n  margin-top: 22rpx;\r\n  padding: 26rpx 30rpx 20rpx;\r\n  border: 1rpx solid rgba(169, 130, 94, 0.1);\r\n  border-radius: 28rpx;\r\n  background: #F3EFE6;\r\n}\r\n\r\n.facts-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.facts-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n  letter-spacing: 0.1em;\r\n  color: #6B5A33;\r\n}\r\n\r\n.facts-count {\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  color: #6D645A;\r\n}\r\n\r\n.fact-grid {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  margin: 0 -8rpx;\r\n}\r\n\r\n.fact-item {\r\n  box-sizing: border-box;\r\n  width: 50%;\r\n  min-width: 0;\r\n  padding: 10rpx 8rpx;\r\n}\r\n\r\n.fact-item.wide {\r\n  width: 100%;\r\n}\r\n\r\n.fact-key {\r\n  display: block;\r\n  font-size: calc(16rpx * var(--fs, 1));\r\n  letter-spacing: 0.08em;\r\n  color: #6D645A;\r\n}\r\n\r\n.fact-value {\r\n  display: block;\r\n  margin-top: 3rpx;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n  color: #3A342C;\r\n}\r\n\r\n.source-line {\r\n  margin-top: 28rpx;\r\n  padding: 18rpx 22rpx;\r\n  border-radius: 20rpx;\r\n  background: rgba(243, 239, 230, 0.58);\r\n  font-size: calc(17rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  letter-spacing: 0.03em;\r\n  color: #6D645A;\r\n}\r\n\r\n.state-card {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  margin-top: 24rpx;\r\n  padding: 70rpx 30rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  text-align: center;\r\n  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.04);\r\n}\r\n\r\n.state-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  color: #5F5A52;\r\n}\r\n\r\n.state-desc {\r\n  font-size: calc(18rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  color: #6D645A;\r\n}\r\n\r\n.state-action {\r\n  margin-top: 4rpx;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  color: #A34A3E;\r\n}\r\n\r\n/* 收藏按钮：沿用全站 ghost 按钮语言（朱砂态），置于头卡与正文之间 */\r\n.fav-row {\r\n  margin-top: 20rpx;\r\n  display: flex;\r\n  gap: 16rpx;\r\n}\r\n\r\n.fav-btn {\r\n  flex: 1;\r\n  height: 72rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border: 1rpx solid rgba(70, 58, 45, 0.14);\r\n  border-radius: 36rpx;\r\n  background: rgba(252, 251, 248, 0.6);\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  letter-spacing: 0.05em;\r\n  color: #5F5A52;\r\n  transition: transform 0.18s ease;\r\n}\r\n\r\n.fav-btn.on {\r\n  border-color: rgba(163, 74, 62, 0.45);\r\n  background: rgba(163, 74, 62, 0.06);\r\n  color: #A34A3E;\r\n}\r\n\r\n.fav-pressed {\r\n  transform: scale(0.98);\r\n}\r\n"; });
 
-__register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n.back-hit {\r\n  display: flex;\r\n  align-items: center;\r\n  min-height: 44px;\r\n}\r\n\r\n.section-action {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  justify-content: flex-end;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n  padding-left: 12rpx;\r\n}\r\n\r\n.search-clear {\r\n  flex: 0 0 44px;\r\n  min-height: 44px;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  line-height: 1;\r\n  color: #6D645A;\r\n  font-size: 34rpx;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  min-height: 44px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #6D645A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n\r\n/* 分享面板（详情页通用，utils/qrshare.js；视觉对齐 profile 的 info sheet） */\r\n.ss-layer {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  z-index: 120;\r\n}\r\n\r\n.ss-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  background: rgba(31, 29, 25, 0.3);\r\n  animation: ssFade 0.18s ease both;\r\n}\r\n\r\n.ss-panel {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  max-height: 86vh;\r\n  overflow-y: auto;\r\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\r\n  background: #FCFBF8;\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\r\n  animation: ssUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n\r\n.ss-grip {\r\n  width: 66rpx;\r\n  height: 6rpx;\r\n  margin: 4rpx auto 14rpx;\r\n  border-radius: 3rpx;\r\n  background: #E6E0D4;\r\n}\r\n\r\n.ss-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 6rpx 8rpx 16rpx;\r\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\r\n}\r\n\r\n.ss-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(33rpx * var(--fs, 1));\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.ss-close {\r\n  font-size: 40rpx;\r\n  line-height: 1;\r\n  padding: 6rpx 12rpx;\r\n  color: #6D645A;\r\n}\r\n\r\n.ss-close-touch {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n}\r\n\r\n.ss-qr-wrap {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  margin-bottom: 34rpx;\r\n}\r\n\r\n.ss-canvas {\r\n  width: 260px;\r\n  height: 424px;\r\n  border-radius: 20rpx;\r\n  background: #FFFFFF;\r\n  border: 1px solid rgba(70, 58, 45, 0.12);\r\n}\r\n\r\n\r\n/* open-type=\"share\" 的原生 button 与普通 view 按钮同款 reset；\r\n   两枚按钮同一行等宽，风格对齐返回胶囊（暖纸渐变 + 赭金细边 + 内高光 + 楷体字） */\r\n.ss-actions {\r\n  display: flex;\r\n  gap: 16rpx;\r\n  margin-top: 4rpx;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.ss-btn {\r\n  flex: 1;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: auto;\r\n  height: 78rpx;\r\n  margin: 0;\r\n  padding: 0;\r\n  border-radius: 39rpx;\r\n  font-family: \"Kaiti SC\", \"STKaiti\", \"KaiTi\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.14em;\r\n  line-height: 1;\r\n  box-sizing: border-box;\r\n}\r\n\r\n.ss-btn::after {\r\n  border: none;\r\n}\r\n\r\n.ss-btn-primary {\r\n  background: linear-gradient(180deg, #2C2822, #1F1D19);\r\n  color: #F6F1EA;\r\n  border: 1rpx solid rgba(190, 150, 90, 0.45);\r\n  box-shadow: inset 0 1rpx 0 rgba(246, 241, 234, 0.16), 0 6rpx 16rpx rgba(31, 29, 25, 0.18);\r\n}\r\n\r\n.ss-btn-ghost {\r\n  background: linear-gradient(180deg, #F3EADA, #EFE2CC);\r\n  color: #5F5A52;\r\n  border: 1rpx solid rgba(150, 110, 60, 0.34);\r\n  box-shadow: inset 0 1rpx 0 rgba(255, 252, 246, 0.65);\r\n}\r\n\r\n@keyframes ssFade {\r\n  from { opacity: 0; }\r\n  to { opacity: 1; }\r\n}\r\n\r\n@keyframes ssUp {\r\n  from { transform: translateY(42%); opacity: 0.4; }\r\n  to { transform: translateY(0); opacity: 1; }\r\n}\r\n"; });
+__register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n.back-hit {\r\n  display: flex;\r\n  align-items: center;\r\n  min-height: 44px;\r\n}\r\n\r\n.section-action {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  justify-content: flex-end;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n  padding-left: 12rpx;\r\n}\r\n\r\n.search-clear {\r\n  flex: 0 0 44px;\r\n  min-height: 44px;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  line-height: 1;\r\n  color: #6D645A;\r\n  font-size: 34rpx;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  min-height: 44px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #6D645A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n\r\n/* 分享面板（详情页通用，utils/qrshare.js；视觉对齐 profile 的 info sheet） */\r\n.ss-layer {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  z-index: 120;\r\n}\r\n\r\n.ss-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  background: rgba(31, 29, 25, 0.3);\r\n  animation: ssFade 0.18s ease both;\r\n}\r\n\r\n.ss-panel {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  max-height: 86vh;\r\n  overflow-y: auto;\r\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\r\n  background: #FCFBF8;\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\r\n  animation: ssUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n\r\n.ss-grip {\r\n  width: 66rpx;\r\n  height: 6rpx;\r\n  margin: 4rpx auto 14rpx;\r\n  border-radius: 3rpx;\r\n  background: #E6E0D4;\r\n}\r\n\r\n.ss-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 6rpx 8rpx 16rpx;\r\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\r\n}\r\n\r\n.ss-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(33rpx * var(--fs, 1));\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.ss-close {\r\n  font-size: 40rpx;\r\n  line-height: 1;\r\n  padding: 6rpx 12rpx;\r\n  color: #6D645A;\r\n}\r\n\r\n.ss-close-touch {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n}\r\n\r\n.ss-qr-wrap {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  margin-bottom: 34rpx;\r\n}\r\n\r\n.ss-canvas {\r\n  width: 260px;\r\n  height: 424px;\r\n  border-radius: 20rpx;\r\n  background: #F4EEE4;\r\n  box-shadow: 0 0 0 1px rgba(70, 58, 45, 0.12);\r\n}\r\n\r\n\r\n/* open-type=\"share\" 的原生 button 与普通 view 按钮同款 reset；\r\n   两枚按钮同一行等宽，风格对齐返回胶囊（暖纸渐变 + 赭金细边 + 内高光 + 楷体字） */\r\n.ss-actions {\r\n  display: flex;\r\n  gap: 16rpx;\r\n  margin-top: 4rpx;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.ss-btn {\r\n  flex: 1;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: auto;\r\n  height: 78rpx;\r\n  margin: 0;\r\n  padding: 0;\r\n  border-radius: 39rpx;\r\n  font-family: \"Kaiti SC\", \"STKaiti\", \"KaiTi\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.14em;\r\n  line-height: 1;\r\n  box-sizing: border-box;\r\n}\r\n\r\n.ss-btn::after {\r\n  border: none;\r\n}\r\n\r\n.ss-btn-primary {\r\n  background: linear-gradient(180deg, #2C2822, #1F1D19);\r\n  color: #F6F1EA;\r\n  border: 1rpx solid rgba(190, 150, 90, 0.45);\r\n  box-shadow: inset 0 1rpx 0 rgba(246, 241, 234, 0.16), 0 6rpx 16rpx rgba(31, 29, 25, 0.18);\r\n}\r\n\r\n.ss-btn-ghost {\r\n  background: linear-gradient(180deg, #F3EADA, #EFE2CC);\r\n  color: #5F5A52;\r\n  border: 1rpx solid rgba(150, 110, 60, 0.34);\r\n  box-shadow: inset 0 1rpx 0 rgba(255, 252, 246, 0.65);\r\n}\r\n\r\n@keyframes ssFade {\r\n  from { opacity: 0; }\r\n  to { opacity: 1; }\r\n}\r\n\r\n@keyframes ssUp {\r\n  from { transform: translateY(42%); opacity: 0.4; }\r\n  to { transform: translateY(0); opacity: 1; }\r\n}\r\n"; });
 })();
