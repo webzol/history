@@ -1,0 +1,98 @@
+[
+  {
+    "id": "60514",
+    "accession": "2001.210",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/60514",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/60514",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP140744.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "cma-1989.150",
+    "accession": "1989.150",
+    "collectionUrl": "https://www.clevelandart.org/art/1989.150",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.150&limit=1",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.150/1989.150_web.jpg",
+    "rights": "CC0"
+  },
+  {
+    "id": "44757",
+    "accession": "1986.112",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/44757",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44757",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-46348-001.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "39919",
+    "accession": "1984.174",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/39919",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39919",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP118649_CRD.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "49368",
+    "accession": "67.43.1",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/49368",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49368",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/67_43_1.JPG",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "42480",
+    "accession": "34.113.4a, b",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42480",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42480",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/34_113_4a_5b_O1.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "53561",
+    "accession": "1974.289.5",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/53561",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/53561",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP151437.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "49376",
+    "accession": "30.120.124",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/49376",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49376",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-45482-001.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "72544",
+    "accession": "2004.322",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/72544",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/72544",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP116267.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "42514",
+    "accession": "1984.358",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42514",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42514",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/LC-1984_358_001.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "45684",
+    "accession": "1989.363.47",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/45684",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45684",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153569.jpg",
+    "rights": "Public Domain"
+  },
+  {
+    "id": "45685",
+    "accession": "1982.205",
+    "collectionUrl": "https://www.metmuseum.org/art/collection/search/45685",
+    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45685",
+    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP216136_CRD.jpg",
+    "rights": "Public Domain"
+  }
+]
