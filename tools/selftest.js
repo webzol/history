@@ -2207,11 +2207,22 @@ console.log('== 阅读字号 ==');
   ok(differs, '「换一位史客」产生新身份');
   eq(storage[identity.KEY].nick, identity.get().nick, '换身份后读取一致');
 
+  const legacy = { avatar: '/assets/avatars/avatar-20.jpg', nick: '种菊翁', motto: identity.MOTTOS[0] };
+  storage[identity.KEY] = legacy;
   const p = pages.profile;
   p.onLoad();
-  ok(p.data.identity && p.data.identity.avatar, '我的页 onLoad 装配随机身份');
-  p.onRerollIdentity();
-  ok(p.data.identity && p.data.identity.nick, '点「换一位史客」可重掷身份');
+  eq(p.data.identity, legacy, '扩充词库后旧身份仍可正常装配');
+  const random = Math.random;
+  const rolls = [0.999, 0.999, 0.999, 0];
+  try {
+    Math.random = () => rolls.shift();
+    p.onRerollIdentity();
+  } finally {
+    Math.random = random;
+  }
+  eq(p.data.identity.avatar, '/assets/avatars/avatar-26.jpg', '换一位史客可抽到新增头像');
+  eq(p.data.identity.nick, '藏卷隐者', '换一位史客可抽到新增字号');
+  eq(identity.get().nick, '藏卷隐者', '换得的新增身份会保存');
 })();
 
 // ---------------------------------------------------------------------------
