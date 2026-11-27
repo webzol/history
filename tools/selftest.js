@@ -2057,6 +2057,73 @@ console.log('== 文物分包 ==');
   ok(homeWxml.indexOf('青铜 · 陶瓷 · 玉器 · 书画') >= 0, '首页文物入口列出四类');
 })();
 
+(function () {
+  const root = path.join(ROOT, 'data', 'relics', 'v1');
+  const files = [];
+  const originalRequest = wx.request;
+  const copyPage = name => instantiate({ ...pages[name], data: structuredClone(pages[name].data) }, name);
+  const request = (file) => {
+    const next = files.shift();
+    eq(next?.file, file, `按需请求文物 ${file}`);
+    return next?.options;
+  };
+  const respond = file => request(file)?.success({ statusCode: 200, data: JSON.parse(fs.readFileSync(path.join(root, file), 'utf8')) });
+  wx.request = (options) => files.push({ file: options.url.split('/data/relics/v1/')[1], options });
+  try {
+    const list = copyPage('relic-list');
+    list.onLoad();
+    eq(list.data.rows.length, 8, '远端清单未返回时仍显示本地首屏');
+    eq(list.data.count, 60, '初始计数只含离线藏品');
+    request('manifest.json')?.fail(new Error('offline'));
+    eq(list.data.remoteState, 'retry', '离线时在线馆藏可手动重试');
+    eq(list.data.rows.length, 8, '离线不清空本地列表');
+    list.retryRemote();
+    respond('manifest.json');
+    eq(list.data.count, 72, '清单成功后显示离线与在线合计');
+    eq(files.length, 0, '清单到达不预取在线详情或列表分卷');
+    while (list.data.hasLocalMore) list.loadMore();
+    eq(files.length, 0, '本地分页不发在线请求');
+
+    list.loadMore();
+    list.loadMore();
+    eq(files.length, 1, '重复点击只请求一次在线分页');
+    list.updateFilters(4, list.data.eras.indexOf('清'));
+    const count = list.data.count;
+    respond('list/0-0/0.json');
+    eq(list.data.count, count, '上一组选项的响应不覆盖新筛选');
+    ok(list.data.rows.every(row => row.type === '书画'), '筛选切换后列表无旧数据');
+
+    list.resetFilters();
+    while (list.data.hasLocalMore) list.loadMore();
+    list.loadMore();
+    eq(list.data.rows.length, 68, '在线第一页复用缓存并追加 8 件');
+    list.loadMore();
+    request('list/0-0/1.json')?.fail(new Error('offline'));
+    eq(list.data.rows.length, 68, '在线分页失败保留已加载项');
+    list.retryRemote();
+    respond('list/0-0/1.json');
+    eq(new Set(list.data.rows.map(row => row.id)).size, 72, '重试追加 4 件且无重复');
+    eq(list.data.hasMore, false, '在线最后一页后无更多按钮');
+
+    const detail = copyPage('relic-detail');
+    detail.setData({ relic: null, share: { open: false } });
+    detail.onLoad({ id: '53937' });
+    request('detail/53937.json')?.fail(new Error('offline'));
+    eq(detail.data.loadState, 'retry', '在线详情可在失败时重试');
+    detail.loadRelic();
+    respond('detail/53937.json');
+    eq(detail.data.relic.accession, '17.118.42', '在线详情读取对应馆藏号');
+    eq(detail.onShareAppMessage().path, '/relics/pages/relic-detail/relic-detail?id=53937', '在线文物好友分享保持稳定 ID');
+    ok(detail.sharePayload().img.startsWith('https://testingcf.jsdelivr.net'), '在线分享使用远端配图');
+    detail.onImageError();
+    ok(detail.data.relic.image.startsWith('https://gcore.jsdelivr.net'), '在线图片失败后切换备用域名');
+    detail.onImageError();
+    eq(detail.data.imageFailed, true, '备用域名失败后停止重试，显示占位');
+  } finally {
+    wx.request = originalRequest;
+  }
+})();
+
 // ---------------------------------------------------------------------------
 // 10. 路由边界：所有跳转目标页面存在
 // ---------------------------------------------------------------------------

@@ -394,7 +394,7 @@ function shareMessage(relic) {
   return {
     title: `阅史记 · ${relic.title}`,
     path: `${DETAIL_PATH}?id=${encodeURIComponent(relic.id)}`,
-    imageUrl: imagePath(relic.id, 'detail')
+    imageUrl: relic.image || imagePath(relic.id, 'detail')
   };
 }
 

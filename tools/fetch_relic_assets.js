@@ -8,6 +8,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { RELICS, sourceFor } = require('../miniprogram/relics/catalog.js');
 
 const ROOT = path.resolve(__dirname, '..');
+const CATALOG = process.argv.includes('--remote') ? require('../miniprogram/data/relics/catalog.json') : RELICS;
 const IMAGE_HOSTS = new Set(['images.metmuseum.org', 'collectionapi.metmuseum.org', 'openaccess-cdn.clevelandart.org']);
 
 async function fetchFile(url) {
@@ -62,10 +63,10 @@ async function main() {
   console.log(`Working directory: ${output}`);
 
   const sources = [];
-  for (let offset = 0; offset < RELICS.length; offset += 3) {
-    sources.push(...await Promise.all(RELICS.slice(offset, offset + 3).map(relic => acquire(relic, originals))));
+  for (let offset = 0; offset < CATALOG.length; offset += 3) {
+    sources.push(...await Promise.all(CATALOG.slice(offset, offset + 3).map(relic => acquire(relic, originals))));
   }
-  const manifest = { sources, expectedRatios: Object.fromEntries(RELICS.map(item => [item.id, item.imageRatio])) };
+  const manifest = { sources, expectedRatios: Object.fromEntries(CATALOG.map(item => [item.id, item.imageRatio])) };
   await fs.writeFile(path.join(output, 'sources.json'), JSON.stringify(manifest, null, 2) + '\n');
   execFileSync(process.env.RELIC_PYTHON || 'python', [path.join(__dirname, 'prepare_relic_images.py'), output], { stdio: 'inherit' });
   console.log(`Acquired ${sources.length} museum records. Review ${output} before applying any updates.`);

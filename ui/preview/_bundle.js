@@ -4023,11 +4023,90 @@ function shareMessage(relic) {
   return {
     title: `阅史记 · ${relic.title}`,
     path: `${DETAIL_PATH}?id=${encodeURIComponent(relic.id)}`,
-    imageUrl: imagePath(relic.id, 'detail')
+    imageUrl: relic.image || imagePath(relic.id, 'detail')
   };
 }
 
 module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, imagePath, sourceFor, shareMessage };
+
+});
+__register('/relics/remote.js', function (require, module, exports) {
+const REPO = '/gh/webzol/history@main/miniprogram/data/relics/v1/';
+const JSON_BASE = `https://cdn.jsdelivr.net${REPO}`;
+const IMAGE_BASE = `https://testingcf.jsdelivr.net${REPO}`;
+const ALT_IMAGE_BASE = `https://gcore.jsdelivr.net${REPO}`;
+const PAGE_SIZE = 8;
+const ID_PATTERN = /^(?:\d+|cma-\d{4}\.[0-9a-z.-]+)$/;
+const CACHE_LIMIT = 24;
+const cache = new Map();
+const pending = new Map();
+
+function requestJson(file, validate, done) {
+  if (cache.has(file)) {
+    const value = cache.get(file);
+    cache.delete(file);
+    cache.set(file, value);
+    done(null, value);
+    return;
+  }
+  if (pending.has(file)) {
+    pending.get(file).push(done);
+    return;
+  }
+  pending.set(file, [done]);
+  function finish(error, value) {
+    const listeners = pending.get(file);
+    pending.delete(file);
+    if (!error && value) {
+      cache.set(file, value);
+      if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value);
+    }
+    listeners.forEach(listener => listener(error, value));
+  }
+  wx.request({
+    url: JSON_BASE + file,
+    timeout: 5000,
+    success(response) {
+      if (response.statusCode === 404 && file.startsWith('detail/')) return finish(null, null);
+      if (response.statusCode !== 200 || !validate(response.data)) return finish(new Error(`文物数据不可用：${file}`));
+      finish(null, response.data);
+    },
+    fail: (error) => finish(error || new Error(`文物数据获取失败：${file}`))
+  });
+}
+
+function getManifest(done) {
+  requestJson('manifest.json', data => data?.version === 1 && data.pageSize === PAGE_SIZE
+    && data.groups && typeof data.groups === 'object' && !Array.isArray(data.groups), done);
+}
+
+function groupFor(manifest, type = '', era = '') {
+  const group = manifest?.groups[`${type}|${era}`];
+  return group && /^[0-9]+-[0-9]+$/.test(group.key) && Number.isSafeInteger(group.count) && group.count > 0 ? group : null;
+}
+
+function getPage(group, page, done) {
+  const expected = Math.min(PAGE_SIZE, group.count - page * PAGE_SIZE);
+  requestJson(`list/${group.key}/${page}.json`, data => Array.isArray(data?.rows) && data.rows.length === expected
+    && new Set(data.rows.map(row => row?.id)).size === expected
+    && data.rows.every(row => row && typeof row.id === 'string' && ID_PATTERN.test(row.id)
+      && typeof row.title === 'string' && row.title && typeof row.period === 'string' && row.period
+      && typeof row.type === 'string' && row.type), done);
+}
+
+function getDetail(id, done) {
+  if (typeof id !== 'string' || !ID_PATTERN.test(id)) return done(null, null);
+  requestJson(`detail/${id}.json`, data => data?.id === id && data.title && data.period && data.type
+    && data.date && data.description && data.accession && Number.isFinite(data.imageRatio) && data.imageRatio > 0, done);
+}
+
+function imageUrl(id, size) { return `${IMAGE_BASE}images/${size}-${id}.jpg`; }
+
+function alternateImage(url) {
+  return url.startsWith(IMAGE_BASE) ? ALT_IMAGE_BASE + url.slice(IMAGE_BASE.length) : '';
+}
+
+module.exports = { PAGE_SIZE, ID_PATTERN, getManifest, groupFor, getPage, getDetail, imageUrl, alternateImage };
 
 });
 __register('/utils/store.js', function (require, module, exports) {
@@ -9277,8 +9356,9 @@ __register('/relics/pages/relic-list/relic-list.js', function (require, module, 
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
 const { ERAS, TYPES, RELICS, DETAIL_PATH, imagePath, shareMessage } = require('../../catalog.js');
+const remote = require('../../remote.js');
 
-const PAGE_SIZE = 8;
+const { PAGE_SIZE } = remote;
 const TYPE_OPTIONS = ['全部', ...TYPES];
 const ERA_OPTIONS = ['不限', ...ERAS];
 
@@ -9292,16 +9372,37 @@ Page('project://relics/pages/relic-list/relic-list.js', {
     filterSheet: null,
     rows: [],
     count: 0,
-    hasMore: false
+    hasMore: false,
+    hasLocalMore: false,
+    remoteState: ''
   },
 
   onLoad() {
+    this.unloaded = false;
     share.enableMenu();
     font.apply(this);
     this.updateFilters(0, 0);
+    this.loadManifest();
   },
 
   onShow() { font.apply(this); },
+
+  onUnload() { this.unloaded = true; },
+
+  loadManifest() {
+    if (this.manifestPending) return;
+    this.manifestPending = true;
+    this.setData({ remoteState: 'loading' });
+    remote.getManifest((error, manifest) => {
+      this.manifestPending = false;
+      if (this.unloaded) return;
+      if (error) return this.setData({ remoteState: 'retry' });
+      this.manifest = manifest;
+      this.syncRemoteGroup(this.data.typeIndex, this.data.eraIndex);
+      this.setData({ count: this.totalCount(), hasMore: this.data.rows.length < this.totalCount(), remoteState: '' });
+      if (!this.matches.length && this.group) this.loadMore();
+    });
+  },
 
   openFilter(e) {
     const kind = e.currentTarget.dataset.kind;
@@ -9330,20 +9431,58 @@ Page('project://relics/pages/relic-list/relic-list.js', {
   resetFilters() { this.updateFilters(0, 0); },
 
   updateFilters(typeIndex, eraIndex) {
+    this.filterRevision = (this.filterRevision || 0) + 1;
+    this.remotePage = 0;
     this.matches = RELICS.filter(item => (!typeIndex || item.type === TYPE_OPTIONS[typeIndex])
       && (!eraIndex || item.eras.includes(ERA_OPTIONS[eraIndex])));
-    this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length, ...this.nextRows(0) });
+    this.syncRemoteGroup(typeIndex, eraIndex);
+    const remoteState = this.manifestPending ? 'loading' : this.manifest ? '' : this.data.remoteState;
+    this.setData({ typeIndex, eraIndex, filterSheet: null, remoteState, count: this.totalCount(), ...this.nextRows(0) });
+    if (!this.matches.length && this.group) this.loadMore();
   },
+
+  syncRemoteGroup(typeIndex, eraIndex) {
+    this.group = remote.groupFor(this.manifest, typeIndex ? TYPE_OPTIONS[typeIndex] : '', eraIndex ? ERA_OPTIONS[eraIndex] : '');
+  },
+
+  totalCount() { return this.matches.length + (this.group?.count || 0); },
 
   nextRows(offset) {
     const batch = this.matches.slice(offset, offset + PAGE_SIZE).map(({ id, title, period, shortPeriod, type }) => ({
       id, title, period: shortPeriod || period, type, thumb: imagePath(id, 'thumb')
     }));
-    return { rows: offset ? this.data.rows.concat(batch) : batch, hasMore: offset + batch.length < this.matches.length };
+    const loaded = offset + batch.length;
+    return { rows: offset ? this.data.rows.concat(batch) : batch, hasMore: loaded < this.totalCount(), hasLocalMore: loaded < this.matches.length };
   },
 
   loadMore() {
-    if (this.data.hasMore) this.setData(this.nextRows(this.data.rows.length));
+    const loaded = this.data.rows.length;
+    if (loaded < this.matches.length) return this.setData(this.nextRows(loaded));
+    if (!this.group || this.data.remoteState === 'loading' || loaded >= this.totalCount()) return;
+    const revision = this.filterRevision;
+    this.setData({ remoteState: 'loading' });
+    remote.getPage(this.group, this.remotePage, (error, data) => {
+      if (this.unloaded || revision !== this.filterRevision) return;
+      if (error) return this.setData({ remoteState: 'retry' });
+      this.remotePage += 1;
+      const rows = this.data.rows.concat(data.rows.map(({ id, title, period, type }) => ({
+        id, title, period, type, thumb: remote.imageUrl(id, 'thumb')
+      })));
+      this.setData({ rows, hasMore: rows.length < this.totalCount(), remoteState: '' });
+    });
+  },
+
+  retryRemote() {
+    if (this.manifest) this.loadMore();
+    else this.loadManifest();
+  },
+
+  onThumbError(e) {
+    const { index, id, url } = e.currentTarget.dataset;
+    const row = this.data.rows[index];
+    if (!row || row.id !== id || row.thumb !== url) return;
+    const alt = remote.alternateImage(url);
+    this.setData({ [`rows[${index}].thumb`]: alt || '' });
   },
 
   openRelic(e) {
@@ -9363,40 +9502,67 @@ Page('project://relics/pages/relic-list/relic-list.js', {
 });
 
 });
-__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <view class=\"filter-card\">\n      <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\n        <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\n      </view>\n      <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\n        <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\n      </view>\n    </view>\n\n    <view class=\"gallery-head\">\n      <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\n      <text class=\"result-count\" aria-live=\"polite\">{{count}} 件</text>\n    </view>\n    <view wx:if=\"{{count}}\" class=\"relic-grid\">\n      <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\n        hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\n        <view class=\"relic-cover\">\n          <image class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load aria-hidden=\"true\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view class=\"relic-card-copy\">\n          <text class=\"relic-name\">{{item.title}}</text>\n          <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\n        </view>\n      </view>\n    </view>\n    <view wx:else class=\"relic-empty\">\n      <text>这个时代与器类下暂无藏品。</text>\n      <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">清除筛选</view>\n    </view>\n    <view wx:if=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\n  </view>\n\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\n      <view class=\"filter-head\">\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\n      </view>\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\n        </view>\n      </scroll-view>\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
-__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(36rpx * var(--fs, 1));\n  line-height: 1.4;\n  color: #1F1D19;\n}\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\n\n.back {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  border-radius: 28rpx;\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\n}\n.back-hit-pressed .back { background: #F1E8DD; }\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  transform: rotate(45deg);\n}\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\n\n.relic-cover { position: relative; overflow: hidden; }\n.cover-fade {\n  position: absolute;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  height: 29rpx;\n  pointer-events: none;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\n}\n\n.relic-empty {\n  padding: 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  color: #5F5A52;\n  font-size: calc(26rpx * var(--fs, 1));\n  line-height: 1.6;\n  text-align: center;\n}\n.relic-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 44px;\n  margin-top: 20rpx;\n  padding: 10rpx 20rpx;\n  border-radius: 30rpx;\n  background: #F1E8DD;\n  color: #6B5036;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.45;\n}\n\n\n.filter-card {\n  display: flex;\n  margin-top: 20rpx;\n  padding: 6rpx 10rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n}\n.filter-trigger + .filter-trigger::before {\n  position: absolute;\n  top: 22rpx;\n  bottom: 22rpx;\n  left: 0;\n  width: 1rpx;\n  background: rgba(70, 58, 45, 0.09);\n  content: '';\n}\n.filter-trigger {\n  position: relative;\n  flex: 1 1 0;\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  gap: 12rpx;\n  min-height: 44px;\n  padding: 6rpx 18rpx 6rpx 24rpx;\n  color: #5F5A52;\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.4;\n}\n.filter-label { flex: 0 0 auto; }\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\n.filter-chevron {\n  flex: 0 0 26rpx;\n  height: 26rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.filter-chevron::before {\n  width: 11rpx;\n  height: 11rpx;\n  border-right: 1px solid #8A6A3E;\n  border-bottom: 1px solid #8A6A3E;\n  transform: translateY(-2rpx) rotate(45deg);\n  content: '';\n}\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\n.relic-card {\n  width: calc((100% - 18rpx) / 2);\n  min-width: 0;\n  overflow: hidden;\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\n  background: #FCFBF8;\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\n}\n.relic-card-pressed { opacity: 0.84; }\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\n.relic-name {\n  display: block;\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(27rpx * var(--fs, 1));\n  line-height: 1.4;\n  overflow-wrap: anywhere;\n}\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\n.relic-meta-type { white-space: nowrap; }\n.more-relics { margin-top: 24rpx; }\n\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\n.filter-sheet {\n  position: absolute;\n  inset: auto 0 0;\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\n  border-radius: 42rpx 42rpx 0 0;\n  background: #FCFBF8;\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\n}\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\n.filter-title {\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(34rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n}\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\n.filter-list { display: block; max-height: 46vh; }\n.filter-option {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  min-height: 44px;\n  padding: 0 20rpx;\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\n  color: #3B3731;\n  font-size: calc(26rpx * var(--fs, 1));\n}\n.filter-option:last-child { border-bottom-color: transparent; }\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\n.filter-check { font-size: 26rpx; }\n.filter-cancel {\n  margin-top: 18rpx;\n  border-radius: 36rpx;\n  background: #EEF0F0;\n  color: #5F5A52;\n  font-size: calc(25rpx * var(--fs, 1));\n}\n\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\n"; });
+__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <view class=\"filter-card\">\n      <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\n        <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\n      </view>\n      <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\n        <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\n      </view>\n    </view>\n\n    <view class=\"gallery-head\">\n      <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\n      <text class=\"result-count\" aria-live=\"polite\">{{count}} 件</text>\n    </view>\n    <view wx:if=\"{{rows.length}}\" class=\"relic-grid\">\n      <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\n        hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\n        <view class=\"relic-cover\">\n          <image wx:if=\"{{item.thumb}}\" class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load aria-hidden=\"true\"\n            binderror=\"onThumbError\" data-id=\"{{item.id}}\" data-index=\"{{index}}\" data-url=\"{{item.thumb}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view class=\"relic-card-copy\">\n          <text class=\"relic-name\">{{item.title}}</text>\n          <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\n        </view>\n      </view>\n    </view>\n    <view wx:elif=\"{{!remoteState}}\" class=\"relic-empty\">\n      <text>这个时代与器类下暂无藏品。</text>\n      <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">清除筛选</view>\n    </view>\n    <view wx:if=\"{{remoteState === 'retry' && !hasLocalMore}}\" class=\"relic-action more-relics\" bindtap=\"retryRemote\" aria-role=\"button\">在线馆藏加载失败，点此重试</view>\n    <text wx:elif=\"{{remoteState === 'loading' && !hasLocalMore}}\" class=\"relic-status\" aria-live=\"polite\">正在加载在线馆藏</text>\n    <view wx:elif=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\n  </view>\n\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\n      <view class=\"filter-head\">\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\n      </view>\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\n        </view>\n      </scroll-view>\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
+__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(36rpx * var(--fs, 1));\n  line-height: 1.4;\n  color: #1F1D19;\n}\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\n\n.back {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  border-radius: 28rpx;\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\n}\n.back-hit-pressed .back { background: #F1E8DD; }\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  transform: rotate(45deg);\n}\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\n\n.relic-cover { position: relative; overflow: hidden; }\n.cover-fade {\n  position: absolute;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  height: 29rpx;\n  pointer-events: none;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\n}\n\n.relic-empty {\n  padding: 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  color: #5F5A52;\n  font-size: calc(26rpx * var(--fs, 1));\n  line-height: 1.6;\n  text-align: center;\n}\n.relic-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 44px;\n  margin-top: 20rpx;\n  padding: 10rpx 20rpx;\n  border-radius: 30rpx;\n  background: #F1E8DD;\n  color: #6B5036;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.45;\n}\n\n\n.filter-card {\n  display: flex;\n  margin-top: 20rpx;\n  padding: 6rpx 10rpx;\n  border-radius: 30rpx;\n  background: #FCFBF8;\n}\n.filter-trigger + .filter-trigger::before {\n  position: absolute;\n  top: 22rpx;\n  bottom: 22rpx;\n  left: 0;\n  width: 1rpx;\n  background: rgba(70, 58, 45, 0.09);\n  content: '';\n}\n.filter-trigger {\n  position: relative;\n  flex: 1 1 0;\n  min-width: 0;\n  display: flex;\n  align-items: center;\n  gap: 12rpx;\n  min-height: 44px;\n  padding: 6rpx 18rpx 6rpx 24rpx;\n  color: #5F5A52;\n  font-size: calc(21rpx * var(--fs, 1));\n  line-height: 1.4;\n}\n.filter-label { flex: 0 0 auto; }\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\n.filter-chevron {\n  flex: 0 0 26rpx;\n  height: 26rpx;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.filter-chevron::before {\n  width: 11rpx;\n  height: 11rpx;\n  border-right: 1px solid #8A6A3E;\n  border-bottom: 1px solid #8A6A3E;\n  transform: translateY(-2rpx) rotate(45deg);\n  content: '';\n}\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\n.relic-card {\n  width: calc((100% - 18rpx) / 2);\n  min-width: 0;\n  overflow: hidden;\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\n  background: #FCFBF8;\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\n}\n.relic-card-pressed { opacity: 0.84; }\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\n.relic-name {\n  display: block;\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(27rpx * var(--fs, 1));\n  line-height: 1.4;\n  overflow-wrap: anywhere;\n}\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\n.relic-meta-type { white-space: nowrap; }\n.more-relics { margin-top: 24rpx; }\n.relic-status { display: block; margin-top: 24rpx; text-align: center; color: #5F5A52; font-size: calc(22rpx * var(--fs, 1)); }\n\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\n.filter-sheet {\n  position: absolute;\n  inset: auto 0 0;\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\n  border-radius: 42rpx 42rpx 0 0;\n  background: #FCFBF8;\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\n}\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\n.filter-title {\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(34rpx * var(--fs, 1));\n  letter-spacing: 0.06em;\n}\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\n.filter-list { display: block; max-height: 46vh; }\n.filter-option {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  min-height: 44px;\n  padding: 0 20rpx;\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\n  color: #3B3731;\n  font-size: calc(26rpx * var(--fs, 1));\n}\n.filter-option:last-child { border-bottom-color: transparent; }\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\n.filter-check { font-size: 26rpx; }\n.filter-cancel {\n  margin-top: 18rpx;\n  border-radius: 36rpx;\n  background: #EEF0F0;\n  color: #5F5A52;\n  font-size: calc(25rpx * var(--fs, 1));\n}\n\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\n"; });
 __register('/relics/pages/relic-detail/relic-detail.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
 const qrshare = require('../../../utils/qrshare.js');
 const { RELICS, LIST_PATH, imagePath, sourceFor, shareMessage } = require('../../catalog.js');
+const remote = require('../../remote.js');
 
 Page('project://relics/pages/relic-detail/relic-detail.js', {
-  data: { fontClass: 'm', relic: null, imageFailed: false, sourceOpen: false, share: { open: false } },
+  data: { fontClass: 'm', relic: null, loadState: '', imageFailed: false, sourceOpen: false, share: { open: false } },
 
   onLoad(options = {}) {
     share.enableMenu();
     font.apply(this);
-    const item = RELICS.find(relic => relic.id === options.id);
-    if (!item) return;
+    this.options = options;
+    this.loadRelic();
+  },
+
+  loadRelic() {
+    const { id } = this.options;
+    const local = RELICS.find(item => item.id === id);
+    if (local) return this.showRelic(local, imagePath(id, 'detail'));
+    if (!id || !remote.ID_PATTERN.test(id)) return this.setData({ loadState: '' });
+    const request = {};
+    this.detailRequest = request;
+    this.setData({ loadState: 'loading' });
+    remote.getDetail(id, (error, item) => {
+      if (this.detailRequest !== request) return;
+      if (error) return this.setData({ loadState: 'retry' });
+      if (!item) return this.setData({ loadState: '' });
+      this.showRelic(item, remote.imageUrl(id, 'detail'));
+    });
+  },
+
+  showRelic(item, image) {
     const { id, title, type, period, date, material, dimensions, accession, description, imageNote, imageRatio } = item;
     const { museum, url, rights } = sourceFor(id);
     this.setData({
+      loadState: '',
+      imageFailed: false,
       relic: { id, title, type, period, date, material, dimensions, accession, description,
-        imageNote: imageNote || '', imageRatio, museum, url, rights, image: imagePath(id, 'detail') }
+        imageNote: imageNote || '', imageRatio, museum, url, rights, image }
     }, () => {
-      if (options.share === '1') this.openShare();
+      if (this.options.share === '1') this.openShare();
     });
   },
 
   onShow() { font.apply(this); },
 
   onUnload() {
+    this.detailRequest = null;
     this.__qrPayload = null;
     this.data.share.open = false;
   },
 
-  onImageError() { this.setData({ imageFailed: true }); },
+  onImageError() {
+    if (!this.data.relic) return;
+    const alt = remote.alternateImage(this.data.relic.image);
+    this.setData(alt ? { 'relic.image': alt } : { imageFailed: true });
+  },
 
   toggleSource() { this.setData({ sourceOpen: !this.data.sourceOpen }); },
 
@@ -9415,6 +9581,7 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
       title: relic.title,
       desc: relic.description,
       img: relic.image,
+      imgFallback: remote.alternateImage(relic.image),
       coverFit: 'contain',
       // 与 onShareAppMessage 同源（catalog.shareMessage），转发路径只有一处定义
       path: shareMessage(relic).path
@@ -9438,7 +9605,7 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
 });
 
 });
-__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <block wx:if=\"{{relic}}\">\n      <view class=\"object-card\">\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\n        <text class=\"object-date\">{{relic.date}}</text>\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>\n      </view>\n\n      <view class=\"details-card\">\n        <view class=\"details-heading\">\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\n        </view>\n        <text class=\"object-description\">{{relic.description}}</text>\n        <view class=\"facts\">\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\n        </view>\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\n        </view>\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\n      </view>\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\n    </block>\n    <view wx:else class=\"relic-empty\">\n      <text>未找到这件文物。</text>\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\n    </view>\n  </view>\n\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\n      <view class=\"ss-head\">\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\n      </view>\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n      </view>\n      <view class=\"relic-share-actions\">\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\n          <text>转寄好友</text>\n        </button>\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\n        </view>\n      </view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
+__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <block wx:if=\"{{relic}}\">\n      <view class=\"object-card\">\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\n        <text class=\"object-date\">{{relic.date}}</text>\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>\n      </view>\n\n      <view class=\"details-card\">\n        <view class=\"details-heading\">\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\n        </view>\n        <text class=\"object-description\">{{relic.description}}</text>\n        <view class=\"facts\">\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\n        </view>\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\n        </view>\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\n      </view>\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\n    </block>\n    <view wx:elif=\"{{loadState}}\" class=\"relic-empty\">\n      <text aria-live=\"polite\">{{loadState === 'loading' ? '正在打开文物' : '文物暂时无法加载'}}</text>\n      <view wx:if=\"{{loadState === 'retry'}}\" class=\"relic-action\" bindtap=\"loadRelic\" aria-role=\"button\">重新加载</view>\n    </view>\n    <view wx:else class=\"relic-empty\">\n      <text>未找到这件文物。</text>\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\n    </view>\n  </view>\n\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\n      <view class=\"ss-head\">\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\n      </view>\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n      </view>\n      <view class=\"relic-share-actions\">\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\n          <text>转寄好友</text>\n        </button>\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\n        </view>\n      </view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
 __register('/relics/pages/relic-detail/relic-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(36rpx * var(--fs, 1));\n  line-height: 1.4;\n  color: #1F1D19;\n}\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\n\n.back {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  border-radius: 28rpx;\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\n}\n.back-hit-pressed .back { background: #F1E8DD; }\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  transform: rotate(45deg);\n}\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\n\n.relic-cover { position: relative; overflow: hidden; }\n.cover-fade {\n  position: absolute;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  height: 29rpx;\n  pointer-events: none;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\n}\n\n.relic-empty {\n  padding: 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  color: #5F5A52;\n  font-size: calc(26rpx * var(--fs, 1));\n  line-height: 1.6;\n  text-align: center;\n}\n.relic-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 44px;\n  margin-top: 20rpx;\n  padding: 10rpx 20rpx;\n  border-radius: 30rpx;\n  background: #F1E8DD;\n  color: #6B5036;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.45;\n}\n\n\n.object-card, .details-card { padding: 28rpx; border-radius: 38rpx; background: #FCFBF8; }\n.object-card { margin-top: 20rpx; }\n.object-type { display: block; color: #865C3B; font-size: calc(22rpx * var(--fs, 1)); line-height: 1.5; }\n.object-name {\n  display: block;\n  margin-top: 5rpx;\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(43rpx * var(--fs, 1));\n  line-height: 1.35;\n}\n.object-date { display: block; margin-top: 9rpx; color: #5F5A52; font-size: calc(24rpx * var(--fs, 1)); line-height: 1.55; }\n.object-cover { margin-top: 24rpx; border-radius: 16rpx 16rpx 0 0; background: #F3EFE6; }\n.object-cover .cover-fade { height: 35rpx; }\n.object-image { position: absolute; inset: 0; width: 100%; height: 100%; }\n.object-image-empty {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 130rpx;\n  margin-top: 24rpx;\n  border-radius: 16rpx;\n  background: #F3EFE6;\n  color: #5F5A52;\n  font-size: calc(24rpx * var(--fs, 1));\n}\n.object-image-note { display: block; margin-top: 10rpx; color: #5F5A52; text-align: right; font-size: calc(19rpx * var(--fs, 1)); }\n.details-card { margin-top: 22rpx; }\n.details-heading { display: flex; align-items: center; gap: 16rpx; }\n.details-title {\n  color: #864B40;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  line-height: 1.4;\n}\n.details-rule { flex: 1; height: 1rpx; background: linear-gradient(90deg, #D9BDB0, transparent); }\n.object-description {\n  display: block;\n  margin: 12rpx 0 22rpx;\n  color: #3B3731;\n  font-size: calc(27rpx * var(--fs, 1));\n  line-height: 1.8;\n}\n.facts {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 14rpx;\n}\n.fact {\n  width: calc((100% - 14rpx) / 2);\n  padding: 12rpx 16rpx;\n  border-radius: 20rpx;\n  background: #F7F3ED;\n  color: #3B3731;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.55;\n}\n.fact-label { display: block; color: #5F5A52; font-size: calc(20rpx * var(--fs, 1)); }\n.source-toggle {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  min-height: 44px;\n  margin-top: 8rpx;\n  color: #7D5A3B;\n  font-size: calc(22rpx * var(--fs, 1));\n}\n.source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }\n.object-share { margin-top: 22rpx; }\n.object-share-pressed { background: #EBDFD1; }\n\n.relic-share-sheet .ss-qr-wrap { margin: 12rpx 0 26rpx; }\n.relic-share-sheet .ss-canvas { box-shadow: 0 14rpx 34rpx rgba(90, 70, 50, 0.09); }\n.relic-share-actions { display: flex; gap: 16rpx; max-width: 306px; margin: 0 auto; }\n.share-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex: 1 1 0;\n  gap: 12rpx;\n  min-width: 0;\n  min-height: 46px;\n  margin: 0;\n  padding: 10rpx 12rpx;\n  border: 0;\n  border-radius: 26rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(27rpx * var(--fs, 1));\n  font-weight: 400;\n  line-height: 1.4;\n}\n.share-action::after { border: 0; }\n.send-action { background: #F1E8DD; color: #63472F; }\n.save-action { background: #EEF0F0; color: #454C4A; }\n.send-action.share-action-pressed { background: #EBDFD1; }\n.save-action.share-action-pressed { background: #E3E8E7; }\n.save-action.share-pending { color: #706C63; }\n\n.share-action-icon { position: relative; flex: 0 0 32rpx; width: 32rpx; height: 32rpx; }\n.send-icon::before, .save-icon::before, .save-icon::after { position: absolute; content: ''; }\n.send-icon::before {\n  left: 4rpx;\n  bottom: 4rpx;\n  width: 18rpx;\n  height: 18rpx;\n  border: 1px solid currentColor;\n  border-radius: 4rpx;\n}\n.send-icon::after {\n  position: absolute;\n  top: 4rpx;\n  right: 4rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-top: 1px solid currentColor;\n  border-right: 1px solid currentColor;\n  background: linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), #F1E8DD;\n  content: '';\n}\n.share-action-pressed .send-icon::after { background-color: #EBDFD1; }\n.save-icon::before {\n  left: 5rpx;\n  bottom: 4rpx;\n  right: 5rpx;\n  height: 7rpx;\n  border: 1px solid currentColor;\n  border-top: 0;\n  border-radius: 0 0 3rpx 3rpx;\n}\n.save-icon::after {\n  top: 11rpx;\n  left: 11rpx;\n  width: 10rpx;\n  height: 10rpx;\n  border-right: 1px solid currentColor;\n  border-bottom: 1px solid currentColor;\n  transform: rotate(45deg);\n}\n.save-icon { background: linear-gradient(currentColor, currentColor) center 4rpx / 1px 14rpx no-repeat; }\n\n@media (max-height: 660px) {\n  .relic-share-sheet .ss-canvas { width: 196px; height: 319.63px; }\n}\n@media (max-height: 530px) {\n  .relic-share-sheet .ss-canvas { width: 172px; height: 280.49px; }\n}\n\n@media (max-height: 460px) {\n  .relic-share-sheet .ss-canvas { width: 148px; height: 241.35px; }\n}\n@media (prefers-reduced-motion: reduce) {\n  .relic-share-layer .ss-panel, .relic-share-layer .ss-mask { animation: none; }\n}\n"; });
 __register('/relics/pages/relic-share/relic-share.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');

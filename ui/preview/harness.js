@@ -172,6 +172,13 @@
     canvasToTempFilePath: function (o) { if (o && o.success) o.success({ tempFilePath: '' }); },
     // 60s「历史上的今天」返回样例载荷；其余请求（jsDelivr）走离线失败 → 回退种子
     request: function (o) {
+      if (o && o.url && o.url.indexOf('/data/relics/v1/') >= 0) {
+        var relicFile = o.url.split('/data/relics/v1/')[1];
+        fetch('../../miniprogram/data/relics/v1/' + relicFile).then(async function (response) {
+          return { statusCode: response.status, data: response.ok ? await response.json() : null };
+        }).then(o.success, o.fail);
+        return;
+      }
       if (o && o.url && o.url.indexOf('today_in_history') >= 0 && o.success) {
         o.success({
           data: {
@@ -312,7 +319,7 @@
         }
         node[segs[segs.length - 1]] = patch[k];
       });
-      renderPage(inst);
+      if (CURRENT === inst) renderPage(inst);
       if (cb) cb();
     };
     // 页面方法绑定到实例（与小程序 this 语义一致；apply 转发全部实参，

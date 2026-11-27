@@ -169,8 +169,7 @@ def jpeg_size(path):
 
 
 def check_relic_catalog():
-    """文物目录与配图一致性：每件文物在分包内都要有 thumb/detail 两图，
-    且 catalog.js 的 imageRatio 必须等于详情图实际高宽比 ×100（页面按它撑图框）。"""
+    """本地和在线目录都要有 thumb/detail 两图，并核对尺寸与 imageRatio。"""
     errors = []
     script = (
         "const c = require(process.argv[1]);"
@@ -185,15 +184,28 @@ def check_relic_catalog():
     except Exception as exc:  # node 缺失或 catalog.js 语法错误都在这里暴露
         return [f"relics/catalog.js 无法读取条目：{exc}"]
 
-    for relic_id, ratio in entries:
+    remote_file = ROOT / "data" / "relics" / "catalog.json"
+    remote_entries = json.loads(remote_file.read_text(encoding="utf-8"))
+    images = [(item_id, ratio, ROOT / "relics" / "assets") for item_id, ratio in entries]
+    images.extend((item["id"], item["imageRatio"], remote_file.parent / "v1" / "images") for item in remote_entries)
+    for relic_id, ratio, directory in images:
         for size in ("thumb", "detail"):
-            path = ROOT / "relics" / "assets" / f"{size}-{relic_id}.jpg"
+            path = directory / f"{size}-{relic_id}.jpg"
             if not path.exists():
                 errors.append(f"relics {relic_id}: 缺少配图 {path.name}")
                 continue
-            if size != "detail":
+            try:
+                width, height = jpeg_size(path)
+            except (OSError, ValueError, IndexError) as exc:
+                errors.append(f"relics {path.name}: 图片无法读取：{exc}")
                 continue
-            width, height = jpeg_size(path)
+            if size == "thumb":
+                if (width, height) != (200, 144):
+                    errors.append(f"relics {path.name}: 缩略图应为 200×144")
+                continue
+            if max(width, height) > 490 or min(width, height) <= 0:
+                errors.append(f"relics {path.name}: 详情图尺寸超出预算")
+                continue
             actual = round(height * 100 / width, 3)
             if abs(actual - ratio) > 0.05:
                 errors.append(f"relics {relic_id}: imageRatio {ratio} 与 detail 图实际 {actual} 不符")

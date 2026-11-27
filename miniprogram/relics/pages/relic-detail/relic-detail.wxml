@@ -47,6 +47,10 @@
       <view class="relic-action object-share" bindtap="openShare" hover-class="object-share-pressed" hover-stay-time="80"
         aria-role="button" aria-label="打开文物分享卡片">共此卷</view>
     </block>
+    <view wx:elif="{{loadState}}" class="relic-empty">
+      <text aria-live="polite">{{loadState === 'loading' ? '正在打开文物' : '文物暂时无法加载'}}</text>
+      <view wx:if="{{loadState === 'retry'}}" class="relic-action" bindtap="loadRelic" aria-role="button">重新加载</view>
+    </view>
     <view wx:else class="relic-empty">
       <text>未找到这件文物。</text>
       <view class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>

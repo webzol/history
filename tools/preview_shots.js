@@ -62,7 +62,8 @@ const targets = [
   ['39-relic-list', 'relic-list?shot=1'],
   ['40-relic-filter', `relic-list?shot=1&s=${esc('click:.filter-trigger')}`],
   ['41-relic-detail', 'relic-detail?shot=1&id=cma-1954.582'],
-  ['42-relic-share', `relic-detail?shot=1&id=39919&s=${esc('click:.relic-action.object-share')}`]
+  ['42-relic-share', `relic-detail?shot=1&id=39919&s=${esc('click:.relic-action.object-share')}`],
+  ['43-relic-remote-detail', 'relic-detail?shot=1&id=53937']
 ];
 
 let miss = 0;

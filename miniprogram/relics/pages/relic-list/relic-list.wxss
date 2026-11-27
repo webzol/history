@@ -73,6 +73,7 @@
 .relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }
 .relic-meta-type { white-space: nowrap; }
 .more-relics { margin-top: 24rpx; }
+.relic-status { display: block; margin-top: 24rpx; text-align: center; color: #5F5A52; font-size: calc(22rpx * var(--fs, 1)); }
 
 .filter-layer { position: fixed; inset: 0; z-index: 120; }
 .filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }
