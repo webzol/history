@@ -46,7 +46,7 @@
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.back-pressed {
+.back-hit-pressed .back {
   transform: scale(0.97);
   background: rgba(244, 236, 224, 0.96);
 }
@@ -185,8 +185,10 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 30%, rgba(30, 26, 20, 0.5));
+  background: linear-gradient(180deg, rgba(30, 26, 20, 0.06) 12%, rgba(30, 26, 20, 0.76) 57%);
 }
+
+.fs-xl .hero-copy { right: 24rpx; bottom: 80rpx; }
 
 .hero-copy {
   position: absolute;
@@ -209,7 +211,7 @@
   margin-top: 10rpx;
   font-size: calc(21rpx * var(--fs, 1));
   letter-spacing: 0.08em;
-  color: rgba(252, 251, 248, 0.86);
+  color: #FCFBF8;
 }
 
 .hero-title {
@@ -351,7 +353,9 @@
 }
 
 .time-btn {
-  height: 76rpx;
+  min-height: 44px;
+  padding: 6rpx 10rpx;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,7 +376,10 @@
 
 .ghost-btn {
   flex: 1;
-  height: 76rpx;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6rpx 10rpx;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;

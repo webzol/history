@@ -1,18 +1,21 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
-  <view class="screen" wx:if="{{event}}">
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen" wx:if="{{event}}" aria-hidden="{{share.open}}">
     <view class="topbar">
-      <view class="back" bindtap="goBack" hover-class="back-pressed" hover-stay-time="80">
-        <view class="back-icon">
-          <view class="back-chevron"></view>
-          <view class="back-shaft"></view>
+      <view class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"
+        hover-class="back-hit-pressed" hover-stay-time="80">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon">
+            <view class="back-chevron"></view>
+            <view class="back-shaft"></view>
+          </view>
+          <view class="back-divider"></view>
+          <text class="back-label">返回</text>
         </view>
-        <view class="back-divider"></view>
-        <text class="back-label">返回</text>
       </view>
       <view class="top-center">
         <text class="top-title">事件</text>
-        <view class="top-seal">
+        <view class="top-seal" aria-hidden="true">
           <text class="seal-char">{{seal}}</text>
         </view>
       </view>
@@ -20,8 +23,8 @@
 
     <view class="head-card {{event.mode === 'modern' ? 'head-modern' : ''}}">
       <view class="e-copy">
+        <text class="e-title" aria-role="heading">{{event.title}}</text>
         <text class="e-year">{{event.yearText}}</text>
-        <text class="e-title">{{event.title}}</text>
         <view class="e-meta">
           <view class="era-chip {{event.mode === 'modern' ? 'chip-modern' : ''}}">
             <text>{{event.era}}</text>
@@ -30,7 +33,7 @@
         </view>
       </view>
       <view class="e-fig" wx:if="{{headImg}}">
-        <image class="e-fig-img" src="{{headImg}}" mode="aspectFit" binderror="onHeadImgErr"></image>
+        <image aria-hidden="true" class="e-fig-img" src="{{headImg}}" mode="aspectFit" binderror="onHeadImgErr"></image>
       </view>
     </view>
 
@@ -44,7 +47,7 @@
     </view>
 
     <view class="section-head" wx:if="{{relatedPersons.length}}">
-      <text class="section-title">其时其人</text>
+      <text class="section-title" aria-role="heading">其时其人</text>
     </view>
     <view class="p-list" wx:if="{{relatedPersons.length}}">
       <view
@@ -52,11 +55,11 @@
         wx:key="id"
         class="p-card"
         data-id="{{item.id}}"
-        bindtap="goPerson"
+        bindtap="goPerson" aria-role="button" aria-label="{{item.name + '，' + item.dates + '，' + item.roles}}"
       >
         <view class="p-thumb-wrap">
-          <image class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit" lazy-load></image>
-          <image
+          <image aria-hidden="true" class="p-thumb-bg" src="{{item.fallback}}" mode="aspectFit" lazy-load></image>
+          <image aria-hidden="true"
             wx:if="{{item.img !== item.fallback}}"
             class="p-thumb-img {{thumbLoaded[item.id] ? 'on' : ''}}" lazy-load
             src="{{item.img}}"
@@ -71,18 +74,18 @@
           <text class="p-dates {{event.mode === 'modern' ? 'accent-modern' : ''}}">{{item.dates}}</text>
           <text class="p-roles">{{item.roles}}</text>
         </view>
-        <text class="rel-arrow">›</text>
+        <text class="rel-arrow" aria-hidden="true">›</text>
       </view>
     </view>
 
     <view class="foot-actions">
-      <view class="ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}" bindtap="toggleCollect">
+      <view class="ghost-btn {{collected ? (event.mode === 'modern' ? 'on on-modern' : 'on') : ''}}" bindtap="toggleCollect" aria-role="button" aria-label="{{collected ? '已收藏此史事，取消收藏' : '收藏此史事'}}">
         <text>{{collected ? '✓ 已收藏' : '收藏此史事'}}</text>
       </view>
-      <view class="ghost-btn" bindtap="openShare">
+      <view class="ghost-btn" bindtap="openShare" aria-role="button" aria-label="打开分享卡片">
         <text>共此卷</text>
       </view>
-      <view class="ghost-btn" bindtap="goTimeline">
+      <view class="ghost-btn" bindtap="goTimeline" aria-role="button">
         <text>回时间轴</text>
       </view>
     </view>
@@ -92,20 +95,20 @@
   </view>
 
     <view class="ss-layer" wx:if="{{share.open}}">
-      <view class="ss-mask" bindtap="closeShare"></view>
-      <view class="ss-panel">
+      <view class="ss-mask" aria-hidden="true" bindtap="closeShare"></view>
+      <view class="ss-panel" aria-role="dialog" aria-modal="true" aria-label="分享卡片">
         <view class="ss-grip"></view>
         <view class="ss-head">
           <text class="ss-title">共此卷</text>
-          <text class="ss-close" bindtap="closeShare">×</text>
+          <text class="ss-close ss-close-touch" bindtap="closeShare" aria-role="button" aria-label="关闭分享卡片">×</text>
         </view>
-        <view class="ss-qr-wrap">
-          <image wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
+        <view class="ss-qr-wrap" aria-hidden="true">
+          <image aria-hidden="true" wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
           <canvas wx:else type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
         </view>
         <view class="ss-actions">
-          <button class="ss-btn ss-btn-primary" open-type="share">转 寄 好 友</button>
-          <view class="ss-btn ss-btn-ghost" bindtap="saveQr">保 存 卡 片</view>
+          <button class="ss-btn ss-btn-primary" open-type="share" aria-label="发送给好友">转 寄 好 友</button>
+          <view class="ss-btn ss-btn-ghost" bindtap="saveQr" aria-role="button" aria-label="保存分享卡片">保 存 卡 片</view>
         </view>
       </view>
     </view>

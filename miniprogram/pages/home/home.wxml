@@ -1,45 +1,45 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
-  <view class="screen">
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen" aria-hidden="{{sheet.open || info.open}}">
     <view class="topbar">
-      <text class="brand">阅史记</text>
+      <text class="brand" aria-role="heading">阅史记</text>
     </view>
 
     <view class="date">{{dateText}}</view>
 
-    <view class="hero" bindtap="onHeroTap">
+    <view class="hero" bindtap="onHeroTap" aria-role="button" aria-label="{{hero.desc ? hero.title + '。' + hero.desc : '今日史事'}}">
       <view class="hero-inner">
         <text class="hero-title">{{hero.title}}</text>
         <text class="hero-desc">{{hero.desc}}</text>
       </view>
-      <image class="hero-art" src="/assets/palace.jpg" mode="widthFix"></image>
+      <image aria-hidden="true" class="hero-art" src="/assets/palace.jpg" mode="widthFix"></image>
     </view>
 
     <view class="quick">
-      <view class="quick-item t1" data-page="timeline" bindtap="goPage">
-        <image class="quick-icon" src="/assets/icons/timeline-tile.png" mode="aspectFit"></image>
+      <view class="quick-item t1" data-page="timeline" bindtap="goPage" aria-role="button" aria-label="时间轴">
+        <image aria-hidden="true" class="quick-icon" src="/assets/icons/timeline-tile.png" mode="aspectFit"></image>
         <text class="quick-label">时间轴</text>
       </view>
-      <view class="quick-item t2" data-page="dynasty" bindtap="goPage">
-        <text class="quick-char">朝</text>
+      <view class="quick-item t2" data-page="dynasty" bindtap="goPage" aria-role="button" aria-label="选择朝代">
+        <text class="quick-char" aria-hidden="true">朝</text>
         <text class="quick-label">朝代</text>
       </view>
-      <view class="quick-item t3" data-page="person" bindtap="goPage">
-        <image class="quick-icon" src="/assets/icons/person.png" mode="aspectFit"></image>
+      <view class="quick-item t3" data-page="person" bindtap="goPage" aria-role="button" aria-label="选择人物">
+        <image aria-hidden="true" class="quick-icon" src="/assets/icons/person.png" mode="aspectFit"></image>
         <text class="quick-label">人物</text>
       </view>
-      <view class="quick-item t4" data-page="event" bindtap="goPage">
-        <image class="quick-icon" src="/assets/icons/event.png" mode="aspectFit"></image>
+      <view class="quick-item t4" data-page="event" bindtap="goPage" aria-role="button" aria-label="选择史事">
+        <image aria-hidden="true" class="quick-icon" src="/assets/icons/event.png" mode="aspectFit"></image>
         <text class="quick-label">事件</text>
       </view>
     </view>
 
     <view class="tih" wx:if="{{tih.length}}">
       <view class="tih-head">
-        <text class="tih-title">历史上的今天</text>
+        <text class="tih-title" aria-role="heading">历史上的今天</text>
         <text class="tih-sub">{{tihDate}}</text>
       </view>
-      <view class="tih-featured" bindtap="onTihTap">
+      <view class="tih-featured" bindtap="onTihTap" aria-role="button" aria-label="{{tih[0].title + '，' + tih[0].yearText + '，查看详情'}}">
         <view class="tih-featured-top">
           <text class="tih-year">{{tih[0].yearText}}</text>
           <text class="tih-tag {{tih[0].type === '出生' ? 'tag-b' : tih[0].type === '逝世' ? 'tag-d' : 'tag-e'}}">{{tih[0].type}}</text>
@@ -51,20 +51,20 @@
     </view>
 
     <view class="section-head">
-      <text class="section-title">沿着时间走</text>
-      <view class="section-link section-action" bindtap="goDiscover">全部朝代 ›</view>
+      <text class="section-title" aria-role="heading">沿着时间走</text>
+      <view class="section-link section-action" bindtap="goDiscover" aria-role="button" aria-label="全部朝代">全部朝代 ›</view>
     </view>
 
     <view class="era-row">
-      <view class="era-card" bindtap="onEraTap">
-        <image class="era-bg" src="/assets/tang-bg.jpg" mode="aspectFill"></image>
-        <view class="era-shade"></view>
+      <view class="era-card" bindtap="onEraTap" aria-role="button" aria-label="{{era.title ? era.title + '，打开古代时间轴' : '打开古代时间轴'}}">
+        <image aria-hidden="true" class="era-bg" src="/assets/tang-bg.jpg" mode="aspectFill"></image>
+        <view class="era-shade" aria-hidden="true"></view>
         <text class="era-title">{{era.title}}</text>
         <text class="era-desc">{{era.desc}}</text>
       </view>
     </view>
 
-    <view class="modern-card" bindtap="onModernTap">
+    <view class="modern-card" bindtap="onModernTap" aria-role="button" aria-label="{{modern.shortTitle ? modern.shortTitle + '，打开近现代时间轴' : '打开近现代时间轴'}}">
       <view class="modern-copy">
         <text class="modern-kicker">{{modern.kicker}}</text>
         <text class="modern-title">{{modern.shortTitle}}</text>
@@ -72,44 +72,44 @@
       </view>
       <view class="modern-years">
         <text>1840</text>
-        <view class="modern-dash"></view>
+        <view class="modern-dash" aria-hidden="true"></view>
         <text>1949</text>
       </view>
     </view>
   </view>
 
   <view class="sheet-layer" wx:if="{{sheet.open}}">
-    <view class="sheet-mask" bindtap="closeSheet"></view>
-    <view class="sheet-panel" catchtap="noop">
-      <view class="sheet-grip"></view>
+    <view class="sheet-mask" aria-hidden="true" bindtap="closeSheet"></view>
+    <view class="sheet-panel" aria-role="dialog" aria-modal="true" aria-label="{{sheet.title}}" catchtap="noop">
+      <view class="sheet-grip" aria-hidden="true"></view>
       <view class="sheet-head">
-        <text class="sheet-title">{{sheet.title}}</text>
-        <text class="sheet-close" bindtap="closeSheet">×</text>
+        <text class="sheet-title" aria-role="heading">{{sheet.title}}</text>
+        <text class="sheet-close" bindtap="closeSheet" aria-role="button" aria-label="关闭选择面板">×</text>
       </view>
       <view class="sheet-list">
-        <view class="sheet-row" wx:for="{{sheet.list}}" wx:key="id" data-index="{{index}}" bindtap="onSheetItem">
+        <view class="sheet-row" wx:for="{{sheet.list}}" wx:key="id" data-index="{{index}}" bindtap="onSheetItem" aria-role="button" aria-label="{{item.title + '，' + item.sub}}">
           <view class="sheet-main">
             <text class="sheet-row-title">{{item.title}}</text>
             <text class="sheet-row-sub">{{item.sub}}</text>
           </view>
-          <text class="sheet-row-arrow">›</text>
+          <text class="sheet-row-arrow" aria-hidden="true">›</text>
         </view>
       </view>
-      <view class="sheet-cancel" bindtap="closeSheet">取消</view>
+      <view class="sheet-cancel" aria-role="button" bindtap="closeSheet">取消</view>
     </view>
   </view>
   <view class="sheet-layer" wx:if="{{info.open}}">
-    <view class="sheet-mask" bindtap="closeInfo"></view>
-    <view class="info-panel" catchtap="noop">
-      <view class="sheet-grip"></view>
+    <view class="sheet-mask" aria-hidden="true" bindtap="closeInfo"></view>
+    <view class="info-panel" aria-role="dialog" aria-modal="true" aria-label="{{info.title}}" catchtap="noop">
+      <view class="sheet-grip" aria-hidden="true"></view>
       <view class="sheet-head">
-        <text class="sheet-title">{{info.title}}</text>
-        <text class="sheet-close" bindtap="closeInfo">×</text>
+        <text class="sheet-title" aria-role="heading">{{info.title}}</text>
+        <text class="sheet-close" bindtap="closeInfo" aria-role="button" aria-label="关闭史事详情">×</text>
       </view>
       <view class="info-body">
         <text class="info-para" wx:for="{{info.paragraphs}}" wx:key="*this">{{item}}</text>
       </view>
-      <view class="sheet-cancel" bindtap="closeInfo">知道了</view>
+      <view class="sheet-cancel" aria-role="button" bindtap="closeInfo">知道了</view>
     </view>
   </view>
 </view>

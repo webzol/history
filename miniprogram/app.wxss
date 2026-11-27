@@ -13,6 +13,12 @@ view, text, image {
   font-family: "Songti SC", "STSong", "SimSun", serif;
 }
 
+.back-hit {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .section-action {
   display: inline-flex;
   align-items: center;
@@ -51,13 +57,14 @@ view, text, image {
 
 .tab {
   flex: 1;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10rpx;
   font-size: 20rpx;
   letter-spacing: 0.03em;
-  color: #7B746A;
+  color: #6D645A;
 }
 
 .tab-icon {
@@ -149,6 +156,14 @@ view, text, image {
   line-height: 1;
   padding: 6rpx 12rpx;
   color: #6D645A;
+}
+
+.ss-close-touch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .ss-qr-wrap {

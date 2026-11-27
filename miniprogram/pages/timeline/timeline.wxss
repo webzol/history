@@ -78,7 +78,7 @@
 
 .seg-item {
   flex: 1;
-  height: 78rpx;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;

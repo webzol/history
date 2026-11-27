@@ -15,13 +15,14 @@
 
 .tab {
   flex: 1;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10rpx;
   font-size: 20rpx;
   letter-spacing: 0.03em;
-  color: #7B746A;
+  color: #6D645A;
 }
 
 .tab-icon {

@@ -1,8 +1,8 @@
 <view wx:if="{{notice.kind === 'modal'}}" class="feedback-layer fs-{{fontClass}}" catchtouchmove="noop">
-  <view class="feedback-card" role="dialog" aria-label="{{notice.title}}">
+  <view class="feedback-card" aria-role="dialog" aria-label="{{notice.title}}">
     <view class="feedback-head">
       <text class="feedback-title">{{notice.title}}</text>
-      <image class="feedback-seal" src="/assets/seal.png" mode="aspectFit"></image>
+      <image aria-hidden="true" class="feedback-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>
     <text wx:if="{{notice.content}}" class="feedback-content">{{notice.content}}</text>
     <view class="feedback-actions">
@@ -13,13 +13,13 @@
 </view>
 <view wx:elif="{{notice.kind === 'loading'}}" class="feedback-layer fs-{{fontClass}}" catchtap="noop" catchtouchmove="noop">
   <view class="feedback-pill" aria-live="polite">
-    <view class="feedback-spinner"></view>
+    <view class="feedback-spinner" aria-hidden="true"></view>
     <text>{{notice.title}}</text>
   </view>
 </view>
 <view wx:elif="{{notice.kind === 'toast'}}" class="feedback-toast fs-{{fontClass}}" aria-live="polite">
   <view class="feedback-pill">
-    <text wx:if="{{notice.icon === 'success'}}" class="feedback-tick">✓</text>
+    <text wx:if="{{notice.icon === 'success'}}" class="feedback-tick" aria-hidden="true">✓</text>
     <text>{{notice.title}}</text>
   </view>
 </view>

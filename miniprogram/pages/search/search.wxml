@@ -1,43 +1,46 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
 
     <view class="topbar">
-      <view class="back" bindtap="goBack" hover-class="back-pressed" hover-stay-time="80">
-        <view class="back-icon">
-          <view class="back-chevron"></view>
-          <view class="back-shaft"></view>
+      <view class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"
+        hover-class="back-hit-pressed" hover-stay-time="80">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon">
+            <view class="back-chevron"></view>
+            <view class="back-shaft"></view>
+          </view>
+          <view class="back-divider"></view>
+          <text class="back-label">返回</text>
         </view>
-        <view class="back-divider"></view>
-        <text class="back-label">返回</text>
       </view>
-      <text class="top-title">搜索</text>
-      <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
+      <text class="top-title" aria-role="heading">搜索</text>
+      <image aria-hidden="true" class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>
     </view>
 
     <view class="search-card">
-      <text class="search-icon">⌕</text>
+      <text class="search-icon" aria-hidden="true">⌕</text>
       <input
         class="search-input"
         value="{{keyword}}"
         placeholder="搜史事 · 人物 · 朝代"
         placeholder-class="ph"
         confirm-type="search"
-        focus
+        aria-label="搜索史事、人物或朝代"
         bindinput="onInput"
         bindconfirm="onSearch"
       />
-      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" aria-label="清空搜索">×</view>
-      <text class="search-btn" bindtap="onSearch">搜索</text>
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" aria-role="button" aria-label="清空搜索">×</view>
+      <text class="search-btn" bindtap="onSearch" aria-role="button">搜索</text>
     </view>
 
     <view class="search-meta" wx:if="{{results}}">
-      <text>{{metaText}}</text>
+      <text aria-live="polite">{{metaText}}</text>
     </view>
 
     <block wx:if="{{!results}}">
       <view class="section-head">
-        <text class="section-title">热门检索</text>
+        <text class="section-title" aria-role="heading">热门检索</text>
       </view>
       <view class="hot-wrap">
         <text
@@ -45,7 +48,7 @@
           wx:key="*this"
           class="hot-chip"
           data-word="{{item}}"
-          bindtap="onHotTap"
+          bindtap="onHotTap" aria-role="button" aria-label="{{'搜索' + item}}"
         >{{item}}</text>
       </view>
     </block>
@@ -53,7 +56,7 @@
     <block wx:else>
       <block wx:if="{{results.persons.length}}">
         <view class="section-head">
-          <text class="section-title">人物</text>
+          <text class="section-title" aria-role="heading">人物</text>
           <text class="section-count">{{results.persons.length}} 位</text>
         </view>
         <view class="result-card">
@@ -63,20 +66,20 @@
             class="row"
             data-type="person"
             data-id="{{item.id}}"
-            bindtap="onRowTap"
+            bindtap="onRowTap" aria-role="button" aria-label="{{item.title + '，' + item.sub}}"
           >
             <view class="row-main">
               <text class="row-title">{{item.title}}</text>
               <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
             </view>
-            <text class="row-arrow">›</text>
+            <text class="row-arrow" aria-hidden="true">›</text>
           </view>
         </view>
       </block>
 
       <block wx:if="{{results.events.length}}">
         <view class="section-head">
-          <text class="section-title">史事</text>
+          <text class="section-title" aria-role="heading">史事</text>
           <text class="section-count">{{results.events.length}} 条</text>
         </view>
         <view class="result-card">
@@ -86,20 +89,20 @@
             class="row"
             data-type="event"
             data-id="{{item.id}}"
-            bindtap="onRowTap"
+            bindtap="onRowTap" aria-role="button" aria-label="{{item.title + '，' + item.sub}}"
           >
             <view class="row-main">
               <text class="row-title">{{item.title}}</text>
               <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
             </view>
-            <text class="row-arrow">›</text>
+            <text class="row-arrow" aria-hidden="true">›</text>
           </view>
         </view>
       </block>
 
       <block wx:if="{{results.panels.length}}">
         <view class="section-head">
-          <text class="section-title">朝代与专题</text>
+          <text class="section-title" aria-role="heading">朝代与专题</text>
           <text class="section-count">{{results.panels.length}} 个</text>
         </view>
         <view class="result-card">
@@ -110,20 +113,19 @@
             data-type="panel"
             data-id="{{item.id}}"
             data-mode="{{item.mode}}"
-            bindtap="onRowTap"
+            bindtap="onRowTap" aria-role="button" aria-label="{{item.title + '，' + item.sub}}"
           >
             <view class="row-main">
               <text class="row-title">{{item.title}}</text>
               <text class="row-sub {{item.modern ? 'sub-modern' : ''}}">{{item.sub}}</text>
             </view>
-            <text class="row-arrow">›</text>
+            <text class="row-arrow" aria-hidden="true">›</text>
           </view>
         </view>
       </block>
 
       <view class="empty" wx:if="{{empty}}">
         <text class="empty-line">未找到"{{keyword}}"相关内容</text>
-        <text class="empty-sub">{{metaText}}</text>
         <text class="empty-sub">换个说法试试，比如"汉武帝""北宋""辛亥"</text>
       </view>
     </block>

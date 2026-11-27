@@ -1,27 +1,30 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
-  <view class="screen" wx:if="{{period}}">
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <view class="screen" wx:if="{{period}}" aria-hidden="{{share.open}}">
     <view class="topbar">
-      <view class="back" bindtap="goBack" hover-class="back-pressed" hover-stay-time="80">
-        <view class="back-icon">
-          <view class="back-chevron"></view>
-          <view class="back-shaft"></view>
+      <view class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"
+        hover-class="back-hit-pressed" hover-stay-time="80">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon">
+            <view class="back-chevron"></view>
+            <view class="back-shaft"></view>
+          </view>
+          <view class="back-divider"></view>
+          <text class="back-label">返回</text>
         </view>
-        <view class="back-divider"></view>
-        <text class="back-label">返回</text>
       </view>
       <text class="top-title">朝代</text>
-      <view class="top-seal">
+      <view class="top-seal" aria-hidden="true">
         <text class="seal-char">{{seal}}</text>
       </view>
     </view>
 
     <view class="head-card {{period.id === 'modern' ? 'head-modern' : ''}}">
       <view class="hero-band">
-        <image class="hero-img" src="{{period.img}}" mode="aspectFill" binderror="onCoverErr"></image>
-        <view class="hero-shade"></view>
+        <image aria-hidden="true" class="hero-img" src="{{period.img}}" mode="aspectFill" binderror="onCoverErr"></image>
+        <view class="hero-shade" aria-hidden="true"></view>
         <view class="hero-copy">
-          <text class="p-name">{{period.name}}</text>
+          <text class="p-name" aria-role="heading">{{period.name}}</text>
           <text class="p-years">{{period.yearText}}</text>
         </view>
         <text class="hero-title">{{period.title}}</text>
@@ -36,13 +39,13 @@
     </view>
 
     <view class="foot-actions" wx:if="{{!events.length}}">
-      <view class="time-btn" bindtap="goTimeline">
+      <view class="time-btn" bindtap="goTimeline" aria-role="button">
         <text>进时间轴看这个时代的脉络</text>
       </view>
     </view>
 
     <view class="section-head" wx:if="{{events.length}}">
-      <text class="section-title">这个时代的史事</text>
+      <text class="section-title" aria-role="heading">这个时代的史事</text>
       <text class="section-count">{{events.length}} 条</text>
     </view>
     <view class="rel-list" wx:if="{{events.length}}">
@@ -51,19 +54,19 @@
         wx:key="id"
         class="rel-card"
         data-id="{{item.id}}"
-        bindtap="goEvent"
+        bindtap="goEvent" aria-role="button" aria-label="{{item.title + '，' + item.yearText + '。' + item.desc}}"
       >
         <text class="rel-year {{period.id === 'modern' ? 'accent-modern' : ''}}">{{item.yearText}}</text>
         <view class="rel-body">
           <text class="rel-title">{{item.title}}</text>
           <text class="rel-desc">{{item.desc}}</text>
         </view>
-        <text class="rel-arrow">›</text>
+        <text class="rel-arrow" aria-hidden="true">›</text>
       </view>
     </view>
 
     <view class="foot-actions">
-      <view class="ghost-btn" bindtap="openShare">
+      <view class="ghost-btn" bindtap="openShare" aria-role="button" aria-label="打开分享卡片">
         <text>共此卷</text>
       </view>
     </view>
@@ -73,20 +76,20 @@
   </view>
 
     <view class="ss-layer" wx:if="{{share.open}}">
-      <view class="ss-mask" bindtap="closeShare"></view>
-      <view class="ss-panel">
+      <view class="ss-mask" aria-hidden="true" bindtap="closeShare"></view>
+      <view class="ss-panel" aria-role="dialog" aria-modal="true" aria-label="分享卡片">
         <view class="ss-grip"></view>
         <view class="ss-head">
           <text class="ss-title">共此卷</text>
-          <text class="ss-close" bindtap="closeShare">×</text>
+          <text class="ss-close ss-close-touch" bindtap="closeShare" aria-role="button" aria-label="关闭分享卡片">×</text>
         </view>
-        <view class="ss-qr-wrap">
-          <image wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
+        <view class="ss-qr-wrap" aria-hidden="true">
+          <image aria-hidden="true" wx:if="{{share.fallback}}" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFill"></image>
           <canvas wx:else type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
         </view>
         <view class="ss-actions">
-          <button class="ss-btn ss-btn-primary" open-type="share">转 寄 好 友</button>
-          <view class="ss-btn ss-btn-ghost" bindtap="saveQr">保 存 卡 片</view>
+          <button class="ss-btn ss-btn-primary" open-type="share" aria-label="发送给好友">转 寄 好 友</button>
+          <view class="ss-btn ss-btn-ghost" bindtap="saveQr" aria-role="button" aria-label="保存分享卡片">保 存 卡 片</view>
         </view>
       </view>
     </view>

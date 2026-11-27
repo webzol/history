@@ -961,9 +961,12 @@ console.log('== 收藏与足迹折叠 ==');
   ['person', 'event', 'period', 'search', 'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'].forEach((name) => {
     const wxml = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxml'), 'utf8');
     const wxss = fs.readFileSync(path.join(ROOT, 'pages', name, name + '.wxss'), 'utf8');
-    ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0 && wxml.indexOf('hover-class="back-pressed"') >= 0, `${name} 使用返回胶囊`);
+    ok(wxml.indexOf('back-label') >= 0 && wxml.indexOf('返回') >= 0 && /hover-class="back-(?:hit-)?pressed"/.test(wxml), `${name} 使用返回胶囊`);
     ok(wxml.indexOf('back-chevron') >= 0 && wxml.indexOf('back-shaft') >= 0 && wxml.indexOf('back-arrow') < 0, `${name} 返回箭头由 CSS 绘制`);
-    ok(/\.back\s*\{[^}]*display:\s*flex[^}]*width:\s*156rpx[^}]*height:\s*56rpx/.test(wxss) && /\.back-pressed\s*\{[^}]*scale\(0\.97\)/.test(wxss), `${name} 返回胶囊固定 156×56`);
+    ok(/\.back\s*\{[^}]*display:\s*flex[^}]*width:\s*156rpx[^}]*height:\s*56rpx/.test(wxss) && /\.back-(?:pressed|hit-pressed\s+\.back)\s*\{[^}]*scale\(0\.97\)/.test(wxss), `${name} 返回胶囊固定 156×56`);
+    if (['person', 'event', 'period', 'search'].includes(name)) {
+      ok(/class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"/.test(wxml), `${name} 返回区可被读屏识别为按钮`);
+    }
   });
 
   // 独立页清空：确认后清空并刷新

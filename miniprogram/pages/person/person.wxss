@@ -46,7 +46,7 @@
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.back-pressed {
+.back-hit-pressed .back {
   transform: scale(0.97);
   background: rgba(244, 236, 224, 0.96);
 }
@@ -375,7 +375,10 @@
 
 .ghost-btn {
   flex: 1;
-  height: 76rpx;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6rpx 10rpx;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;

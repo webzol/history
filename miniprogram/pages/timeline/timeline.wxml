@@ -1,25 +1,25 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
 
     <view class="header">
       <view class="topbar">
-        <text class="brand">时间轴</text>
-        <image class="brand-seal" src="/assets/seal.png" mode="aspectFit"></image>
+        <text class="brand" aria-role="heading">时间轴</text>
+        <image aria-hidden="true" class="brand-seal" src="/assets/seal.png" mode="aspectFit"></image>
       </view>
       <view class="intro">从史前到今天，一条可以走下去的河。</view>
     </view>
 
     <view class="seg">
-      <text class="seg-item {{mode === 'ancient' ? 'active' : ''}}" data-mode="ancient" bindtap="switchMode">古代</text>
-      <text class="seg-item {{mode === 'modern' ? 'active' : ''}}" data-mode="modern" bindtap="switchMode">近现代</text>
+      <text class="seg-item {{mode === 'ancient' ? 'active' : ''}}" data-mode="ancient" bindtap="switchMode" aria-role="button" aria-label="{{mode === 'ancient' ? '古代，已选中' : '古代'}}">古代</text>
+      <text class="seg-item {{mode === 'modern' ? 'active' : ''}}" data-mode="modern" bindtap="switchMode" aria-role="button" aria-label="{{mode === 'modern' ? '近现代，已选中' : '近现代'}}">近现代</text>
     </view>
 
     <view class="era-band">
       <view class="era-head">
         <view class="era-title-row">
-          <text class="era-name">{{eraName}}</text>
-          <image class="era-mini-seal" src="/assets/seal.png" mode="aspectFit"></image>
+          <text class="era-name" aria-role="heading">{{eraName}}</text>
+          <image aria-hidden="true" class="era-mini-seal" src="/assets/seal.png" mode="aspectFit"></image>
         </view>
         <text class="era-count">{{eraCount}} 朝</text>
       </view>
@@ -33,7 +33,7 @@
           <view class="era-meta-value era-list">
             <view wx:for="{{eraList}}" wx:key="*this" class="era-word">
               <text>{{item}}</text>
-              <text wx:if="{{index < eraList.length - 1}}" class="era-sep">·</text>
+              <text wx:if="{{index < eraList.length - 1}}" class="era-sep" aria-hidden="true">·</text>
             </view>
           </view>
         </view>
@@ -41,10 +41,10 @@
     </view>
 
     <view class="event-list">
-      <view class="rail"></view>
+      <view class="rail" aria-hidden="true"></view>
       <view wx:for="{{groups}}" wx:for-item="group" wx:key="start" class="event-group">
-        <view wx:for="{{group.items}}" wx:key="id" class="event-item" data-id="{{item.id}}" bindtap="onEvent">
-          <text class="dot {{item.dotClass}}"></text>
+        <view wx:for="{{group.items}}" wx:key="id" class="event-item" data-id="{{item.id}}" bindtap="onEvent" aria-role="button" aria-label="{{item.title + '，' + item.yearText + '。' + item.desc}}">
+          <text class="dot {{item.dotClass}}" aria-hidden="true"></text>
           <view class="event-card">
             <view class="event-head">
               <text class="event-year {{item.yearAncientText ? 'year-red' : ''}}">{{item.yearText}}</text>
@@ -57,7 +57,7 @@
         </view>
       </view>
     </view>
-    <view wx:if="{{hasMore}}" class="timeline-more" bindtap="onMore">加载更多史事</view>
+    <view wx:if="{{hasMore}}" class="timeline-more" bindtap="onMore" aria-role="button">加载更多史事</view>
   </view>
 </view>
 

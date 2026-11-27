@@ -47,7 +47,7 @@
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.back-pressed {
+.back-hit-pressed .back {
   transform: scale(0.97);
   background: rgba(244, 236, 224, 0.96);
 }
@@ -141,7 +141,7 @@
 .search-input {
   flex: 1;
   min-width: 0;
-  height: 64rpx;
+  height: 44px;
   font-size: calc(28rpx * var(--fs, 1));
   letter-spacing: 0.02em;
   color: #1F1D19;
@@ -153,6 +153,11 @@
 }
 
 .search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  flex-shrink: 0;
   padding: 10rpx 26rpx;
   border-radius: 26rpx;
   background: #A34A3E;
@@ -199,6 +204,9 @@
 }
 
 .hot-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 12rpx 28rpx;
   border-radius: 30rpx;
   background: #FCFBF8;
@@ -278,4 +286,10 @@
   font-size: calc(22rpx * var(--fs, 1));
   letter-spacing: 0.04em;
   color: #6D645A;
+}
+
+@media (max-width: 360px) {
+  .fs-xl .search-card { padding: 14rpx 18rpx; gap: 10rpx; }
+  .fs-xl .search-btn { padding-left: 16rpx; padding-right: 16rpx; }
+  .fs-xl .search-icon { display: none; }
 }

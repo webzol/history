@@ -46,7 +46,7 @@
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.back-pressed {
+.back-hit-pressed .back {
   transform: scale(0.97);
   background: rgba(244, 236, 224, 0.96);
 }
@@ -202,6 +202,7 @@
 
 .e-year {
   display: block;
+  margin-top: 14rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(30rpx * var(--fs, 1));
   letter-spacing: 0.08em;
@@ -214,7 +215,6 @@
 
 .e-title {
   display: block;
-  margin-top: 14rpx;
   font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: calc(50rpx * var(--fs, 1));
   letter-spacing: 0.06em;
@@ -225,6 +225,7 @@
 .e-meta {
   margin-top: 22rpx;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18rpx;
 }
@@ -387,7 +388,10 @@
 
 .ghost-btn {
   flex: 1;
-  height: 76rpx;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6rpx 10rpx;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;

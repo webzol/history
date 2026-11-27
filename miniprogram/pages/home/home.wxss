@@ -453,6 +453,11 @@
 }
 
 .sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 40rpx;
   line-height: 1;
   padding: 6rpx 12rpx;
@@ -503,15 +508,20 @@
 
 .sheet-cancel {
   margin-top: 18rpx;
-  height: 84rpx;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 42rpx;
   background: #EEF0F0;
   font-size: calc(26rpx * var(--fs, 1));
   letter-spacing: 0.08em;
   color: #5F5A52;
   text-align: center;
-  line-height: calc(84rpx * var(--fs, 1));
 }
+
+.fs-xl .sheet-row-title,
+.fs-xl .sheet-row-sub { white-space: normal; }
 
 @keyframes sheetFade {
   from { opacity: 0; }

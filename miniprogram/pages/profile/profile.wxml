@@ -1,5 +1,5 @@
 <view class="page fs-{{fontClass}}">
-  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
+  <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
     <view class="topbar">
       <text class="brand">我的</text>
@@ -34,7 +34,7 @@
 
     <view class="pref-card">
       <view class="pref-head">
-        <text class="pref-title">阅读设置</text>
+        <text class="pref-title" aria-role="heading">阅读设置</text>
         <text class="pref-note">全站文字</text>
       </view>
       <view class="seg">
@@ -43,7 +43,7 @@
           wx:key="key"
           class="seg-item {{fontKey === item.key ? 'on' : ''}}"
           data-key="{{item.key}}"
-          bindtap="onFontPick"
+          bindtap="onFontPick" aria-role="button" aria-label="{{item.label + '字号' + (fontKey === item.key ? '，已选中' : '')}}"
         >
           <text>{{item.label}}</text>
         </view>
@@ -113,9 +113,9 @@
     </view>
 
     <view class="menu-card">
-      <view class="menu-row" bindtap="onSearch">
+      <view class="menu-row" bindtap="onSearch" aria-role="button" aria-label="搜索史事、人物或朝代">
         <text class="menu-label">搜索史事 · 人物</text>
-        <text class="menu-arrow">›</text>
+        <text class="menu-arrow" aria-hidden="true">›</text>
       </view>
       <view class="menu-row" bindtap="onCheckUpdate">
         <text class="menu-label">检查内容更新</text>

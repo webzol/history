@@ -5,8 +5,10 @@
     wx:key="key"
     data-key="{{item.key}}"
     bindtap="onTabTap"
+    aria-role="button"
+    aria-label="{{item.label + (active === item.key ? '，当前页面' : '')}}"
   >
-    <image class="tab-icon" src="{{active === item.key && item.activeIcon ? item.activeIcon : item.icon}}" mode="aspectFit"></image>
+    <image aria-hidden="true" class="tab-icon" src="{{active === item.key && item.activeIcon ? item.activeIcon : item.icon}}" mode="aspectFit"></image>
     <text>{{item.label}}</text>
   </view>
 </view>

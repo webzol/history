@@ -252,9 +252,11 @@
       TAB_KEYS.forEach(function (key) {
         var t = document.createElement('div');
         t.className = 'tab';
+        t.setAttribute('role', 'button');
         t.dataset.key = key;
         var icon = document.createElement('img');
         icon.className = 'tab-icon';
+        icon.alt = '';
         icon.src = '../../miniprogram/assets/icons/' +
           key + (key === 'home' ? '-active.png' : '.png');
         var label = document.createElement('span');
@@ -275,10 +277,10 @@
       host.appendChild(el);
     }
     var pageNo = location.hash.replace(/^#/, '').split('?')[0];
-    TAB_KEYS.forEach(function (key) {
-      el.querySelectorAll('.tab').forEach(function (tab) {
-        tab.classList.toggle('active', tab.dataset.key === pageNo);
-      });
+    el.querySelectorAll('.tab').forEach(function (tab) {
+      var active = tab.dataset.key === pageNo;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-label', tab.textContent + (active ? '，当前页面' : ''));
     });
   }
 
@@ -392,10 +394,10 @@
   }
 
   function rwpx(w) {
-    // 固定基准换算：750rpx = 390px（iPhone 逻辑宽），与真机一致；
-    // 不用 100vw —— headless 在 dsf=2 下视口不是 390，vw 基准会整体放大。
+    // 以预览手机实际宽度换算。标准截图模式仍固定采用 390px 基准。
+    var width = document.getElementById('phone').clientWidth || 390;
     return w.replace(/(\d+(?:\.\d+)?)rpx/g, function (m, n) {
-      return Math.round(parseFloat(n) * 0.52 * 100) / 100 + 'px';
+      return Math.round(parseFloat(n) * width / 750 * 100) / 100 + 'px';
     });
   }
 
@@ -506,7 +508,9 @@
       var list = evalExpr(pickExpr(attrs['wx:for']), scope);
       if (Array.isArray(list)) {
         list.forEach(function (item, index) {
-          var inner = makeScope(inst, { item: item, index: index });
+          var inner = Object.assign({}, scope);
+          inner[attrs['wx:for-item'] || 'item'] = item;
+          inner[attrs['wx:for-index'] || 'index'] = index;
           var el = makeEl(node, inner, inst);
           parent.appendChild(el);
         });
@@ -582,6 +586,10 @@
         el.setAttribute('class', out);
       } else if (key === 'id') {
         el.setAttribute('id', out);
+      } else if (key === 'aria-role') {
+        el.setAttribute('role', out);
+      } else if (/^aria-/.test(key)) {
+        el.setAttribute(key, out);
       } else if (node.tag === 'scroll-view' && key === 'scroll-y') {
         el.style.overflowY = 'auto';
       } else if (node.tag === 'image' && key === 'src') {
