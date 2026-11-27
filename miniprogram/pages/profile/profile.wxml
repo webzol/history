@@ -48,7 +48,10 @@
           <text>{{item.label}}</text>
         </view>
       </view>
-      <text class="pref-preview">一页一页，读千年史事。</text>
+      <view class="reading-help">
+        <text class="reading-help-title" aria-role="heading">无障碍阅读</text>
+        <text class="reading-help-copy">在手机设置中开启「旁白」（iPhone）或「TalkBack」（安卓），即可用读屏浏览阅史记的主要页面。</text>
+      </view>
     </view>
 
     <view class="list-card hint-card" wx:if="{{!favs.length}}">
