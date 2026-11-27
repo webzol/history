@@ -13,6 +13,8 @@ const eraImage = require('../../utils/eraImages.js').eraImage;
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     person: null,
@@ -26,6 +28,7 @@ Page({
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
     this.curId = wxacode.mergeScene(options || {}).id;
@@ -136,5 +139,9 @@ Page({
       title: person ? `${person.name} · 阅史记` : '阅史记',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.sharePayload().imgFallback);
   }
 });

@@ -15,6 +15,8 @@ function safeTitle(value, fallback) {
   }
 }
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     pageTitle: '资料库',
@@ -38,6 +40,7 @@ Page({
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     const opts = options || {};
     const kind = opts.kind || 'figures';
@@ -199,5 +202,9 @@ Page({
       title: `阅史记 · ${this.data.pageTitle}`,
       path: `/pages/archive-list/archive-list?kind=${this.data.kind}&type=${encodeURIComponent(this.data.type)}&title=${encodeURIComponent(this.data.pageTitle)}`
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.data.cover);
   }
 });

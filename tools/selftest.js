@@ -2301,6 +2301,49 @@ console.log('== 太阳码 wxacode ==');
 })();
 
 // ---------------------------------------------------------------------------
+// 朋友圈分享
+// ---------------------------------------------------------------------------
+
+console.log('== 朋友圈分享 ==');
+
+(function () {
+  const archiveOptions = { kind: 'cards', type: '12', title: '诸子百家名句赏析' };
+  const cases = {
+    timeline: [{ mode: 'modern' }, (page) => page.data.mode],
+    event: [{ id: 'xinhai-1911' }, (page) => page.data.event?.id],
+    person: [{ id: 'su-shi' }, (page) => page.data.person?.id],
+    period: [{ id: 'han' }, (page) => page.data.period?.id],
+    'archive-list': [archiveOptions, (page) => page.data.pageTitle],
+    'archive-detail': [{ ...archiveOptions, shard: '00', id: 'hc-12-00001' }, (page) => page.data.item?.title]
+  };
+  const app = require(path.join(ROOT, 'app.json'));
+  app.pages.forEach((route) => {
+    const name = urlTarget('/' + route);
+    const [options = {}, selected] = cases[name] || [];
+    const makePage = () => instantiate({ ...pages[name], data: structuredClone(pages[name].data) }, name);
+    const source = makePage();
+    const logStart = wxLog.length;
+    source.onLoad(options);
+    ok(wxLog.slice(logStart).some((entry) => entry.kind === 'showShareMenu' &&
+      entry.menus.includes('shareAppMessage') && entry.menus.includes('shareTimeline')), `${name} 开启原生朋友圈菜单`);
+    const card = source.onShareTimeline();
+    eq(card.title, source.onShareAppMessage().title, `${name} 朋友圈标题`);
+    ok(imgOk(card.imageUrl), `${name} 使用可访问的分享题图`);
+    ok(!Object.hasOwn(card, 'path'), `${name} 由微信打开当前页`);
+    if (!selected) {
+      eq(card.query, undefined, `${name} 分享页面入口`);
+      return;
+    }
+    const query = Object.fromEntries(new URLSearchParams(card.query));
+    Object.entries(options).forEach(([key, value]) => eq(query[key], value, `${name} 分享参数 ${key}`));
+    const receiver = makePage();
+    receiver.onLoad(query);
+    ok(selected(source), `${name} 分享前读到指定内容`);
+    eq(selected(receiver), selected(source), `${name} 从朋友圈参数打开同一内容`);
+  });
+})();
+
+// ---------------------------------------------------------------------------
 // 汇总
 // ---------------------------------------------------------------------------
 

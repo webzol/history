@@ -3,6 +3,8 @@ const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const PAGE_SIZE = 24;
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     mode: 'ancient',
@@ -16,6 +18,7 @@ Page({
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     const mode = options && options.mode === 'modern' ? 'modern' : 'ancient';
     this.loadMode(mode);
@@ -115,5 +118,9 @@ Page({
 
   onShareAppMessage() {
     return { title: '阅史记 · 时间轴上的中国', path: '/pages/timeline/timeline' };
+  },
+
+  onShareTimeline() {
+    return { ...share.timeline(this.onShareAppMessage()), query: `mode=${this.data.mode}` };
   }
 });

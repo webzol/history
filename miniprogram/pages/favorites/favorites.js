@@ -4,6 +4,8 @@ const font = require('../../utils/font.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const { resolveEntry, groupByType, flattenGroups } = require('../../utils/entries.js');
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     favs: [],
@@ -14,6 +16,7 @@ Page({
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
   },
 
@@ -76,5 +79,9 @@ Page({
       title: '我的收藏 · 阅史记',
       path: '/pages/favorites/favorites'
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });

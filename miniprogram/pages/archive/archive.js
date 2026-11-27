@@ -51,6 +51,8 @@ function buildRows(groups, openKey) {
   return rows;
 }
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     stats: { total: 0, cards: 0, figures: 0, events: 0, categories: 0 },
@@ -63,6 +65,7 @@ Page({
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
     const meta = apk.getMeta();
     const stats = {
@@ -178,5 +181,9 @@ Page({
 
   onShareAppMessage() {
     return { title: '阅史记 · 资料库', path: '/pages/archive/archive' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });

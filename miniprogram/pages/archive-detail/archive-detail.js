@@ -108,6 +108,8 @@ function factRowsOf(facts) {
     .filter((row) => row.key || row.value);
 }
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     kicker: '资料库',
@@ -130,6 +132,7 @@ Page({
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 kind/type/id（普通跳转原样透传）
     const opts = wxacode.mergeScene(options || {});
@@ -320,5 +323,9 @@ Page({
       title: item ? `阅史记 · ${item.title}` : '阅史记 · 资料库',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.data.cover);
   }
 });

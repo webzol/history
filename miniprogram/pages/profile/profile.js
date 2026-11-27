@@ -6,6 +6,8 @@ const identity = require('../../utils/identity.js');
 const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     stats: [
@@ -33,6 +35,7 @@ Page({
   },
 
   onLoad() {
+    share.enableMenu();
     this.doStats();
     this.setData({ identity: identity.get(), season: identity.seasonFor() });
   },
@@ -227,5 +230,13 @@ Page({
         feedback.toast({ title: '已清除', icon: 'success' });
       }
     });
+  },
+
+  onShareAppMessage() {
+    return { title: '阅史记 · 我的', path: '/pages/profile/profile' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });

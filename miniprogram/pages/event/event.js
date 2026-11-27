@@ -11,6 +11,8 @@ const altArt = require('../../utils/eraImages.js').altArt;
 const EVENT_ART = require('../../utils/eraImages.js').EVENT_ART;
 const eraImage = require('../../utils/eraImages.js').eraImage;
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     event: null,
@@ -24,6 +26,7 @@ Page({
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
     this.curId = wxacode.mergeScene(options || {}).id;
@@ -150,5 +153,9 @@ Page({
       title: event ? `${event.title} · 阅史记` : '阅史记',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.sharePayload().imgFallback);
   }
 });

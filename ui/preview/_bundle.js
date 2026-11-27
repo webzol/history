@@ -6045,6 +6045,24 @@ module.exports = {
 };
 
 });
+__register('/utils/share.js', function (require, module, exports) {
+function enableMenu() {
+  if (typeof wx.showShareMenu === 'function') {
+    wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+  }
+}
+
+function timeline({ title, path }, imageUrl) {
+  const card = { title, imageUrl: imageUrl || '/assets/palace.jpg' };
+  // 微信朋友圈固定打开当前页，只需传入现有分享路径的查询部分。
+  const queryStart = path.indexOf('?');
+  if (queryStart >= 0) card.query = path.slice(queryStart + 1);
+  return card;
+}
+
+module.exports = { enableMenu, timeline };
+
+});
 __register('/utils/privacy.js', function (require, module, exports) {
 const feedback = require('./feedback.js');
 // 隐私同意状态以微信为准；不使用本地 storage 代替平台授权。
@@ -6292,6 +6310,7 @@ const hd = require('../../utils/historyData.js');
 const api = require('../../utils/api.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const share = require('../../utils/share.js');
 
 const SHARE_TITLE = '阅史记 · 一页一页读历史';
 
@@ -6311,9 +6330,7 @@ Page('project://pages/home/home.js', {
   },
 
   onLoad() {
-    if (typeof wx.showShareMenu === 'function') {
-      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
-    }
+    share.enableMenu();
   },
 
   onShow() {
@@ -6494,7 +6511,7 @@ Page('project://pages/home/home.js', {
   },
 
   onShareTimeline() {
-    return { title: SHARE_TITLE, imageUrl: '/assets/palace.jpg' };
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -6506,6 +6523,8 @@ const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const PAGE_SIZE = 24;
+
+const share = require('../../utils/share.js');
 
 Page('project://pages/timeline/timeline.js', {
   data: {
@@ -6520,6 +6539,7 @@ Page('project://pages/timeline/timeline.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     const mode = options && options.mode === 'modern' ? 'modern' : 'ancient';
     this.loadMode(mode);
@@ -6619,6 +6639,10 @@ Page('project://pages/timeline/timeline.js', {
 
   onShareAppMessage() {
     return { title: '阅史记 · 时间轴上的中国', path: '/pages/timeline/timeline' };
+  },
+
+  onShareTimeline() {
+    return { ...share.timeline(this.onShareAppMessage()), query: `mode=${this.data.mode}` };
   }
 });
 
@@ -6643,6 +6667,8 @@ const PERIOD_META = {
   modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
 };
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/discover/discover.js', {
   data: {
     periods: [],
@@ -6654,6 +6680,7 @@ Page('project://pages/discover/discover.js', {
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
     this.build();
   },
@@ -6735,6 +6762,10 @@ Page('project://pages/discover/discover.js', {
 
   onShareAppMessage() {
     return { title: '阅史记 · 发现', path: '/pages/discover/discover' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -6749,6 +6780,8 @@ const font = require('../../utils/font.js');
 const identity = require('../../utils/identity.js');
 const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
 const altArt = require('../../utils/eraImages.js').altArt;
+
+const share = require('../../utils/share.js');
 
 Page('project://pages/profile/profile.js', {
   data: {
@@ -6777,6 +6810,7 @@ Page('project://pages/profile/profile.js', {
   },
 
   onLoad() {
+    share.enableMenu();
     this.doStats();
     this.setData({ identity: identity.get(), season: identity.seasonFor() });
   },
@@ -6971,6 +7005,14 @@ Page('project://pages/profile/profile.js', {
         feedback.toast({ title: '已清除', icon: 'success' });
       }
     });
+  },
+
+  onShareAppMessage() {
+    return { title: '阅史记 · 我的', path: '/pages/profile/profile' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -6991,6 +7033,8 @@ const altArt = require('../../utils/eraImages.js').altArt;
 const EVENT_ART = require('../../utils/eraImages.js').EVENT_ART;
 const eraImage = require('../../utils/eraImages.js').eraImage;
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/event/event.js', {
   data: {
     event: null,
@@ -7004,6 +7048,7 @@ Page('project://pages/event/event.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
     this.curId = wxacode.mergeScene(options || {}).id;
@@ -7130,6 +7175,10 @@ Page('project://pages/event/event.js', {
       title: event ? `${event.title} · 阅史记` : '阅史记',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.sharePayload().imgFallback);
   }
 });
 
@@ -7152,6 +7201,8 @@ const eraImage = require('../../utils/eraImages.js').eraImage;
 // 近现代识别色为蓝灰；其余时代走古代赭石色
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/person/person.js', {
   data: {
     person: null,
@@ -7165,6 +7216,7 @@ Page('project://pages/person/person.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
     this.curId = wxacode.mergeScene(options || {}).id;
@@ -7275,6 +7327,10 @@ Page('project://pages/person/person.js', {
       title: person ? `${person.name} · 阅史记` : '阅史记',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.sharePayload().imgFallback);
   }
 });
 
@@ -7321,6 +7377,8 @@ const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
 // 清代史事的 era 分「清」「晚清」两段；朝代页合并收录
 const PERIOD_ERAS = { qing: ['清', '晚清'] };
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/period/period.js', {
   data: {
     period: null,
@@ -7332,6 +7390,7 @@ Page('project://pages/period/period.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 id（普通跳转原样透传）
     this.curId = wxacode.mergeScene(options || {}).id;
@@ -7440,6 +7499,10 @@ Page('project://pages/period/period.js', {
       title: period ? `${period.name} · 阅史记` : '阅史记',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.sharePayload().img);
   }
 });
 
@@ -7470,6 +7533,8 @@ function ensureIndex(history) {
   idxRef = history;
 }
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/search/search.js', {
   data: {
     keyword: '',
@@ -7478,6 +7543,10 @@ Page('project://pages/search/search.js', {
     empty: false,
     metaText: '',
     fontClass: 'm'
+  },
+
+  onLoad() {
+    share.enableMenu();
   },
 
   onShow() {
@@ -7622,6 +7691,14 @@ Page('project://pages/search/search.js', {
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
+  },
+
+  onShareAppMessage() {
+    return { title: '阅史记 · 搜索', path: '/pages/search/search' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -7635,6 +7712,8 @@ const font = require('../../utils/font.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const { resolveEntry, fmtWhen, groupByType, flattenGroups } = require('../../utils/entries.js');
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/footprints/footprints.js', {
   data: {
     foots: [],
@@ -7645,6 +7724,7 @@ Page('project://pages/footprints/footprints.js', {
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
   },
 
@@ -7710,6 +7790,10 @@ Page('project://pages/footprints/footprints.js', {
       title: '我的浏览足迹 · 阅史记',
       path: '/pages/footprints/footprints'
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -7723,6 +7807,8 @@ const font = require('../../utils/font.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const { resolveEntry, groupByType, flattenGroups } = require('../../utils/entries.js');
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/favorites/favorites.js', {
   data: {
     favs: [],
@@ -7733,6 +7819,7 @@ Page('project://pages/favorites/favorites.js', {
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
   },
 
@@ -7795,6 +7882,10 @@ Page('project://pages/favorites/favorites.js', {
       title: '我的收藏 · 阅史记',
       path: '/pages/favorites/favorites'
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -7855,6 +7946,8 @@ function buildRows(groups, openKey) {
   return rows;
 }
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/archive/archive.js', {
   data: {
     stats: { total: 0, cards: 0, figures: 0, events: 0, categories: 0 },
@@ -7867,6 +7960,7 @@ Page('project://pages/archive/archive.js', {
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
     const meta = apk.getMeta();
     const stats = {
@@ -7982,6 +8076,10 @@ Page('project://pages/archive/archive.js', {
 
   onShareAppMessage() {
     return { title: '阅史记 · 资料库', path: '/pages/archive/archive' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
 
@@ -8006,6 +8104,8 @@ function safeTitle(value, fallback) {
   }
 }
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/archive-list/archive-list.js', {
   data: {
     pageTitle: '资料库',
@@ -8029,6 +8129,7 @@ Page('project://pages/archive-list/archive-list.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     const opts = options || {};
     const kind = opts.kind || 'figures';
@@ -8190,6 +8291,10 @@ Page('project://pages/archive-list/archive-list.js', {
       title: `阅史记 · ${this.data.pageTitle}`,
       path: `/pages/archive-list/archive-list?kind=${this.data.kind}&type=${encodeURIComponent(this.data.type)}&title=${encodeURIComponent(this.data.pageTitle)}`
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.data.cover);
   }
 });
 
@@ -8307,6 +8412,8 @@ function factRowsOf(facts) {
     .filter((row) => row.key || row.value);
 }
 
+const share = require('../../utils/share.js');
+
 Page('project://pages/archive-detail/archive-detail.js', {
   data: {
     kicker: '资料库',
@@ -8329,6 +8436,7 @@ Page('project://pages/archive-detail/archive-detail.js', {
   },
 
   onLoad(options) {
+    share.enableMenu();
     font.apply(this);
     // 太阳码扫码进入：options 只有 scene，mergeScene 解出 kind/type/id（普通跳转原样透传）
     const opts = wxacode.mergeScene(options || {});
@@ -8519,6 +8627,10 @@ Page('project://pages/archive-detail/archive-detail.js', {
       title: item ? `阅史记 · ${item.title}` : '阅史记 · 资料库',
       path: this.sharePayload().path
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage(), this.data.cover);
   }
 });
 

@@ -58,6 +58,7 @@ parts.push(wrapJs('utils/identity.js', read('utils/identity.js')));
 parts.push(wrapJs('utils/solarlunar.js', read('utils/solarlunar.js')));
 parts.push(wrapJs('utils/wxacode.js', read('utils/wxacode.js')));
 parts.push(wrapJs('utils/qrshare.js', read('utils/qrshare.js')));
+parts.push(wrapJs('utils/share.js', read('utils/share.js')));
 parts.push(wrapJs('utils/privacy.js', read('utils/privacy.js')));
 parts.push(wrapJs('utils/feedback.js', read('utils/feedback.js')));
 parts.push('');

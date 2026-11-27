@@ -4,6 +4,8 @@ const font = require('../../utils/font.js');
 const altArt = require('../../utils/eraImages.js').altArt;
 const { resolveEntry, fmtWhen, groupByType, flattenGroups } = require('../../utils/entries.js');
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     foots: [],
@@ -14,6 +16,7 @@ Page({
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
   },
 
@@ -79,5 +82,9 @@ Page({
       title: '我的浏览足迹 · 阅史记',
       path: '/pages/footprints/footprints'
     };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });

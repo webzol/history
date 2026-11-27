@@ -21,6 +21,8 @@ function ensureIndex(history) {
   idxRef = history;
 }
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     keyword: '',
@@ -29,6 +31,10 @@ Page({
     empty: false,
     metaText: '',
     fontClass: 'm'
+  },
+
+  onLoad() {
+    share.enableMenu();
   },
 
   onShow() {
@@ -173,5 +179,13 @@ Page({
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
+  },
+
+  onShareAppMessage() {
+    return { title: '阅史记 · 搜索', path: '/pages/search/search' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });

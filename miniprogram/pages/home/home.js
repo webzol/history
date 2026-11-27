@@ -2,6 +2,7 @@ const hd = require('../../utils/historyData.js');
 const api = require('../../utils/api.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
+const share = require('../../utils/share.js');
 
 const SHARE_TITLE = '阅史记 · 一页一页读历史';
 
@@ -21,9 +22,7 @@ Page({
   },
 
   onLoad() {
-    if (typeof wx.showShareMenu === 'function') {
-      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
-    }
+    share.enableMenu();
   },
 
   onShow() {
@@ -204,6 +203,6 @@ Page({
   },
 
   onShareTimeline() {
-    return { title: SHARE_TITLE, imageUrl: '/assets/palace.jpg' };
+    return share.timeline(this.onShareAppMessage());
   }
 });

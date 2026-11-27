@@ -15,6 +15,8 @@ const PERIOD_META = {
   modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
 };
 
+const share = require('../../utils/share.js');
+
 Page({
   data: {
     periods: [],
@@ -26,6 +28,7 @@ Page({
   },
 
   onLoad() {
+    share.enableMenu();
     font.apply(this);
     this.build();
   },
@@ -107,5 +110,9 @@ Page({
 
   onShareAppMessage() {
     return { title: '阅史记 · 发现', path: '/pages/discover/discover' };
+  },
+
+  onShareTimeline() {
+    return share.timeline(this.onShareAppMessage());
   }
 });
