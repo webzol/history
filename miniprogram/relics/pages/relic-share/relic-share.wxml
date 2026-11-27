@@ -1,38 +1,10 @@
-<view class="page fs-{{fontClass}} relic-share-page">
+<view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
   <view class="screen">
-    <view class="topbar">
-      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回上一页">
-        <view class="back" aria-hidden="true">
-          <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
-          <view class="back-divider"></view><text class="back-label">返回</text>
-        </view>
-      </view>
-      <text class="top-title" aria-role="heading">共此卷</text>
-      <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
-    </view>
-
-    <block wx:if="{{share.open}}">
-      <view class="ss-qr-wrap" aria-role="img" aria-label="{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}">
-        <image wx:if="{{share.fallback}}" aria-hidden="true" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFit"></image>
-        <canvas wx:else aria-hidden="true" type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
-      </view>
-      <view class="relic-share-actions">
-        <button class="share-action send-action" open-type="share" hover-class="share-action-pressed" hover-stay-time="80">
-          <view class="share-action-icon send-icon" aria-hidden="true"></view>
-          <text>转寄好友</text>
-        </button>
-        <view class="share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}" bindtap="saveQr"
-          hover-class="{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}" hover-stay-time="80"
-          aria-role="button" aria-disabled="{{share.coverPending && !share.fallback}}">
-          <view class="share-action-icon save-icon" aria-hidden="true"></view>
-          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>
-        </view>
-      </view>
-    </block>
-    <view wx:else class="relic-empty">
-      <text>未找到这件文物。</text>
-      <view class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>
+    <view class="topbar"><text class="top-title" aria-role="heading">共此卷</text></view>
+    <view class="relic-empty" aria-live="polite">
+      <text>{{failed ? '暂时无法打开这件文物。' : '正在打开文物'}}</text>
+      <view wx:if="{{failed}}" class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>
     </view>
   </view>
 </view>

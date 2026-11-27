@@ -1,6 +1,6 @@
 <view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
-  <view class="screen">
+  <view class="screen" aria-hidden="{{share.open}}">
     <view class="topbar">
       <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回文物列表">
         <view class="back" aria-hidden="true">
@@ -45,11 +45,38 @@
         <text wx:if="{{sourceOpen}}" class="source-url" user-select="{{true}}">{{relic.url}}</text>
       </view>
       <view class="relic-action object-share" bindtap="openShare" hover-class="object-share-pressed" hover-stay-time="80"
-        aria-role="button" aria-label="打开文物分享页">共此卷</view>
+        aria-role="button" aria-label="打开文物分享卡片">共此卷</view>
     </block>
     <view wx:else class="relic-empty">
       <text>未找到这件文物。</text>
       <view class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>
+    </view>
+  </view>
+
+  <view wx:if="{{share.open}}" class="ss-layer relic-share-layer">
+    <view class="ss-mask" bindtap="closeShare" catchtouchmove="noop" aria-hidden="true"></view>
+    <view class="ss-panel relic-share-sheet" aria-role="dialog" aria-modal="true" aria-label="共此卷，文物分享卡片">
+      <view class="ss-grip" aria-hidden="true"></view>
+      <view class="ss-head">
+        <text class="ss-title" aria-role="heading">共此卷</text>
+        <view class="ss-close ss-close-touch" bindtap="closeShare" aria-role="button" aria-label="关闭分享卡片">×</view>
+      </view>
+      <view class="ss-qr-wrap" aria-role="img" aria-label="{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}">
+        <image wx:if="{{share.fallback}}" aria-hidden="true" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFit"></image>
+        <canvas wx:else aria-hidden="true" type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
+      </view>
+      <view class="relic-share-actions">
+        <button class="share-action send-action" open-type="share" hover-class="share-action-pressed" hover-stay-time="80">
+          <view class="share-action-icon send-icon" aria-hidden="true"></view>
+          <text>转寄好友</text>
+        </button>
+        <view class="share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}" bindtap="saveQr"
+          hover-class="{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}" hover-stay-time="80"
+          aria-role="button" aria-disabled="{{share.coverPending && !share.fallback}}">
+          <view class="share-action-icon save-icon" aria-hidden="true"></view>
+          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>
+        </view>
+      </view>
     </view>
   </view>
 </view>

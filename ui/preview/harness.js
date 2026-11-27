@@ -342,6 +342,7 @@
     pageHost.scrollTop = 0;
     window.scrollTo(0, 0);
     showPopups();
+    if (inst.onReady) inst.onReady();
   }
 
   function hidePopups() {
