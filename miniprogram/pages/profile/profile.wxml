@@ -11,7 +11,8 @@
         <view class="season-motif"></view>
         <view class="season-motif season-motif-small"></view>
       </view>
-      <view class="avatar-wrap" bindtap="onRerollIdentity" aria-label="换一位史客">
+      <view class="avatar-wrap" bindtap="onRerollIdentity" aria-label="换一位史客"
+        hover-class="avatar-pressed" hover-start-time="0" hover-stay-time="100">
         <image class="avatar" src="{{identity.avatar}}" mode="aspectFill"></image>
         <text wx:if="{{season.label}}" class="avatar-season">{{season.label}}</text>
       </view>

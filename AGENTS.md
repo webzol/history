@@ -216,6 +216,8 @@ python tools/validate_miniprogram.py
 
 ## 6. 代码约定
 
+- **所有开发都要评估性能影响**：开发时检查首屏、点击响应、滚动和切页，关注主包体积、请求次数、缓存、渲染节点和 `setData` 载荷。按改动实际影响验证相关项，记录结果与待做的真机验证。
+- **界面动效优先用 WXSS 的 `transform` 和 `opacity`**，控制播放范围和时长。避免逐帧 `setData`、布局属性动画和装饰性循环，尊重减少动态效果设置，保留点击区域和滚动响应。
 - 原生小程序，不引入 Taro/uni-app。
 - 页面结构：`pages/<name>/<name>.{js,json,wxml,wxss}`。
 - 使用 `rpx`；1px 细线可用 `px`（或 1rpx）。

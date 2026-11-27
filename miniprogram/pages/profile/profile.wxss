@@ -69,6 +69,8 @@
   border-radius: 50%;
 }
 
+.avatar-pressed .avatar { opacity: 0.82; }
+
 .avatar-season {
   position: absolute;
   right: -7rpx;
@@ -111,26 +113,28 @@
 .identity-enter .avatar-wrap::before {
   content: '';
   position: absolute;
-  inset: -6rpx;
+  inset: -5rpx;
   border: 3rpx solid var(--season-ink, #6D645A);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
-  animation: avatar-ring-in 500ms ease-out;
+  animation: avatar-ring-in 540ms ease-out;
 }
 
 .identity-enter .season-art {
-  animation: season-art-in 700ms ease-out;
+  transform-origin: right bottom;
+  animation: season-art-in 640ms ease-out;
 }
 
 @keyframes avatar-ring-in {
-  0%, 100% { opacity: 0; }
-  40% { opacity: 0.52; }
+  0% { opacity: 0.2; transform: scale(0.98); }
+  30% { opacity: 0.62; }
+  100% { opacity: 0; transform: scale(1.09); }
 }
 
 @keyframes season-art-in {
-  from { opacity: 0; transform: translateY(7rpx); }
-  to { opacity: 0.68; transform: translateY(0); }
+  from { opacity: 0.16; transform: translateY(12rpx) rotate(-6deg); }
+  to { opacity: 0.68; transform: translateY(0) rotate(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
