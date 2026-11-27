@@ -227,6 +227,16 @@ const wx = {
       }
       return;
     }
+    if (opts.url.indexOf('/data/relics/') >= 0) {
+      const rel = opts.url.split('/data/relics/')[1];
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', rel), 'utf8'));
+        if (opts.success) opts.success({ data, statusCode: 200 });
+      } catch (e) {
+        if (opts.fail) opts.fail(e);
+      }
+      return;
+    }
     const hook = opts.url.indexOf('today_in_history') >= 0 ? mockRequest.today : mockRequest.payload;
     if (hook) opts.success({ data: hook });
     else if (opts.fail) opts.fail(new Error('offline'));
@@ -1911,7 +1921,7 @@ console.log('== 搜索 ==');
 })();
 
 // ---------------------------------------------------------------------------
-// 9. 文物分包（relics：列表筛选 / 详情 / 分享兼容入口）
+// 9. 文物分包（relics：精修 60 件包内 + 全量目录分片，批量条目走 CDN）
 // ---------------------------------------------------------------------------
 
 console.log('== 文物分包 ==');
@@ -1919,37 +1929,41 @@ console.log('== 文物分包 ==');
 (function () {
   resetWifiStack();
   const catalog = require(path.join(ROOT, 'relics', 'catalog.js'));
+  const relicData = require(path.join(ROOT, 'relics', 'relicData.js'));
+  const index = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', 'index.json'), 'utf8'));
+  const detailMemo = {};
+  for (let n = 0; n < index.parts; n++) {
+    const shard = JSON.parse(fs.readFileSync(
+      path.join(ROOT, 'data', 'relics', 'detail-' + String(n).padStart(2, '0') + '.json'), 'utf8'));
+    Object.keys(shard.items).forEach((key) => { detailMemo[key] = shard.items[key]; });
+  }
 
-  eq(catalog.RELICS.length, 60, '文物目录 60 件');
-  eq(catalog.TYPES, ['青铜', '陶瓷', '玉器', '书画'], '器类四类');
-  catalog.TYPES.forEach((type) => {
-    eq(catalog.RELICS.filter((r) => r.type === type).length, 15, `${type} 各 15 件`);
+  // 精修目录（包内）：字段、双图、筛选取值
+  eq(catalog.RELICS.length, 60, '精修文物 60 件');
+  eq(catalog.TYPES.length, 8, '器类八类');
+  ['青铜', '陶瓷', '玉器', '书画'].forEach((type) => {
+    eq(catalog.RELICS.filter((r) => r.type === type).length, 15, '精修' + type + ' 各 15 件');
   });
   const ids = catalog.RELICS.map((r) => r.id);
   eq(new Set(ids).size, 60, '文物 id 不重复');
   catalog.RELICS.forEach((relic) => {
     ok(relic.eras.length > 0 && relic.eras.every((era) => catalog.ERAS.indexOf(era) >= 0),
-      `${relic.id} 时代取值在筛选项内`);
+      relic.id + ' 时代取值在筛选项内');
     ok(relic.title && relic.period && relic.date && relic.material && relic.dimensions
       && relic.accession && relic.description.length >= 20 && relic.imageRatio > 0,
-      `${relic.id} 展示字段齐全`);
+      relic.id + ' 展示字段齐全');
+    ok(fs.existsSync(path.join(ROOT, 'relics', 'assets', 'thumb-' + relic.id + '.jpg')),
+      relic.id + ' 有分包缩略图');
+    ok(fs.existsSync(path.join(ROOT, 'data', 'img', 'relics', relic.id + '.jpg')),
+      relic.id + ' 有 CDN 详情图');
   });
   catalog.ERAS.forEach((era) => {
-    ok(catalog.RELICS.some((r) => r.eras.indexOf(era) >= 0), `筛选时代 ${era} 下有藏品`);
-  });
-  // 缩略图留在分包（列表离线可读），详情大图放 data/img/relics 经 jsDelivr 分发，
-  // 详情图高宽比与 catalog 的 imageRatio 一致由 validate_miniprogram.py 复核
-  catalog.RELICS.forEach((relic) => {
-    ok(fs.existsSync(path.join(ROOT, 'relics', 'assets', `thumb-${relic.id}.jpg`)),
-      `${relic.id} 有分包缩略图`);
-    ok(fs.existsSync(path.join(ROOT, 'data', 'img', 'relics', `${relic.id}.jpg`)),
-      `${relic.id} 有 CDN 详情图`);
+    ok(catalog.RELICS.some((r) => r.eras.indexOf(era) >= 0), '筛选时代 ' + era + ' 下有藏品');
   });
   eq(catalog.detailUrls('44757'), [
     'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/relics/44757.jpg',
     'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/relics/44757.jpg'
   ], '详情图双域 URL（主 testingcf / 备 gcore）');
-  // 馆方页与授权按 id 前缀推导（cma- 为克利夫兰 CC0，其余为大都会公有领域）
   eq(catalog.sourceFor('cma-1952.510'), {
     museum: '克利夫兰艺术博物馆',
     url: 'https://www.clevelandart.org/art/1952.510',
@@ -1961,40 +1975,98 @@ console.log('== 文物分包 ==');
     rights: '公有领域'
   }, '大都会条目映射公有领域与馆方页');
 
-  // 列表页：默认 8 条分页 + 器类/时代双筛选
+  // 全量目录分片：结构、去重、分卷条数、模板条目字段与配图
+  ok(index.total >= 2000, '全量目录 ' + index.total + ' 件 ≥ 2000');
+  eq(index.rows.length, index.total, '索引行数与 total 一致');
+  const indexIds = index.rows.map((row) => row.id);
+  eq(new Set(indexIds).size, index.total, '全量目录 id 不重复');
+  ok(indexIds.indexOf('cma-1952.510') >= 0 && indexIds.indexOf('44757') >= 0, '精修条目纳入全量索引');
+  eq(index.parts, Math.ceil(index.total / index.step), '分卷数与分片步长一致');
+  for (let n = 0; n < index.parts; n++) {
+    const shardPath = path.join(ROOT, 'data', 'relics', 'detail-' + String(n).padStart(2, '0') + '.json');
+    const count = Object.keys(JSON.parse(fs.readFileSync(shardPath, 'utf8')).items).length;
+    const expect = Math.min(index.step, index.total - n * index.step);
+    eq(count, expect, '分卷 ' + n + ' 条数');
+  }
+  let templateCount = 0;
+  index.rows.forEach((row) => {
+    const entry = detailMemo[row.id];
+    ok(!!entry, row.id + ' 有详情分卷条目');
+    if (!entry) return;
+    if (entry.t) {
+      templateCount += 1;
+      ok(entry.description.length >= 30 && entry.imageRatio > 0 && entry.accession,
+        row.id + ' 模板条目字段齐全');
+      ok(fs.existsSync(path.join(ROOT, 'data', 'img', 'relics', 'thumb-' + row.id + '.jpg')),
+        row.id + ' 有 CDN 缩略图');
+      ok(fs.existsSync(path.join(ROOT, 'data', 'img', 'relics', row.id + '.jpg')),
+        row.id + ' 有 CDN 详情图');
+    }
+  });
+  ok(templateCount >= 1900, '模板条目 ' + templateCount + ' 件 ≥ 1900');
+  eq(relicData.thumbFor('44757'), '/relics/assets/thumb-44757.jpg', '精修缩略图走包内');
+  const firstTemplate = index.rows.find((row) => detailMemo[row.id] && detailMemo[row.id].t);
+  ok(relicData.thumbFor(firstTemplate.id).indexOf('https://testingcf.jsdelivr.net') === 0,
+    '批量缩略图走 CDN');
+  ok(relicData.thumbAlt('https://testingcf.jsdelivr.net/x.jpg').indexOf('gcore') >= 0
+    && relicData.thumbAlt('/relics/assets/thumb-44757.jpg') === '', '备用域换算规则');
+
+  // 列表页：全量索引加载 + 8 条分页 + 器类/时代筛选
   const list = pages['relic-list'];
   list.onLoad();
+  eq(list.data.indexLoading, false, '同步索引桩下加载完成');
+  eq(list.data.count, index.total, '列表默认全量件数');
   eq(list.data.rows.length, 8, '列表首屏 8 条');
-  eq(list.data.count, 60, '列表默认 60 件');
   eq(list.data.hasMore, true, '列表有待加载');
+  eq(list.data.rows[0].id, index.rows[0].id, '首行与索引排序一致');
+  eq(list.data.rows[0].thumb, relicData.thumbFor(index.rows[0].id), '行卡缩略图按精修/批量取源');
+  eq(Object.keys(list.data.rows[0]).sort(),
+    ['id', 'period', 'thumb', 'title', 'type'], '行卡只传展示字段');
   list.loadMore();
   eq(list.data.rows.length, 16, '加载更多追加一屏');
   list.onReachBottom();
   eq(list.data.rows.length, 24, '触底自动续载一屏');
-  eq(list.data.rows[0].thumb, '/relics/assets/thumb-44757.jpg', '行卡缩略图路径');
-  eq(Object.keys(list.data.rows[0]).sort(),
-    ['id', 'period', 'thumb', 'title', 'type'], '行卡只传展示字段');
+
+  const eraAlias = {
+    '新石器时代': ['新石器时代'], '二里头文化': ['二里头文化'], '商': ['商'], '西周': ['西周'],
+    '东周': ['东周', '春秋', '战国'], '汉': ['汉', '秦'],
+    '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
+    '唐': ['唐'], '五代': ['五代'], '宋': ['宋', '辽', '金', '西夏'],
+    '元': ['元'], '明': ['明'], '清': ['清']
+  };
+  const matchesEra = (item, era) => eraAlias[era].some((alias) => item.period.indexOf(alias) >= 0);
 
   tap(list, 'openFilter', { kind: 'type' });
-  eq(list.data.filterSheet.title, '选择器类', '器类弹层标题');
-  eq(list.data.filterSheet.options.length, 5, '器类弹层含「全部」');
+  eq(list.data.filterSheet.options.length, 9, '器类弹层含「全部」共九项');
   tap(list, 'onFilterPick', { index: 1 });
-  eq(list.data.filterSheet, null, '选中后关闭弹层');
-  eq(list.data.count, 15, '筛青铜 15 件');
-  eq(list.data.typeIndex, 1, '器类选择保留');
+  const expectBronze = index.rows.filter((row) => row.type === '青铜');
+  eq(list.data.count, expectBronze.length, '筛青铜 ' + expectBronze.length + ' 件');
+  eq(list.data.rows.length, Math.min(8, expectBronze.length), '筛青铜首屏 8 条');
   tap(list, 'openFilter', { kind: 'era' });
   tap(list, 'onFilterPick', { index: 5 });
-  eq(list.data.count, 2, '青铜 × 东周的组合筛选');
+  const expectCombo = index.rows.filter((row) => row.type === '青铜' && matchesEra(row, '东周'));
+  eq(list.data.count, expectCombo.length, '青铜 × 东周组合 ' + expectCombo.length + ' 件');
   tap(list, 'onFilterPick', { index: 99 });
-  eq(list.data.count, 2, '越界索引不生效');
+  eq(list.data.count, expectCombo.length, '越界索引不生效');
   tap(list, 'resetFilters', {});
-  eq(list.data.count, 60, '清除筛选恢复全部');
+  eq(list.data.count, index.total, '清除筛选恢复全量');
   eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个选择');
-  // 无结果态（时代与器类无交集时）：青铜 × 清（弹层选项带「不限」偏移，清 = 索引 13）
+  // 无结果态：动态找一个零交集组合
+  let zeroType = null;
+  let zeroEraIndex = null;
+  for (let typeIndex = 1; typeIndex < 9 && zeroType === null; typeIndex++) {
+    for (let eraIndex = 1; eraIndex < 14; eraIndex++) {
+      const type = catalog.TYPES[typeIndex - 1];
+      const era = catalog.ERAS[eraIndex - 1];
+      const hit = index.rows.some((row) => row.type === type && matchesEra(row, era));
+      if (!hit) { zeroType = typeIndex; zeroEraIndex = eraIndex; break; }
+    }
+  }
+  ok(zeroType !== null, '存在零交集组合');
   tap(list, 'openFilter', { kind: 'type' });
-  tap(list, 'onFilterPick', { index: 1 });
+  tap(list, 'onFilterPick', { index: zeroType });
   tap(list, 'openFilter', { kind: 'era' });
-  tap(list, 'onFilterPick', { index: 13 });
+  tap(list, 'onFilterPick', { index: zeroEraIndex });
   eq(list.data.count, 0, '组合无交集时归零');
   eq(list.data.rows.length, 0, '无结果不渲染卡片');
   tap(list, 'resetFilters', {});
@@ -2005,12 +2077,14 @@ console.log('== 文物分包 ==');
   list.goBack();
   eq(last('switchTab').url, '/pages/home/home', '列表无栈返回回首页');
 
-  // 详情页：字段、授权、分享面板
+  // 详情页（精修件）：字段、授权、分享面板、降级链
   const detail = pages['relic-detail'];
   detail.onLoad({ id: 'cma-1952.510' });
+  eq(detail.data.loading, false, '精修件同步出详情');
   eq(detail.data.relic.title, '双仙人耳玉杯', '详情标题');
   eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '详情馆方');
   eq(detail.data.relic.rights, 'CC0', '详情授权文案');
+  eq(detail.data.relic.template, false, '精修件非模板');
   eq(detail.data.relic.image, catalog.detailUrls('cma-1952.510')[0], '详情主图走 CDN 主域');
   eq(detail.data.relic.imageThumb, '/relics/assets/thumb-cma-1952.510.jpg', '包内缩略图备好降级');
   eq(detail.data.relic.imageRatio, 55.714, '详情图框比例');
@@ -2022,7 +2096,6 @@ console.log('== 文物分包 ==');
   }, '文物详情');
   ok(detail.sharePayload().coverFit === 'contain', '文物题图等比完整排入');
   eq(detail.sharePayload().imgFallback, '/relics/assets/thumb-cma-1952.510.jpg', '海报题图兜底包内缩略图');
-  // 配图降级链：主域失败换备用域，双域都失败显示包内缩略图
   detail.onImageError();
   eq(detail.data.relic.image, catalog.detailUrls('cma-1952.510')[1], '主图失败换备用域');
   detail.onImageError();
@@ -2030,8 +2103,30 @@ console.log('== 文物分包 ==');
   detail.onImageError();
   eq(detail.data.degraded, true, '降级后不再重复步进');
 
-  // 未知 id 兜底：目录查不到即不渲染（onLoad 直接 return），页面走 wxml 的空态分支
-  ok(!catalog.RELICS.some((r) => r.id === 'not-exist'), '未知 id 不在目录内');
+  // 详情页（批量模板件）：远端分卷解析 + 模板标记 + 无包内缩略图降级
+  const templateId = firstTemplate.id;
+  resetWifiStack();
+  detail.onLoad({ id: templateId });
+  eq(detail.data.loading, false, '批量件经索引分卷出详情');
+  eq(detail.data.relic.id, templateId, '批量件 id');
+  eq(detail.data.relic.template, true, '批量件带模板标记');
+  eq(detail.data.relic.title, index.rows.find((row) => row.id === templateId).title, '批量件标题与索引一致');
+  eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '批量件馆方');
+  eq(detail.data.relic.imageThumb, '', '批量件无包内缩略图');
+  detail.onImageError();
+  detail.onImageError();
+  eq(detail.data.degraded, true, '批量件双域失败降级占位');
+  assertSharePanel(detail, {
+    kicker: '文物 · ' + detail.data.relic.period,
+    pathTail: 'relic-detail?id=' + templateId
+  }, '批量文物详情');
+
+  // 未知 id 兜底
+  ok(!indexIds.includes('not-exist'), '未知 id 不在目录内');
+  resetWifiStack();
+  detail.onLoad({ id: 'not-exist' });
+  eq(detail.data.notFound, true, '未知 id 走未找到态');
+
   resetWifiStack();
   tap(detail, 'goBack', {});
   eq(last('redirectTo').url, catalog.LIST_PATH, '详情无栈返回回列表');
@@ -2042,22 +2137,28 @@ console.log('== 文物分包 ==');
   direct.onLoad({ id: '60514', share: '1' });
   ok(direct.data.share.open, 'share=1 直达打开分享面板');
 
-  // 旧分享页兼容入口：转详情并带 share=1
+  // 旧分享页兼容入口：转详情并带 share=1（精修同步 / 批量查索引）
   resetWifiStack();
   const share = pages['relic-share'];
   share.onLoad({ id: '39919' });
   share.onReady();
   eq(last('redirectTo').url, '/relics/pages/relic-detail/relic-detail?id=39919&share=1', '旧分享页转详情弹层');
+  resetWifiStack();
   share.onLoad({ id: 'not-exist' });
   share.onReady();
   eq(last('redirectTo').url, catalog.LIST_PATH, '旧分享页未知 id 回列表');
+  const bulkShareId = firstTemplate.id;
+  resetWifiStack();
+  share.onLoad({ id: bulkShareId });
+  share.onReady();
+  eq(last('redirectTo').url, '/relics/pages/relic-detail/relic-detail?id=' + encodeURIComponent(bulkShareId) + '&share=1', '旧分享页批量条目转详情');
 
   // 首页入口
   resetWifiStack();
   tap(pages.home, 'goRelics', {});
   eq(last('navigateTo').url, '/relics/pages/relic-list/relic-list', '首页进入文物列表');
   const homeWxml = fs.readFileSync(path.join(ROOT, 'pages', 'home', 'home.wxml'), 'utf8');
-  ok(homeWxml.indexOf('青铜 · 陶瓷 · 玉器 · 书画') >= 0, '首页文物入口列出四类');
+  ok(homeWxml.indexOf('青铜 · 陶瓷 · 玉器 · 书画 等 8 类') >= 0, '首页文物入口列出八类');
 })();
 
 // ---------------------------------------------------------------------------

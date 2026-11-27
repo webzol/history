@@ -15,6 +15,10 @@
         "type": "folder"
       },
       {
+        "value": "data/relics",
+        "type": "folder"
+      },
+      {
         "value": "README.md",
         "type": "file"
       },

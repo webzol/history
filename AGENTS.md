@@ -15,7 +15,12 @@
 - 高保真网页首页：`ui/reference/home-v3.html`
 - 原生小程序（13 主包页 + **3 文物分包页**全部落地）：首页 / 时间轴 / 发现 / 我的 + 人物、事件、**朝代**详情页 + 搜索页 + 收藏、足迹独立页 + **资料库首页/列表/详情**；文物列表/详情/旧分享入口在 `miniprogram/relics/` 普通分包（60 件，见下）；数据=本地真实历史种子 `miniprogram/data/history.js`（100 史事 / 89 人物 / 24 朝代 / 2 专题 + 今日史事日期库 16 组），并叠加 **jsDelivr 远端热更**：`utils/historyData.js` 数据中枢统一供数，远端 JSON（`data/history.json`，由 `tools/build_data_json.js` 生成——**改数据后必须重建并提交**）；「我的」页「检查内容更新」可 purge jsDelivr 缓存即时生效（`purge.jsdelivr.net` 需白名单）；热更数据在 `utils/remote.js` 内存缓存（首读 storage，稳态切页零 IO 零 stringify，「清除缓存」会 resetMemory）。首页「历史上的今天」板块走 **60s API**（`utils/api.js`，天级缓存 6h，失败自动隐藏板块）。**首页两条「今日」内容均为每日随机（2026-10-25）**：`api.pickDaily` 以公历月日为种子做确定性抽取——同一天所有用户看到同一条、隔天自动换，不是每次点击重随机。「今日史事」hero 卡在日期库 16 组匹配日按库显示（真实历史今天），其余日子从全部 100 史事里每日随机抽一条（不再固定回退 dailyFallback，抽取异常才兜底）；60s 板块精选也从「固定取第一条有描述的」改为每日随机。在线域名白名单：`cdn.jsdelivr.net`、`purge.jsdelivr.net`、`60s.viki.moe`。
 - 「史页资料库」：APK 数据 39,067 条（辞条 13,287 / 人物 4,869 / 事件 705 / 帝王 373 / 战争 466 / 三国纪事 29 / 名句 677 / 文言辞条 3,889 / 诗文名句 3,955 / 诗文全文 10,817），入口在发现页；数据放 `miniprogram/data/apk/`，由 `project.config.json` 的 `packOptions.ignore` 排除出主包，`utils/apkData.js` 通过 jsDelivr 按需加载（内存 + 7 天本地缓存；单文件 ≤1.5MB，资料库总预算 5MB，超预算先淘汰旧分卷）。**首屏提速（2026-10-24）**：每个栏目索引拆成 `head.json`（`{total, step:200, parts, items}`，前 200 条，~15–30KB，列表页首屏只拉这一份）+ `part-N.json`（剩余条目每 200 条一块，首屏渲染后后台 **4 并发限流**补齐；请求失败/403 自动重试一次——jsDelivr 对突发请求会 403 限流）；`index.json` 保留作拆分输入与旧版回退。**不断层交付（2026-10-31）**：分块合并只取「head + 连续成功前缀」，个别分块失败绝不让后面的分块顶上来开中段空洞；失败分块按 1.5s/4s 退避自动重试两轮，每接上一块就再回调一次（`info.loaded`=已载入条数），列表平滑生长；**残缺索引绝不写缓存**（全部到齐才写，否则断层随 7 天缓存长期存在）；补齐受阻时列表页显示「分块补齐受阻 · 点按重试」。本地缓存 key 为 `shige_apk_v3_*`（分块布局变更时须升版本号整体失效）。全部栏目统一为「列表索引 + 详情分卷」：索引固定列 `[id,title,meta,summary,shard]`（摘要 44 字），`00.json`… 为详情分卷（非诗文 ≤180 条 / ≤320KB，诗文 ≤120 条 / ≤320KB）；列表只加载索引，详情按 `shard` 只加载一册。拆分工具 `tools/split_apk_index.js`（幂等，改索引数据后重跑）。原始 APK/DB 在 `import/`，不提交。
-- **文物分包（relics，普通分包）**：`miniprogram/relics/`，3 页（`relic-list` 列表 / `relic-detail` 详情 / `relic-share` 旧分享入口，`onReady` 转详情并带 `share=1`）。入口在首页四磁贴下方的「文物」横卡（`pages/home` 的 `goRelics`）；`app.json` 配了 `preloadRule` 在 wifi 下预下载分包。**目录 60 件（2026-11-27）**：青铜 / 陶瓷 / 玉器 / 书画各 15 件，按年代先后排列在 `relics/catalog.js`（含 title/type/eras/period/date/material/dimensions/accession/description/imageRatio/imageNote）；时代筛选项 13 个（新石器时代/二里头文化/商/西周/东周/汉/魏晋南北朝/唐/五代/宋/元/明/清），每个时代都有藏品。馆方与授权由 `sourceFor(id)` 按 id 前缀推导——`cma-` 前缀为克利夫兰艺术博物馆（CC0），其余为大都会艺术博物馆（公有领域）；详情页配图说明按其结果渲染。列表 8 条一屏、**触底自动续载**（「加载更多」按钮保留兜底）、器类 × 时代双筛选走自定义暖白底部弹层、行卡只传 `id/title/period/type/thumb`。**配图分两层（2026-11-27 加载改造）**：200×144 缩略图 `relics/assets/thumb-*.jpg` 留在分包（列表离线可读，60 张约 164KB）；详情大图移出分包放 `data/img/relics/<id>.jpg`（长边 ≤490，经 jsDelivr 分发、`data/img` 整目录已排除出包），详情页按 `catalog.detailUrls(id)` 的 **testingcf 主域 → gcore 备用域** 依次加载（`binderror` 步进），双域都失败降级显示包内缩略图；共此卷海报题图同源（CDN 主域 + 缩略图兜底 `imgFallback`）。`imageRatio` 必须等于详情图实际高宽比 ×100（validate 对照 `data/img/relics` 实测）。配图与 `docs/relic-sources.json`（60 条：35 CC0 / 25 公有领域）由 `node tools/fetch_relic_assets.js`（Met v1.1 search / Open Access API + 授权与馆藏号核对，403/429 退避重试）+ `python tools/prepare_relic_images.py` 复现，输出先落 `tmp/relic-import-*` 供复核再同步入包（`tmp/` 不提交）；候选挖掘工具 `tools/discover_relics.js`（缓存于 `tmp/relic-discovery/`）。`miniprogram/relics/catalog.js` 与配图一致性由 `python tools/validate_miniprogram.py` 静态校验。
+- **文物分包（relics，普通分包）**：`miniprogram/relics/`，3 页（`relic-list` 列表 / `relic-detail` 详情 / `relic-share` 旧分享入口，`onReady` 转详情并带 `share=1`）。入口在首页四磁贴下方的「文物」横卡（`pages/home` 的 `goRelics`，文案「青铜 · 陶瓷 · 玉器 · 书画 等 8 类」）；`app.json` 配了 `preloadRule` 在 wifi 下预下载分包。**两层目录（2026-11-28 全量拉取定稿）**：
+  - **精修 60 件**在包内 `relics/catalog.js`（青铜/陶瓷/玉器/书画各 15，年代先后，逐条人工中文简介），缩略图 `relics/assets/thumb-*.jpg` 留分包（离线可读），详情大图在 `data/img/relics/<id>.jpg` 经 jsDelivr 分发；详情页对精修件走包内快路径（0 请求）。
+  - **批量 1,943 件**（克利夫兰 CC0 开放数据全量，模板生成、标 `t:1` 未审校）经 `data/relics/index.json`（全量索引 ~175KB）+ `detail-NN.json`（每 200 件一卷 ~80KB）分片加载：`relics/relicData.js` 负责 jsDelivr 双域请求 + 内存 + 7 天 storage 缓存（key `shige_relic_index_v1` / `shige_relic_det_v1_<n>`）。列表冷启动仅 1 次请求（index），筛选/分页全本地；详情批量件按索引定位加载所在分卷（缓存后 0 请求）。批量缩略图 `data/img/relics/thumb-<id>.jpg` 走 CDN（列表 binderror 换 gcore 一次），批量件无包内图，详情双域都失败显示「图像暂不可用」。
+  - 器类筛选扩为 8 类（青铜/陶瓷/玉器/书画/雕塑/漆器/玻璃珐琅/其他），时代 13 个筛选项对全量目录生效（索引行存显示期名，`relic-list.js` 的 `ERA_MATCH` 别名归组）；列表 8 条一屏 + 触底续载（`rows[offset+i]` 逐项路径追加）。
+  - 生成链路：`tools/discover_relics.js` 候选缓存（`tmp/relic-discovery/cma.json`，含馆方中文原题名）→ `tools/fetch_relics_full.js` 全量原图（`tmp/relic-full/`）→ `python tools/prepare_relic_images.py` 出缩略/详情图 → `python tools/build_relics_full.py` 生成索引分卷 + 同步配图 + 重写 `docs/relic-sources.json`（精修段逐条 + 批量段说明；依赖 `pip install zhconv` 做繁简转换）。批量题名优先馆方中文原题名，否则词表英译，覆盖不了保留英文原题。`data/relics` 与 `data/img` 均在 packOptions.ignore 排除出包。
+  - 校验：`python tools/validate_miniprogram.py` 做「精修双图 + imageRatio 实测」「分片 total/parts/每卷条数」「每件索引行 ↔ 分卷条目 ↔ CDN 双图三方对账」三组退出码检查；`tools/selftest.js` 第 9 段覆盖双路径详情、降级链、模板标记、批量分享直达；`tools/relic_perf_probe.js` 量 setData 载荷与请求数（`--net` 抽样探测 CDN）。
 - 收藏 / 浏览足迹已落地（本地存储，utils/store.js，收藏行支持长按移出）；「我的」页各只展示前 3 条，>3 条时「查看全部」进独立分类页，独立页支持清空；分享已接入各页。**资料库条目已接入（2026-10-25）**：资料详情页有「收藏此资料」按钮、浏览即留足迹；资料条目在存储里带 `info` 展示快照（kind/aType/shard/rawId/cat/meta/title，唯一键 `kind|type|rawId`），收藏/足迹页据此渲染并跳详情，不回查远端数据；收藏/足迹/我的页跳转统一走 `entries.resolveEntry` 给出的 `nav` 链接；收藏页新增「资料」分组（人物/史事/资料）。
 - **「共此卷」分享卡片（2026-11-14；11-15 canvas 2d 高清化 + 定稿「无码纯卡片」）**：四详情页（person/event/period/archive-detail）底部按钮进半屏面板（`app.wxss` 全局 `.ss-*` 样式 + `utils/qrshare.js`），canvas 绘制海报（**宣纸笺初版 1:1 还原（2026-11-15 定稿回退），画布 260×424**：宣纸底 `assets/paper-bg.jpg` 纹理 + 顶/底朱砂界格细线 + 装裱式题图（暖白裱底圆角卡 + 画心 cover 裁中铺满，离线兜底米色占位画心→share-cover-fallback.jpg）+ kicker + 宋体标题 + 摘要 + 分隔细线 + 每日名句（楷体+出处）+ 落款区（公历/农历日期 + 「史载」印，**无码定稿**）+ 品牌行）可保存相册，「转寄好友」button open-type=share 走各页 onShareAppMessage。**海报渲染为 canvas 2d API（`type="2d"`）**：固定 4.5 倍缓冲 1170×2534（与设备 dpr 无关，坐标按 260×563 逻辑书写 + scale(4.5)），导出按缓冲原生分辨率；卷面 aspectFill 绘入与全站同源的 `assets/paper-bg.jpg` 宣纸纹理；图像走 `canvas.createImage()` + 模块级缓存（`peekImg` 只读 / `preloadPosterImgs` 预取 / `resetImgs` 测试重置）；**每次绘制重新查询节点整幅重画**（真机节点持久开销可忽略；harness setData 整页重建 DOM，缓存节点会画到分离元素上）。四页 wxml 用 `<canvas type="2d" id="ssQrCanvas">`。**太阳码生成链路已停用触发（2026-11-15 定稿「无码纯卡片」后无 UI 消费方）**：`tools/gen_wxacode.js` 脚本与 workflow 文件原样保留，`.github/workflows/wxacode.yml` 的 `on:` 触发块已整段注释（不再自动/手动跑）；重新启用 = 取消注释并 push。生成需 secret=`WX_APPSECRET`，遇 89503 需管理员确认（见 DEVELOPMENT_LOG 2026-11-14/15 条目）。scene/URL/文件名规则单源在 `utils/wxacode.js`（生成端 require 同一模块）。scene 规范：`p/e/d=<id>`（三主库页）、`g=<栏目短码>&i=<id>`（archive，cards 带 `&t=`；短码 f/m/v/w/y/q/n/p/c + poems 五体裁 ps/pc/pw/pq/pf），figures/emperors 超限 id（2,367 条）走 `h=<sha1 前 12 位 base36>` + `idx/<栏目>.json` 清单还原（hash 对不变 id 恒定，增量生成恒安全）。四页 onLoad 首行 `mergeScene(options)` 支持扫码直达（archive 超限条目先 `resolveIndex` 还原 id）。生成端错误阶梯含 89503 管理员确认轮询（Actions 动态 IP 无法加白名单的固有流程，见 DEVELOPMENT_LOG 2026-11-14/15 条目）。各页提供 `sharePayload()`（kicker/title/desc/img/path）。harness 的 setData 已支持点路径、downloadFile 远端图映射本地仓库文件、canvas 2d mock（SelectorQuery + mock 节点 + createImage，`mockQr.codeFail`/`netFail` 控制码图与远端图失败）。
 - 质量链路：`node tools/selftest.js`（约 2300 断言交互自测，含文物分包）+ `ui/preview/` 浏览器渲染 harness（42 张标准截图核对，`preview_shots.js` 起跑前自检预览服务在线、要求截图文件 mtime 前进，防旧图假 OK）+ `python tools/validate_miniprogram.py` 静态校验（含文物目录与配图一致性、分包体积预算）。
@@ -102,7 +107,7 @@ E:\AI\history\
 │  ├─ pages\home|timeline|discover|profile|person|event|period|search|favorites|footprints|archive|archive-list|archive-detail
 │  └─ relics\                      # 文物分包（3 页 + catalog.js + assets 配图）
 ├─ tools\
-│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 2441 / FAIL 0，含文物分包）
+│  ├─ selftest.js                   # 交互自测（node tools/selftest.js；PASS 10326 / FAIL 0，含文物全量目录）
 │  ├─ build_preview.js              # 小程序源码 → ui/preview/_bundle.js
 │  ├─ preview_server.js             # 静态服务（http://127.0.0.1:8137）
 │  ├─ preview_shots.js              # 批量截图 42 张 → ui/preview/shots/
@@ -111,7 +116,8 @@ E:\AI\history\
 │  ├─ validate_miniprogram.py       # JS/JSON/WXML/资源静态校验
 │  ├─ content_audit.py              # 数据完整性审计（全量 100/89/24/2/16 字段 + 引用完整性 + history.js↔history.json 一致性，退出码可挂 CI）
 │  ├─ fetch_relic_assets.js / prepare_relic_images.py   # 文物配图复现链路（馆方 API → tmp/ 复核 → 入分包）
-│  ├─ relic_perf_probe.js           # 文物栏目性能探针（setData 载荷/请求数；--net 全量探测 CDN 详情图）
+│  ├─ relic_perf_probe.js           # 文物栏目性能探针（setData 载荷/请求数；--net 抽样探测 CDN 详情图）
+│  ├─ discover_relics.js / fetch_relics_full.js / build_relics_full.py   # 文物候选挖掘 / 全量原图拉取 / 目录分片生成（zhconv）
 │  ├─ compress_assets.py / make_paper_bg.py / crop_seal.py 等   # 素材复现链路
 ├─ .github\workflows\wxacode.yml    # 数据变更 push → 太阳码增量生成并提交（secret: WX_APPSECRET）
 └─ ui\
@@ -156,7 +162,7 @@ E:\AI\history\ui\reference\home-v3.html
 ### 自测工具（2026-10-19 起可用）
 
 ```powershell
-# 交互自测（mock wx/Page 跑真实页面代码；PASS 2441 / FAIL 0）
+# 交互自测（mock wx/Page 跑真实页面代码；PASS 10326 / FAIL 0）
 node tools/selftest.js
 
 # 浏览器 UI 预览：起服务 → 打开 http://127.0.0.1:8137/ui/preview/index.html#home
@@ -258,7 +264,7 @@ python tools/validate_miniprogram.py
 9. ~~首页"今日史事"日期匹配未完成~~ → 2026-10-19 晚：已按公历「月-日」日期库匹配；2026-10-25 起无匹配日改为「每日随机」抽一条史事（`api.pickDaily` 日期种子），仅日期库 16 组匹配日仍按库固定显示。农历事件暂未列入，正式发布前仍需历史审校。
 10. 旧版 `ui/neo/` 和 `docs/UI设计说明.md` 容易误用；除非用户明确要求，否则不要用旧版风格覆盖当前实现。
 11. 资料库数据来自 APK 迁移，尚未逐条史实/授权审校；诗文全文已按体裁/分卷纳入（诗 2,938 / 词 4,523 / 文 2,991 / 曲 338 / 赋 27）。列表搜索只覆盖轻量索引字段（标题/分类/摘要；诗词为篇名/作者/朝代/摘要），不做全文检索；详情正文只在打开条目时按 `shard` 拉取。
-13. 文物 60 件的图像来自大都会（公有领域）与克利夫兰（CC0）开放数据，馆方页、接口与配图地址逐条记在 `docs/relic-sources.json`；但文物简介为按馆方记录改写的通稿文案，**尚未逐条史实审校**，正式发布前需复核。2026-11-27 起缩略图留分包（媒体 164KB/1024KB）、详情大图走 `data/img/relics` + jsDelivr 双域加载、离线降级缩略图；若继续加件，缩略图每件约 2.8KB，包体余量充足，详情图只加仓库体积不加包体。
+13. 文物目录两层：精修 60 件（大都会公有领域 + 克利夫兰 CC0）与批量 1,943 件（克利夫兰 CC0 全量）。批量条目为馆方记录模板生成（简介含「未经史实审校」标注），**尚未逐条史实审校**；约四成题名保留馆方英文原题，待精修替换。批量缩略图/详情图走 jsDelivr，弱网/离线下列表图与批量详情图不可用（有降级提示）。正式发布前需按批次审校。
 12. ~~资料库条目暂未接入收藏/足迹~~ → 2026-10-25 已接入：`utils/store.js` 的 `toggleFavorite/addFootprint` 支持第三参 `extra`（展示快照），资料条目用 `entries.archiveKey(kind, type, rawId)` 作唯一键、详情页带 `info` 快照写入；收藏/足迹/我的三页跳转统一走 `resolveEntry` 的 `nav`。残缺快照（无 `info.title`）解析为 null 不渲染，老数据不受影响。
 
 ---

@@ -1,482 +1,493 @@
-[
-  {
-    "id": "44757",
-    "accession": "1986.112",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/44757",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44757",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-46348-001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1953.628",
-    "accession": "1953.628",
-    "collectionUrl": "https://www.clevelandart.org/art/1953.628",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1953.628&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1953.628/1953.628_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "49376",
-    "accession": "30.120.124",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/49376",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49376",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-45482-001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1991.115",
-    "accession": "1991.115",
-    "collectionUrl": "https://www.clevelandart.org/art/1991.115",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1991.115&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1991.115/1991.115_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1989.150",
-    "accession": "1989.150",
-    "collectionUrl": "https://www.clevelandart.org/art/1989.150",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.150&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.150/1989.150_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1915.630",
-    "accession": "1915.630",
-    "collectionUrl": "https://www.clevelandart.org/art/1915.630",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1915.630&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1915.630/1915.630_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "60514",
-    "accession": "2001.210",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/60514",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/60514",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP140744.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "53561",
-    "accession": "1974.289.5",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/53561",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/53561",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP151437.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "44617",
-    "accession": "62.217",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/44617",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44617",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP218261.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "748361",
-    "accession": "2019.193.1",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/748361",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/748361",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-22702-001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1952.490",
-    "accession": "1952.490",
-    "collectionUrl": "https://www.clevelandart.org/art/1952.490",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.490&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.490/1952.490_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "42176",
-    "accession": "24.72.13",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42176",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42176",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP219874.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "42167",
-    "accession": "24.72.4",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42167",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42167",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-16136-001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1989.3",
-    "accession": "1989.3",
-    "collectionUrl": "https://www.clevelandart.org/art/1989.3",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.3&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.3/1989.3_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "44784",
-    "accession": "25.20.2a, b",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/44784",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44784",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP155221.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "61403",
-    "accession": "23.120.5",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/61403",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/61403",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/LC-23_120_5_001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "75242",
-    "accession": "2009.94",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/75242",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/75242",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP228967.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "39637",
-    "accession": "1985.214.99",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/39637",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39637",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-32069-001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "74527",
-    "accession": "2008.287",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/74527",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/74527",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP162901.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "72544",
-    "accession": "2004.322",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/72544",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/72544",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP116267.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1986.46.a",
-    "accession": "1986.46.a",
-    "collectionUrl": "https://www.clevelandart.org/art/1986.46.a",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1986.46.a&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1986.46.a/1986.46.a_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1946.238",
-    "accession": "1946.238",
-    "collectionUrl": "https://www.clevelandart.org/art/1946.238",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1946.238&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1946.238/1946.238_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1952.473",
-    "accession": "1952.473",
-    "collectionUrl": "https://www.clevelandart.org/art/1952.473",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.473&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.473/1952.473_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1989.71",
-    "accession": "1989.71",
-    "collectionUrl": "https://www.clevelandart.org/art/1989.71",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.71&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.71/1989.71_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1995.296",
-    "accession": "1995.296",
-    "collectionUrl": "https://www.clevelandart.org/art/1995.296",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.296&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.296/1995.296_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1995.326",
-    "accession": "1995.326",
-    "collectionUrl": "https://www.clevelandart.org/art/1995.326",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.326&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.326/1995.326_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1970.152",
-    "accession": "1970.152",
-    "collectionUrl": "https://www.clevelandart.org/art/1970.152",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1970.152&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1970.152/1970.152_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-2017.16",
-    "accession": "2017.16",
-    "collectionUrl": "https://www.clevelandart.org/art/2017.16",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=2017.16&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/2017.16/2017.16_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1973.84",
-    "accession": "1973.84",
-    "collectionUrl": "https://www.clevelandart.org/art/1973.84",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1973.84&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1973.84/1973.84_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1963.579",
-    "accession": "1963.579",
-    "collectionUrl": "https://www.clevelandart.org/art/1963.579",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1963.579&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1963.579/1963.579_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1930.731",
-    "accession": "1930.731",
-    "collectionUrl": "https://www.clevelandart.org/art/1930.731",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1930.731&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1930.731/1930.731_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1995.352",
-    "accession": "1995.352",
-    "collectionUrl": "https://www.clevelandart.org/art/1995.352",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.352&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.352/1995.352_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1973.74",
-    "accession": "1973.74",
-    "collectionUrl": "https://www.clevelandart.org/art/1973.74",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1973.74&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1973.74/1973.74_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "49368",
-    "accession": "67.43.1",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/49368",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49368",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/67_43_1.JPG",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-2000.118.1",
-    "accession": "2000.118.1",
-    "collectionUrl": "https://www.clevelandart.org/art/2000.118.1",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=2000.118.1&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/2000.118.1/2000.118.1_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1918.470",
-    "accession": "1918.470",
-    "collectionUrl": "https://www.clevelandart.org/art/1918.470",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1918.470&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1918.470/1918.470_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1975.92",
-    "accession": "1975.92",
-    "collectionUrl": "https://www.clevelandart.org/art/1975.92",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1975.92&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1975.92/1975.92_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1959.348",
-    "accession": "1959.348",
-    "collectionUrl": "https://www.clevelandart.org/art/1959.348",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1959.348&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1959.348/1959.348_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "39919",
-    "accession": "1984.174",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/39919",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39919",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP118649_CRD.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "39918",
-    "accession": "1989.363.4",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/39918",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39918",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153769.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1953.126",
-    "accession": "1953.126",
-    "collectionUrl": "https://www.clevelandart.org/art/1953.126",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1953.126&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1953.126/1953.126_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1933.220",
-    "accession": "1933.220",
-    "collectionUrl": "https://www.clevelandart.org/art/1933.220",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1933.220&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1933.220/1933.220_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1983.85",
-    "accession": "1983.85",
-    "collectionUrl": "https://www.clevelandart.org/art/1983.85",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1983.85&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1983.85/1983.85_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1961.421",
-    "accession": "1961.421",
-    "collectionUrl": "https://www.clevelandart.org/art/1961.421",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1961.421&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1961.421/1961.421_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1958.427",
-    "accession": "1958.427",
-    "collectionUrl": "https://www.clevelandart.org/art/1958.427",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1958.427&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.427/1958.427_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "42480",
-    "accession": "34.113.4a, b",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42480",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42480",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/34_113_4a_5b_O1.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1957.40",
-    "accession": "1957.40",
-    "collectionUrl": "https://www.clevelandart.org/art/1957.40",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1957.40&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1957.40/1957.40_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1948.206",
-    "accession": "1948.206",
-    "collectionUrl": "https://www.clevelandart.org/art/1948.206",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1948.206&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1948.206/1948.206_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1961.92",
-    "accession": "1961.92",
-    "collectionUrl": "https://www.clevelandart.org/art/1961.92",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1961.92&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1961.92/1961.92_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "45685",
-    "accession": "1982.205",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/45685",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45685",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP216136_CRD.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "45684",
-    "accession": "1989.363.47",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/45684",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45684",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153569.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "45797",
-    "accession": "1986.266.1a–u",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/45797",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45797",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP161169_CRD.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1954.582",
-    "accession": "1954.582",
-    "collectionUrl": "https://www.clevelandart.org/art/1954.582",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1954.582&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1954.582/1954.582_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "42514",
-    "accession": "1984.358",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42514",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42514",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/LC-1984_358_001.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "42526",
-    "accession": "19.28.10",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/42526",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42526",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-14609-087.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1962.223",
-    "accession": "1962.223",
-    "collectionUrl": "https://www.clevelandart.org/art/1962.223",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1962.223&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1962.223/1962.223_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "cma-1971.145",
-    "accession": "1971.145",
-    "collectionUrl": "https://www.clevelandart.org/art/1971.145",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1971.145&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1971.145/1971.145_web.jpg",
-    "rights": "CC0"
-  },
-  {
-    "id": "49167",
-    "accession": "1983.412.1",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/49167",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49167",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153920.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "36071",
-    "accession": "55.211.2",
-    "collectionUrl": "https://www.metmuseum.org/art/collection/search/36071",
-    "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/36071",
-    "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-37658-002.jpg",
-    "rights": "Public Domain"
-  },
-  {
-    "id": "cma-1952.510",
-    "accession": "1952.510",
-    "collectionUrl": "https://www.clevelandart.org/art/1952.510",
-    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.510&limit=1",
-    "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.510/1952.510_web.jpg",
-    "rights": "CC0"
+{
+  "curated": [
+    {
+      "id": "44757",
+      "accession": "1986.112",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/44757",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44757",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-46348-001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1953.628",
+      "accession": "1953.628",
+      "collectionUrl": "https://www.clevelandart.org/art/1953.628",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1953.628&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1953.628/1953.628_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "49376",
+      "accession": "30.120.124",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/49376",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49376",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-45482-001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1991.115",
+      "accession": "1991.115",
+      "collectionUrl": "https://www.clevelandart.org/art/1991.115",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1991.115&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1991.115/1991.115_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1989.150",
+      "accession": "1989.150",
+      "collectionUrl": "https://www.clevelandart.org/art/1989.150",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.150&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.150/1989.150_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1915.630",
+      "accession": "1915.630",
+      "collectionUrl": "https://www.clevelandart.org/art/1915.630",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1915.630&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1915.630/1915.630_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "60514",
+      "accession": "2001.210",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/60514",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/60514",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP140744.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "53561",
+      "accession": "1974.289.5",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/53561",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/53561",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP151437.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "44617",
+      "accession": "62.217",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/44617",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44617",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP218261.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "748361",
+      "accession": "2019.193.1",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/748361",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/748361",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-22702-001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1952.490",
+      "accession": "1952.490",
+      "collectionUrl": "https://www.clevelandart.org/art/1952.490",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.490&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.490/1952.490_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "42176",
+      "accession": "24.72.13",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/42176",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42176",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP219874.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "42167",
+      "accession": "24.72.4",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/42167",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42167",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-16136-001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1989.3",
+      "accession": "1989.3",
+      "collectionUrl": "https://www.clevelandart.org/art/1989.3",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.3&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.3/1989.3_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "44784",
+      "accession": "25.20.2a, b",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/44784",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/44784",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP155221.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "61403",
+      "accession": "23.120.5",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/61403",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/61403",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/LC-23_120_5_001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "75242",
+      "accession": "2009.94",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/75242",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/75242",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP228967.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "39637",
+      "accession": "1985.214.99",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/39637",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39637",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-32069-001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "74527",
+      "accession": "2008.287",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/74527",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/74527",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP162901.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "72544",
+      "accession": "2004.322",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/72544",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/72544",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP116267.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1986.46.a",
+      "accession": "1986.46.a",
+      "collectionUrl": "https://www.clevelandart.org/art/1986.46.a",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1986.46.a&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1986.46.a/1986.46.a_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1946.238",
+      "accession": "1946.238",
+      "collectionUrl": "https://www.clevelandart.org/art/1946.238",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1946.238&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1946.238/1946.238_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1952.473",
+      "accession": "1952.473",
+      "collectionUrl": "https://www.clevelandart.org/art/1952.473",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.473&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.473/1952.473_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1989.71",
+      "accession": "1989.71",
+      "collectionUrl": "https://www.clevelandart.org/art/1989.71",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1989.71&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1989.71/1989.71_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1995.296",
+      "accession": "1995.296",
+      "collectionUrl": "https://www.clevelandart.org/art/1995.296",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.296&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.296/1995.296_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1995.326",
+      "accession": "1995.326",
+      "collectionUrl": "https://www.clevelandart.org/art/1995.326",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.326&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.326/1995.326_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1970.152",
+      "accession": "1970.152",
+      "collectionUrl": "https://www.clevelandart.org/art/1970.152",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1970.152&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1970.152/1970.152_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-2017.16",
+      "accession": "2017.16",
+      "collectionUrl": "https://www.clevelandart.org/art/2017.16",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=2017.16&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/2017.16/2017.16_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1973.84",
+      "accession": "1973.84",
+      "collectionUrl": "https://www.clevelandart.org/art/1973.84",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1973.84&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1973.84/1973.84_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1963.579",
+      "accession": "1963.579",
+      "collectionUrl": "https://www.clevelandart.org/art/1963.579",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1963.579&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1963.579/1963.579_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1930.731",
+      "accession": "1930.731",
+      "collectionUrl": "https://www.clevelandart.org/art/1930.731",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1930.731&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1930.731/1930.731_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1995.352",
+      "accession": "1995.352",
+      "collectionUrl": "https://www.clevelandart.org/art/1995.352",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1995.352&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1995.352/1995.352_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1973.74",
+      "accession": "1973.74",
+      "collectionUrl": "https://www.clevelandart.org/art/1973.74",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1973.74&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1973.74/1973.74_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "49368",
+      "accession": "67.43.1",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/49368",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49368",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/67_43_1.JPG",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-2000.118.1",
+      "accession": "2000.118.1",
+      "collectionUrl": "https://www.clevelandart.org/art/2000.118.1",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=2000.118.1&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/2000.118.1/2000.118.1_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1918.470",
+      "accession": "1918.470",
+      "collectionUrl": "https://www.clevelandart.org/art/1918.470",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1918.470&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1918.470/1918.470_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1975.92",
+      "accession": "1975.92",
+      "collectionUrl": "https://www.clevelandart.org/art/1975.92",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1975.92&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1975.92/1975.92_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1959.348",
+      "accession": "1959.348",
+      "collectionUrl": "https://www.clevelandart.org/art/1959.348",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1959.348&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1959.348/1959.348_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "39919",
+      "accession": "1984.174",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/39919",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39919",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP118649_CRD.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "39918",
+      "accession": "1989.363.4",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/39918",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/39918",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153769.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1953.126",
+      "accession": "1953.126",
+      "collectionUrl": "https://www.clevelandart.org/art/1953.126",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1953.126&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1953.126/1953.126_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1933.220",
+      "accession": "1933.220",
+      "collectionUrl": "https://www.clevelandart.org/art/1933.220",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1933.220&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1933.220/1933.220_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1983.85",
+      "accession": "1983.85",
+      "collectionUrl": "https://www.clevelandart.org/art/1983.85",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1983.85&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1983.85/1983.85_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1961.421",
+      "accession": "1961.421",
+      "collectionUrl": "https://www.clevelandart.org/art/1961.421",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1961.421&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1961.421/1961.421_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1958.427",
+      "accession": "1958.427",
+      "collectionUrl": "https://www.clevelandart.org/art/1958.427",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1958.427&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.427/1958.427_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "42480",
+      "accession": "34.113.4a, b",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/42480",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42480",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/34_113_4a_5b_O1.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1957.40",
+      "accession": "1957.40",
+      "collectionUrl": "https://www.clevelandart.org/art/1957.40",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1957.40&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1957.40/1957.40_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1948.206",
+      "accession": "1948.206",
+      "collectionUrl": "https://www.clevelandart.org/art/1948.206",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1948.206&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1948.206/1948.206_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1961.92",
+      "accession": "1961.92",
+      "collectionUrl": "https://www.clevelandart.org/art/1961.92",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1961.92&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1961.92/1961.92_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "45685",
+      "accession": "1982.205",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/45685",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45685",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP216136_CRD.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "45684",
+      "accession": "1989.363.47",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/45684",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45684",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153569.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "45797",
+      "accession": "1986.266.1a–u",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/45797",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/45797",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP161169_CRD.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1954.582",
+      "accession": "1954.582",
+      "collectionUrl": "https://www.clevelandart.org/art/1954.582",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1954.582&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1954.582/1954.582_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "42514",
+      "accession": "1984.358",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/42514",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42514",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/LC-1984_358_001.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "42526",
+      "accession": "19.28.10",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/42526",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/42526",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-14609-087.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1962.223",
+      "accession": "1962.223",
+      "collectionUrl": "https://www.clevelandart.org/art/1962.223",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1962.223&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1962.223/1962.223_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "cma-1971.145",
+      "accession": "1971.145",
+      "collectionUrl": "https://www.clevelandart.org/art/1971.145",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1971.145&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1971.145/1971.145_web.jpg",
+      "rights": "CC0"
+    },
+    {
+      "id": "49167",
+      "accession": "1983.412.1",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/49167",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/49167",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP153920.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "36071",
+      "accession": "55.211.2",
+      "collectionUrl": "https://www.metmuseum.org/art/collection/search/36071",
+      "apiUrl": "https://collectionapi.metmuseum.org/public/collection/v1/objects/36071",
+      "imageUrl": "https://images.metmuseum.org/CRDImages/as/web-large/DP-37658-002.jpg",
+      "rights": "Public Domain"
+    },
+    {
+      "id": "cma-1952.510",
+      "accession": "1952.510",
+      "collectionUrl": "https://www.clevelandart.org/art/1952.510",
+      "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/?accession_number=1952.510&limit=1",
+      "imageUrl": "https://openaccess-cdn.clevelandart.org/1952.510/1952.510_web.jpg",
+      "rights": "CC0"
+    }
+  ],
+  "bulk": {
+    "museum": "克利夫兰艺术博物馆",
+    "license": "CC0",
+    "count": 1944,
+    "api": "https://openaccess-api.clevelandart.org/api/artworks/",
+    "query": "department=Chinese Art&cc0=1&has_image=1（creation_date_latest ≤ 1911）",
+    "pulledAt": "2026-11-28",
+    "note": "批量条目按馆方记录模板生成（build_relics_full.py），馆方页 https://www.clevelandart.org/art/<馆藏号>，未经史实审校。"
   }
-]
+}

@@ -2296,3 +2296,12 @@ miniprogram/data/history.js
   - 详情 onLoad 1 次 setData 0.53KB；列表与详情全流程 `wx.request` 均为 0（缩略图包内、详情图走 `<image>` 按需）。
 - **CDN 可用性**：60 张详情图 testingcf 主域全量探测，4 并发下 47/60 返回 403（jsDelivr 对单 IP 突发限流），**改串行复测 13 张全部 200**（610–1433ms，单图 6–30KB），即 60/60 在线；gcore 备用域抽样同样受突发限流影响但可用。真实用户单次详情只取 1 张，远低于限流阈值；应用内另有双域步进 + 包内缩略图兜底。
 - **数据完整性**：`content_audit.py` 全量通过（主库 100/89/24/2/16 + 资料库 22 栏 39,067 条 363 分卷 + 种子与热更 JSON 一致）；`validate_miniprogram.py` 通过（含文物一致性：60 缩略图在分包、60 详情图在 data/img/relics、imageRatio 与实测一致）；catalog ↔ 分包缩略图 ↔ CDN 详情图 ↔ relic-sources.json 四方对账：数量、id 集合、排列顺序完全一致（60/60/60/60）。
+
+## 2026-11-28 · 文物目录全量拉取：2,003 件 + 远端分片架构
+
+- **目录 60 → 2,003 件**：接入克利夫兰艺术博物馆中国藏品开放数据全量（CC0、有图、1911 年前），扣除已精修 60 件与成组件部件号后批量 1,943 件。器类筛选扩为 8 类（青铜 229 / 陶瓷 540 / 玉器 171 / 书画 610 / 雕塑 140 / 漆器 27 / 玻璃珐琅 54 / 其他 172 + 精修 60），时代 13 个筛选项对全量生效，年代从新石器排到清末。
+- **远端分片架构**（批量件不再进包）：`data/relics/index.json` 全量索引（2,003 行 175KB，jsDelivr 分发、packOptions 排除出包）+ `detail-NN.json` 每 200 件一卷（~80KB×11）；`relics/relicData.js` 双域请求 + 内存 + 7 天 storage 缓存。列表冷启动 1 次请求出首屏，筛选分页全本地；详情精修件包内快路径（0 请求），批量件按索引定位加载所在分卷（缓存后 0 请求）。批量缩略图（200×144）与详情大图全走 `data/img/relics/` CDN（列表 binderror 换备用域一次），批量件离线降级为「图像暂不可用」占位。
+- **生成管线**：`tools/discover_relics.js` 重抓馆方全字段记录（补回 `title_in_original_language`，753 件自带中文原题名，zhconv 繁转简）→ `tools/fetch_relics_full.js` 拉全量原图（2,258 张，1 张馆方 404 自动跳过）→ `prepare_relic_images.py` 出双图（35.4MB→缩略 1943 组 + 详情 1943 组）→ `tools/build_relics_full.py` 生成目录分卷 + 同步配图 + 重写 `docs/relic-sources.json`（精修段逐条 + 批量段 CC0 说明）。批量简介按馆方记录模板化（年代/材质/尺寸/馆藏号，简介自带「未经史实审校」标注，条目带 `t:1`）；题名优先馆方中文原题名，其次词表英译（ASCII 短语词边界替换，防 `an` 命中 `jian` 这类误伤），仍覆盖不了约四成保留馆方英文原题，待精修替换。`validate_miniprogram.py` 新增分片三方对账（索引行↔分卷条目↔CDN 双图 + imageRatio 实测）；`selftest.js` 文物段重写（精修/批量双路径详情、降级链、模板标记、批量分享直达、零交集组合动态寻找）；`relic_perf_probe.js` 适配新架构。
+- **性能实测**（`node tools/relic_perf_probe.js`）：列表首屏 onLoad 1 次 setData 1.40KB（8 行，约 179 字节/行），一次渲染 2,003 行需 145KB、分页省 99%；续载约 1.3KB/屏；筛选切换 1 次 1.5KB；列表冷启动 wx.request 仅 1 次（index.json，7 天缓存后 0 次）；详情精修 0 请求 / 批量 1 次分卷。分包 230.9KB（媒体 164KB 不变，批量图全在包外）。
+- 验证：`node tools/selftest.js` PASS **10326** / FAIL 0（断言数因批量件逐件校验从 2,441 涨到 10,326）；`python tools/validate_miniprogram.py` 通过（含分片对账 2,003 件）；content_audit、隐私自测 14 项通过；42 张截图全过，人工核对列表（2,003 件计数、新石器起步、CDN 缩略图）、精修详情与共此卷海报。
+- 待验证/待办：微信真机 index.json 首次加载（175KB gzip 后传输量）与批量详情分卷弱网表现；批量条目为模板生成**未经史实审校**，按批次精修替换（含约四成英文题名的中文化）；大都会开放数据候选（接口有 WAF 限流，本轮未批量拉取）留作下一批扩充。

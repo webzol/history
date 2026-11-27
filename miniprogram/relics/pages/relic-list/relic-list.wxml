@@ -25,13 +25,20 @@
 
     <view class="gallery-head">
       <text class="gallery-title" aria-role="heading">馆藏</text>
-      <text class="result-count" aria-live="polite">{{count}} 件</text>
+      <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : count + ' 件')}}</text>
     </view>
-    <view wx:if="{{count}}" class="relic-grid">
+    <view wx:if="{{indexLoading}}" class="relic-empty">
+      <text>馆藏目录加载中，请稍候。</text>
+    </view>
+    <view wx:elif="{{indexFailed}}" class="relic-empty">
+      <text>目录加载失败，请检查网络后重试。</text>
+      <view class="relic-action" bindtap="retryIndex" aria-role="button">重新加载</view>
+    </view>
+    <view wx:elif="{{count}}" class="relic-grid">
       <view wx:for="{{rows}}" wx:key="id" class="relic-card" data-id="{{item.id}}" bindtap="openRelic"
         hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button" aria-label="{{item.title + '，' + item.period + '，' + item.type}}">
         <view class="relic-cover">
-          <image class="relic-thumb" src="{{item.thumb}}" mode="aspectFit" lazy-load aria-hidden="true"></image>
+          <image class="relic-thumb" src="{{item.thumb}}" mode="aspectFit" lazy-load binderror="onThumbError" data-index="{{index}}" aria-hidden="true"></image>
           <view class="cover-fade" aria-hidden="true"></view>
         </view>
         <view class="relic-card-copy">

@@ -38,7 +38,7 @@
       aria-role="button" aria-label="文物，浏览青铜、陶瓷、玉器和书画">
       <view class="relic-entry-copy">
         <text class="relic-entry-title">文物</text>
-        <text class="relic-entry-types">青铜 · 陶瓷 · 玉器 · 书画</text>
+        <text class="relic-entry-types">青铜 · 陶瓷 · 玉器 · 书画 等 8 类</text>
       </view>
       <image class="relic-entry-art" src="/assets/relic-home-ink.png" mode="aspectFit" aria-hidden="true"></image>
       <text class="relic-entry-arrow" aria-hidden="true">›</text>

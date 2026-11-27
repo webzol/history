@@ -12,7 +12,10 @@
       <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
     </view>
 
-    <block wx:if="{{relic}}">
+    <view wx:if="{{loading}}" class="relic-empty">
+      <text>目录加载中，请稍候。</text>
+    </view>
+    <block wx:elif="{{relic}}">
       <view class="object-card">
         <text class="object-type">{{relic.period}} · {{relic.type}}</text>
         <text class="object-name" aria-role="heading">{{relic.title}}</text>
@@ -22,11 +25,12 @@
             aria-label="{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}"></image>
           <view class="cover-fade" aria-hidden="true"></view>
         </view>
-        <view wx:else class="relic-cover object-cover" style="padding-top: 72%;">
+        <view wx:elif="{{relic.imageThumb}}" class="relic-cover object-cover" style="padding-top: 72%;">
           <image class="object-image" src="{{relic.imageThumb}}" mode="aspectFit" aria-hidden="true"></image>
           <view class="cover-fade" aria-hidden="true"></view>
         </view>
-        <text class="object-image-note">{{degraded ? '详情大图离线暂不可用，显示缩略图 · ' : ''}}{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>
+        <view wx:else class="object-image-empty">图像暂不可用</view>
+        <text class="object-image-note">{{degraded && relic.imageThumb ? '详情大图离线暂不可用，显示缩略图 · ' : ''}}{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>
       </view>
 
       <view class="details-card">

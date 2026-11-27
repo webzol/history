@@ -58,9 +58,13 @@ def main():
     assets = root / "assets"
     assets.mkdir(exist_ok=True)
     changed_ratios = []
+    skipped = 0
 
     for item in manifest["sources"]:
         key = item["id"]
+        if not (root / "originals" / f"{key}.jpg").exists():
+            skipped += 1
+            continue
         with Image.open(root / "originals" / f"{key}.jpg") as image:
             source = ImageOps.exif_transpose(image).convert("RGB")
         detail = source.copy()
@@ -69,13 +73,15 @@ def main():
         cover = gallery_photo(source).resize((200, 144), RESAMPLE)
         cover.save(assets / f"thumb-{key}.jpg", quality=66, optimize=True)
         ratio = round(detail.height * 100 / detail.width, 3)
-        if ratio != manifest["expectedRatios"][key]:
+        expected = manifest["expectedRatios"].get(key)
+        if expected and ratio != expected:
             changed_ratios.append(f"{key} imageRatio: {ratio}")
 
     if changed_ratios:
         raise SystemExit("Review image ratios before putting these assets in the package:\n" + "\n".join(changed_ratios))
     size = sum(file.stat().st_size for file in assets.glob("*.jpg"))
-    print(f"Prepared {len(manifest['sources']) * 2} images ({size / 1024:.1f} KB) in {assets}")
+    print(f"Prepared {len(manifest['sources']) - skipped} images ({size / 1024:.1f} KB) in {assets}"
+          + (f"；跳过缺原图 {skipped} 条" if skipped else ""))
 
 
 if __name__ == "__main__":

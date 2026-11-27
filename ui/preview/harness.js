@@ -204,6 +204,21 @@
           return;
         }
       }
+      // 文物目录分片（index/detail-NN）映射仓库本地文件，离线预览可载全量目录
+      if (o && o.url && o.url.indexOf('/data/relics/') >= 0) {
+        var relR = o.url.split('/data/relics/')[1];
+        if (relR) {
+          fetch('/miniprogram/data/relics/' + relR).then(function (res) {
+            if (!res.ok) throw new Error('relics ' + res.status);
+            return res.json();
+          }).then(function (data) {
+            if (o.success) o.success({ data: data, statusCode: 200 });
+          }).catch(function (err) {
+            if (o.fail) o.fail(err);
+          });
+          return;
+        }
+      }
       if (o && o.fail) o.fail(new Error('offline'));
     },
     navigateTo: function (o) {

@@ -1,26 +1,28 @@
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
 const qrshare = require('../../../utils/qrshare.js');
-const { RELICS, LIST_PATH, imagePath, detailUrls, sourceFor, shareMessage } = require('../../catalog.js');
+const relicData = require('../../relicData.js');
+const { RELICS, LIST_PATH, imagePath, detailUrls, shareMessage } = require('../../catalog.js');
 
 Page({
-  data: { fontClass: 'm', relic: null, degraded: false, sourceOpen: false, share: { open: false } },
+  data: { fontClass: 'm', relic: null, loading: true, notFound: false, degraded: false, sourceOpen: false, share: { open: false } },
 
   onLoad(options = {}) {
     share.enableMenu();
     font.apply(this);
-    const item = RELICS.find(relic => relic.id === options.id);
-    if (!item) return;
-    const { id, title, type, period, date, material, dimensions, accession, description, imageNote, imageRatio } = item;
-    const { museum, url, rights } = sourceFor(id);
-    // 详情大图按 CDN 主域 → 备用域依次加载（binderror 步进），都失败降级为包内缩略图
-    this.detailSources = detailUrls(id);
-    this.setData({
-      relic: { id, title, type, period, date, material, dimensions, accession, description,
-        imageNote: imageNote || '', imageRatio, museum, url, rights,
-        image: this.detailSources[0], imageThumb: imagePath(id, 'thumb') }
-    }, () => {
-      if (options.share === '1') this.openShare();
+    this.setData({ loading: true, notFound: false, degraded: false, relic: null });
+    // 精修 60 件包内即时出；批量条目按索引分卷异步解析
+    relicData.loadDetail(options.id, (payload) => {
+      if (!payload) {
+        this.setData({ loading: false, notFound: true });
+        return;
+      }
+      const relic = payload.relic;
+      this.detailSources = detailUrls(relic.id);
+      relic.image = this.detailSources[0];
+      this.setData({ relic, loading: false }, () => {
+        if (options.share === '1') this.openShare();
+      });
     });
   },
 
@@ -57,7 +59,7 @@ Page({
       kicker: `文物 · ${relic.period}`,
       title: relic.title,
       desc: relic.description,
-      // 海报题图走 CDN 主域，失败回退包内缩略图（qrshare 的 imgFallback 链）
+      // 海报题图走 CDN 主域，精修件回退包内缩略图（批量件无包内图，走兜底卷首）
       img: detailUrls(relic.id)[0],
       imgFallback: relic.imageThumb,
       coverFit: 'contain',

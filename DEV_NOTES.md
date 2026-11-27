@@ -182,3 +182,10 @@
 
 - 交互自测 PASS 2441/FAIL 0、隐私 14 项、content_audit、validate 全过；catalog/缩略图/详情图/sources 四方 60 条对账一致。
 - 新增 `tools/relic_perf_probe.js`：首屏 setData 0.90KB（8 行）、续载逐项路径追加约 0.9KB/屏（修正 `rows[8]` 整组塞一个下标的写法）、详情 0.53KB、全流程 0 次wx.request；CDN 60/60 在线（4 并发会被 jsDelivr 限流 403，串行全 200，610–1433ms）。
+
+## 2026-11-28 · 文物全量拉取 2,003 件
+
+- 目录 60 → 2,003 件：精修 60（包内）+ 批量 1,943（克利夫兰 CC0 全量，模板生成标未审校）。器类 8 类、时代 13 项对全量生效。
+- 新架构：`data/relics/index.json` + `detail-NN.json` 分片经 jsDelivr（`relics/relicData.js` 双域 + 7 天缓存），批量缩略/详情图走 `data/img/relics/` CDN。列表冷启 1 请求、首屏 setData 1.4KB（全量直渲染需 145KB，省 99%）；精修详情 0 请求、批量 1 次分卷。
+- 管线：discover（全字段含中文原题名）→ fetch_relics_full → prepare → build_relics_full（zhconv 繁转简 + 词表英译题名）。validate 加分片三方对账；selftest 文物段重写，PASS 10326/FAIL 0。
+- 待办：真机弱网验证；批量条目按批次史实审校（含约四成英文题名中文化）；大都会候选批量拉取另批处理。

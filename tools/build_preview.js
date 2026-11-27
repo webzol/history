@@ -49,6 +49,7 @@ parts.push(wrapJs('data/history-extra.js', read('data/history-extra.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
 parts.push(wrapJs('data/archive-meta.js', read('data/archive-meta.js')));
 parts.push(wrapJs('relics/catalog.js', read('relics/catalog.js')));
+parts.push(wrapJs('relics/relicData.js', read('relics/relicData.js')));
 parts.push(wrapJs('utils/store.js', read('utils/store.js')));
 parts.push(wrapJs('utils/historyData.js', read('utils/historyData.js')));
 parts.push(wrapJs('utils/remote.js', read('utils/remote.js')));

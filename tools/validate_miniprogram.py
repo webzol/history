@@ -198,6 +198,74 @@ def check_relic_catalog():
         actual = round(height * 100 / width, 3)
         if abs(actual - ratio) > 0.05:
             errors.append(f"relics {relic_id}: imageRatio {ratio} 与详情图实际 {actual} 不符")
+
+    errors.extend(check_relic_shards(dict(entries)))
+    return errors
+
+
+def check_relic_shards(curated_ratio):
+    """全量目录分片一致性：index 行 ↔ 详情分卷 ↔ CDN 配图三方对账。"""
+    relics_dir = ROOT / "data" / "relics"
+    index_path = relics_dir / "index.json"
+    if not index_path.exists():
+        return ["relics 分片：缺少 data/relics/index.json"]
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [f"relics 分片 index.json 解析失败：{exc}"]
+    errors = []
+    rows = index.get("rows") or []
+    total = index.get("total")
+    step = index.get("step") or 200
+    parts = index.get("parts")
+    if total != len(rows):
+        errors.append(f"relics 分片：total {total} 与 rows {len(rows)} 不一致")
+    if parts != (len(rows) + step - 1) // step:
+        errors.append(f"relics 分片：parts {parts} 与 rows/step 不一致")
+    ids = [row.get("id") for row in rows]
+    if len(set(ids)) != len(ids):
+        errors.append("relics 分片：索引 id 重复")
+
+    detail_entries = {}
+    for n in range(parts or 0):
+        shard_path = relics_dir / f"detail-{n:02d}.json"
+        if not shard_path.exists():
+            errors.append(f"relics 分片：缺少 detail-{n:02d}.json")
+            continue
+        try:
+            shard = json.loads(shard_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            errors.append(f"relics 分片 detail-{n:02d}.json 解析失败：{exc}")
+            continue
+        expect = min(step, len(rows) - n * step)
+        if len(shard.get("items") or {}) != expect:
+            errors.append(f"relics 分卷 {n}：条数 {len(shard.get('items') or {})} 应为 {expect}")
+        detail_entries.update(shard.get("items") or {})
+
+    for row in rows:
+        relic_id = row.get("id")
+        if not relic_id or not row.get("title") or not row.get("period") or not row.get("type"):
+            errors.append(f"relics 索引行字段缺失：{relic_id}")
+            continue
+        entry = detail_entries.get(relic_id)
+        if not entry:
+            errors.append(f"relics {relic_id}: 索引行无对应详情分卷条目")
+            continue
+        if relic_id in curated_ratio:
+            continue  # 精修件比例已在上循环校验
+        detail = ROOT / "data" / "img" / "relics" / f"{relic_id}.jpg"
+        thumb = ROOT / "data" / "img" / "relics" / f"thumb-{relic_id}.jpg"
+        if not thumb.exists():
+            errors.append(f"relics {relic_id}: 缺少 CDN 缩略图")
+        if not detail.exists():
+            errors.append(f"relics {relic_id}: 缺少 CDN 详情图")
+            continue
+        width, height = jpeg_size(detail)
+        actual = round(height * 100 / width, 3)
+        if abs(actual - entry.get("imageRatio", 0)) > 0.05:
+            errors.append(f"relics {relic_id}: imageRatio {entry.get('imageRatio')} 与详情图实际 {actual} 不符")
+        if entry.get("t") and len(entry.get("description") or "") < 30:
+            errors.append(f"relics {relic_id}: 模板简介过短")
     return errors
 
 
