@@ -17,10 +17,17 @@
         <image wx:if="{{share.fallback}}" aria-hidden="true" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFit"></image>
         <canvas wx:else aria-hidden="true" type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
       </view>
-      <view class="ss-actions">
-        <button class="ss-btn ss-btn-primary" open-type="share" aria-label="转寄好友">转寄好友</button>
-        <view class="ss-btn ss-btn-ghost {{share.coverPending && !share.fallback ? 'share-pending' : ''}}" bindtap="saveQr"
-          aria-role="button" aria-disabled="{{share.coverPending && !share.fallback}}">{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</view>
+      <view class="relic-share-actions">
+        <button class="share-action send-action" open-type="share" hover-class="share-action-pressed" hover-stay-time="80">
+          <view class="share-action-icon send-icon" aria-hidden="true"></view>
+          <text>转寄好友</text>
+        </button>
+        <view class="share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}" bindtap="saveQr"
+          hover-class="{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}" hover-stay-time="80"
+          aria-role="button" aria-disabled="{{share.coverPending && !share.fallback}}">
+          <view class="share-action-icon save-icon" aria-hidden="true"></view>
+          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>
+        </view>
       </view>
     </block>
     <view wx:else class="relic-empty">
