@@ -217,6 +217,7 @@ python tools/validate_miniprogram.py
 
 ## 6. 代码约定
 
+- 2026-11-27 主包质量预算改为低于 1.5 MB、图片音频低于 200 KB，启用组件按需注入。`assets/paintings`、`assets/thumbs`、`assets/personart`、`assets/eventart` 保留原图并排除入包，页面路径由 `utils/eraImages.js` 转成 CDN 地址，失败回退本地宫阙。更早章节对这四类图的「本地」描述指仓库素材，运行时以此条为准。
 - **所有开发都要评估性能影响**：开发时检查首屏、点击响应、滚动和切页，关注主包体积、请求次数、缓存、渲染节点和 `setData` 载荷。按改动实际影响验证相关项，记录结果与待做的真机验证。
 - **界面动效优先用 WXSS 的 `transform` 和 `opacity`**，控制播放范围和时长。避免逐帧 `setData`、布局属性动画和装饰性循环，尊重减少动态效果设置，保留点击区域和滚动响应。
 - 原生小程序，不引入 Taro/uni-app。

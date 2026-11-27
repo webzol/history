@@ -19,7 +19,31 @@
         "type": "file"
       },
       {
-        "value": "assets/paintings/SOURCES.md",
+        "value": "assets/paintings",
+        "type": "folder"
+      },
+      {
+        "value": "assets/thumbs",
+        "type": "folder"
+      },
+      {
+        "value": "assets/personart",
+        "type": "folder"
+      },
+      {
+        "value": "assets/eventart",
+        "type": "folder"
+      },
+      {
+        "value": "assets/avatar-scholar.jpg",
+        "type": "file"
+      },
+      {
+        "value": "assets/back-arrow.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/icons/arrow.png",
         "type": "file"
       }
     ],
@@ -31,6 +55,8 @@
     "enhance": true,
     "postcss": true,
     "minified": true,
+    "ignoreDevUnusedFiles": true,
+    "ignoreUploadUnusedFiles": true,
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": true,

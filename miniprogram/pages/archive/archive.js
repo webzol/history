@@ -1,6 +1,7 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
+const { nextArt } = require('../../utils/eraImages.js');
 
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -150,6 +151,15 @@ Page({
       openKey,
       rows: buildRows(this.groups || [], openKey)
     });
+  },
+
+  onGroupCoverErr(e) {
+    const { index, key } = e.currentTarget.dataset;
+    const group = this.groups.find((item) => item.key === key);
+    const src = group && nextArt(group.cover);
+    if (!src) return;
+    group.cover = src;
+    this.setData({ [`rows[${index}].cover`]: src });
   },
 
   onEntry(e) {

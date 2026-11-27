@@ -4,7 +4,7 @@ const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 const identity = require('../../utils/identity.js');
 const { resolveEntry, fmtWhen } = require('../../utils/entries.js');
-const altArt = require('../../utils/eraImages.js').altArt;
+const nextArt = require('../../utils/eraImages.js').nextArt;
 
 const share = require('../../utils/share.js');
 
@@ -181,7 +181,7 @@ Page({
     if (!rows) return;
     const index = rows.findIndex((r) => r.id === id && r.type === type);
     if (index < 0) return;
-    const alt = altArt(rows[index].img);
+    const alt = nextArt(rows[index].img);
     if (alt) this.setData({ [list + '[' + index + '].img']: alt });
   },
 

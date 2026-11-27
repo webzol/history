@@ -6,10 +6,7 @@ const qrshare = require('../../utils/qrshare.js');
 const wxacode = require('../../utils/wxacode.js');
 const eventImage = require('../../utils/eraImages.js').eventImage;
 const personImageThumb = require('../../utils/eraImages.js').personImageThumb;
-const personThumb = require('../../utils/eraImages.js').personThumb;
-const altArt = require('../../utils/eraImages.js').altArt;
-const EVENT_ART = require('../../utils/eraImages.js').EVENT_ART;
-const eraImage = require('../../utils/eraImages.js').eraImage;
+const { nextArt, FALLBACK } = require('../../utils/eraImages.js');
 
 const share = require('../../utils/share.js');
 
@@ -49,7 +46,7 @@ Page({
     }
 
     // 反查人物列表：人物详情里登记过 relatedEvents 的人，即与该事件相关。
-    // fallback 恒为本地时代细部图：远端专属图加载中/失败时垫底，秒出且不闪破图。
+    // 先显示本地宫阙，远端小图就绪后覆盖，避免同一行并发拉两张题图。
     const relatedPersons = hd
       .get()
       .persons.filter((person) =>
@@ -62,7 +59,7 @@ Page({
         dates: person.dates,
         roles: person.roles,
         img: personImageThumb(person.id, person.era, index),
-        fallback: personThumb(person.era, index)
+        fallback: FALLBACK
       }));
 
     this.setData({
@@ -86,7 +83,7 @@ Page({
 
   // 远端专属图加载失败 → 换备用 jsDelivr 域名重试一次；再失败则露出垫底时代图
   onHeadImgErr() {
-    const alt = altArt(this.data.headImg);
+    const alt = nextArt(this.data.headImg);
     if (alt) this.setData({ headImg: alt });
   },
 
@@ -96,7 +93,7 @@ Page({
     if (index < 0) return;
     const item = this.data.relatedPersons[index];
     // 换备用 jsDelivr 域名重试一次；仍失败则置回垫底图（img === fallback 时上层隐藏）
-    this.setData({ ['relatedPersons[' + index + '].img']: altArt(item.img) || item.fallback });
+    this.setData({ ['relatedPersons[' + index + '].img']: nextArt(item.img) || item.fallback });
   },
 
   toggleCollect() {
@@ -142,7 +139,7 @@ Page({
       title: event ? event.title : '阅史记',
       desc: event ? event.desc || '' : '',
       img: this.data.headImg || '',
-      imgFallback: (event && (EVENT_ART[event.id] || eraImage(event.era))) || '/assets/palace.jpg',
+      imgFallback: FALLBACK,
       path: event ? `/pages/event/event?id=${event.id}` : '/pages/home/home'
     };
   },

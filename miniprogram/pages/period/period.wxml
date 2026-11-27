@@ -18,7 +18,7 @@
 
     <view class="head-card {{period.id === 'modern' ? 'head-modern' : ''}}">
       <view class="hero-band">
-        <image class="hero-img" src="{{period.img}}" mode="aspectFill"></image>
+        <image class="hero-img" src="{{period.img}}" mode="aspectFill" binderror="onCoverErr"></image>
         <view class="hero-shade"></view>
         <view class="hero-copy">
           <text class="p-name">{{period.name}}</text>

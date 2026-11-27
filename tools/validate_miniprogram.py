@@ -18,6 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "miniprogram"
 VOID = {"image", "input", "br", "hr", "meta", "link"}
+MEDIA_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".ico",
+                  ".mp3", ".aac", ".wav", ".m4a", ".ogg", ".amr", ".flac"}
 
 
 class Checker(HTMLParser):
@@ -86,11 +88,11 @@ def main():
         if checker.stack:
             errors.append(f"{wxml.name}: unclosed tags {checker.stack}")
 
-    # 主包体积预算：微信上传上限 2MB，packOptions.ignore 的文件不计入。
-    # 往主包加数据/素材后跑这条，避免临近上限才被发现（2026-11-21 起纳入常规校验）。
+    # 按微信开发者工具的代码质量阈值估算，packOptions.ignore 的文件不计入。
     config = json.loads((ROOT / "project.config.json").read_text(encoding="utf-8"))
     ignore_rules = (config.get("packOptions") or {}).get("ignore") or []
-    budget_kb = 2048
+    package_budget_kb = 1536
+    media_budget_kb = 200
 
     def is_ignored(rel):
         rel = rel.replace("\\", "/")
@@ -101,15 +103,24 @@ def main():
         return False
 
     total = 0
+    media = 0
     for path in ROOT.rglob("*"):
-        if path.is_file() and not is_ignored(str(path.relative_to(ROOT))):
-            total += path.stat().st_size
+        if not path.is_file() or is_ignored(str(path.relative_to(ROOT))):
+            continue
+        if path.name in {"project.config.json", "project.private.config.json"} and path.parent == ROOT:
+            continue
+        size = path.stat().st_size
+        total += size
+        if path.suffix.lower() in MEDIA_SUFFIXES:
+            media += size
     size_kb = total / 1024
-    if size_kb > budget_kb:
-        errors.append(
-            f"main package {size_kb:.1f}KB exceeds WeChat upload limit {budget_kb}KB "
-            "- remove files or add packOptions.ignore entries"
-        )
+    media_kb = media / 1024
+    if size_kb >= package_budget_kb:
+        errors.append(f"main package {size_kb:.1f}KB must be below {package_budget_kb}KB")
+    if media_kb >= media_budget_kb:
+        errors.append(f"packaged images/audio {media_kb:.1f}KB must be below {media_budget_kb}KB")
+    if app.get("lazyCodeLoading") != "requiredComponents":
+        errors.append("app.json must enable requiredComponents lazy code loading")
 
     if errors:
         print("FAIL")
@@ -118,7 +129,8 @@ def main():
         raise SystemExit(1)
 
     print(
-        f"OK: {len(app['pages'])} pages, main package {size_kb:.1f}KB / {budget_kb}KB, "
+        f"OK: {len(app['pages'])} pages, main package {size_kb:.1f}KB / {package_budget_kb}KB, "
+        f"images/audio {media_kb:.1f}KB / {media_budget_kb}KB, "
         "JSON/assets/WXML checks passed."
     )
 

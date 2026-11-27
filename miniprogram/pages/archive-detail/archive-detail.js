@@ -3,7 +3,7 @@ const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
 const archiveArt = require('../../utils/archiveArt.js');
-const altArt = require('../../utils/eraImages.js').altArt;
+const { altArt, nextArt } = require('../../utils/eraImages.js');
 const store = require('../../utils/store.js');
 const entries = require('../../utils/entries.js');
 const qrshare = require('../../utils/qrshare.js');
@@ -315,6 +315,11 @@ Page({
       imgFallback: this.data.cover || '/assets/palace.jpg',
       path: `/pages/archive-detail/archive-detail?kind=${this.kind}&type=${encodeURIComponent(this.type)}&shard=${encodeURIComponent(this.shard || '')}&title=${encodeURIComponent(this.data.kicker)}&id=${encodeURIComponent(this.id)}`
     };
+  },
+
+  onCoverErr() {
+    const src = nextArt(this.data.cover);
+    if (src) this.setData({ cover: src });
   },
 
   onShareAppMessage() {

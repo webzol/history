@@ -28,7 +28,7 @@
     </view>
 
     <view class="cover-card">
-      <image class="cover-img" src="{{cover}}" mode="aspectFill"></image>
+      <image class="cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverErr"></image>
       <view class="cover-mask"></view>
       <view class="cover-copy">
         <text class="cover-kicker">阅史记资料库 · 分类</text>

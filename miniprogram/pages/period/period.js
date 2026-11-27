@@ -1,3 +1,4 @@
+const { artAsset, nextArt } = require('../../utils/eraImages.js');
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
@@ -12,24 +13,24 @@ const PERIOD_META = {
   chunqiu: { img: '/assets/palace.jpg', yearText: '前770–前476', seal: '春' },
   zhanguo: { img: '/assets/palace.jpg', yearText: '前475–前221', seal: '战' },
   qin: { img: '/assets/palace.jpg', yearText: '前221–前207', seal: '秦' },
-  han: { img: '/assets/paintings/han.jpg', yearText: '前202–公元9', seal: '汉' },
-  donghan: { img: '/assets/paintings/han.jpg', yearText: '25–220', seal: '汉' },
+  han: { img: artAsset('/assets/paintings/han.jpg'), yearText: '前202–公元9', seal: '汉' },
+  donghan: { img: artAsset('/assets/paintings/han.jpg'), yearText: '25–220', seal: '汉' },
   sanguo: { img: '/assets/palace.jpg', yearText: '184–280', seal: '三' },
   xijin: { img: '/assets/palace.jpg', yearText: '266–316', seal: '晋' },
-  dongjin: { img: '/assets/paintings/landscape.jpg', yearText: '317–420', seal: '晋' },
-  nanbeichao: { img: '/assets/paintings/landscape.jpg', yearText: '420–589', seal: '南' },
+  dongjin: { img: artAsset('/assets/paintings/landscape.jpg'), yearText: '317–420', seal: '晋' },
+  nanbeichao: { img: artAsset('/assets/paintings/landscape.jpg'), yearText: '420–589', seal: '南' },
   sui: { img: '/assets/palace.jpg', yearText: '581–618', seal: '隋' },
-  tang: { img: '/assets/paintings/tang.jpg', yearText: '618–907', seal: '唐' },
+  tang: { img: artAsset('/assets/paintings/tang.jpg'), yearText: '618–907', seal: '唐' },
   wudai: { img: '/assets/palace.jpg', yearText: '907–979', seal: '五' },
-  song: { img: '/assets/paintings/song.jpg', yearText: '960–1127', seal: '宋' },
-  nansong: { img: '/assets/paintings/song.jpg', yearText: '1127–1279', seal: '宋' },
+  song: { img: artAsset('/assets/paintings/song.jpg'), yearText: '960–1127', seal: '宋' },
+  nansong: { img: artAsset('/assets/paintings/song.jpg'), yearText: '1127–1279', seal: '宋' },
   liao: { img: '/assets/palace.jpg', yearText: '916–1125', seal: '辽' },
   xixia: { img: '/assets/palace.jpg', yearText: '1038–1227', seal: '夏' },
   jin: { img: '/assets/palace.jpg', yearText: '1115–1234', seal: '金' },
   yuan: { img: '/assets/palace.jpg', yearText: '1206–1368', seal: '元' },
-  ming: { img: '/assets/paintings/ming.jpg', yearText: '1368–1644', seal: '明' },
-  qing: { img: '/assets/paintings/qing.jpg', yearText: '1644–1912', seal: '清' },
-  modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
+  ming: { img: artAsset('/assets/paintings/ming.jpg'), yearText: '1368–1644', seal: '明' },
+  qing: { img: artAsset('/assets/paintings/qing.jpg'), yearText: '1644–1912', seal: '清' },
+  modern: { img: artAsset('/assets/paintings/modern.jpg'), yearText: '1840–1949', seal: '近' }
 };
 
 const MODERN_ERAS = ['晚清', '民国', '新中国', '近现代', '现代'];
@@ -62,6 +63,11 @@ Page({
 
   onShow() {
     font.apply(this);
+  },
+
+  onCoverErr() {
+    const src = this.data.period && nextArt(this.data.period.img);
+    if (src) this.setData({ 'period.img': src });
   },
 
   apply(redirectOnMiss) {

@@ -1,7 +1,7 @@
 const feedback = require('../../utils/feedback.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
-const altArt = require('../../utils/eraImages.js').altArt;
+const nextArt = require('../../utils/eraImages.js').nextArt;
 const { resolveEntry, fmtWhen, groupByType, flattenGroups } = require('../../utils/entries.js');
 
 const share = require('../../utils/share.js');
@@ -58,7 +58,7 @@ Page({
     const { type, id } = e.currentTarget.dataset;
     const index = this.data.rows.findIndex((r) => r.kind === 'item' && r.id === id && r.type === type);
     if (index < 0) return;
-    const alt = altArt(this.data.rows[index].img);
+    const alt = nextArt(this.data.rows[index].img);
     if (alt) this.setData({ ['rows[' + index + '].img']: alt });
   },
 

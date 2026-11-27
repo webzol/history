@@ -1,6 +1,7 @@
 const font = require('../../utils/font.js');
 const apk = require('../../utils/apkData.js');
 const archiveImages = require('../../utils/archiveImages.js');
+const { nextArt } = require('../../utils/eraImages.js');
 
 const PAGE_SIZE = 60;
 const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -195,6 +196,11 @@ Page({
 
   goBack() {
     wx.navigateBack({ fail: () => wx.redirectTo({ url: '/pages/archive/archive' }) });
+  },
+
+  onCoverErr() {
+    const src = nextArt(this.data.cover);
+    if (src) this.setData({ cover: src });
   },
 
   onShareAppMessage() {

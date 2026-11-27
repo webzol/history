@@ -1,3 +1,4 @@
+const { artAsset, nextArt } = require('../../utils/eraImages.js');
 const hd = require('../../utils/historyData.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
@@ -7,12 +8,12 @@ const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 // 朝代卡配图（搜图素材，见 assets/paintings/SOURCES.md）
 const PERIOD_META = {
-  han: { img: '/assets/paintings/han.jpg', yearText: '前202–公元9', seal: '汉' },
-  tang: { img: '/assets/paintings/tang.jpg', yearText: '618–907', seal: '唐' },
-  song: { img: '/assets/paintings/song.jpg', yearText: '960–1127', seal: '宋' },
-  ming: { img: '/assets/paintings/ming.jpg', yearText: '1368–1644', seal: '明' },
-  qing: { img: '/assets/paintings/qing.jpg', yearText: '1644–1912', seal: '清' },
-  modern: { img: '/assets/paintings/modern.jpg', yearText: '1840–1949', seal: '近' }
+  han: { img: artAsset('/assets/paintings/han.jpg'), yearText: '前202–公元9', seal: '汉' },
+  tang: { img: artAsset('/assets/paintings/tang.jpg'), yearText: '618–907', seal: '唐' },
+  song: { img: artAsset('/assets/paintings/song.jpg'), yearText: '960–1127', seal: '宋' },
+  ming: { img: artAsset('/assets/paintings/ming.jpg'), yearText: '1368–1644', seal: '明' },
+  qing: { img: artAsset('/assets/paintings/qing.jpg'), yearText: '1644–1912', seal: '清' },
+  modern: { img: artAsset('/assets/paintings/modern.jpg'), yearText: '1840–1949', seal: '近' }
 };
 
 const share = require('../../utils/share.js');
@@ -78,6 +79,13 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ active: 'discover' });
     }
+  },
+
+  onPeriodImgErr(e) {
+    const { index } = e.currentTarget.dataset;
+    const item = this.data.periods[index];
+    const src = item && nextArt(item.img);
+    if (src) this.setData({ [`periods[${index}].img`]: src });
   },
 
   goTimeline(e) {

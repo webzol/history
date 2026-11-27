@@ -74,12 +74,12 @@ function makeMockCanvasNode() {
 
 // 远端专属图（jsDelivr URL）映射回仓库内 miniprogram/data/img/ 检查存在性
 // 2026-10-24：cdn.jsdelivr.net 对图片一律 301 跳 raw.githubusercontent.com，图片基址已切 gcore
+const artUrl = (asset) => 'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram' + asset;
 const IMG_CDN_PREFIX = 'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram';
 function imgOk(img) {
   if (!img) return false;
-  if (img.indexOf(IMG_CDN_PREFIX) === 0) {
-    return fs.existsSync(path.join(ROOT, img.slice(IMG_CDN_PREFIX.length)));
-  }
+  const repoPath = img.match(/^https:\/\/[^/]+\.jsdelivr\.net\/gh\/webzol\/history@main\/miniprogram(\/.*)$/);
+  if (repoPath) return fs.existsSync(path.join(ROOT, repoPath[1]));
   return fs.existsSync(path.join(ROOT, img));
 }
 function remoteEventImg(id) {
@@ -499,36 +499,36 @@ console.log('== 数据完整性 ==');
 
   // 时代配图映射（事件头卡 / 人物缩略图共用）
   const eraImages = require(path.join(ROOT, 'utils', 'eraImages.js'));
-  eq(eraImages.eraImage('西汉'), '/assets/paintings/han.jpg', '时代配图 · 西汉');
-  eq(eraImages.eraImage('晚清'), '/assets/paintings/qing.jpg', '时代配图 · 晚清并到清');
-  eq(eraImages.eraImage('民国'), '/assets/paintings/landscape.jpg', '时代配图 · 民国用千里江山图');
-  eq(eraImages.eraImage('近现代'), '/assets/paintings/landscape.jpg', '时代配图 · 近现代用千里江山图');
-  eq(eraImages.eraImage('新中国'), '/assets/paintings/modern.jpg', '时代配图 · 新中国用开国大典');
-  eq(eraImages.eraImage('辽'), '/assets/paintings/liao.jpg', '时代配图 · 辽代有专属绘画');
-  eq(eraImages.eraImage('东晋'), '/assets/paintings/dongjin.jpg', '时代配图 · 东晋用顾恺之洛神赋图');
-  eq(eraImages.eraImage('南北朝'), '/assets/paintings/nanbeichao.jpg', '时代配图 · 南北朝用云冈石窟');
-  eq(eraImages.eraImage('秦'), '/assets/paintings/qin.jpg', '时代配图 · 秦代有专属绘画');
-  eq(eraImages.eraImage('元'), '/assets/paintings/yuan.jpg', '时代配图 · 元代有专属绘画');
-  eq(eraImages.personThumb('西汉', 0), '/assets/thumbs/han-1.jpg', '人物缩略图 · 西汉轮换起点');
-  eq(eraImages.personThumb('西汉', 1), '/assets/thumbs/han-2.jpg', '人物缩略图 · 西汉第二张');
-  eq(eraImages.personThumb('民国', 0), '/assets/thumbs/republic-1.jpg', '人物缩略图 · 民国用山河细部');
-  eq(eraImages.personThumb('辽', 0), '/assets/thumbs/liao-1.jpg', '人物缩略图 · 辽代有专属细部');
-  eq(eraImages.personThumb('战国', 0), '/assets/thumbs/zhanguo-1.jpg', '人物缩略图 · 战国有专属细部');
-  eq(eraImages.personThumb('东晋', 0), '/assets/thumbs/dongjin-1.jpg', '人物缩略图 · 东晋有专属细部');
-  eq(eraImages.personThumb('南北朝', 0), '/assets/thumbs/nanbeichao-1.jpg', '人物缩略图 · 南北朝有专属细部');
-  eq(eraImages.eventImage('chibi', '三国'), '/assets/eventart/chibi.jpg', '事件配图 · 赤壁之战用专属图');
-  eq(eraImages.eventImage('qin-unify', '秦'), '/assets/eventart/qin-unify.jpg', '事件配图 · 秦统一用专属图');
-  eq(eraImages.eventImage('no-such-id', '北宋'), '/assets/paintings/song.jpg', '事件配图 · 无专属图回退朝代级');
-  eq(eraImages.eventImage('han-wudi', '西汉'), '/assets/eventart/han-wudi.jpg', '事件配图 · 汉武帝即位用专属图');
-  eq(eraImages.personImage('zhang-qian', '西汉'), '/assets/personart/zhang-qian.jpg', '人物配图 · 张骞用专属图');
-  eq(eraImages.personImage('wei-qing', '西汉'), '/assets/personart/wei-qing.jpg', '人物配图 · 卫青用专属图');
-  eq(eraImages.personImage('huo-qubing', '西汉'), '/assets/personart/huo-qubing.jpg', '人物配图 · 霍去病用专属图');
-  eq(eraImages.personImage('han-wudi', '西汉'), '/assets/personart/wudi.jpg', '人物配图 · 汉武帝用专属图');
-  eq(eraImages.personImageThumb('zhang-qian', '西汉', 0), '/assets/personart/zhang-qian.jpg', '人物小图 · 人物整幅画优先于细部裁切');
+  eq(eraImages.eraImage('西汉'), artUrl('/assets/paintings/han.jpg'), '时代配图 · 西汉');
+  eq(eraImages.eraImage('晚清'), artUrl('/assets/paintings/qing.jpg'), '时代配图 · 晚清并到清');
+  eq(eraImages.eraImage('民国'), artUrl('/assets/paintings/landscape.jpg'), '时代配图 · 民国用千里江山图');
+  eq(eraImages.eraImage('近现代'), artUrl('/assets/paintings/landscape.jpg'), '时代配图 · 近现代用千里江山图');
+  eq(eraImages.eraImage('新中国'), artUrl('/assets/paintings/modern.jpg'), '时代配图 · 新中国用开国大典');
+  eq(eraImages.eraImage('辽'), artUrl('/assets/paintings/liao.jpg'), '时代配图 · 辽代有专属绘画');
+  eq(eraImages.eraImage('东晋'), artUrl('/assets/paintings/dongjin.jpg'), '时代配图 · 东晋用顾恺之洛神赋图');
+  eq(eraImages.eraImage('南北朝'), artUrl('/assets/paintings/nanbeichao.jpg'), '时代配图 · 南北朝用云冈石窟');
+  eq(eraImages.eraImage('秦'), artUrl('/assets/paintings/qin.jpg'), '时代配图 · 秦代有专属绘画');
+  eq(eraImages.eraImage('元'), artUrl('/assets/paintings/yuan.jpg'), '时代配图 · 元代有专属绘画');
+  eq(eraImages.personThumb('西汉', 0), artUrl('/assets/thumbs/han-1.jpg'), '人物缩略图 · 西汉轮换起点');
+  eq(eraImages.personThumb('西汉', 1), artUrl('/assets/thumbs/han-2.jpg'), '人物缩略图 · 西汉第二张');
+  eq(eraImages.personThumb('民国', 0), artUrl('/assets/thumbs/republic-1.jpg'), '人物缩略图 · 民国用山河细部');
+  eq(eraImages.personThumb('辽', 0), artUrl('/assets/thumbs/liao-1.jpg'), '人物缩略图 · 辽代有专属细部');
+  eq(eraImages.personThumb('战国', 0), artUrl('/assets/thumbs/zhanguo-1.jpg'), '人物缩略图 · 战国有专属细部');
+  eq(eraImages.personThumb('东晋', 0), artUrl('/assets/thumbs/dongjin-1.jpg'), '人物缩略图 · 东晋有专属细部');
+  eq(eraImages.personThumb('南北朝', 0), artUrl('/assets/thumbs/nanbeichao-1.jpg'), '人物缩略图 · 南北朝有专属细部');
+  eq(eraImages.eventImage('chibi', '三国'), artUrl('/assets/eventart/chibi.jpg'), '事件配图 · 赤壁之战用专属图');
+  eq(eraImages.eventImage('qin-unify', '秦'), artUrl('/assets/eventart/qin-unify.jpg'), '事件配图 · 秦统一用专属图');
+  eq(eraImages.eventImage('no-such-id', '北宋'), artUrl('/assets/paintings/song.jpg'), '事件配图 · 无专属图回退朝代级');
+  eq(eraImages.eventImage('han-wudi', '西汉'), artUrl('/assets/eventart/han-wudi.jpg'), '事件配图 · 汉武帝即位用专属图');
+  eq(eraImages.personImage('zhang-qian', '西汉'), artUrl('/assets/personart/zhang-qian.jpg'), '人物配图 · 张骞用专属图');
+  eq(eraImages.personImage('wei-qing', '西汉'), artUrl('/assets/personart/wei-qing.jpg'), '人物配图 · 卫青用专属图');
+  eq(eraImages.personImage('huo-qubing', '西汉'), artUrl('/assets/personart/huo-qubing.jpg'), '人物配图 · 霍去病用专属图');
+  eq(eraImages.personImage('han-wudi', '西汉'), artUrl('/assets/personart/wudi.jpg'), '人物配图 · 汉武帝用专属图');
+  eq(eraImages.personImageThumb('zhang-qian', '西汉', 0), artUrl('/assets/personart/zhang-qian.jpg'), '人物小图 · 人物整幅画优先于细部裁切');
   eq(eraImages.personImageThumb('sima-qian', '西汉', 0), 'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg', '人物小图 · 司马迁命中远端专属图');
   ok(eraImages.altArt('https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg') === 'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg', '远端图兜底 · altArt 换备用域名');
   ok(eraImages.altArt('/assets/personart/zhang-qian.jpg') === '' && eraImages.altArt('https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/persons/sima-qian.jpg') === '', '远端图兜底 · 本地图与已重试图不二次兜底');
-  eq(eraImages.personImageThumb('no-such-person', '西汉', 0), '/assets/thumbs/han-1.jpg', '人物小图 · 无专属回退朝代细部');
+  eq(eraImages.personImageThumb('no-such-person', '西汉', 0), artUrl('/assets/thumbs/han-1.jpg'), '人物小图 · 无专属回退朝代细部');
   let thumbCount = 0;
   ['han', 'tang', 'song', 'ming', 'qing', 'modern', 'republic',
      'shanggu', 'xia', 'shang', 'zhou', 'chunqiu', 'zhanguo', 'qin', 'sanguo',
@@ -777,7 +777,7 @@ console.log('== 发现 ==');
   p.onLoad();
   eq(p.data.periods.length, 6, '朝代六张卡');
   p.data.periods.forEach((item) =>
-    ok(item.img && fs.existsSync(path.join(ROOT, item.img)), `朝代卡有图 ${item.id}`)
+    ok(imgOk(item.img), `朝代卡有图 ${item.id}`)
   );
   eq(p.data.picks.length, 1, '精选史事只展示一条');
   eq(p.data.picks[0].id, 'yuanmingyuan-1860', '精选条为最新史事');
@@ -849,7 +849,7 @@ console.log('== 我的 ==' );
   ok(p.data.foots.some((x) => x.id === 'su-shi'), '足迹含刚浏览的人物');
   ok(p.data.foots.every((x) => x.when && x.when.length > 0), '足迹带时间');
   ok(p.data.favs.every((x) => x.img && imgOk(x.img)), '收藏条目带配图');
-  eq(p.data.favs.find((x) => x.id === 'xinhai-1911').img, remoteEventImg('xinhai-1911') || '/assets/thumbs/republic-1.jpg', '辛亥革命收藏优先专属事件图');
+  eq(p.data.favs.find((x) => x.id === 'xinhai-1911').img, remoteEventImg('xinhai-1911') || artUrl('/assets/thumbs/republic-1.jpg'), '辛亥革命收藏优先专属事件图');
   ok(p.data.foots.every((x) => x.img && imgOk(x.img)), '足迹条目带配图');
   ok(fs.existsSync(path.join(ROOT, 'assets/avatar-scholar.jpg')), '手绘历史形象头像存在');
 
@@ -1017,9 +1017,13 @@ console.log('== 资料库 ==');
   eq(archive.data.groups[3].countText, '4,566', '文献组数量');
   eq(archive.data.groups[4].name, '诗文', '诗文单独成组');
   eq(archive.data.groups[4].countText, '14,772', '诗文组数量');
-  ok(archive.data.groups.every((group) => group.cover.indexOf('/assets/') === 0), '资料库五组都有分类题图');
+  ok(archive.data.groups.every((group) => imgOk(group.cover)), '资料库五组都有分类题图');
   eq(archive.data.groups[0].cover, '/assets/scroll-accent.jpg', '典籍辞条题图');
-  eq(archive.data.groups[2].cover, '/assets/thumbs/ming-2.jpg', '事件题图');
+  eq(archive.data.groups[2].cover, artUrl('/assets/thumbs/ming-2.jpg'), '事件题图');
+  tap(archive, 'onGroupCoverErr', { key: 'events', index: 2 });
+  ok(archive.data.rows[2].cover.startsWith('https://cdn.jsdelivr.net/'), '资料库分类题图失败后换备用域名');
+  tap(archive, 'onGroupCoverErr', { key: 'events', index: 2 });
+  eq(archive.data.rows[2].cover, '/assets/palace.jpg', '资料库分类题图双域失败显示本地图');
   eq(archive.data.stats.figuresText, '5,242', '首屏人物统计与人物组一致');
   eq(archive.data.stats.eventsText, '1,200', '首屏事件统计与事件组一致');
 
@@ -1090,7 +1094,7 @@ console.log('== 资料库 ==');
   ok(!listUrls.some((url) => /\/cards\/12\/00\.json$/.test(url)), '列表首屏不拉详情分卷');
   eq(list.data.loading, false, '资料库列表加载完成');
   eq(list.data.total, 246, '资料库列表总数');
-  eq(list.data.cover, '/assets/paintings/tang.jpg', '资料库列表分类题图');
+  eq(list.data.cover, artUrl('/assets/paintings/tang.jpg'), '资料库列表分类题图');
   eq(list.data.coverMeta, '246 条', '资料库列表题图显示条数');
   eq(list.data.shown.length, 60, '资料库列表首屏 60 条');
   list.onMore();
@@ -1181,7 +1185,7 @@ console.log('== 资料库 ==');
   ok(storage['shige_apk_v3_cards_12_00_json'], '详情分卷写入本地缓存');
   eq(detail.data.loading, false, '资料库详情加载完成');
   eq(detail.data.item.id, first.id, '资料库详情命中条目');
-  eq(detail.data.cover, '/assets/paintings/tang.jpg', '资料详情分类题图');
+  eq(detail.data.cover, artUrl('/assets/paintings/tang.jpg'), '资料详情分类题图');
   ok(detail.data.blocks.length > 0, '资料库详情正文分段');
   ok(detail.data.sections.length >= 4, '名句详情拆出原文/注释/译文/赏析');
   ok(detail.data.sections.some((section) => section.label === '原文'), '名句详情保留原文小标题');
@@ -1287,8 +1291,8 @@ console.log('== 资料库 ==');
     '资料详情配图 · 唐太宗条目匹配主站人物图');
   ok(archiveArt.entryImage('events', 'he-195') === remoteEventImg('chanyuan-1005'),
     '资料详情配图 · 澶渊之盟条目匹配主站事件图');
-  ok(archiveArt.entryImage('wars', 'hw-w17066792697D6B4') === '/assets/eventart/chibi.jpg',
-    '资料详情配图 · 赤壁之战条目命中本地专属图');
+  ok(archiveArt.entryImage('wars', 'hw-w17066792697D6B4') === artUrl('/assets/eventart/chibi.jpg'),
+    '资料详情配图 · 赤壁之战条目命中已有专属图');
   ok(archiveArt.entryImage('figures', 'no-such-id') === '', '资料详情配图 · 未命中且未自抓返回空');
   ok(archiveArt.entryImage('cards', '12') === '' && archiveArt.entryImage('quotes', 'x') === '',
     '资料详情配图 · 辞条/名句类不配图');
@@ -1511,19 +1515,19 @@ console.log('== 人物详情 ==');
     '相关史事映射（对齐审校后：苏轼仅关联王安石变法）');
   eq(p.data.accent, 'ancient', '古代赭石');
   eq(p.data.seal, '苏', '顶栏小印取自人名首字');
-  eq(p.data.headImg, remotePersonImg('su-shi') || '/assets/paintings/song.jpg', '人物头卡：苏轼优先专属图，否则宋画');
+  eq(p.data.headImg, remotePersonImg('su-shi') || artUrl('/assets/paintings/song.jpg'), '人物头卡：苏轼优先专属图，否则宋画');
   eq(p.data.related.map((e) => e.img),
-    p.data.related.map((e) => remoteEventImg(e.id) || '/assets/paintings/song.jpg'),
+    p.data.related.map((e) => remoteEventImg(e.id) || artUrl('/assets/paintings/song.jpg')),
     '相关史事行图：事件专属图优先，无则朝代画');
 
   p.onLoad({ id: 'lu-xun' });
   eq(p.data.accent, 'modern', '近现代蓝灰');
   eq(p.data.related.length, 3, '鲁迅相关史事三条');
-  eq(p.data.headImg, remotePersonImg('lu-xun') || '/assets/paintings/landscape.jpg', '鲁迅头卡优先专属图，否则千里江山图');
+  eq(p.data.headImg, remotePersonImg('lu-xun') || artUrl('/assets/paintings/landscape.jpg'), '鲁迅头卡优先专属图，否则千里江山图');
   ok(p.data.related.every((e) => e.img && imgOk(e.img)), '鲁迅相关史事缩略图存在');
 
   p.onLoad({ id: 'mao-zedong' });
-  eq(p.data.headImg, remotePersonImg('mao-zedong') || '/assets/paintings/modern.jpg', '毛泽东头卡优先专属图，否则开国大典');
+  eq(p.data.headImg, remotePersonImg('mao-zedong') || artUrl('/assets/paintings/modern.jpg'), '毛泽东头卡优先专属图，否则开国大典');
 
   p.onLoad({ id: 'zhao-kuangyin' });
   eq(p.data.person.name, '赵匡胤', '赵匡胤载入');
@@ -1668,7 +1672,7 @@ console.log('== 事件详情 ==');
   eq(p.data.event.title, '澶渊之盟', '澶渊之盟载入');
   eq(p.data.relatedPersons.map((x) => x.id), ['xiao-chuo', 'kou-zhun'], '其时其人：反查列出萧绰与寇准（对齐审校后）');
   eq(p.data.seal, '澶', '顶栏小印取事件名首字');
-  eq(p.data.headImg, remoteEventImg('chanyuan-1005') || '/assets/paintings/song.jpg', '事件头卡：澶渊之盟优先专属图，否则清明上河图');
+  eq(p.data.headImg, remoteEventImg('chanyuan-1005') || artUrl('/assets/paintings/song.jpg'), '事件头卡：澶渊之盟优先专属图，否则清明上河图');
   ok(p.data.relatedPersons.every((x) => x.img && imgOk(x.img)), '其时其人：每人有配图且文件存在');
   ok(p.data.relatedPersons.every((x) => x.fallback && imgOk(x.fallback) && x.fallback.indexOf('https://') !== 0), '其时其人：每人有本地默认垫底图');
   eq(p.data.thumbLoaded, {}, '其时其人：初始未标记加载完成');
@@ -1678,14 +1682,14 @@ console.log('== 事件详情 ==');
 
   p.onLoad({ id: 'han-wudi' });
   eq(p.data.relatedPersons.map((x) => x.id), ['han-wudi', 'zhang-qian', 'wei-qing', 'sima-qian'], '汉武帝即位时霍去病尚未出生');
-  eq(p.data.headImg, '/assets/eventart/han-wudi.jpg', '事件头卡：汉武帝即位用专属事件图');
+  eq(p.data.headImg, artUrl('/assets/eventart/han-wudi.jpg'), '事件头卡：汉武帝即位用专属事件图');
   eq(new Set(p.data.relatedPersons.map((x) => x.img)).size, 4, '其时其人：四位人物各有不同配图');
 
   p.onLoad({ id: 'qidan-916' });
-  eq(p.data.headImg, remoteEventImg('qidan-916') || '/assets/paintings/liao.jpg', '事件头卡：契丹建国优先专属图，否则辽画');
+  eq(p.data.headImg, remoteEventImg('qidan-916') || artUrl('/assets/paintings/liao.jpg'), '事件头卡：契丹建国优先专属图，否则辽画');
   
   p.onLoad({ id: 'fen-shu' });
-  eq(p.data.headImg, remoteEventImg('fen-shu') || '/assets/paintings/qin.jpg', '事件头卡：焚书坑儒优先专属图，否则秦画');
+  eq(p.data.headImg, remoteEventImg('fen-shu') || artUrl('/assets/paintings/qin.jpg'), '事件头卡：焚书坑儒优先专属图，否则秦画');
 
   p.onLoad({ id: 'mobei-119' });
   eq(p.data.relatedPersons.map((x) => x.id), ['wei-qing', 'huo-qubing'], '漠北之战反查列出卫青与霍去病');

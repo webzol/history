@@ -585,7 +585,8 @@
       } else if (node.tag === 'scroll-view' && key === 'scroll-y') {
         el.style.overflowY = 'auto';
       } else if (node.tag === 'image' && key === 'src') {
-        el.setAttribute('src', out.replace(/^\/assets\//, '../../miniprogram/assets/'));
+        var imagePath = out.replace(/^https:\/\/[^/]+\.jsdelivr\.net\/gh\/webzol\/history@main\/miniprogram\//, '../../miniprogram/');
+        el.setAttribute('src', imagePath.replace(/^\/assets\//, '../../miniprogram/assets/'));
       } else if (node.tag === 'image' && key === 'mode') {
         // 与小程序 image mode 对齐，避免预览把图片强行填满容器造成“变形”误判
         if (out === 'aspectFit') el.style.objectFit = 'contain';
