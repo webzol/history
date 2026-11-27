@@ -1,6 +1,6 @@
 # 阅史记文物数据交接
 
-更新于 2026-11-27（北京时间）。离线目录由 36 件扩至 60 件，见提交 [`9c5547d`](https://github.com/webzol/history/commit/9c5547dc488e1aee25a7762521c1d0b92a3a1693)。开发分支再增加 12 件在线试点，目录连通时共 72 件。
+更新于 2026-11-27（北京时间）。离线目录由 36 件扩至 60 件，见提交 [`9c5547d`](https://github.com/webzol/history/commit/9c5547dc488e1aee25a7762521c1d0b92a3a1693)。开发分支再增加 12 件在线试点，目录连通时共 72 件。[在线试点实现提交 `ff29e00`](https://github.com/webzol/history/commit/ff29e0008ab49e433b01176e0c6cee9e230f0421)
 
 ## 已入库
 
