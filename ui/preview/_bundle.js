@@ -1,7 +1,7 @@
 // 自动生成：node tools/build_preview.js（勿手改）
 (function () {
   var MOD = window.__SRC = {};
-  window.__PAGE_PATHS = {"home":"/pages/home/home","timeline":"/pages/timeline/timeline","discover":"/pages/discover/discover","profile":"/pages/profile/profile","event":"/pages/event/event","person":"/pages/person/person","period":"/pages/period/period","search":"/pages/search/search","footprints":"/pages/footprints/footprints","favorites":"/pages/favorites/favorites","archive":"/pages/archive/archive","archive-list":"/pages/archive-list/archive-list","archive-detail":"/pages/archive-detail/archive-detail","relic-list":"/relics/pages/relic-list/relic-list","relic-detail":"/relics/pages/relic-detail/relic-detail"};
+  window.__PAGE_PATHS = {"home":"/pages/home/home","timeline":"/pages/timeline/timeline","discover":"/pages/discover/discover","profile":"/pages/profile/profile","event":"/pages/event/event","person":"/pages/person/person","period":"/pages/period/period","search":"/pages/search/search","footprints":"/pages/footprints/footprints","favorites":"/pages/favorites/favorites","archive":"/pages/archive/archive","archive-list":"/pages/archive-list/archive-list","archive-detail":"/pages/archive-detail/archive-detail","relic-list":"/relics/pages/relic-list/relic-list","relic-detail":"/relics/pages/relic-detail/relic-detail","relic-share":"/relics/pages/relic-share/relic-share"};
   function __register(p, f) { MOD[p] = f; }
 
 __register('/app.js', function (require, module, exports) {
@@ -3716,7 +3716,19 @@ function sourceFor(id) {
   return { museum: '大都会艺术博物馆', url: `https://www.metmuseum.org/art/collection/search/${id}` };
 }
 
-module.exports = { TYPES, ERAS, RELICS, imagePath, sourceFor };
+const LIST_PATH = '/relics/pages/relic-list/relic-list';
+const DETAIL_PATH = '/relics/pages/relic-detail/relic-detail';
+
+function shareMessage(relic) {
+  if (!relic) return { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' };
+  return {
+    title: `阅史记 · ${relic.title}`,
+    path: `${DETAIL_PATH}?id=${encodeURIComponent(relic.id)}`,
+    imageUrl: imagePath(relic.id, 'detail')
+  };
+}
+
+module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, imagePath, sourceFor, shareMessage };
 
 });
 __register('/utils/store.js', function (require, module, exports) {
@@ -5882,6 +5894,8 @@ function open(page) {
       desc: payload.desc || '',
       img: payload.img || '',
       imgLocal: '',  // 题图源（就绪后重绘；空则画预置卷首兜底图）
+      coverFit: payload.coverFit || '',
+      coverPending: payload.coverFit === 'contain' && !!payload.img,
       quote: quote ? quote.quote : '',
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
@@ -5908,13 +5922,16 @@ function startCoverChain(page, payload) {
   const fallback = (payload && payload.imgFallback) || '';
   const trySrc = (src) => {
     if (!src) {
+      if (page.data.share.coverPending) page.setData({ 'share.coverPending': false });
       drawPoster(page);
       return;
     }
     loadCanvasImg(page, src, (img) => {
       if (!page.data.share.open || page.__qrPayload !== payload) return;
       if (img) {
-        page.setData({ 'share.imgLocal': src });
+        const patch = { 'share.imgLocal': src };
+        if (page.data.share.coverPending) patch['share.coverPending'] = false;
+        page.setData(patch);
         drawPoster(page);
         return;
       }
@@ -6074,18 +6091,35 @@ function paintPoster(ctx, share, getImage = peekImg) {
   }
   washMountains(ctx, 343, 'rgba(179, 141, 104, 0.10)', true);
 
-  const cover = (share.imgLocal && getImage(share.imgLocal)) || getImage(FALLBACK_COVER);
+  const itemCover = share.imgLocal && getImage(share.imgLocal);
+  const cover = itemCover || getImage(FALLBACK_COVER);
+  const containCover = itemCover && share.coverFit === 'contain';
   if (cover && cover.width && cover.height) {
-    ctx.globalAlpha = 0.86;
-    drawCropped(ctx, cover, x, y, width, 109);
-    ctx.globalAlpha = 1;
+    if (containCover) {
+      const scale = Math.min((width - 20) / cover.width, 94 / cover.height);
+      const w = cover.width * scale;
+      const h = cover.height * scale;
+      const left = (W - w) / 2;
+      const top = y + (102 - h) / 2;
+      ctx.save();
+      roundRectPath(ctx, left, top, w, h, 4);
+      ctx.clip();
+      ctx.drawImage(cover, left, top, w, h);
+      ctx.restore();
+    } else {
+      ctx.globalAlpha = 0.86;
+      drawCropped(ctx, cover, x, y, width, 109);
+      ctx.globalAlpha = 1;
+    }
   }
-  const fade = ctx.createLinearGradient(0, 108, 0, 154);
-  fade.addColorStop(0, 'rgba(249, 243, 233, 0)');
-  fade.addColorStop(0.58, 'rgba(249, 243, 233, 0.76)');
-  fade.addColorStop(1, CARD);
-  ctx.fillStyle = fade;
-  ctx.fillRect(x, 108, width, 46);
+  if (!containCover) {
+    const fade = ctx.createLinearGradient(0, 108, 0, 154);
+    fade.addColorStop(0, 'rgba(249, 243, 233, 0)');
+    fade.addColorStop(0.58, 'rgba(249, 243, 233, 0.76)');
+    fade.addColorStop(1, CARD);
+    ctx.fillStyle = fade;
+    ctx.fillRect(x, 108, width, 46);
+  }
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -8949,10 +8983,9 @@ __register('/pages/archive-detail/archive-detail.wxss', function (require, modul
 __register('/relics/pages/relic-list/relic-list.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
-const { ERAS, TYPES, RELICS, imagePath } = require('../../catalog.js');
+const { ERAS, TYPES, RELICS, DETAIL_PATH, imagePath, shareMessage } = require('../../catalog.js');
 
 const PAGE_SIZE = 8;
-const LIST_PATH = '/relics/pages/relic-list/relic-list';
 const TYPE_OPTIONS = ['全部', ...TYPES];
 const ERA_OPTIONS = ['不限', ...ERAS];
 
@@ -9021,16 +9054,19 @@ Page('project://relics/pages/relic-list/relic-list.js', {
   },
 
   openRelic(e) {
-    wx.navigateTo({ url: `/relics/pages/relic-detail/relic-detail?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
+    wx.navigateTo({ url: `${DETAIL_PATH}?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
   },
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   },
 
-  onShareAppMessage() { return { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' }; },
+  onShareAppMessage() { return shareMessage(); },
 
-  onShareTimeline() { return { title: '阅史记 · 文物', imageUrl: '/assets/relic-home-ink.png' }; }
+  onShareTimeline() {
+    const { title, imageUrl } = this.onShareAppMessage();
+    return { title, imageUrl };
+  }
 });
 
 });
@@ -9039,10 +9075,7 @@ __register('/relics/pages/relic-list/relic-list.wxss', function (require, module
 __register('/relics/pages/relic-detail/relic-detail.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
-const { RELICS, imagePath, sourceFor } = require('../../catalog.js');
-
-const LIST_PATH = '/relics/pages/relic-list/relic-list';
-const DETAIL_PATH = '/relics/pages/relic-detail/relic-detail';
+const { RELICS, LIST_PATH, imagePath, sourceFor, shareMessage } = require('../../catalog.js');
 
 Page('project://relics/pages/relic-detail/relic-detail.js', {
   data: { fontClass: 'm', relic: null, imageFailed: false, sourceOpen: false },
@@ -9066,24 +9099,82 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
 
   toggleSource() { this.setData({ sourceOpen: !this.data.sourceOpen }); },
 
+  openShare() {
+    const { relic } = this.data;
+    if (relic) wx.navigateTo({ url: `/relics/pages/relic-share/relic-share?id=${encodeURIComponent(relic.id)}` });
+  },
+
   goBack() {
     wx.navigateBack({ fail: () => wx.redirectTo({ url: LIST_PATH }) });
   },
 
-  onShareAppMessage() {
-    const { relic } = this.data;
-    return relic ? { title: `阅史记 · ${relic.title}`, path: `${DETAIL_PATH}?id=${relic.id}`, imageUrl: relic.image }
-      : { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' };
-  },
+  onShareAppMessage() { return shareMessage(this.data.relic); },
 
   onShareTimeline() {
-    return share.timeline(this.onShareAppMessage(), this.data.relic?.image);
+    const card = this.onShareAppMessage();
+    return share.timeline(card, card.imageUrl);
   }
 });
 
 });
-__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <block wx:if=\"{{relic}}\">\n      <view class=\"object-card\">\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\n        <text class=\"object-date\">{{relic.date}}</text>\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · 公有领域</text>\n      </view>\n\n      <view class=\"details-card\">\n        <view class=\"details-heading\">\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\n        </view>\n        <text class=\"object-description\">{{relic.description}}</text>\n        <view class=\"facts\">\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\n        </view>\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\n        </view>\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\n      </view>\n    </block>\n    <view wx:else class=\"relic-empty\">\n      <text>未找到这件文物。</text>\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
-__register('/relics/pages/relic-detail/relic-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(36rpx * var(--fs, 1));\n  line-height: 1.4;\n  color: #1F1D19;\n}\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\n\n.back {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  border-radius: 28rpx;\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\n}\n.back-hit-pressed .back { background: #F1E8DD; }\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  transform: rotate(45deg);\n}\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\n\n.relic-cover { position: relative; overflow: hidden; }\n.cover-fade {\n  position: absolute;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  height: 29rpx;\n  pointer-events: none;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\n}\n\n.relic-empty {\n  padding: 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  color: #5F5A52;\n  font-size: calc(26rpx * var(--fs, 1));\n  line-height: 1.6;\n  text-align: center;\n}\n.relic-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 44px;\n  margin-top: 20rpx;\n  padding: 10rpx 20rpx;\n  border-radius: 30rpx;\n  background: #F1E8DD;\n  color: #6B5036;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.45;\n}\n\n\n.object-card, .details-card { padding: 28rpx; border-radius: 38rpx; background: #FCFBF8; }\n.object-card { margin-top: 20rpx; }\n.object-type { display: block; color: #865C3B; font-size: calc(22rpx * var(--fs, 1)); line-height: 1.5; }\n.object-name {\n  display: block;\n  margin-top: 5rpx;\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(43rpx * var(--fs, 1));\n  line-height: 1.35;\n}\n.object-date { display: block; margin-top: 9rpx; color: #5F5A52; font-size: calc(24rpx * var(--fs, 1)); line-height: 1.55; }\n.object-cover { margin-top: 24rpx; border-radius: 16rpx 16rpx 0 0; background: #F3EFE6; }\n.object-cover .cover-fade { height: 35rpx; }\n.object-image { position: absolute; inset: 0; width: 100%; height: 100%; }\n.object-image-empty {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 130rpx;\n  margin-top: 24rpx;\n  border-radius: 16rpx;\n  background: #F3EFE6;\n  color: #5F5A52;\n  font-size: calc(24rpx * var(--fs, 1));\n}\n.object-image-note { display: block; margin-top: 10rpx; color: #5F5A52; text-align: right; font-size: calc(19rpx * var(--fs, 1)); }\n.details-card { margin-top: 22rpx; }\n.details-heading { display: flex; align-items: center; gap: 16rpx; }\n.details-title {\n  color: #864B40;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  line-height: 1.4;\n}\n.details-rule { flex: 1; height: 1rpx; background: linear-gradient(90deg, #D9BDB0, transparent); }\n.object-description {\n  display: block;\n  margin: 12rpx 0 22rpx;\n  color: #3B3731;\n  font-size: calc(27rpx * var(--fs, 1));\n  line-height: 1.8;\n}\n.facts {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 14rpx;\n}\n.fact {\n  width: calc((100% - 14rpx) / 2);\n  padding: 12rpx 16rpx;\n  border-radius: 20rpx;\n  background: #F7F3ED;\n  color: #3B3731;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.55;\n}\n.fact-label { display: block; color: #5F5A52; font-size: calc(20rpx * var(--fs, 1)); }\n.source-toggle {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  min-height: 44px;\n  margin-top: 8rpx;\n  color: #7D5A3B;\n  font-size: calc(22rpx * var(--fs, 1));\n}\n.source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }\n"; });
+__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <block wx:if=\"{{relic}}\">\r\n      <view class=\"object-card\">\r\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\r\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\r\n        <text class=\"object-date\">{{relic.date}}</text>\r\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\r\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\r\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\r\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · 公有领域</text>\r\n      </view>\r\n\r\n      <view class=\"details-card\">\r\n        <view class=\"details-heading\">\r\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\r\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <text class=\"object-description\">{{relic.description}}</text>\r\n        <view class=\"facts\">\r\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\r\n        </view>\r\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\r\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\r\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\r\n        </view>\r\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\r\n      </view>\r\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\r\n        aria-role=\"button\" aria-label=\"打开文物分享页\">共此卷</view>\r\n    </block>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>未找到这件文物。</text>\r\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
+__register('/relics/pages/relic-detail/relic-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.object-card, .details-card { padding: 28rpx; border-radius: 38rpx; background: #FCFBF8; }\r\n.object-card { margin-top: 20rpx; }\r\n.object-type { display: block; color: #865C3B; font-size: calc(22rpx * var(--fs, 1)); line-height: 1.5; }\r\n.object-name {\r\n  display: block;\r\n  margin-top: 5rpx;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(43rpx * var(--fs, 1));\r\n  line-height: 1.35;\r\n}\r\n.object-date { display: block; margin-top: 9rpx; color: #5F5A52; font-size: calc(24rpx * var(--fs, 1)); line-height: 1.55; }\r\n.object-cover { margin-top: 24rpx; border-radius: 16rpx 16rpx 0 0; background: #F3EFE6; }\r\n.object-cover .cover-fade { height: 35rpx; }\r\n.object-image { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.object-image-empty {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 130rpx;\r\n  margin-top: 24rpx;\r\n  border-radius: 16rpx;\r\n  background: #F3EFE6;\r\n  color: #5F5A52;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n}\r\n.object-image-note { display: block; margin-top: 10rpx; color: #5F5A52; text-align: right; font-size: calc(19rpx * var(--fs, 1)); }\r\n.details-card { margin-top: 22rpx; }\r\n.details-heading { display: flex; align-items: center; gap: 16rpx; }\r\n.details-title {\r\n  color: #864B40;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.details-rule { flex: 1; height: 1rpx; background: linear-gradient(90deg, #D9BDB0, transparent); }\r\n.object-description {\r\n  display: block;\r\n  margin: 12rpx 0 22rpx;\r\n  color: #3B3731;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.8;\r\n}\r\n.facts {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  gap: 14rpx;\r\n}\r\n.fact {\r\n  width: calc((100% - 14rpx) / 2);\r\n  padding: 12rpx 16rpx;\r\n  border-radius: 20rpx;\r\n  background: #F7F3ED;\r\n  color: #3B3731;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n}\r\n.fact-label { display: block; color: #5F5A52; font-size: calc(20rpx * var(--fs, 1)); }\r\n.source-toggle {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  margin-top: 8rpx;\r\n  color: #7D5A3B;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n}\r\n.source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }\r\n.object-share { margin-top: 22rpx; }\r\n.object-share-pressed { background: #EBDFD1; }\r\n"; });
+__register('/relics/pages/relic-share/relic-share.js', function (require, module, exports) {
+const font = require('../../../utils/font.js');
+const share = require('../../../utils/share.js');
+const qrshare = require('../../../utils/qrshare.js');
+const { RELICS, LIST_PATH, shareMessage } = require('../../catalog.js');
+
+Page('project://relics/pages/relic-share/relic-share.js', {
+  data: { fontClass: 'm', share: { open: false } },
+
+  onLoad(options = {}) {
+    font.apply(this);
+    this.relic = RELICS.find(item => item.id === options.id);
+    if (!this.relic) return;
+    share.enableMenu();
+    qrshare.open(this);
+  },
+
+  onShow() { font.apply(this); },
+
+  onUnload() {
+    this.__qrPayload = null;
+    this.data.share.open = false;
+  },
+
+  sharePayload() {
+    const relic = this.relic;
+    const message = shareMessage(relic);
+    return {
+      kicker: `文物 · ${relic.period}`,
+      title: relic.title,
+      desc: relic.description,
+      img: message.imageUrl,
+      coverFit: 'contain'
+    };
+  },
+
+  saveQr() {
+    if (!this.data.share.coverPending || this.data.share.fallback) qrshare.save(this);
+  },
+
+  goBack() {
+    const url = this.relic ? shareMessage(this.relic).path : LIST_PATH;
+    wx.navigateBack({ fail: () => wx.redirectTo({ url }) });
+  },
+
+  onShareAppMessage() { return shareMessage(this.relic); },
+
+  onShareTimeline() {
+    const card = this.onShareAppMessage();
+    return share.timeline(card, card.imageUrl);
+  }
+});
+
+});
+__register('/relics/pages/relic-share/relic-share.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}} relic-share-page\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\" aria-role=\"heading\">共此卷</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <block wx:if=\"{{share.open}}\">\r\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\r\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\r\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n      </view>\r\n      <view class=\"ss-actions\">\r\n        <button class=\"ss-btn ss-btn-primary\" open-type=\"share\" aria-label=\"转寄好友\">转寄好友</button>\r\n        <view class=\"ss-btn ss-btn-ghost {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\r\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</view>\r\n      </view>\r\n    </block>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>未找到这件文物。</text>\r\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
+__register('/relics/pages/relic-share/relic-share.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.relic-share-page .ss-qr-wrap { margin: 26rpx 0 32rpx; }\r\n.relic-share-page .ss-canvas { box-shadow: 0 14rpx 34rpx rgba(90, 70, 50, 0.09); }\r\n.relic-share-page .ss-actions { max-width: 340px; margin: 0 auto; }\r\n.relic-share-page .ss-btn { min-height: 44px; padding: 10rpx 6rpx; line-height: 1.35; }\r\n.relic-share-page .share-pending { opacity: 0.62; }\r\n\r\n@media (max-height: 650px) {\r\n  .relic-share-page .ss-canvas { width: 208px; height: 339.2px; }\r\n}\r\n@media (max-height: 520px) {\r\n  .relic-share-page .ss-canvas { width: 176px; height: 287.02px; }\r\n}\r\n"; });
 
 __register('/styles/app.wxss', function (require, module, exports) { module.exports = "page {\r\n  background: #F6F1EA;\r\n  color: #1F1D19;\r\n  font-family: \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nview, text, image {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.serif {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n}\r\n\r\n.back-hit {\r\n  display: flex;\r\n  align-items: center;\r\n  min-height: 44px;\r\n}\r\n\r\n.section-action {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  justify-content: flex-end;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n  padding-left: 12rpx;\r\n}\r\n\r\n.search-clear {\r\n  flex: 0 0 44px;\r\n  min-height: 44px;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  line-height: 1;\r\n  color: #6D645A;\r\n  font-size: 34rpx;\r\n}\r\n\r\n/* 底部 tab（真实渲染：custom-tab-bar/index.wxss；此处同份样式供 web 预览外壳使用） */\r\n.tabbar {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  z-index: 10;\r\n  min-height: 128rpx;\r\n  padding: 16rpx 20rpx 0;\r\n  padding-bottom: constant(safe-area-inset-bottom);\r\n  padding-bottom: env(safe-area-inset-bottom);\r\n  display: flex;\r\n  background: rgba(250, 248, 243, 0.96);\r\n  border-top: 1rpx solid rgba(70, 58, 45, 0.10);\r\n}\r\n\r\n.tab {\r\n  flex: 1;\r\n  min-height: 44px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  gap: 10rpx;\r\n  font-size: 20rpx;\r\n  letter-spacing: 0.03em;\r\n  color: #6D645A;\r\n}\r\n\r\n.tab-icon {\r\n  width: 44rpx;\r\n  height: 44rpx;\r\n  display: block;\r\n  opacity: 0.52;\r\n}\r\n\r\n.tab.active {\r\n  color: #211E1A;\r\n}\r\n\r\n.tab.active .tab-icon {\r\n  opacity: 1;\r\n}\r\n\r\n/* 阅读字号：s 小 / m 标准 / l 大 / xl 特大；页面根节点挂 fs-*，子元素字号用 calc(... * var(--fs)) */\r\n.fs-s { --fs: 0.9; }\r\n.fs-m { --fs: 1; }\r\n.fs-l { --fs: 1.14; }\r\n.fs-xl { --fs: 1.28; }\r\n\r\n/* 小屏隐藏顶栏小印，并让短标题略微右移，避开较宽的返回胶囊 */\r\n@media (max-width: 360px) {\r\n  .page .top-seal { display: none; }\r\n  .page .top-title { left: 56%; }\r\n}\r\n\r\n/* 分享面板（详情页通用，utils/qrshare.js；视觉对齐 profile 的 info sheet） */\r\n.ss-layer {\r\n  position: fixed;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  z-index: 120;\r\n}\r\n\r\n.ss-mask {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  top: 0;\r\n  bottom: 0;\r\n  background: rgba(31, 29, 25, 0.3);\r\n  animation: ssFade 0.18s ease both;\r\n}\r\n\r\n.ss-panel {\r\n  position: absolute;\r\n  left: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  max-height: 86vh;\r\n  overflow-y: auto;\r\n  padding: 16rpx 34rpx calc(30rpx + env(safe-area-inset-bottom));\r\n  background: #FCFBF8;\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  box-shadow: 0 -24rpx 52rpx rgba(90, 70, 50, 0.16);\r\n  animation: ssUp 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n\r\n.ss-grip {\r\n  width: 66rpx;\r\n  height: 6rpx;\r\n  margin: 4rpx auto 14rpx;\r\n  border-radius: 3rpx;\r\n  background: #E6E0D4;\r\n}\r\n\r\n.ss-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 6rpx 8rpx 16rpx;\r\n  border-bottom: 1rpx solid rgba(31, 29, 25, 0.06);\r\n}\r\n\r\n.ss-title {\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(33rpx * var(--fs, 1));\r\n  letter-spacing: 0.07em;\r\n  color: #1F1D19;\r\n}\r\n\r\n.ss-close {\r\n  font-size: 40rpx;\r\n  line-height: 1;\r\n  padding: 6rpx 12rpx;\r\n  color: #6D645A;\r\n}\r\n\r\n.ss-close-touch {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-width: 44px;\r\n  min-height: 44px;\r\n}\r\n\r\n.ss-qr-wrap {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  margin-bottom: 34rpx;\r\n}\r\n\r\n.ss-canvas {\r\n  width: 260px;\r\n  height: 424px;\r\n  border-radius: 20rpx;\r\n  background: #F4EEE4;\r\n  box-shadow: 0 0 0 1px rgba(70, 58, 45, 0.12);\r\n}\r\n\r\n\r\n/* open-type=\"share\" 的原生 button 与普通 view 按钮同款 reset；\r\n   两枚按钮同一行等宽，风格对齐返回胶囊（暖纸渐变 + 赭金细边 + 内高光 + 楷体字） */\r\n.ss-actions {\r\n  display: flex;\r\n  gap: 16rpx;\r\n  margin-top: 4rpx;\r\n  margin-bottom: 8rpx;\r\n}\r\n\r\n.ss-btn {\r\n  flex: 1;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: auto;\r\n  height: 78rpx;\r\n  margin: 0;\r\n  padding: 0;\r\n  border-radius: 39rpx;\r\n  font-family: \"Kaiti SC\", \"STKaiti\", \"KaiTi\", serif;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  letter-spacing: 0.14em;\r\n  line-height: 1;\r\n  box-sizing: border-box;\r\n}\r\n\r\n.ss-btn::after {\r\n  border: none;\r\n}\r\n\r\n.ss-btn-primary {\r\n  background: linear-gradient(180deg, #2C2822, #1F1D19);\r\n  color: #F6F1EA;\r\n  border: 1rpx solid rgba(190, 150, 90, 0.45);\r\n  box-shadow: inset 0 1rpx 0 rgba(246, 241, 234, 0.16), 0 6rpx 16rpx rgba(31, 29, 25, 0.18);\r\n}\r\n\r\n.ss-btn-ghost {\r\n  background: linear-gradient(180deg, #F3EADA, #EFE2CC);\r\n  color: #5F5A52;\r\n  border: 1rpx solid rgba(150, 110, 60, 0.34);\r\n  box-shadow: inset 0 1rpx 0 rgba(255, 252, 246, 0.65);\r\n}\r\n\r\n@keyframes ssFade {\r\n  from { opacity: 0; }\r\n  to { opacity: 1; }\r\n}\r\n\r\n@keyframes ssUp {\r\n  from { transform: translateY(42%); opacity: 0.4; }\r\n  to { transform: translateY(0); opacity: 1; }\r\n}\r\n"; });
 })();

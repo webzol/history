@@ -1,0 +1,14 @@
+@import "../../common.wxss";
+
+.relic-share-page .ss-qr-wrap { margin: 26rpx 0 32rpx; }
+.relic-share-page .ss-canvas { box-shadow: 0 14rpx 34rpx rgba(90, 70, 50, 0.09); }
+.relic-share-page .ss-actions { max-width: 340px; margin: 0 auto; }
+.relic-share-page .ss-btn { min-height: 44px; padding: 10rpx 6rpx; line-height: 1.35; }
+.relic-share-page .share-pending { opacity: 0.62; }
+
+@media (max-height: 650px) {
+  .relic-share-page .ss-canvas { width: 208px; height: 339.2px; }
+}
+@media (max-height: 520px) {
+  .relic-share-page .ss-canvas { width: 176px; height: 287.02px; }
+}

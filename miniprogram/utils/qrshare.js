@@ -209,6 +209,8 @@ function open(page) {
       desc: payload.desc || '',
       img: payload.img || '',
       imgLocal: '',  // 题图源（就绪后重绘；空则画预置卷首兜底图）
+      coverFit: payload.coverFit || '',
+      coverPending: payload.coverFit === 'contain' && !!payload.img,
       quote: quote ? quote.quote : '',
       quoteSource: quote ? quote.source : '',
       dateText: dateText(),
@@ -235,13 +237,16 @@ function startCoverChain(page, payload) {
   const fallback = (payload && payload.imgFallback) || '';
   const trySrc = (src) => {
     if (!src) {
+      if (page.data.share.coverPending) page.setData({ 'share.coverPending': false });
       drawPoster(page);
       return;
     }
     loadCanvasImg(page, src, (img) => {
       if (!page.data.share.open || page.__qrPayload !== payload) return;
       if (img) {
-        page.setData({ 'share.imgLocal': src });
+        const patch = { 'share.imgLocal': src };
+        if (page.data.share.coverPending) patch['share.coverPending'] = false;
+        page.setData(patch);
         drawPoster(page);
         return;
       }
@@ -401,18 +406,35 @@ function paintPoster(ctx, share, getImage = peekImg) {
   }
   washMountains(ctx, 343, 'rgba(179, 141, 104, 0.10)', true);
 
-  const cover = (share.imgLocal && getImage(share.imgLocal)) || getImage(FALLBACK_COVER);
+  const itemCover = share.imgLocal && getImage(share.imgLocal);
+  const cover = itemCover || getImage(FALLBACK_COVER);
+  const containCover = itemCover && share.coverFit === 'contain';
   if (cover && cover.width && cover.height) {
-    ctx.globalAlpha = 0.86;
-    drawCropped(ctx, cover, x, y, width, 109);
-    ctx.globalAlpha = 1;
+    if (containCover) {
+      const scale = Math.min((width - 20) / cover.width, 94 / cover.height);
+      const w = cover.width * scale;
+      const h = cover.height * scale;
+      const left = (W - w) / 2;
+      const top = y + (102 - h) / 2;
+      ctx.save();
+      roundRectPath(ctx, left, top, w, h, 4);
+      ctx.clip();
+      ctx.drawImage(cover, left, top, w, h);
+      ctx.restore();
+    } else {
+      ctx.globalAlpha = 0.86;
+      drawCropped(ctx, cover, x, y, width, 109);
+      ctx.globalAlpha = 1;
+    }
   }
-  const fade = ctx.createLinearGradient(0, 108, 0, 154);
-  fade.addColorStop(0, 'rgba(249, 243, 233, 0)');
-  fade.addColorStop(0.58, 'rgba(249, 243, 233, 0.76)');
-  fade.addColorStop(1, CARD);
-  ctx.fillStyle = fade;
-  ctx.fillRect(x, 108, width, 46);
+  if (!containCover) {
+    const fade = ctx.createLinearGradient(0, 108, 0, 154);
+    fade.addColorStop(0, 'rgba(249, 243, 233, 0)');
+    fade.addColorStop(0.58, 'rgba(249, 243, 233, 0.76)');
+    fade.addColorStop(1, CARD);
+    ctx.fillStyle = fade;
+    ctx.fillRect(x, 108, width, 46);
+  }
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

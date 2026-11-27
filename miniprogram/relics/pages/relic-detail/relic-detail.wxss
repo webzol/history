@@ -68,3 +68,5 @@
   font-size: calc(22rpx * var(--fs, 1));
 }
 .source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }
+.object-share { margin-top: 22rpx; }
+.object-share-pressed { background: #EBDFD1; }

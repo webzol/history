@@ -44,6 +44,8 @@
         </view>
         <text wx:if="{{sourceOpen}}" class="source-url" user-select="{{true}}">{{relic.url}}</text>
       </view>
+      <view class="relic-action object-share" bindtap="openShare" hover-class="object-share-pressed" hover-stay-time="80"
+        aria-role="button" aria-label="打开文物分享页">共此卷</view>
     </block>
     <view wx:else class="relic-empty">
       <text>未找到这件文物。</text>

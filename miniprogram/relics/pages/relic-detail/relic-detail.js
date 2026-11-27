@@ -1,9 +1,6 @@
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
-const { RELICS, imagePath, sourceFor } = require('../../catalog.js');
-
-const LIST_PATH = '/relics/pages/relic-list/relic-list';
-const DETAIL_PATH = '/relics/pages/relic-detail/relic-detail';
+const { RELICS, LIST_PATH, imagePath, sourceFor, shareMessage } = require('../../catalog.js');
 
 Page({
   data: { fontClass: 'm', relic: null, imageFailed: false, sourceOpen: false },
@@ -27,17 +24,19 @@ Page({
 
   toggleSource() { this.setData({ sourceOpen: !this.data.sourceOpen }); },
 
+  openShare() {
+    const { relic } = this.data;
+    if (relic) wx.navigateTo({ url: `/relics/pages/relic-share/relic-share?id=${encodeURIComponent(relic.id)}` });
+  },
+
   goBack() {
     wx.navigateBack({ fail: () => wx.redirectTo({ url: LIST_PATH }) });
   },
 
-  onShareAppMessage() {
-    const { relic } = this.data;
-    return relic ? { title: `阅史记 · ${relic.title}`, path: `${DETAIL_PATH}?id=${relic.id}`, imageUrl: relic.image }
-      : { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' };
-  },
+  onShareAppMessage() { return shareMessage(this.data.relic); },
 
   onShareTimeline() {
-    return share.timeline(this.onShareAppMessage(), this.data.relic?.image);
+    const card = this.onShareAppMessage();
+    return share.timeline(card, card.imageUrl);
   }
 });

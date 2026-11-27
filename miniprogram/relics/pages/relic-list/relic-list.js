@@ -1,9 +1,8 @@
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
-const { ERAS, TYPES, RELICS, imagePath } = require('../../catalog.js');
+const { ERAS, TYPES, RELICS, DETAIL_PATH, imagePath, shareMessage } = require('../../catalog.js');
 
 const PAGE_SIZE = 8;
-const LIST_PATH = '/relics/pages/relic-list/relic-list';
 const TYPE_OPTIONS = ['全部', ...TYPES];
 const ERA_OPTIONS = ['不限', ...ERAS];
 
@@ -72,14 +71,17 @@ Page({
   },
 
   openRelic(e) {
-    wx.navigateTo({ url: `/relics/pages/relic-detail/relic-detail?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
+    wx.navigateTo({ url: `${DETAIL_PATH}?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
   },
 
   goBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   },
 
-  onShareAppMessage() { return { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' }; },
+  onShareAppMessage() { return shareMessage(); },
 
-  onShareTimeline() { return { title: '阅史记 · 文物', imageUrl: '/assets/relic-home-ink.png' }; }
+  onShareTimeline() {
+    const { title, imageUrl } = this.onShareAppMessage();
+    return { title, imageUrl };
+  }
 });

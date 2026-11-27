@@ -60,6 +60,7 @@
   var privacyListener;
 
   function pathOf(name) { return window.__PAGE_PATHS[name]; }
+  function localAssetUrl(url) { return url.replace(/^\/(?=(?:relics\/)?assets\/)/, '../../miniprogram/'); }
   function parseQuery(q) {
     var out = {};
     (q || '').split('&').forEach(function (kv) {
@@ -112,7 +113,7 @@
           var rel = s.split('/miniprogram/')[1];
           return rel ? '../../miniprogram/' + rel : s;
         }
-        return s.replace(/^\/assets\//, '../../miniprogram/assets/');
+        return localAssetUrl(s);
       }
       function makeNode(cv) {
         var node = {
@@ -219,11 +220,13 @@
     navigateBack: function (o) {
       if (navStack.length > 1) {
         hidePopups();
+        if (CURRENT && CURRENT.onUnload) CURRENT.onUnload();
         navStack.pop();
         var previous = navStack[navStack.length - 1];
         CURRENT = previous.inst;
         renderPage(CURRENT);
         pageHost.scrollTop = previous.scrollTop || 0;
+        window.scrollTo(0, previous.windowScroll || 0);
         showPopups();
         if (o.success) o.success({});
       } else if (o.fail) {
@@ -324,7 +327,11 @@
 
   function openPage(name, query, how) {
     hidePopups();
-    if (navStack.length) navStack[navStack.length - 1].scrollTop = pageHost.scrollTop;
+    if (how === 'replace' && CURRENT && CURRENT.onUnload) CURRENT.onUnload();
+    if (navStack.length) {
+      navStack[navStack.length - 1].scrollTop = pageHost.scrollTop;
+      navStack[navStack.length - 1].windowScroll = window.scrollY;
+    }
     var inst = instantiate(name);
     var rec = { name: name, query: query, inst: inst };
     if (how === 'replace') navStack[navStack.length - 1] = rec;
@@ -333,6 +340,7 @@
     if (inst.onLoad) inst.onLoad(query || {});
     renderPage(inst);
     pageHost.scrollTop = 0;
+    window.scrollTo(0, 0);
     showPopups();
   }
 
@@ -603,7 +611,7 @@
         el.style.overflowY = 'auto';
       } else if (node.tag === 'image' && key === 'src') {
         var imagePath = out.replace(/^https:\/\/[^/]+\.jsdelivr\.net\/gh\/webzol\/history@main\/miniprogram\//, '../../miniprogram/');
-        el.setAttribute('src', imagePath.replace(/^\/(?=(?:relics\/)?assets\/)/, '../../miniprogram/'));
+        el.setAttribute('src', localAssetUrl(imagePath));
       } else if (node.tag === 'image' && key === 'mode') {
         // 与小程序 image mode 对齐，避免预览把图片强行填满容器造成“变形”误判
         if (out === 'aspectFit') el.style.objectFit = 'contain';

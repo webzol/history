@@ -17,7 +17,7 @@
   "subPackages": [
     {
       "root": "relics",
-      "pages": ["pages/relic-list/relic-list", "pages/relic-detail/relic-detail"]
+      "pages": ["pages/relic-list/relic-list", "pages/relic-detail/relic-detail", "pages/relic-share/relic-share"]
     }
   ],
   "window": {

@@ -1,0 +1,33 @@
+<view class="page fs-{{fontClass}} relic-share-page">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回上一页">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
+          <view class="back-divider"></view><text class="back-label">返回</text>
+        </view>
+      </view>
+      <text class="top-title" aria-role="heading">共此卷</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
+    </view>
+
+    <block wx:if="{{share.open}}">
+      <view class="ss-qr-wrap" aria-role="img" aria-label="{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}">
+        <image wx:if="{{share.fallback}}" aria-hidden="true" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFit"></image>
+        <canvas wx:else aria-hidden="true" type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
+      </view>
+      <view class="ss-actions">
+        <button class="ss-btn ss-btn-primary" open-type="share" aria-label="转寄好友">转寄好友</button>
+        <view class="ss-btn ss-btn-ghost {{share.coverPending && !share.fallback ? 'share-pending' : ''}}" bindtap="saveQr"
+          aria-role="button" aria-disabled="{{share.coverPending && !share.fallback}}">{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</view>
+      </view>
+    </block>
+    <view wx:else class="relic-empty">
+      <text>未找到这件文物。</text>
+      <view class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>
+    </view>
+  </view>
+</view>
+<feedback-popup></feedback-popup>
+<privacy-popup></privacy-popup>

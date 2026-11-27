@@ -87,4 +87,16 @@ function sourceFor(id) {
   return { museum: '大都会艺术博物馆', url: `https://www.metmuseum.org/art/collection/search/${id}` };
 }
 
-module.exports = { TYPES, ERAS, RELICS, imagePath, sourceFor };
+const LIST_PATH = '/relics/pages/relic-list/relic-list';
+const DETAIL_PATH = '/relics/pages/relic-detail/relic-detail';
+
+function shareMessage(relic) {
+  if (!relic) return { title: '阅史记 · 文物', path: LIST_PATH, imageUrl: '/assets/relic-home-ink.png' };
+  return {
+    title: `阅史记 · ${relic.title}`,
+    path: `${DETAIL_PATH}?id=${encodeURIComponent(relic.id)}`,
+    imageUrl: imagePath(relic.id, 'detail')
+  };
+}
+
+module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, imagePath, sourceFor, shareMessage };
