@@ -49,6 +49,10 @@
       {
         "value": "assets/share-cover-fallback.jpg",
         "type": "file"
+      },
+      {
+        "value": "assets/share-wxacode.jpg",
+        "type": "file"
       }
     ],
     "include": []

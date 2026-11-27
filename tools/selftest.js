@@ -2391,11 +2391,16 @@ console.log('== 朋友圈分享 ==');
   const quote = '料敌合变，出奇无穷，声震天下。';
   qrshare.paintPoster(ctx, { title: '夏', quote }, () => null);
   eq(rows.filter((row) => row.y >= 283 && row.y <= 297).map((row) => row.label), [quote], '参考图题句完整排在一行');
-  const code = { width: 258, height: 258 };
+  const code = { width: 288, height: 288 };
+  const seal = { width: 114, height: 197 };
   const images = [];
   ctx.drawImage = (...args) => images.push(args);
-  qrshare.paintPoster(ctx, { title: '夏' }, (src) => src === '/assets/share-wxacode.jpg' ? code : null);
-  eq(images, [[code, 182, 328, 50, 50]], '小程序码完整画成正方形，不裁切或拉伸');
+  rows.length = 0;
+  const assets = { '/assets/share-wxacode.png': code, '/assets/seal.png': seal };
+  qrshare.paintPoster(ctx, { title: '夏' }, (src) => assets[src]);
+  eq(images[0], [seal, 229 - 27 * 114 / 197, 298, 27 * 114 / 197, 27], '史载印放在名句右侧');
+  eq(images[1], [code, 181, 329, 52, 52], '小程序码完整绘入，不裁切或拉伸');
+  ok(rows.every((row) => !row.label.includes('扫一扫')), '海报码图下方不显示提示语');
 }
 
 // ---------------------------------------------------------------------------

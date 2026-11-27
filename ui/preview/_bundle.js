@@ -5708,7 +5708,7 @@ const FALLBACK_IMG = '/assets/share-fallback.jpg';
 const FALLBACK_COVER = '/assets/palace.jpg';
 // 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
 const PAPER_BG = '/assets/paper-bg.jpg';
-const SHARE_CODE = '/assets/share-wxacode.jpg';
+const SHARE_CODE = '/assets/share-wxacode.png';
 
 // 海报逻辑尺寸（px，与 app.wxss .ss-canvas 一致）与高清倍率
 const CANVAS_ID = 'ssQrCanvas';
@@ -6167,11 +6167,18 @@ function paintPoster(ctx, share, getImage = peekImg) {
   const quote = share.quote || '';
   const quoteWidth = ctx.measureText(quote).width;
   if (quoteWidth > 191 && quoteWidth * 11 / 12.5 <= 191) ctx.font = '11px ' + KAI;
-  const quoteLines = drawLines(ctx, quote, 191, 2, 283, 14);
+  const quoteLines = drawLines(ctx, quote, ctx.measureText(quote).width <= 191 ? 191 : 166, 2, 283, 14);
   if (quoteLines && share.quoteSource) {
     ctx.fillStyle = MUTED;
     ctx.font = '9.4px ' + SONG;
-    drawLines(ctx, '—— ' + share.quoteSource, 178, 1, quoteLines === 1 ? 304 : 312, 0);
+    drawLines(ctx, '—— ' + share.quoteSource, 160, 1, quoteLines === 1 ? 304 : 312, 0);
+  }
+
+  const seal = getImage('/assets/seal.png');
+  if (seal && seal.width && seal.height) {
+    const sealH = 27;
+    const sealW = sealH * seal.width / seal.height;
+    ctx.drawImage(seal, 229 - sealW, 298, sealW, sealH);
   }
 
   ctx.fillStyle = '#E4D5C5';
@@ -6191,22 +6198,9 @@ function paintPoster(ctx, share, getImage = peekImg) {
     ctx.fillText(label, 50, baseline, code ? 106 : 144);
   });
 
-  const seal = getImage('/assets/seal.png');
-  if (seal && seal.width && seal.height) {
-    const sealH = code ? 26 : 40;
-    const sealW = sealH * seal.width / seal.height;
-    ctx.drawImage(seal, (code ? 175 : 229) - sealW, code ? 343 : 334, sealW, sealH);
-  }
   if (code && code.width && code.height) {
-    // 码图按正方形整幅绘入，保留原有白边、码点和绿色微信标识。
-    ctx.fillStyle = '#FFFFFF';
-    roundRectPath(ctx, 180, 327, 54, 51.5, 3);
-    ctx.fill();
-    ctx.drawImage(code, 182, 328, 50, 50);
-    ctx.textAlign = 'center';
-    ctx.fillStyle = MUTED;
-    ctx.font = '5.5px ' + SONG;
-    ctx.fillText('微信扫一扫', 207, 381);
+    // 圆形白边随码图一起绘入，透明外沿直接露出宣纸。
+    ctx.drawImage(code, 181, 329, 52, 52);
   }
   ctx.restore();
 }
