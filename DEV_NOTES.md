@@ -158,3 +158,15 @@
 - 运行 `node tools/fetch_relic_assets.js` 会按 `miniprogram/relics/catalog.js` 的馆藏编号查询大都会和克利夫兰的开放接口，核对编号和图片授权。原始 JSON、原图和处理结果放在 `tmp/relic-import-*` 下。使用本机 Node 和 Python Pillow，可通过 `RELIC_PYTHON` 指定 Python 路径。
 - `python tools/prepare_relic_images.py <本次输出目录>` 可重新生成 200×144 列表图和长边不超过 490px 的等比详情图。发现馆方图片比例变化时输出新比例供复核。`docs/relic-sources.json` 保存本次馆藏页、接口、配图地址和授权标记。本流程仅在临时目录产出候选文件，复核后再同步到文物分包。
 - 实跑获取 12 条官方记录，24 张配图与仓库内版本逐字节一致。主库和资料库数据审计、16 页静态校验和现有自测通过。
+
+## 2026-11-27 · 文物目录扩充到 36 件
+
+- 目录由 12 件扩到 **36 件**（青铜 / 陶瓷 / 玉器 / 书画各 9 件），按年代先后排列；筛选时代相应扩为「新石器时代 / 二里头文化 / 商 / 西周 / 东周 / 汉 / 唐 / 宋 / 元 / 明 / 清」，每个时代都有藏品。新增条目含克利夫兰（CC0）11 件、大都会（公有领域）13 件，馆藏号、材质、尺寸、纪年逐条按馆方记录核对。
+- `sourceFor(id)` 改为按 id 前缀推导馆方与授权（`cma-` → 克利夫兰 + CC0，其余 → 大都会 + 公有领域），详情页配图说明不再写死「公有领域」。`sharePayload()` 补 `path` 并与 `onShareAppMessage` 同源（都用 `catalog.shareMessage`），转发路径只有一处定义。
+- 配图沿用 `fetch_relic_assets.js` + `prepare_relic_images.py` 复现，本次抓取 36 条官方记录、72 张配图（detail 457.1 KB / thumb 100.8 KB）。原 12 件新旧图逐字节一致，未引入无谓改动。图像全部留在文物分包内，离线可读，因此**分包媒体预算从 200 KB 放宽到 1024 KB**（主包仍守 200 KB）；两条阈值都写进 `tools/validate_miniprogram.py` 做退出码。`docs/relic-sources.json` 重写为 36 条，顺序与目录一致。
+- `tools/validate_miniprogram.py` 新增文物一致性检查：每件文物必须在分包内有 thumb/detail 两图，且 `catalog.js` 的 `imageRatio` 与详情图实际高宽比一致（容忍 0.05），用内置 JPEG 头解析，不引入 Pillow 依赖。
+- `tools/selftest.js` 新增「文物分包」段（含此前完全未覆盖的 relics 三个页面）：目录字段与配图齐备、器类/时代筛选组合与越界索引、无交集空态、列表→详情跳转、详情字段与授权文案、分享面板全链路（复用 `assertSharePanel`）、未知 id 兜底、`share=1` 直达弹层、旧分享页兼容跳转、首页入口。`urlTarget` 支持 `/relics/pages/...` 路由，页面注册断言改为 16 页。
+- 新增 4 张回归截图（`39-relic-list` / `40-relic-filter` / `41-relic-detail` / `42-relic-share`），截图总数 38 → 42。
+- 验证：`node tools/selftest.js` PASS 2337 / FAIL 0；`python tools/validate_miniprogram.py` 通过（主包 754.2 KB / 媒体 174.3 KB；文物分包 601.6 KB / 媒体 557.9 KB / 1024 KB 预算）；`python tools/content_audit.py` 通过；`node tools/preview_shots.js` 42 张全过。Chrome 核对列表首屏与滚动、长画幅详情（杜堇立轴 211% 图框）、共此卷弹层。
+- 待验证：微信真机首次分包下载、列表滚动与筛选弹层、详情长画幅图框、读屏；文物简介为按馆方记录改写的通稿文案，**尚未逐条史实审校**。
+- 说明：`ui/preview/shots/` 里 38 张既有截图在本次环境重新渲染后字节全变（同名同尺寸、内容按像素一致，属 Chrome 版本差异），已逐张还原，只保留 4 张新增截图，避免把无关噪声混入提交。

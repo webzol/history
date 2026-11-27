@@ -329,7 +329,7 @@ function assertSharePanel(page, cfg, tag) {
 }
 
 function urlTarget(url) {
-  const m = /^\/pages\/([\w-]+)\/([\w-]+)/.exec(url);
+  const m = /^\/(?:relics\/)?pages\/([\w-]+)\/([\w-]+)/.exec(url);
   return m ? m[1] : url;
 }
 
@@ -391,6 +391,16 @@ function loadAll() {
     pages[name];
     delete require.cache[require.resolve(path.join(ROOT, 'pages', name, `${name}.js`))];
     require(path.join(ROOT, 'pages', name, `${name}.js`));
+  });
+
+  // 文物分包页（relics/pages/*）
+  ['relic-list', 'relic-detail', 'relic-share'].forEach((name) => {
+    currentFile = name;
+    global.__CUR = name;
+    pages[name];
+    const file = path.join(ROOT, 'relics', 'pages', name, `${name}.js`);
+    delete require.cache[require.resolve(file)];
+    require(file);
   });
 }
 loadAll();
@@ -1901,7 +1911,143 @@ console.log('== 搜索 ==');
 })();
 
 // ---------------------------------------------------------------------------
-// 9. 路由边界：所有跳转目标页面存在
+// 9. 文物分包（relics：列表筛选 / 详情 / 分享兼容入口）
+// ---------------------------------------------------------------------------
+
+console.log('== 文物分包 ==');
+
+(function () {
+  resetWifiStack();
+  const catalog = require(path.join(ROOT, 'relics', 'catalog.js'));
+
+  eq(catalog.RELICS.length, 36, '文物目录 36 件');
+  eq(catalog.TYPES, ['青铜', '陶瓷', '玉器', '书画'], '器类四类');
+  catalog.TYPES.forEach((type) => {
+    eq(catalog.RELICS.filter((r) => r.type === type).length, 9, `${type} 各 9 件`);
+  });
+  const ids = catalog.RELICS.map((r) => r.id);
+  eq(new Set(ids).size, 36, '文物 id 不重复');
+  catalog.RELICS.forEach((relic) => {
+    ok(relic.eras.length > 0 && relic.eras.every((era) => catalog.ERAS.indexOf(era) >= 0),
+      `${relic.id} 时代取值在筛选项内`);
+    ok(relic.title && relic.period && relic.date && relic.material && relic.dimensions
+      && relic.accession && relic.description.length >= 20 && relic.imageRatio > 0,
+      `${relic.id} 展示字段齐全`);
+  });
+  catalog.ERAS.forEach((era) => {
+    ok(catalog.RELICS.some((r) => r.eras.indexOf(era) >= 0), `筛选时代 ${era} 下有藏品`);
+  });
+  // 配图必须真实存在，且详情图高宽比与 catalog 的 imageRatio 一致（页面按它撑图框）
+  catalog.RELICS.forEach((relic) => {
+    ['thumb', 'detail'].forEach((size) => {
+      ok(fs.existsSync(path.join(ROOT, 'relics', 'assets', `${size}-${relic.id}.jpg`)),
+        `${relic.id} 有 ${size} 配图`);
+    });
+  });
+  // 馆方页与授权按 id 前缀推导（cma- 为克利夫兰 CC0，其余为大都会公有领域）
+  eq(catalog.sourceFor('cma-1952.510'), {
+    museum: '克利夫兰艺术博物馆',
+    url: 'https://www.clevelandart.org/art/1952.510',
+    rights: 'CC0'
+  }, '克利夫兰条目映射 CC0 与馆方页');
+  eq(catalog.sourceFor('60514'), {
+    museum: '大都会艺术博物馆',
+    url: 'https://www.metmuseum.org/art/collection/search/60514',
+    rights: '公有领域'
+  }, '大都会条目映射公有领域与馆方页');
+
+  // 列表页：默认 8 条分页 + 器类/时代双筛选
+  const list = pages['relic-list'];
+  list.onLoad();
+  eq(list.data.rows.length, 8, '列表首屏 8 条');
+  eq(list.data.count, 36, '列表默认 36 件');
+  eq(list.data.hasMore, true, '列表有待加载');
+  list.loadMore();
+  eq(list.data.rows.length, 16, '加载更多追加一屏');
+  eq(list.data.rows[0].thumb, '/relics/assets/thumb-44757.jpg', '行卡缩略图路径');
+  eq(Object.keys(list.data.rows[0]).sort(),
+    ['id', 'period', 'thumb', 'title', 'type'], '行卡只传展示字段');
+
+  tap(list, 'openFilter', { kind: 'type' });
+  eq(list.data.filterSheet.title, '选择器类', '器类弹层标题');
+  eq(list.data.filterSheet.options.length, 5, '器类弹层含「全部」');
+  tap(list, 'onFilterPick', { index: 1 });
+  eq(list.data.filterSheet, null, '选中后关闭弹层');
+  eq(list.data.count, 9, '筛青铜 9 件');
+  eq(list.data.typeIndex, 1, '器类选择保留');
+  tap(list, 'openFilter', { kind: 'era' });
+  tap(list, 'onFilterPick', { index: 5 });
+  eq(list.data.count, 2, '青铜 × 东周的组合筛选');
+  tap(list, 'onFilterPick', { index: 99 });
+  eq(list.data.count, 2, '越界索引不生效');
+  tap(list, 'resetFilters', {});
+  eq(list.data.count, 36, '清除筛选恢复全部');
+  eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个选择');
+  // 无结果态（时代与器类无交集时）：青铜 × 清
+  tap(list, 'openFilter', { kind: 'type' });
+  tap(list, 'onFilterPick', { index: 1 });
+  tap(list, 'openFilter', { kind: 'era' });
+  tap(list, 'onFilterPick', { index: 11 });
+  eq(list.data.count, 0, '组合无交集时归零');
+  eq(list.data.rows.length, 0, '无结果不渲染卡片');
+  tap(list, 'resetFilters', {});
+
+  resetWifiStack();
+  tap(list, 'openRelic', { id: 'cma-1952.510' });
+  eq(last('navigateTo').url, '/relics/pages/relic-detail/relic-detail?id=cma-1952.510', '列表进详情带 id');
+  list.goBack();
+  eq(last('switchTab').url, '/pages/home/home', '列表无栈返回回首页');
+
+  // 详情页：字段、授权、分享面板
+  const detail = pages['relic-detail'];
+  detail.onLoad({ id: 'cma-1952.510' });
+  eq(detail.data.relic.title, '双仙人耳玉杯', '详情标题');
+  eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '详情馆方');
+  eq(detail.data.relic.rights, 'CC0', '详情授权文案');
+  eq(detail.data.relic.image, '/relics/assets/detail-cma-1952.510.jpg', '详情配图路径');
+  eq(detail.data.relic.imageRatio, 55.714, '详情图框比例');
+  tap(detail, 'toggleSource', {});
+  eq(detail.data.sourceOpen, true, '展开馆方藏品页地址');
+  assertSharePanel(detail, {
+    kicker: '文物 · 清',
+    pathTail: 'relic-detail?id=cma-1952.510'
+  }, '文物详情');
+  ok(detail.sharePayload().coverFit === 'contain', '文物题图等比完整排入');
+  detail.onImageError();
+  eq(detail.data.imageFailed, true, '配图失败显示占位');
+
+  // 未知 id 兜底：目录查不到即不渲染（onLoad 直接 return），页面走 wxml 的空态分支
+  ok(!catalog.RELICS.some((r) => r.id === 'not-exist'), '未知 id 不在目录内');
+  resetWifiStack();
+  tap(detail, 'goBack', {});
+  eq(last('redirectTo').url, catalog.LIST_PATH, '详情无栈返回回列表');
+
+  // 分享直达：?share=1 直接在详情打开共此卷面板
+  const direct = pages['relic-detail'];
+  direct.data.share.open = false;
+  direct.onLoad({ id: '60514', share: '1' });
+  ok(direct.data.share.open, 'share=1 直达打开分享面板');
+
+  // 旧分享页兼容入口：转详情并带 share=1
+  resetWifiStack();
+  const share = pages['relic-share'];
+  share.onLoad({ id: '39919' });
+  share.onReady();
+  eq(last('redirectTo').url, '/relics/pages/relic-detail/relic-detail?id=39919&share=1', '旧分享页转详情弹层');
+  share.onLoad({ id: 'not-exist' });
+  share.onReady();
+  eq(last('redirectTo').url, catalog.LIST_PATH, '旧分享页未知 id 回列表');
+
+  // 首页入口
+  resetWifiStack();
+  tap(pages.home, 'goRelics', {});
+  eq(last('navigateTo').url, '/relics/pages/relic-list/relic-list', '首页进入文物列表');
+  const homeWxml = fs.readFileSync(path.join(ROOT, 'pages', 'home', 'home.wxml'), 'utf8');
+  ok(homeWxml.indexOf('青铜 · 陶瓷 · 玉器 · 书画') >= 0, '首页文物入口列出四类');
+})();
+
+// ---------------------------------------------------------------------------
+// 10. 路由边界：所有跳转目标页面存在
 // ---------------------------------------------------------------------------
 
 console.log('== 路由完整 ==');
@@ -1911,7 +2057,7 @@ console.log('== 路由完整 ==');
     .filter((r) => ['navigateTo', 'redirectTo'].indexOf(r.kind) >= 0)
     .map((r) => urlTarget(r.url));
   targets.forEach((t) => ok(pages[t], `跳转目标页存在 ${t}`));
-  ok(Object.keys(pages).length === 13, '十三个页面全部注册');
+  ok(Object.keys(pages).length === 16, '十六个页面全部注册（13 主包页 + 3 文物分包页）');
 })();
 
 // ---------------------------------------------------------------------------

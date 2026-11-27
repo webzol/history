@@ -23,7 +23,7 @@
           <view class="cover-fade" aria-hidden="true"></view>
         </view>
         <view wx:else class="object-image-empty">图像暂不可用</view>
-        <text wx:if="{{!imageFailed}}" class="object-image-note">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · 公有领域</text>
+        <text wx:if="{{!imageFailed}}" class="object-image-note">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>
       </view>
 
       <view class="details-card">

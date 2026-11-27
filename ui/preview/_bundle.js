@@ -3628,21 +3628,11 @@ module.exports = {"generatedAt":"2026-10-23","source":"org.raphets.history APK",
 });
 __register('/relics/catalog.js', function (require, module, exports) {
 const TYPES = ['青铜', '陶瓷', '玉器', '书画'];
-const ERAS = ['新石器时代', '二里头文化', '商', '汉', '唐', '宋', '明'];
+const ERAS = ['新石器时代', '二里头文化', '商', '西周', '东周', '汉', '唐', '宋', '元', '明', '清'];
 
+// 按年代先后排列。以文物本体的形制与用途为主，馆方的断代与出土地随文说明。
+// imageRatio = 详情图 高/宽 × 100，须与 tools/prepare_relic_images.py 的输出一致（改图须同步改这里）。
 const RELICS = [
-  {
-    id: '60514', title: '青铜鼎', type: '青铜', eras: ['商'], period: '商', date: '公元前13至12世纪',
-    imageRatio: 75.102,
-    material: '青铜', dimensions: '通高20.3厘米，口径17.1厘米', accession: '2001.210',
-    description: '两耳立在口沿，三足托起圆腹。鼎原可用来烹煮、盛放食物，在商代礼仪中也用来陈设祭品。'
-  },
-  {
-    id: 'cma-1989.150', title: '青铜斝', type: '青铜', eras: ['二里头文化'], period: '二里头文化', date: '约公元前1700至前1500年',
-    imageRatio: 107.93,
-    material: '青铜', dimensions: '高24厘米', accession: '1989.150',
-    description: '斝是一种温酒器。这件斝的宽口上立着两根柱，三条长足把器腹架高。馆方将它归入二里头文化，认为可能来自河南。'
-  },
   {
     id: '44757', title: '良渚文化玉璧', type: '玉器', eras: ['新石器时代'], period: '新石器时代 · 良渚文化', shortPeriod: '新石器时代', date: '公元前3千纪中叶',
     imageRatio: 75.102,
@@ -3650,28 +3640,10 @@ const RELICS = [
     description: '玉璧呈圆盘形，中间开孔。将玉料磨成薄而平整的圆盘，再磨出圆孔，需要细致加工。良渚墓葬中常可见到这类玉器。'
   },
   {
-    id: '39919', title: '米芾《吴江舟中诗》', type: '书画', eras: ['宋'], period: '北宋', date: '约公元1095年',
-    imageRatio: 43.265,
-    material: '纸本墨书，手卷', dimensions: '31.1 × 556.9厘米', accession: '1984.174', imageNote: '手卷局部',
-    description: '米芾以草书写下舟中诗。卷中笔势有快慢，字形倾侧、大小不一，连缀起来却自有节奏。手卷通常由右向左逐段展开。'
-  },
-  {
-    id: '49368', title: '三彩陶骆驼俑', type: '陶瓷', eras: ['唐'], period: '唐', date: '公元8世纪',
-    imageRatio: 142.029,
-    material: '三彩釉陶', dimensions: '高37.1厘米，宽11.9厘米，长27.9厘米', accession: '67.43.1',
-    description: '这件陶俑塑出双峰驼昂首站立的姿态。骆驼是古代长途运输的役畜，唐代墓葬也常用陶俑表现它的形象。'
-  },
-  {
-    id: '42480', title: '龙泉窑青釉盖罐', type: '陶瓷', eras: ['宋'], period: '南宋', date: '公元12至13世纪',
-    imageRatio: 66.531,
-    material: '青釉瓷质器，釉下刻饰及立体装饰', dimensions: '连盖高25.4厘米', accession: '34.113.4a, b',
-    description: '罐身和盖子施青釉，器身有刻饰，罐盖附近还有立体装饰。顺着釉色看起伏，可以分辨刻入胎体的线条与突起的造型。'
-  },
-  {
-    id: '53561', title: '青铜爵', type: '青铜', eras: ['商'], period: '商', date: '公元前12至11世纪',
-    imageRatio: 133.515,
-    material: '青铜', dimensions: '高19.7厘米', accession: '1974.289.5',
-    description: '前端伸出长流，后端上翘，器身下有三足。顺着长流可以辨出倾倒酒液的方向，也能看出爵与斝的器形差别。'
+    id: 'cma-1953.628', title: '红山文化玉人', type: '玉器', eras: ['新石器时代'], period: '新石器时代 · 红山文化', shortPeriod: '新石器时代', date: '约公元前4700至前2920年',
+    imageRatio: 147.59,
+    material: '软玉', dimensions: '高14.6厘米，宽6厘米', accession: '1953.628',
+    description: '玉人作坐姿，头部为牛首，顶上生出四角。两肩上方钻出一对相通的小孔，可以穿绳悬佩。这类玉器出自东北地区的红山文化，一般认为与当时的原始信仰有关。'
   },
   {
     id: '49376', title: '玉璋', type: '玉器', eras: ['新石器时代', '商'], period: '新石器时代至商', date: '公元前2千纪',
@@ -3680,16 +3652,148 @@ const RELICS = [
     description: '璋体扁长，刃端内弧，窄端有一小孔。馆方将它归入礼仪用器，并将年代定在新石器时代至商这一较宽的范围。'
   },
   {
+    id: 'cma-1989.150', title: '青铜斝', type: '青铜', eras: ['二里头文化'], period: '二里头文化', date: '约公元前1700至前1500年',
+    imageRatio: 107.93,
+    material: '青铜', dimensions: '高24厘米', accession: '1989.150',
+    description: '斝是一种温酒器。这件斝的宽口上立着两根柱，三条长足把器腹架高。馆方将它归入二里头文化，认为可能来自河南。'
+  },
+  {
+    id: '60514', title: '青铜鼎', type: '青铜', eras: ['商'], period: '商', date: '公元前13至12世纪',
+    imageRatio: 75.102,
+    material: '青铜', dimensions: '通高20.3厘米，口径17.1厘米', accession: '2001.210',
+    description: '两耳立在口沿，三足托起圆腹。鼎原可用来烹煮、盛放食物，在商代礼仪中也用来陈设祭品。'
+  },
+  {
+    id: '53561', title: '青铜爵', type: '青铜', eras: ['商'], period: '商', date: '公元前12至11世纪',
+    imageRatio: 133.515,
+    material: '青铜', dimensions: '高19.7厘米', accession: '1974.289.5',
+    description: '前端伸出长流，后端上翘，器身下有三足。顺着长流可以辨出倾倒酒液的方向，也能看出爵与斝的器形差别。'
+  },
+  {
+    id: '44617', title: '青铜簋', type: '青铜', eras: ['商'], period: '商', date: '公元前12世纪',
+    imageRatio: 75.102,
+    material: '青铜', dimensions: '高11.7厘米，双耳间宽23.5厘米，口径15.9厘米', accession: '62.217',
+    description: '簋是盛放煮熟的黍稷一类饭食的器皿。这件簋的双耳安在器身两侧，下接圈足。商代墓葬中，簋常与鼎等食器成套随葬。'
+  },
+  {
+    id: '748361', title: '商代蟠龙形玉佩', type: '玉器', eras: ['商'], period: '商', date: '公元前13至12世纪',
+    imageRatio: 74.898,
+    material: '软玉', dimensions: '直径4.4厘米，厚1厘米', accession: '2019.193.1',
+    description: '玉佩的龙身蜷曲成环，首尾相接，环中留出一孔。商代玉器多用这类卷曲的动物造型，或作佩饰，或用于礼仪。'
+  },
+  {
+    id: '42176', title: '青铜角', type: '青铜', eras: ['西周'], period: '西周', date: '公元前11世纪晚期',
+    imageRatio: 133.152,
+    material: '青铜', dimensions: '高20厘米，口沿宽14.6厘米，腹深6.4厘米', accession: '24.72.13',
+    description: '角是饮酒器，口沿两端分别作流和尾，口上立两根短柱，器身下有三足。这件角与同一批入藏的西周礼器同号著录。'
+  },
+  {
+    id: '42167', title: '青铜尊', type: '青铜', eras: ['西周'], period: '西周', date: '公元前11世纪晚期',
+    imageRatio: 116.114,
+    material: '青铜', dimensions: '高34.9厘米，口径28.3厘米，足径17.5厘米', accession: '24.72.4',
+    description: '尊是盛酒器，用来盛放祭祀用的酒。这件尊的口沿向外展开，器身下承圈足，与同一批入藏的西周礼器同号著录。'
+  },
+  {
+    id: '44784', title: '青铜豆', type: '青铜', eras: ['东周'], period: '东周', date: '公元前6世纪末至前5世纪初',
+    imageRatio: 133.515,
+    material: '青铜', dimensions: '通高26.7厘米，口径18.4厘米，足径12.4厘米', accession: '25.20.2a, b',
+    description: '豆是盛放腌菜、肉酱一类食物的器皿，上为浅盘，下接柄和底座。这件豆带盖，馆方把年代定在春秋晚期至战国早期。'
+  },
+  {
+    id: '61403', title: '交龙纹铜镜', type: '青铜', eras: ['东周'], period: '战国', date: '公元前5至前4世纪',
+    imageRatio: 86.531,
+    material: '青铜', dimensions: '直径13.3厘米', accession: '23.120.5',
+    description: '铜镜背面铸出相互盘绕的龙纹，镜钮居中，纹饰在镜背上铺满一圈。战国时期的铜镜用于照容，背面常饰这类动物纹样。'
+  },
+  {
+    id: '75242', title: '战国龙形玉佩', type: '玉器', eras: ['东周'], period: '战国', date: '公元前5世纪',
+    imageRatio: 133.515,
+    material: '软玉', dimensions: '长10.8厘米，高2.5厘米', accession: '2009.94',
+    description: '玉佩作龙形，龙首生角，龙身向上卷起。战国时期的玉作坊常用蟠曲的龙形制佩，这件器物用透闪石软玉琢成。'
+  },
+  {
+    id: '39637', title: '战国蟠结龙纹玉环', type: '玉器', eras: ['东周'], period: '战国', date: '公元前3世纪',
+    imageRatio: 111.364,
+    material: '软玉', dimensions: '高7.9厘米，宽5.2厘米', accession: '1985.214.99',
+    description: '环体由一条蟠结的龙绕成，龙首与爪在环上转折相接，龙身各处用阴线刻出细部。'
+  },
+  {
+    id: '74527', title: '战国至西汉玉璧', type: '玉器', eras: ['东周', '汉'], period: '战国至西汉', date: '公元前3至前2世纪',
+    imageRatio: 75.102,
+    material: '玉', dimensions: '直径14.6厘米，厚1厘米', accession: '2008.287',
+    description: '玉璧作圆板形，中心开圆孔，器面光素。璧在先秦两汉的礼仪中用作礼器，也见于墓葬随葬。'
+  },
+  {
     id: '72544', title: '金饰玉梳', type: '玉器', eras: ['汉'], period: '东汉', date: '公元25至220年',
     imageRatio: 82.449,
     material: '软玉、金', dimensions: '高5.1厘米，长7.6厘米', accession: '2004.322',
     description: '梳背上嵌着金饰，下方是一排细密的玉梳齿。金与玉在一件小器物上相接，可以从梳背细看两种材料的处理。'
   },
   {
-    id: '42514', title: '龙泉窑青釉刻牡丹纹盘', type: '陶瓷', eras: ['明'], period: '明', date: '公元14世纪晚期至15世纪初',
-    imageRatio: 75.102,
-    material: '青釉炻器，釉下刻纹', dimensions: '高8.9厘米，口径50.8厘米', accession: '1984.358',
-    description: '盘径超过半米，盘心刻牡丹，外围的纹线从盘心向盘沿展开。青釉覆在刻纹上，花纹随釉层深浅显现。'
+    id: 'cma-1986.46.a', title: '青铜博山炉', type: '青铜', eras: ['汉'], period: '西汉', date: '公元前200至前100年',
+    imageRatio: 123.737,
+    material: '青铜', dimensions: '通高18.4厘米，腹径9.9厘米', accession: '1986.46.a',
+    description: '炉盖做成尖耸的山形，山间铸出人物与走兽。汉人焚香时把香料放在炉身中点燃，烟从盖上的镂孔散出，望去像山间的雾气。'
+  },
+  {
+    id: '49368', title: '三彩陶骆驼俑', type: '陶瓷', eras: ['唐'], period: '唐', date: '公元8世纪',
+    imageRatio: 142.029,
+    material: '三彩釉陶', dimensions: '高37.1厘米，宽11.9厘米，长27.9厘米', accession: '67.43.1',
+    description: '这件陶俑塑出双峰驼昂首站立的姿态。骆驼是古代长途运输的役畜，唐代墓葬也常用陶俑表现它的形象。'
+  },
+  {
+    id: 'cma-2000.118.1', title: '三彩镇墓兽', type: '陶瓷', eras: ['唐'], period: '唐', date: '公元8世纪初',
+    imageRatio: 144.543,
+    material: '三彩釉陶', dimensions: '通高92.3厘米，宽43.8厘米', accession: '2000.118.1',
+    description: '镇墓兽作兽面，头顶生角，蹲踞在座上，遍身竖起的尖刺加强威慑。唐三彩以铅釉低温烧成，绿、黄、白三色在窑中自然流动。这类陶塑成对放在墓中，用来镇守。'
+  },
+  {
+    id: '39919', title: '米芾《吴江舟中诗》', type: '书画', eras: ['宋'], period: '北宋', date: '约公元1095年',
+    imageRatio: 43.265,
+    material: '纸本墨书，手卷', dimensions: '31.1 × 556.9厘米', accession: '1984.174', imageNote: '手卷局部',
+    description: '米芾以草书写下舟中诗。卷中笔势有快慢，字形倾侧、大小不一，连缀起来却自有节奏。手卷通常由右向左逐段展开。'
+  },
+  {
+    id: '39918', title: '黄庭坚《廉颇蔺相如列传》', type: '书画', eras: ['宋'], period: '北宋', date: '约公元1095年',
+    imageRatio: 46.531,
+    material: '纸本墨书，手卷', dimensions: '纵33.7厘米，横1840.2厘米', accession: '1989.363.4', imageNote: '手卷局部',
+    description: '黄庭坚以行书写下《史记》中的这篇列传，全卷长逾十八米，字迹随书写推进而起伏，笔画中段收紧、撇捺向外送出。'
+  },
+  {
+    id: 'cma-1961.421', title: '马麟《坐看云起图》', type: '书画', eras: ['宋'], period: '南宋', date: '约公元1256年',
+    imageRatio: 41.429,
+    material: '绢本墨笔，册页', dimensions: '纵25.1厘米，横25.3厘米', accession: '1961.421', imageNote: '册页',
+    description: '画面中一位士人倚坐，望向山间升起的云气，题名取自王维的诗句。南宋时这类诗意图常画在绢本册页或团扇上。'
+  },
+  {
+    id: '42480', title: '龙泉窑青釉盖罐', type: '陶瓷', eras: ['宋'], period: '南宋', date: '公元12至13世纪',
+    imageRatio: 66.531,
+    material: '青釉瓷质器，釉下刻饰及立体装饰', dimensions: '连盖高25.4厘米', accession: '34.113.4a, b',
+    description: '罐身和盖子施青釉，器身有刻饰，罐盖附近还有立体装饰。顺着釉色看起伏，可以分辨刻入胎体的线条与突起的造型。'
+  },
+  {
+    id: 'cma-1957.40', title: '汝窑青釉笔洗', type: '陶瓷', eras: ['宋'], period: '北宋', date: '公元11世纪晚期至1127年',
+    imageRatio: 53.469,
+    material: '青瓷，汝窑', dimensions: '高3.8厘米，口径12.8厘米', accession: '1957.40',
+    description: '笔洗作浅盘形，通体施淡青釉，釉面开有细密的片纹。汝窑为北宋宫廷烧造的时间不长，烧成的器物数量很少，器底细小的支钉痕是它的一项特征。'
+  },
+  {
+    id: 'cma-1948.206', title: '建窑黑釉兔毫盏', type: '陶瓷', eras: ['宋'], period: '南宋', date: '公元12至13世纪',
+    imageRatio: 69.592,
+    material: '黑釉瓷，建窑', dimensions: '高8.7厘米，口径17.8厘米', accession: '1948.206',
+    description: '盏内壁的黑釉上泛出红褐色的条状结晶，因形似兔毛而被称作「兔毫」。这件盏的口沿原镶金属边，尺寸比常见的建盏更大。'
+  },
+  {
+    id: 'cma-1961.92', title: '龙泉窑青釉凸龙纹盘', type: '陶瓷', eras: ['元'], period: '元', date: '公元14世纪',
+    imageRatio: 99.388,
+    material: '青釉炻器，龙泉窑', dimensions: '口径43.2厘米', accession: '1961.92',
+    description: '盘心凸起一条盘绕的龙，周围衬以云纹和水波，盘沿环绕五瓣花，龙首前方有一颗火珠。青釉覆在凸起的纹饰上，颜色随釉层的厚薄深浅不同。'
+  },
+  {
+    id: '45685', title: '沈周《四季花卉图》', type: '书画', eras: ['明'], period: '明', date: '公元15世纪至16世纪初',
+    imageRatio: 42.449,
+    material: '纸本设色，手卷', dimensions: '27.5 × 504.8厘米', accession: '1982.205', imageNote: '手卷局部',
+    description: '沈周把不同季节的花草画在同一手卷中。顺着枝叶的转折看，深浅不一的叶片与细线勾出的花瓣各有层次。'
   },
   {
     id: '45684', title: '沈周《赠汉文诗》', type: '书画', eras: ['明'], period: '明', date: '公元1493年',
@@ -3698,10 +3802,52 @@ const RELICS = [
     description: '沈周将行书布在折扇形的纸面上。字虽小，横斜伸展的笔画仍能看出馆方所说的黄庭坚书风。'
   },
   {
-    id: '45685', title: '沈周《四季花卉图》', type: '书画', eras: ['明'], period: '明', date: '公元15世纪至16世纪初',
-    imageRatio: 42.449,
-    material: '纸本设色，手卷', dimensions: '27.5 × 504.8厘米', accession: '1982.205', imageNote: '手卷局部',
-    description: '沈周把不同季节的花草画在同一手卷中。顺着枝叶的转折看，深浅不一的叶片与细线勾出的花瓣各有层次。'
+    id: '45797', title: '陈淳花卉册页', type: '书画', eras: ['明'], period: '明', date: '公元1540年',
+    imageRatio: 56.735,
+    material: '纸本设色，册页', dimensions: '每开约33 × 57厘米', accession: '1986.266.1a–u', imageNote: '册页选开',
+    description: '册中收花卉十六开，另附书迹一开。每开画一种花草，用墨色的深浅分出花瓣与叶片，枝叶的走向各有差别。'
+  },
+  {
+    id: 'cma-1954.582', title: '杜堇《陪月闲行图》', type: '书画', eras: ['明'], period: '明', date: '公元15世纪晚期',
+    imageRatio: 211.207,
+    material: '纸本设色，立轴', dimensions: '纵156.4厘米，横72.4厘米', accession: '1954.582',
+    description: '画中一位文人在月下踱步，身后是梅树和坡石。原题画的是北宋诗人林逋，他在西湖边隐居，以梅为妻、以鹤为子。'
+  },
+  {
+    id: '42514', title: '龙泉窑青釉刻牡丹纹盘', type: '陶瓷', eras: ['明'], period: '明', date: '公元14世纪晚期至15世纪初',
+    imageRatio: 75.102,
+    material: '青釉炻器，釉下刻纹', dimensions: '高8.9厘米，口径50.8厘米', accession: '1984.358',
+    description: '盘径超过半米，盘心刻牡丹，外围的纹线从盘心向盘沿展开。青釉覆在刻纹上，花纹随釉层深浅显现。'
+  },
+  {
+    id: '42526', title: '青花栀子花纹盘', type: '陶瓷', eras: ['明'], period: '明', date: '公元16世纪晚期',
+    imageRatio: 75.102,
+    material: '瓷，釉下青花及釉上彩', dimensions: '口径26厘米', accession: '19.28.10',
+    description: '盘心以釉下钴蓝画出一枝栀子花，釉上再加彩色，外壁另有一圈纹饰。青花与釉上彩先后入窑，是明代景德镇常用的做法。'
+  },
+  {
+    id: 'cma-1971.145', title: '珐琅彩锦鸡花卉蒜头瓶', type: '陶瓷', eras: ['清'], period: '清', date: '公元1736至1795年',
+    imageRatio: 150.307,
+    material: '瓷，珐琅彩', dimensions: '高18.6厘米，腹径10.5厘米', accession: '1971.145',
+    description: '瓶口作蒜头形，器身用珐琅彩画出锦鸡与花卉。这类器物先在景德镇烧成白瓷，再送进宫中的作坊加绘，由宫廷画师按样稿落笔。'
+  },
+  {
+    id: '49167', title: '恽冰花卉册页', type: '书画', eras: ['清'], period: '清', date: '公元17世纪',
+    imageRatio: 90.612,
+    material: '纸本设色，册页', dimensions: '纵31.1厘米，横34.3厘米', accession: '1983.412.1', imageNote: '册页',
+    description: '册页上画一枝花，花瓣用色层层晕染，叶片直接以色彩点染成形。恽冰是清代的女画家，以没骨花卉见长。'
+  },
+  {
+    id: '36071', title: '王翚山水图轴', type: '书画', eras: ['清'], period: '清', date: '公元1693年',
+    imageRatio: 149.847,
+    material: '纸本墨笔，立轴', dimensions: '纵85.7厘米，横43.8厘米', accession: '55.211.2',
+    description: '立轴画山峦与林木，用墨的干湿分出远近层次，山石的轮廓以侧笔勾出。王翚是清初「四王」之一，这幅画作于1693年。'
+  },
+  {
+    id: 'cma-1952.510', title: '双仙人耳玉杯', type: '玉器', eras: ['清'], period: '清', date: '公元1736至1795年',
+    imageRatio: 55.714,
+    material: '软玉，青白玉', dimensions: '高6.5厘米，连耳宽16厘米', accession: '1952.510',
+    description: '杯的两侧各以一位仙人作耳，器身上环绕着仙人、乐人和侍从。这件杯曾被看作元代器物，新的研究将它改定在清代乾隆时期；器上没有乾隆款识，因此可能未曾入宫。'
   }
 ];
 
@@ -3709,11 +3855,20 @@ function imagePath(id, size) {
   return `/relics/assets/${size}-${id}.jpg`;
 }
 
+// 馆方藏品页与图像授权：cma- 前缀为克利夫兰艺术博物馆（CC0），其余为大都会艺术博物馆（公有领域）。
 function sourceFor(id) {
-  if (id === 'cma-1989.150') {
-    return { museum: '克利夫兰艺术博物馆', url: 'https://www.clevelandart.org/art/1989.150' };
+  if (id.startsWith('cma-')) {
+    return {
+      museum: '克利夫兰艺术博物馆',
+      url: `https://www.clevelandart.org/art/${id.slice(4)}`,
+      rights: 'CC0'
+    };
   }
-  return { museum: '大都会艺术博物馆', url: `https://www.metmuseum.org/art/collection/search/${id}` };
+  return {
+    museum: '大都会艺术博物馆',
+    url: `https://www.metmuseum.org/art/collection/search/${id}`,
+    rights: '公有领域'
+  };
 }
 
 const LIST_PATH = '/relics/pages/relic-list/relic-list';
@@ -9081,10 +9236,10 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
     const item = RELICS.find(relic => relic.id === options.id);
     if (!item) return;
     const { id, title, type, period, date, material, dimensions, accession, description, imageNote, imageRatio } = item;
-    const { museum, url } = sourceFor(id);
+    const { museum, url, rights } = sourceFor(id);
     this.setData({
       relic: { id, title, type, period, date, material, dimensions, accession, description,
-        imageNote: imageNote || '', imageRatio, museum, url, image: imagePath(id, 'detail') }
+        imageNote: imageNote || '', imageRatio, museum, url, rights, image: imagePath(id, 'detail') }
     }, () => {
       if (options.share === '1') this.openShare();
     });
@@ -9116,7 +9271,9 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
       title: relic.title,
       desc: relic.description,
       img: relic.image,
-      coverFit: 'contain'
+      coverFit: 'contain',
+      // 与 onShareAppMessage 同源（catalog.shareMessage），转发路径只有一处定义
+      path: shareMessage(relic).path
     };
   },
 
@@ -9137,7 +9294,7 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
 });
 
 });
-__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <block wx:if=\"{{relic}}\">\n      <view class=\"object-card\">\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\n        <text class=\"object-date\">{{relic.date}}</text>\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · 公有领域</text>\n      </view>\n\n      <view class=\"details-card\">\n        <view class=\"details-heading\">\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\n        </view>\n        <text class=\"object-description\">{{relic.description}}</text>\n        <view class=\"facts\">\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\n        </view>\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\n        </view>\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\n      </view>\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\n    </block>\n    <view wx:else class=\"relic-empty\">\n      <text>未找到这件文物。</text>\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\n    </view>\n  </view>\n\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\n      <view class=\"ss-head\">\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\n      </view>\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n      </view>\n      <view class=\"relic-share-actions\">\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\n          <text>转寄好友</text>\n        </button>\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\n        </view>\n      </view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
+__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\n    <view class=\"topbar\">\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\n        <view class=\"back\" aria-hidden=\"true\">\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\n        </view>\n      </view>\n      <text class=\"top-title\">文物</text>\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\n    </view>\n\n    <block wx:if=\"{{relic}}\">\n      <view class=\"object-card\">\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\n        <text class=\"object-date\">{{relic.date}}</text>\n        <view wx:if=\"{{!imageFailed}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\n        </view>\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\n        <text wx:if=\"{{!imageFailed}}\" class=\"object-image-note\">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>\n      </view>\n\n      <view class=\"details-card\">\n        <view class=\"details-heading\">\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\n        </view>\n        <text class=\"object-description\">{{relic.description}}</text>\n        <view class=\"facts\">\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\n        </view>\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\n        </view>\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\n      </view>\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\n    </block>\n    <view wx:else class=\"relic-empty\">\n      <text>未找到这件文物。</text>\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\n    </view>\n  </view>\n\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\n      <view class=\"ss-head\">\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\n      </view>\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\n      </view>\n      <view class=\"relic-share-actions\">\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\n          <text>转寄好友</text>\n        </button>\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\n        </view>\n      </view>\n    </view>\n  </view>\n</view>\n<feedback-popup></feedback-popup>\n<privacy-popup></privacy-popup>\n"; });
 __register('/relics/pages/relic-detail/relic-detail.wxss', function (require, module, exports) { module.exports = ".page {\n  position: relative;\n  min-height: 100vh;\n  overflow: hidden;\n  background: #F6F1EA;\n}\n\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\n.top-title {\n  position: absolute;\n  left: 54%;\n  transform: translateX(-50%);\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(36rpx * var(--fs, 1));\n  line-height: 1.4;\n  color: #1F1D19;\n}\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\n\n.back {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 156rpx;\n  height: 56rpx;\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\n  border-radius: 28rpx;\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\n}\n.back-hit-pressed .back { background: #F1E8DD; }\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\n.back-chevron {\n  position: absolute;\n  left: 1rpx;\n  top: 3rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-left: 2rpx solid #8A6A3E;\n  border-bottom: 2rpx solid #8A6A3E;\n  transform: rotate(45deg);\n}\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\n\n.relic-cover { position: relative; overflow: hidden; }\n.cover-fade {\n  position: absolute;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  height: 29rpx;\n  pointer-events: none;\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\n}\n\n.relic-empty {\n  padding: 34rpx;\n  border-radius: 38rpx;\n  background: #FCFBF8;\n  color: #5F5A52;\n  font-size: calc(26rpx * var(--fs, 1));\n  line-height: 1.6;\n  text-align: center;\n}\n.relic-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 44px;\n  margin-top: 20rpx;\n  padding: 10rpx 20rpx;\n  border-radius: 30rpx;\n  background: #F1E8DD;\n  color: #6B5036;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.45;\n}\n\n\n.object-card, .details-card { padding: 28rpx; border-radius: 38rpx; background: #FCFBF8; }\n.object-card { margin-top: 20rpx; }\n.object-type { display: block; color: #865C3B; font-size: calc(22rpx * var(--fs, 1)); line-height: 1.5; }\n.object-name {\n  display: block;\n  margin-top: 5rpx;\n  color: #1F1D19;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(43rpx * var(--fs, 1));\n  line-height: 1.35;\n}\n.object-date { display: block; margin-top: 9rpx; color: #5F5A52; font-size: calc(24rpx * var(--fs, 1)); line-height: 1.55; }\n.object-cover { margin-top: 24rpx; border-radius: 16rpx 16rpx 0 0; background: #F3EFE6; }\n.object-cover .cover-fade { height: 35rpx; }\n.object-image { position: absolute; inset: 0; width: 100%; height: 100%; }\n.object-image-empty {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 130rpx;\n  margin-top: 24rpx;\n  border-radius: 16rpx;\n  background: #F3EFE6;\n  color: #5F5A52;\n  font-size: calc(24rpx * var(--fs, 1));\n}\n.object-image-note { display: block; margin-top: 10rpx; color: #5F5A52; text-align: right; font-size: calc(19rpx * var(--fs, 1)); }\n.details-card { margin-top: 22rpx; }\n.details-heading { display: flex; align-items: center; gap: 16rpx; }\n.details-title {\n  color: #864B40;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(30rpx * var(--fs, 1));\n  line-height: 1.4;\n}\n.details-rule { flex: 1; height: 1rpx; background: linear-gradient(90deg, #D9BDB0, transparent); }\n.object-description {\n  display: block;\n  margin: 12rpx 0 22rpx;\n  color: #3B3731;\n  font-size: calc(27rpx * var(--fs, 1));\n  line-height: 1.8;\n}\n.facts {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 14rpx;\n}\n.fact {\n  width: calc((100% - 14rpx) / 2);\n  padding: 12rpx 16rpx;\n  border-radius: 20rpx;\n  background: #F7F3ED;\n  color: #3B3731;\n  font-size: calc(24rpx * var(--fs, 1));\n  line-height: 1.55;\n}\n.fact-label { display: block; color: #5F5A52; font-size: calc(20rpx * var(--fs, 1)); }\n.source-toggle {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  min-height: 44px;\n  margin-top: 8rpx;\n  color: #7D5A3B;\n  font-size: calc(22rpx * var(--fs, 1));\n}\n.source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }\n.object-share { margin-top: 22rpx; }\n.object-share-pressed { background: #EBDFD1; }\n\n.relic-share-sheet .ss-qr-wrap { margin: 12rpx 0 26rpx; }\n.relic-share-sheet .ss-canvas { box-shadow: 0 14rpx 34rpx rgba(90, 70, 50, 0.09); }\n.relic-share-actions { display: flex; gap: 16rpx; max-width: 306px; margin: 0 auto; }\n.share-action {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  flex: 1 1 0;\n  gap: 12rpx;\n  min-width: 0;\n  min-height: 46px;\n  margin: 0;\n  padding: 10rpx 12rpx;\n  border: 0;\n  border-radius: 26rpx;\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\n  font-size: calc(27rpx * var(--fs, 1));\n  font-weight: 400;\n  line-height: 1.4;\n}\n.share-action::after { border: 0; }\n.send-action { background: #F1E8DD; color: #63472F; }\n.save-action { background: #EEF0F0; color: #454C4A; }\n.send-action.share-action-pressed { background: #EBDFD1; }\n.save-action.share-action-pressed { background: #E3E8E7; }\n.save-action.share-pending { color: #706C63; }\n\n.share-action-icon { position: relative; flex: 0 0 32rpx; width: 32rpx; height: 32rpx; }\n.send-icon::before, .save-icon::before, .save-icon::after { position: absolute; content: ''; }\n.send-icon::before {\n  left: 4rpx;\n  bottom: 4rpx;\n  width: 18rpx;\n  height: 18rpx;\n  border: 1px solid currentColor;\n  border-radius: 4rpx;\n}\n.send-icon::after {\n  position: absolute;\n  top: 4rpx;\n  right: 4rpx;\n  width: 12rpx;\n  height: 12rpx;\n  border-top: 1px solid currentColor;\n  border-right: 1px solid currentColor;\n  background: linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), #F1E8DD;\n  content: '';\n}\n.share-action-pressed .send-icon::after { background-color: #EBDFD1; }\n.save-icon::before {\n  left: 5rpx;\n  bottom: 4rpx;\n  right: 5rpx;\n  height: 7rpx;\n  border: 1px solid currentColor;\n  border-top: 0;\n  border-radius: 0 0 3rpx 3rpx;\n}\n.save-icon::after {\n  top: 11rpx;\n  left: 11rpx;\n  width: 10rpx;\n  height: 10rpx;\n  border-right: 1px solid currentColor;\n  border-bottom: 1px solid currentColor;\n  transform: rotate(45deg);\n}\n.save-icon { background: linear-gradient(currentColor, currentColor) center 4rpx / 1px 14rpx no-repeat; }\n\n@media (max-height: 660px) {\n  .relic-share-sheet .ss-canvas { width: 196px; height: 319.63px; }\n}\n@media (max-height: 530px) {\n  .relic-share-sheet .ss-canvas { width: 172px; height: 280.49px; }\n}\n\n@media (max-height: 460px) {\n  .relic-share-sheet .ss-canvas { width: 148px; height: 241.35px; }\n}\n@media (prefers-reduced-motion: reduce) {\n  .relic-share-layer .ss-panel, .relic-share-layer .ss-mask { animation: none; }\n}\n"; });
 __register('/relics/pages/relic-share/relic-share.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');

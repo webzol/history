@@ -13,6 +13,7 @@ Checks:
 
 import json
 import re
+import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -91,10 +92,13 @@ def main():
             errors.append(f"{wxml.name}: unclosed tags {checker.stack}")
 
     # 按微信开发者工具的代码质量阈值估算，packOptions.ignore 的文件不计入。
+    # 主包媒体预算 200KB：随小程序一起下发，必须守住。分包媒体预算放宽到 1024KB——
+    # 分包只在进入对应栏目时才下载，图片留在包内可以离线可读（文物栏目的藏品照即属此类）。
     config = json.loads((ROOT / "project.config.json").read_text(encoding="utf-8"))
     ignore_rules = (config.get("packOptions") or {}).get("ignore") or []
     package_budget_kb = 1536
-    media_budget_kb = 200
+    media_budget_kb = {"main": 200}
+    subpackage_media_budget_kb = 1024
 
     def is_ignored(rel):
         rel = rel.replace("\\", "/")
@@ -121,13 +125,16 @@ def main():
     for package, (total, media) in package_sizes.items():
         size_kb = total / 1024
         media_kb = media / 1024
+        media_budget = media_budget_kb.get(package, subpackage_media_budget_kb)
         if size_kb >= package_budget_kb:
             errors.append(f"{package} package {size_kb:.1f}KB must be below {package_budget_kb}KB")
-        if media_kb >= media_budget_kb:
-            errors.append(f"{package} images/audio {media_kb:.1f}KB must be below {media_budget_kb}KB")
-        reports.append(f"{package} package {size_kb:.1f}KB / {package_budget_kb}KB, images/audio {media_kb:.1f}KB / {media_budget_kb}KB")
+        if media_kb >= media_budget:
+            errors.append(f"{package} images/audio {media_kb:.1f}KB must be below {media_budget}KB")
+        reports.append(f"{package} package {size_kb:.1f}KB / {package_budget_kb}KB, images/audio {media_kb:.1f}KB / {media_budget}KB")
     if app.get("lazyCodeLoading") != "requiredComponents":
         errors.append("app.json must enable requiredComponents lazy code loading")
+
+    errors.extend(check_relic_catalog())
 
     if errors:
         print("FAIL")
@@ -135,7 +142,62 @@ def main():
             print(" -", error)
         raise SystemExit(1)
 
-    print(f"OK: {len(pages)} pages, {'; '.join(reports)}. JSON/assets/WXML checks passed.")
+    print(f"OK: {len(pages)} pages, {'; '.join(reports)}. JSON/assets/WXML/WXSS checks passed.")
+
+
+def jpeg_size(path):
+    """读 JPEG 尺寸，避免给静态校验引入 Pillow 依赖。"""
+    with open(path, "rb") as handle:
+        if handle.read(2) != b"\xff\xd8":
+            raise ValueError("not a JPEG")
+        while True:
+            byte = handle.read(1)
+            if not byte:
+                raise ValueError("no SOF marker")
+            if byte != b"\xff":
+                continue
+            marker = handle.read(1)
+            while marker == b"\xff":
+                marker = handle.read(1)
+            if marker[0] in range(0xC0, 0xD0) and marker[0] not in (0xC4, 0xC8, 0xCC):
+                handle.read(3)  # 段长 + 精度
+                height = int.from_bytes(handle.read(2), "big")
+                width = int.from_bytes(handle.read(2), "big")
+                return width, height
+            length = int.from_bytes(handle.read(2), "big")
+            handle.seek(length - 2, 1)
+
+
+def check_relic_catalog():
+    """文物目录与配图一致性：每件文物在分包内都要有 thumb/detail 两图，
+    且 catalog.js 的 imageRatio 必须等于详情图实际高宽比 ×100（页面按它撑图框）。"""
+    errors = []
+    script = (
+        "const c = require(process.argv[1]);"
+        "process.stdout.write(JSON.stringify(c.RELICS.map(r => [r.id, r.imageRatio])));"
+    )
+    try:
+        result = subprocess.run(
+            ["node", "-e", script, str(ROOT / "relics" / "catalog.js")],
+            capture_output=True, text=True, encoding="utf-8", check=True,
+        )
+        entries = json.loads(result.stdout)
+    except Exception as exc:  # node 缺失或 catalog.js 语法错误都在这里暴露
+        return [f"relics/catalog.js 无法读取条目：{exc}"]
+
+    for relic_id, ratio in entries:
+        for size in ("thumb", "detail"):
+            path = ROOT / "relics" / "assets" / f"{size}-{relic_id}.jpg"
+            if not path.exists():
+                errors.append(f"relics {relic_id}: 缺少配图 {path.name}")
+                continue
+            if size != "detail":
+                continue
+            width, height = jpeg_size(path)
+            actual = round(height * 100 / width, 3)
+            if abs(actual - ratio) > 0.05:
+                errors.append(f"relics {relic_id}: imageRatio {ratio} 与 detail 图实际 {actual} 不符")
+    return errors
 
 
 if __name__ == "__main__":

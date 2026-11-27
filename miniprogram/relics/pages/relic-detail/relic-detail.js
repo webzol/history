@@ -12,10 +12,10 @@ Page({
     const item = RELICS.find(relic => relic.id === options.id);
     if (!item) return;
     const { id, title, type, period, date, material, dimensions, accession, description, imageNote, imageRatio } = item;
-    const { museum, url } = sourceFor(id);
+    const { museum, url, rights } = sourceFor(id);
     this.setData({
       relic: { id, title, type, period, date, material, dimensions, accession, description,
-        imageNote: imageNote || '', imageRatio, museum, url, image: imagePath(id, 'detail') }
+        imageNote: imageNote || '', imageRatio, museum, url, rights, image: imagePath(id, 'detail') }
     }, () => {
       if (options.share === '1') this.openShare();
     });
@@ -47,7 +47,9 @@ Page({
       title: relic.title,
       desc: relic.description,
       img: relic.image,
-      coverFit: 'contain'
+      coverFit: 'contain',
+      // 与 onShareAppMessage 同源（catalog.shareMessage），转发路径只有一处定义
+      path: shareMessage(relic).path
     };
   },
 
