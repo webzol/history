@@ -10,6 +10,10 @@
     </view>
     <scroll-view class="privacy-body" scroll-y="{{true}}">
       <text class="privacy-paragraph">感谢你使用阅史记。请先阅读并了解我们的隐私保护指引。</text>
+      <view class="privacy-reading">
+        <text class="privacy-reading-title" aria-role="heading">无障碍阅读</text>
+        <text class="privacy-reading-copy">在手机设置中开启「旁白」（iPhone）或「TalkBack」（安卓），即可用读屏浏览阅史记的主要页面。</text>
+      </view>
       <text class="privacy-paragraph">当你选择将分享海报保存到相册时，我们会申请相册写入权限，仅用于保存你选定的海报。</text>
       <text class="privacy-paragraph">收藏、浏览足迹和阅读设置保存在当前设备。随机头像与昵称由程序生成，无需获取微信头像或昵称。</text>
       <text class="privacy-contract" bindtap="onOpenContract" aria-role="button">{{contractName}}</text>

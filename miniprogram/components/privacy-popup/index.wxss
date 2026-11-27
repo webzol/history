@@ -54,6 +54,7 @@
   height: 78rpx;
 }
 .privacy-body {
+  display: block;
   height: 46vh;
   margin: 22rpx 0 28rpx;
 }
@@ -62,6 +63,25 @@
   color: #5F5A52;
   font-size: calc(26rpx * var(--fs, 1));
   line-height: 1.8;
+}
+.privacy-reading {
+  margin: 0 0 18rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 18rpx;
+  background: #F3EFE6;
+  font-size: calc(24rpx * var(--fs, 1));
+  line-height: 1.65;
+}
+.privacy-reading-title, .privacy-reading-copy {
+  display: block;
+}
+.privacy-reading-title {
+  color: #1F1D19;
+  font-weight: 600;
+}
+.privacy-reading-copy {
+  margin-top: 4rpx;
+  color: #3B3731;
 }
 .privacy-contract {
   padding: 6rpx 0;
