@@ -6293,6 +6293,8 @@ const api = require('../../utils/api.js');
 const store = require('../../utils/store.js');
 const font = require('../../utils/font.js');
 
+const SHARE_TITLE = '阅史记 · 一页一页读历史';
+
 Page('project://pages/home/home.js', {
   data: {
     dateText: '10月18日 · 今天',
@@ -6306,6 +6308,12 @@ Page('project://pages/home/home.js', {
     sheet: { open: false, title: '', list: [] },
     info: { open: false, title: '', paragraphs: [] },
     fontClass: 'm'
+  },
+
+  onLoad() {
+    if (typeof wx.showShareMenu === 'function') {
+      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    }
   },
 
   onShow() {
@@ -6482,7 +6490,11 @@ Page('project://pages/home/home.js', {
   },
 
   onShareAppMessage() {
-    return { title: '阅史记 · 一页一页读历史', path: '/pages/home/home' };
+    return { title: SHARE_TITLE, path: '/pages/home/home' };
+  },
+
+  onShareTimeline() {
+    return { title: SHARE_TITLE, imageUrl: '/assets/palace.jpg' };
   }
 });
 

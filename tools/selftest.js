@@ -144,6 +144,7 @@ const wx = {
     Object.keys(storage).forEach((k) => delete storage[k]);
   },
   showToast(opts) { route('showToast', '', opts); },
+  showShareMenu(opts) { route('showShareMenu', '', opts); },
   showModal(opts) {
     pendingModal = opts;
     route('showModal', '', { title: opts.title, content: opts.content });
@@ -557,6 +558,15 @@ console.log('== 首页 ==');
 (function () {
   resetWifiStack();
   const p = pages.home;
+
+  p.onLoad();
+  eq(last('showShareMenu')?.menus, ['shareAppMessage', 'shareTimeline'], '首页原生菜单启用好友和朋友圈分享');
+  const friendShare = p.onShareAppMessage();
+  eq(friendShare.path, '/pages/home/home', '首页好友分享仍打开首页');
+  const timelineShare = p.onShareTimeline();
+  eq(timelineShare.title, friendShare.title, '朋友圈分享沿用首页品牌标题');
+  ok(imgOk(timelineShare.imageUrl), '朋友圈分享题图位于小程序包内');
+  ok(!timelineShare.path, '朋友圈分享由微信打开当前首页');
 
   p.onShow();
   eq(p.data.dateText.slice(-4), '· 今天', 'dateText 为今天');
