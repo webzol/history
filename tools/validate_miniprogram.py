@@ -59,7 +59,9 @@ def main():
             errors.append(f"JSON {path.relative_to(ROOT)}: {exc}")
 
     app = json.loads((ROOT / "app.json").read_text(encoding="utf-8"))
-    for page in app["pages"]:
+    subpackages = app.get("subPackages", [])
+    pages = app["pages"] + [f"{pack['root']}/{page}" for pack in subpackages for page in pack["pages"]]
+    for page in pages:
         for ext in ("js", "json", "wxml", "wxss"):
             path = ROOT / f"{page}.{ext}"
             if not path.exists():
@@ -102,23 +104,28 @@ def main():
                 return True
         return False
 
-    total = 0
-    media = 0
+    package_roots = [pack["root"].rstrip("/") for pack in subpackages]
+    package_sizes = {name: [0, 0] for name in ["main", *package_roots]}
     for path in ROOT.rglob("*"):
-        if not path.is_file() or is_ignored(str(path.relative_to(ROOT))):
+        relative = path.relative_to(ROOT).as_posix()
+        if not path.is_file() or is_ignored(relative):
             continue
         if path.name in {"project.config.json", "project.private.config.json"} and path.parent == ROOT:
             continue
         size = path.stat().st_size
-        total += size
+        package = next((name for name in package_roots if relative.startswith(name + "/")), "main")
+        package_sizes[package][0] += size
         if path.suffix.lower() in MEDIA_SUFFIXES:
-            media += size
-    size_kb = total / 1024
-    media_kb = media / 1024
-    if size_kb >= package_budget_kb:
-        errors.append(f"main package {size_kb:.1f}KB must be below {package_budget_kb}KB")
-    if media_kb >= media_budget_kb:
-        errors.append(f"packaged images/audio {media_kb:.1f}KB must be below {media_budget_kb}KB")
+            package_sizes[package][1] += size
+    reports = []
+    for package, (total, media) in package_sizes.items():
+        size_kb = total / 1024
+        media_kb = media / 1024
+        if size_kb >= package_budget_kb:
+            errors.append(f"{package} package {size_kb:.1f}KB must be below {package_budget_kb}KB")
+        if media_kb >= media_budget_kb:
+            errors.append(f"{package} images/audio {media_kb:.1f}KB must be below {media_budget_kb}KB")
+        reports.append(f"{package} package {size_kb:.1f}KB / {package_budget_kb}KB, images/audio {media_kb:.1f}KB / {media_budget_kb}KB")
     if app.get("lazyCodeLoading") != "requiredComponents":
         errors.append("app.json must enable requiredComponents lazy code loading")
 
@@ -128,11 +135,7 @@ def main():
             print(" -", error)
         raise SystemExit(1)
 
-    print(
-        f"OK: {len(app['pages'])} pages, main package {size_kb:.1f}KB / {package_budget_kb}KB, "
-        f"images/audio {media_kb:.1f}KB / {media_budget_kb}KB, "
-        "JSON/assets/WXML checks passed."
-    )
+    print(f"OK: {len(pages)} pages, {'; '.join(reports)}. JSON/assets/WXML checks passed.")
 
 
 if __name__ == "__main__":

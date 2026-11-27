@@ -10,14 +10,19 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', 'miniprogram');
 const OUT = path.join(__dirname, '..', 'ui', 'preview');
 
-const PAGES = [
-  'home', 'timeline', 'discover', 'profile', 'event', 'person', 'period', 'search',
-  'footprints', 'favorites', 'archive', 'archive-list', 'archive-detail'
-];
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const app = JSON.parse(read('app.json'));
+const PAGES = app.pages.concat((app.subPackages || []).flatMap(({ root, pages }) =>
+  pages.map(page => `${root}/${page}`)));
+const pagePaths = Object.fromEntries(PAGES.map(page => [path.posix.basename(page), '/' + page]));
+
+function readStyles(file) {
+  return read(file).replace(/^@import\s+"([^"\r\n]+)";[ \t]*$/gm,
+    (_, relative) => readStyles(path.posix.join(path.posix.dirname(file), relative)));
+}
 
   function wrapJs(modPath, source) {
-    const isEntry = /^pages\/[\w-]+\/[\w-]+\.js$/.test(modPath) || modPath === 'app.js';
+    const isEntry = modPath === 'app.js' || PAGES.includes(modPath.slice(0, -3));
     let code = source;
     if (isEntry) {
       // Page(/App( 各文件仅一处调用（已核实）；把模块路径绑进配置便于浏览器端注册
@@ -34,6 +39,7 @@ const parts = [];
 parts.push('// 自动生成：node tools/build_preview.js（勿手改）');
 parts.push('(function () {');
 parts.push('  var MOD = window.__SRC = {};');
+parts.push(`  window.__PAGE_PATHS = ${JSON.stringify(pagePaths)};`);
 parts.push('  function __register(p, f) { MOD[p] = f; }');
 parts.push('');
 
@@ -42,6 +48,7 @@ parts.push(wrapJs('app.js', read('app.js')));
 parts.push(wrapJs('data/history-extra.js', read('data/history-extra.js')));
 parts.push(wrapJs('data/history.js', read('data/history.js')));
 parts.push(wrapJs('data/archive-meta.js', read('data/archive-meta.js')));
+parts.push(wrapJs('relics/catalog.js', read('relics/catalog.js')));
 parts.push(wrapJs('utils/store.js', read('utils/store.js')));
 parts.push(wrapJs('utils/historyData.js', read('utils/historyData.js')));
 parts.push(wrapJs('utils/remote.js', read('utils/remote.js')));
@@ -74,15 +81,10 @@ parts.push('');
 });
 
 // pages
-const pageBundle = {};
-PAGES.forEach((name) => {
-  const js = read(path.join('pages', name, `${name}.js`));
-  const wxml = read(path.join('pages', name, `${name}.wxml`));
-  const wxss = read(path.join('pages', name, `${name}.wxss`));
-  parts.push(wrapJs(`pages/${name}/${name}.js`, js));
-  parts.push(stringMod(`pages/${name}/${name}.wxml`, wxml));
-  parts.push(stringMod(`pages/${name}/${name}.wxss`, wxss));
-  pageBundle[name] = true;
+PAGES.forEach((page) => {
+  parts.push(wrapJs(`${page}.js`, read(`${page}.js`)));
+  parts.push(stringMod(`${page}.wxml`, read(`${page}.wxml`)));
+  parts.push(stringMod(`${page}.wxss`, readStyles(`${page}.wxss`)));
 });
 parts.push('');
 

@@ -59,7 +59,7 @@
   var privacyNeeded = false;
   var privacyListener;
 
-  function pathOf(name) { return '/pages/' + name + '/' + name; }
+  function pathOf(name) { return window.__PAGE_PATHS[name]; }
   function parseQuery(q) {
     var out = {};
     (q || '').split('&').forEach(function (kv) {
@@ -72,8 +72,9 @@
     return out;
   }
   function targetPage(url) {
-    var m = /^\/pages\/([\w-]+)\/([\w-]+)\??(.*)$/.exec(url);
-    return m ? { name: m[1], query: parseQuery(m[3] || '') } : null;
+    var parts = url.split('?');
+    var name = parts[0].split('/').pop();
+    return pathOf(name) === parts[0] ? { name: name, query: parseQuery(parts[1]) } : null;
   }
 
   var storage = {};
@@ -219,8 +220,10 @@
       if (navStack.length > 1) {
         hidePopups();
         navStack.pop();
-        CURRENT = navStack[navStack.length - 1].inst;
+        var previous = navStack[navStack.length - 1];
+        CURRENT = previous.inst;
         renderPage(CURRENT);
+        pageHost.scrollTop = previous.scrollTop || 0;
         showPopups();
         if (o.success) o.success({});
       } else if (o.fail) {
@@ -243,7 +246,7 @@
 
   var TAB_KEYS = ['home', 'timeline', 'discover', 'profile'];
 
-  function ensureTabShell() {
+  function ensureTabShell(pageNo) {
     var el = document.getElementById('tabshell');
     if (!el) {
       el = document.createElement('div');
@@ -276,7 +279,7 @@
       var host = document.getElementById('phone') || document.body;
       host.appendChild(el);
     }
-    var pageNo = location.hash.replace(/^#/, '').split('?')[0];
+    el.style.display = TAB_KEYS.includes(pageNo) ? '' : 'none';
     el.querySelectorAll('.tab').forEach(function (tab) {
       var active = tab.dataset.key === pageNo;
       tab.classList.toggle('active', active);
@@ -321,6 +324,7 @@
 
   function openPage(name, query, how) {
     hidePopups();
+    if (navStack.length) navStack[navStack.length - 1].scrollTop = pageHost.scrollTop;
     var inst = instantiate(name);
     var rec = { name: name, query: query, inst: inst };
     if (how === 'replace') navStack[navStack.length - 1] = rec;
@@ -328,6 +332,7 @@
     CURRENT = inst;
     if (inst.onLoad) inst.onLoad(query || {});
     renderPage(inst);
+    pageHost.scrollTop = 0;
     showPopups();
   }
 
@@ -391,6 +396,7 @@
     var scope = makeScope(inst, {});
     ast.children.forEach(function (n) { renderNode(n, frag, scope, inst); });
     pageHost.appendChild(frag);
+    ensureTabShell(inst.name);
   }
 
   function rwpx(w) {
@@ -577,6 +583,7 @@
       var val = attrs[key];
       if (val === true) { // focus 等布尔属性
         if (key === 'focus') setTimeout(function () { try { el.focus(); } catch (e) { void e; } }, 60);
+        if (node.tag === 'image' && key === 'lazy-load') el.loading = 'lazy';
         return;
       }
       var out = bindText(String(val), scope);
@@ -586,6 +593,8 @@
         el.setAttribute('class', out);
       } else if (key === 'id') {
         el.setAttribute('id', out);
+      } else if (key === 'style') {
+        el.setAttribute('style', rwpx(out));
       } else if (key === 'aria-role') {
         el.setAttribute('role', out);
       } else if (/^aria-/.test(key)) {
@@ -594,7 +603,7 @@
         el.style.overflowY = 'auto';
       } else if (node.tag === 'image' && key === 'src') {
         var imagePath = out.replace(/^https:\/\/[^/]+\.jsdelivr\.net\/gh\/webzol\/history@main\/miniprogram\//, '../../miniprogram/');
-        el.setAttribute('src', imagePath.replace(/^\/assets\//, '../../miniprogram/assets/'));
+        el.setAttribute('src', imagePath.replace(/^\/(?=(?:relics\/)?assets\/)/, '../../miniprogram/'));
       } else if (node.tag === 'image' && key === 'mode') {
         // 与小程序 image mode 对齐，避免预览把图片强行填满容器造成“变形”误判
         if (out === 'aspectFit') el.style.objectFit = 'contain';
@@ -612,6 +621,18 @@
     });
 
     el.__dataset = snapshot(dataset);
+
+    if (node.tag === 'picker' && attrs.mode === 'selector' && attrs.bindchange) {
+      el.addEventListener('click', function () {
+        var options = evalExpr(pickExpr(attrs.range), scope);
+        drawSheet({
+          itemList: options,
+          success: function (result) {
+            inst.cfg[attrs.bindchange].call(inst, { detail: { value: String(result.tapIndex) } });
+          }
+        });
+      });
+    }
 
     Object.keys(attrs).forEach(function (key) {
       if (!/^bind/.test(key) || typeof attrs[key] !== 'string') return;
@@ -798,7 +819,6 @@
     privacyNeeded = query.privacy === '1';
     openPage(pageName, query, 'replace');
     if (CURRENT && CURRENT.onShow && query.shot !== 'reentry') CURRENT.onShow();
-    ensureTabShell();
 
     if (query.debug) {
       try {

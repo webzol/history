@@ -1,0 +1,55 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回文物列表">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
+          <view class="back-divider"></view><text class="back-label">返回</text>
+        </view>
+      </view>
+      <text class="top-title">文物</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
+    </view>
+
+    <block wx:if="{{relic}}">
+      <view class="object-card">
+        <text class="object-type">{{relic.period}} · {{relic.type}}</text>
+        <text class="object-name" aria-role="heading">{{relic.title}}</text>
+        <text class="object-date">{{relic.date}}</text>
+        <view wx:if="{{!imageFailed}}" class="relic-cover object-cover" style="padding-top: {{relic.imageRatio}}%;">
+          <image class="object-image" src="{{relic.image}}" mode="aspectFit" binderror="onImageError"
+            aria-label="{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}"></image>
+          <view class="cover-fade" aria-hidden="true"></view>
+        </view>
+        <view wx:else class="object-image-empty">图像暂不可用</view>
+        <text wx:if="{{!imageFailed}}" class="object-image-note">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · 公有领域</text>
+      </view>
+
+      <view class="details-card">
+        <view class="details-heading">
+          <text class="details-title" aria-role="heading">文物简介</text>
+          <view class="details-rule" aria-hidden="true"></view>
+        </view>
+        <text class="object-description">{{relic.description}}</text>
+        <view class="facts">
+          <view class="fact"><text class="fact-label">材质</text><text>{{relic.material}}</text></view>
+          <view class="fact"><text class="fact-label">尺寸</text><text>{{relic.dimensions}}</text></view>
+          <view class="fact"><text class="fact-label">馆藏</text><text>{{relic.museum}}</text></view>
+          <view class="fact"><text class="fact-label">藏品编号</text><text>{{relic.accession}}</text></view>
+        </view>
+        <view class="source-toggle" bindtap="toggleSource" aria-role="button"
+          aria-label="{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}">
+          <text>馆方藏品页</text><text aria-hidden="true">{{sourceOpen ? '⌃' : '›'}}</text>
+        </view>
+        <text wx:if="{{sourceOpen}}" class="source-url" user-select="{{true}}">{{relic.url}}</text>
+      </view>
+    </block>
+    <view wx:else class="relic-empty">
+      <text>未找到这件文物。</text>
+      <view class="relic-action" bindtap="goBack" aria-role="button">返回文物列表</view>
+    </view>
+  </view>
+</view>
+<feedback-popup></feedback-popup>
+<privacy-popup></privacy-popup>

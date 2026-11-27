@@ -265,10 +265,12 @@ test('真实海报保存链路：拒绝不写相册、不引导设置；同意�
   }
 });
 
-test('13 页均挂载组件；同意只能由微信原生事件触发', () => {
+test('主包和分包页面均挂载组件；同意只能由微信原生事件触发', () => {
   const app = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'));
   assert.equal(app.usingComponents['privacy-popup'], '/components/privacy-popup/index');
-  for (const page of app.pages) {
+  const pages = app.pages.concat((app.subPackages || []).flatMap(({root, pages: localPages}) =>
+    localPages.map(page => `${root}/${page}`)));
+  for (const page of pages) {
     assert.match(fs.readFileSync(path.join(ROOT, page + '.wxml'), 'utf8'), /<privacy-popup>/);
   }
   const wxml = fs.readFileSync(path.join(ROOT, 'components/privacy-popup/index.wxml'), 'utf8');

@@ -151,6 +151,40 @@
   color: #3B3731;
 }
 
+.relic-entry {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 120rpx;
+  margin-top: 18rpx;
+  padding: 14rpx 22rpx 14rpx 28rpx;
+  border-radius: 34rpx;
+  background: #F1E8DD;
+  box-shadow: 0 16rpx 34rpx rgba(90, 70, 50, 0.045);
+}
+
+.relic-entry-copy { flex: 1; min-width: 0; }
+.relic-entry-title, .relic-entry-types { display: block; }
+.relic-entry-title {
+  color: #1F1D19;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(32rpx * var(--fs, 1));
+  line-height: 1.3;
+}
+.relic-entry-types {
+  margin-top: 6rpx;
+  color: #5F5A52;
+  font-size: calc(21rpx * var(--fs, 1));
+  line-height: 1.45;
+}
+.relic-entry-art {
+  flex: 0 0 122rpx;
+  width: 122rpx;
+  height: 88rpx;
+}
+.relic-entry-arrow { color: #6D645A; font-size: 36rpx; }
+.relic-entry-pressed { background: #EBDFD1; }
+
 /* 「历史上的今天」——60s API 实时板块 */
 .tih {
   margin-top: 34rpx;

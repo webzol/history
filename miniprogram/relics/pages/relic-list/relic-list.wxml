@@ -1,0 +1,55 @@
+<view class="page fs-{{fontClass}}">
+  <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
+  <view class="screen">
+    <view class="topbar">
+      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回上一页">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
+          <view class="back-divider"></view><text class="back-label">返回</text>
+        </view>
+      </view>
+      <text class="top-title" aria-role="heading">文物</text>
+      <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
+    </view>
+
+    <view class="filter-card">
+      <picker class="filter-picker" mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="onType">
+        <view class="filter-trigger" aria-role="button" aria-label="{{'器类，' + types[typeIndex]}}">
+          <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
+          <view class="filter-chevron" aria-hidden="true"></view>
+        </view>
+      </picker>
+      <picker class="filter-picker" mode="selector" range="{{eras}}" value="{{eraIndex}}" bindchange="onEra">
+        <view class="filter-trigger" aria-role="button" aria-label="{{'时代，' + eras[eraIndex]}}">
+          <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
+          <view class="filter-chevron" aria-hidden="true"></view>
+        </view>
+      </picker>
+    </view>
+
+    <view class="gallery-head">
+      <text class="gallery-title" aria-role="heading">馆藏</text>
+      <text class="result-count" aria-live="polite">{{count}} 件</text>
+    </view>
+    <view wx:if="{{count}}" class="relic-grid">
+      <view wx:for="{{rows}}" wx:key="id" class="relic-card" data-id="{{item.id}}" bindtap="openRelic"
+        hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button" aria-label="{{item.title + '，' + item.period + '，' + item.type}}">
+        <view class="relic-cover">
+          <image class="relic-thumb" src="{{item.thumb}}" mode="aspectFit" lazy-load aria-hidden="true"></image>
+          <view class="cover-fade" aria-hidden="true"></view>
+        </view>
+        <view class="relic-card-copy">
+          <text class="relic-name">{{item.title}}</text>
+          <view class="relic-meta"><text>{{item.period}}</text><text class="relic-meta-type"> · {{item.type}}</text></view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="relic-empty">
+      <text>这个时代与器类下暂无藏品。</text>
+      <view class="relic-action" bindtap="resetFilters" aria-role="button">清除筛选</view>
+    </view>
+    <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
+  </view>
+</view>
+<feedback-popup></feedback-popup>
+<privacy-popup></privacy-popup>

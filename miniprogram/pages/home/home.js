@@ -91,6 +91,13 @@ Page({
     wx.switchTab({ url: '/pages/discover/discover' });
   },
 
+  goRelics() {
+    wx.navigateTo({
+      url: '/relics/pages/relic-list/relic-list',
+      fail: () => wx.showToast({ title: '文物加载失败，请重试', icon: 'none' })
+    });
+  },
+
   goPage(e) {
     const page = e.currentTarget.dataset.page;
     const history = hd.get();

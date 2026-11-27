@@ -1,0 +1,73 @@
+@import "../../common.wxss";
+
+.filter-card {
+  display: flex;
+  margin-top: 20rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 30rpx;
+  background: #FCFBF8;
+}
+.filter-picker { position: relative; flex: 1 1 0; min-width: 0; }
+.filter-picker + .filter-picker::before {
+  position: absolute;
+  top: 22rpx;
+  bottom: 22rpx;
+  left: 0;
+  width: 1rpx;
+  background: rgba(70, 58, 45, 0.09);
+  content: '';
+}
+.filter-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 44px;
+  padding: 6rpx 18rpx 6rpx 24rpx;
+  color: #5F5A52;
+  font-size: calc(21rpx * var(--fs, 1));
+  line-height: 1.4;
+}
+.filter-label { flex: 0 0 auto; }
+.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }
+.filter-chevron {
+  flex: 0 0 26rpx;
+  height: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.filter-chevron::before {
+  width: 11rpx;
+  height: 11rpx;
+  border-right: 1px solid #8A6A3E;
+  border-bottom: 1px solid #8A6A3E;
+  transform: translateY(-2rpx) rotate(45deg);
+  content: '';
+}
+.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }
+.gallery-title { font-family: "Songti SC", "STSong", "SimSun", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }
+.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }
+.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }
+.relic-card {
+  width: calc((100% - 18rpx) / 2);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 22rpx 22rpx 28rpx 28rpx;
+  background: #FCFBF8;
+  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);
+}
+.relic-card-pressed { opacity: 0.84; }
+.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }
+.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }
+.relic-card-copy { padding: 18rpx 20rpx 20rpx; }
+.relic-name {
+  display: block;
+  color: #1F1D19;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(27rpx * var(--fs, 1));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }
+.relic-meta-type { white-space: nowrap; }
+.more-relics { margin-top: 24rpx; }
