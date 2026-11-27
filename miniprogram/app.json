@@ -41,6 +41,12 @@
   },
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",
+  "preloadRule": {
+    "pages/home/home": {
+      "network": "wifi",
+      "packages": ["relics"]
+    }
+  },
   "usingComponents": {
     "feedback-popup": "/components/feedback-popup/index",
     "privacy-popup": "/components/privacy-popup/index"

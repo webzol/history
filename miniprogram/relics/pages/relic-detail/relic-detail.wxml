@@ -17,13 +17,16 @@
         <text class="object-type">{{relic.period}} · {{relic.type}}</text>
         <text class="object-name" aria-role="heading">{{relic.title}}</text>
         <text class="object-date">{{relic.date}}</text>
-        <view wx:if="{{!imageFailed}}" class="relic-cover object-cover" style="padding-top: {{relic.imageRatio}}%;">
+        <view wx:if="{{!degraded}}" class="relic-cover object-cover" style="padding-top: {{relic.imageRatio}}%;">
           <image class="object-image" src="{{relic.image}}" mode="aspectFit" binderror="onImageError"
             aria-label="{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}"></image>
           <view class="cover-fade" aria-hidden="true"></view>
         </view>
-        <view wx:else class="object-image-empty">图像暂不可用</view>
-        <text wx:if="{{!imageFailed}}" class="object-image-note">{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>
+        <view wx:else class="relic-cover object-cover" style="padding-top: 72%;">
+          <image class="object-image" src="{{relic.imageThumb}}" mode="aspectFit" aria-hidden="true"></image>
+          <view class="cover-fade" aria-hidden="true"></view>
+        </view>
+        <text class="object-image-note">{{degraded ? '详情大图离线暂不可用，显示缩略图 · ' : ''}}{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>
       </view>
 
       <view class="details-card">

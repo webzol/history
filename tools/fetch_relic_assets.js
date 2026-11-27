@@ -19,10 +19,11 @@ async function fetchFile(url) {
       if (attempt === 2) throw error;
     }
     if (response?.ok) return response;
-    if (response && ((response.status < 500 && response.status !== 429) || attempt === 2)) {
+    // 馆方 WAF 对突发请求会回 403（稍后重试即恢复），与 429、5xx 一并退避重试
+    if (response && ((response.status < 500 && response.status !== 429 && response.status !== 403) || attempt === 2)) {
       throw new Error(`${url}: HTTP ${response.status}`);
     }
-    await delay((attempt + 1) * 1000);
+    await delay((attempt + 1) * 1500);
   }
 }
 

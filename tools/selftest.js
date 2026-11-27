@@ -1920,13 +1920,13 @@ console.log('== 文物分包 ==');
   resetWifiStack();
   const catalog = require(path.join(ROOT, 'relics', 'catalog.js'));
 
-  eq(catalog.RELICS.length, 36, '文物目录 36 件');
+  eq(catalog.RELICS.length, 60, '文物目录 60 件');
   eq(catalog.TYPES, ['青铜', '陶瓷', '玉器', '书画'], '器类四类');
   catalog.TYPES.forEach((type) => {
-    eq(catalog.RELICS.filter((r) => r.type === type).length, 9, `${type} 各 9 件`);
+    eq(catalog.RELICS.filter((r) => r.type === type).length, 15, `${type} 各 15 件`);
   });
   const ids = catalog.RELICS.map((r) => r.id);
-  eq(new Set(ids).size, 36, '文物 id 不重复');
+  eq(new Set(ids).size, 60, '文物 id 不重复');
   catalog.RELICS.forEach((relic) => {
     ok(relic.eras.length > 0 && relic.eras.every((era) => catalog.ERAS.indexOf(era) >= 0),
       `${relic.id} 时代取值在筛选项内`);
@@ -1937,13 +1937,18 @@ console.log('== 文物分包 ==');
   catalog.ERAS.forEach((era) => {
     ok(catalog.RELICS.some((r) => r.eras.indexOf(era) >= 0), `筛选时代 ${era} 下有藏品`);
   });
-  // 配图必须真实存在，且详情图高宽比与 catalog 的 imageRatio 一致（页面按它撑图框）
+  // 缩略图留在分包（列表离线可读），详情大图放 data/img/relics 经 jsDelivr 分发，
+  // 详情图高宽比与 catalog 的 imageRatio 一致由 validate_miniprogram.py 复核
   catalog.RELICS.forEach((relic) => {
-    ['thumb', 'detail'].forEach((size) => {
-      ok(fs.existsSync(path.join(ROOT, 'relics', 'assets', `${size}-${relic.id}.jpg`)),
-        `${relic.id} 有 ${size} 配图`);
-    });
+    ok(fs.existsSync(path.join(ROOT, 'relics', 'assets', `thumb-${relic.id}.jpg`)),
+      `${relic.id} 有分包缩略图`);
+    ok(fs.existsSync(path.join(ROOT, 'data', 'img', 'relics', `${relic.id}.jpg`)),
+      `${relic.id} 有 CDN 详情图`);
   });
+  eq(catalog.detailUrls('44757'), [
+    'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/relics/44757.jpg',
+    'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/img/relics/44757.jpg'
+  ], '详情图双域 URL（主 testingcf / 备 gcore）');
   // 馆方页与授权按 id 前缀推导（cma- 为克利夫兰 CC0，其余为大都会公有领域）
   eq(catalog.sourceFor('cma-1952.510'), {
     museum: '克利夫兰艺术博物馆',
@@ -1960,10 +1965,12 @@ console.log('== 文物分包 ==');
   const list = pages['relic-list'];
   list.onLoad();
   eq(list.data.rows.length, 8, '列表首屏 8 条');
-  eq(list.data.count, 36, '列表默认 36 件');
+  eq(list.data.count, 60, '列表默认 60 件');
   eq(list.data.hasMore, true, '列表有待加载');
   list.loadMore();
   eq(list.data.rows.length, 16, '加载更多追加一屏');
+  list.onReachBottom();
+  eq(list.data.rows.length, 24, '触底自动续载一屏');
   eq(list.data.rows[0].thumb, '/relics/assets/thumb-44757.jpg', '行卡缩略图路径');
   eq(Object.keys(list.data.rows[0]).sort(),
     ['id', 'period', 'thumb', 'title', 'type'], '行卡只传展示字段');
@@ -1973,7 +1980,7 @@ console.log('== 文物分包 ==');
   eq(list.data.filterSheet.options.length, 5, '器类弹层含「全部」');
   tap(list, 'onFilterPick', { index: 1 });
   eq(list.data.filterSheet, null, '选中后关闭弹层');
-  eq(list.data.count, 9, '筛青铜 9 件');
+  eq(list.data.count, 15, '筛青铜 15 件');
   eq(list.data.typeIndex, 1, '器类选择保留');
   tap(list, 'openFilter', { kind: 'era' });
   tap(list, 'onFilterPick', { index: 5 });
@@ -1981,13 +1988,13 @@ console.log('== 文物分包 ==');
   tap(list, 'onFilterPick', { index: 99 });
   eq(list.data.count, 2, '越界索引不生效');
   tap(list, 'resetFilters', {});
-  eq(list.data.count, 36, '清除筛选恢复全部');
+  eq(list.data.count, 60, '清除筛选恢复全部');
   eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个选择');
-  // 无结果态（时代与器类无交集时）：青铜 × 清
+  // 无结果态（时代与器类无交集时）：青铜 × 清（弹层选项带「不限」偏移，清 = 索引 13）
   tap(list, 'openFilter', { kind: 'type' });
   tap(list, 'onFilterPick', { index: 1 });
   tap(list, 'openFilter', { kind: 'era' });
-  tap(list, 'onFilterPick', { index: 11 });
+  tap(list, 'onFilterPick', { index: 13 });
   eq(list.data.count, 0, '组合无交集时归零');
   eq(list.data.rows.length, 0, '无结果不渲染卡片');
   tap(list, 'resetFilters', {});
@@ -2004,7 +2011,8 @@ console.log('== 文物分包 ==');
   eq(detail.data.relic.title, '双仙人耳玉杯', '详情标题');
   eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '详情馆方');
   eq(detail.data.relic.rights, 'CC0', '详情授权文案');
-  eq(detail.data.relic.image, '/relics/assets/detail-cma-1952.510.jpg', '详情配图路径');
+  eq(detail.data.relic.image, catalog.detailUrls('cma-1952.510')[0], '详情主图走 CDN 主域');
+  eq(detail.data.relic.imageThumb, '/relics/assets/thumb-cma-1952.510.jpg', '包内缩略图备好降级');
   eq(detail.data.relic.imageRatio, 55.714, '详情图框比例');
   tap(detail, 'toggleSource', {});
   eq(detail.data.sourceOpen, true, '展开馆方藏品页地址');
@@ -2013,8 +2021,14 @@ console.log('== 文物分包 ==');
     pathTail: 'relic-detail?id=cma-1952.510'
   }, '文物详情');
   ok(detail.sharePayload().coverFit === 'contain', '文物题图等比完整排入');
+  eq(detail.sharePayload().imgFallback, '/relics/assets/thumb-cma-1952.510.jpg', '海报题图兜底包内缩略图');
+  // 配图降级链：主域失败换备用域，双域都失败显示包内缩略图
   detail.onImageError();
-  eq(detail.data.imageFailed, true, '配图失败显示占位');
+  eq(detail.data.relic.image, catalog.detailUrls('cma-1952.510')[1], '主图失败换备用域');
+  detail.onImageError();
+  eq(detail.data.degraded, true, '双域失败降级缩略图');
+  detail.onImageError();
+  eq(detail.data.degraded, true, '降级后不再重复步进');
 
   // 未知 id 兜底：目录查不到即不渲染（onLoad 直接 return），页面走 wxml 的空态分支
   ok(!catalog.RELICS.some((r) => r.id === 'not-exist'), '未知 id 不在目录内');

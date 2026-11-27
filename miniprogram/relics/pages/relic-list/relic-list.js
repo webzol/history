@@ -70,6 +70,9 @@ Page({
     if (this.data.hasMore) this.setData(this.nextRows(this.data.rows.length));
   },
 
+  // 触底自动续载一屏，避免一次渲染全部行卡；「加载更多」按钮保留作兜底
+  onReachBottom() { this.loadMore(); },
+
   openRelic(e) {
     wx.navigateTo({ url: `${DETAIL_PATH}?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
   },

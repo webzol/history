@@ -169,8 +169,9 @@ def jpeg_size(path):
 
 
 def check_relic_catalog():
-    """文物目录与配图一致性：每件文物在分包内都要有 thumb/detail 两图，
-    且 catalog.js 的 imageRatio 必须等于详情图实际高宽比 ×100（页面按它撑图框）。"""
+    """文物目录与配图一致性：每件文物在分包内要有 thumb 缩略图（列表离线可读），
+    详情大图放 data/img/relics/（jsDelivr 分发，分包不装），catalog.js 的 imageRatio
+    必须等于详情图实际高宽比 ×100（页面按它撑图框）。"""
     errors = []
     script = (
         "const c = require(process.argv[1]);"
@@ -186,17 +187,17 @@ def check_relic_catalog():
         return [f"relics/catalog.js 无法读取条目：{exc}"]
 
     for relic_id, ratio in entries:
-        for size in ("thumb", "detail"):
-            path = ROOT / "relics" / "assets" / f"{size}-{relic_id}.jpg"
-            if not path.exists():
-                errors.append(f"relics {relic_id}: 缺少配图 {path.name}")
-                continue
-            if size != "detail":
-                continue
-            width, height = jpeg_size(path)
-            actual = round(height * 100 / width, 3)
-            if abs(actual - ratio) > 0.05:
-                errors.append(f"relics {relic_id}: imageRatio {ratio} 与 detail 图实际 {actual} 不符")
+        thumb = ROOT / "relics" / "assets" / f"thumb-{relic_id}.jpg"
+        detail = ROOT / "data" / "img" / "relics" / f"{relic_id}.jpg"
+        if not thumb.exists():
+            errors.append(f"relics {relic_id}: 缺少缩略图 {thumb.name}")
+        if not detail.exists():
+            errors.append(f"relics {relic_id}: 缺少详情图 data/img/relics/{detail.name}")
+            continue
+        width, height = jpeg_size(detail)
+        actual = round(height * 100 / width, 3)
+        if abs(actual - ratio) > 0.05:
+            errors.append(f"relics {relic_id}: imageRatio {ratio} 与详情图实际 {actual} 不符")
     return errors
 
 

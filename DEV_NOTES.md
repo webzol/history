@@ -170,3 +170,10 @@
 - 验证：`node tools/selftest.js` PASS 2337 / FAIL 0；`python tools/validate_miniprogram.py` 通过（主包 754.2 KB / 媒体 174.3 KB；文物分包 601.6 KB / 媒体 557.9 KB / 1024 KB 预算）；`python tools/content_audit.py` 通过；`node tools/preview_shots.js` 42 张全过。Chrome 核对列表首屏与滚动、长画幅详情（杜堇立轴 211% 图框）、共此卷弹层。
 - 待验证：微信真机首次分包下载、列表滚动与筛选弹层、详情长画幅图框、读屏；文物简介为按馆方记录改写的通稿文案，**尚未逐条史实审校**。
 - 说明：`ui/preview/shots/` 里 38 张既有截图在本次环境重新渲染后字节全变（同名同尺寸、内容按像素一致，属 Chrome 版本差异），已逐张还原，只保留 4 张新增截图，避免把无关噪声混入提交。
+
+## 2026-11-27 · 文物 60 件 + 详情图 CDN 加载
+
+- 目录扩到 60 件（四类各 15），新增 24 件全为克利夫兰 CC0，补齐汉、魏晋南北朝、五代空档；时代筛选加「魏晋南北朝」「五代」。
+- 详情大图移出分包 → `data/img/relics/` 经 jsDelivr：testingcf 主域 → gcore 备用域 → 包内缩略图兜底；缩略图留分包（媒体 164KB），分包 602.6 → 222.5KB。列表触底续载；首页 wifi 预下载分包。
+- `tools/discover_relics.js` 候选挖掘入仓（克利夫兰全量 + 大都会分材质，缓存 tmp/）；`fetch_relic_assets.js` 补 403/429 退避。validate 改查「缩略图在包 + 详情图在 data/img/relics + 比例一致」。
+- 验证：selftest PASS 2441/FAIL 0、validate 通过（主包 754.4KB / 分包 222.5KB）、内容审计、隐私自测 14 项、42 张截图全过。真机预下载、弱网降级、新条目史实审校待办。
