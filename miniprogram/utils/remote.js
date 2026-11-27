@@ -14,6 +14,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000;
 // 模块级内存缓存：~200KB 的 JSON 每次从 storage 读 + 解析不便宜（每个页面
 // onShow 都会 refresh 一次），首读落内存后引用直达，切页零 IO 零解析。
 let memoryData = null;
+let inflight = null;
 
 function readCache() {
   if (memoryData) return memoryData;
@@ -64,8 +65,26 @@ function fetchRemoteHistory(cb, opts) {
     if (typeof cb === 'function') cb(null, cached);
     return;
   }
+  // 首页、发现页和详情页可能在首屏同时触发 refresh。合并普通请求，
+  // 让它们共享一次网络访问，避免启动阶段重复下载同一份历史数据。
+  if (!fresh && inflight) {
+    if (typeof cb === 'function') inflight.push(cb);
+    return;
+  }
+  const finish = (err, data) => {
+    if (!fresh) {
+      const callbacks = inflight || [];
+      inflight = null;
+      callbacks.forEach((done) => {
+        if (typeof done === 'function') done(err, data);
+      });
+      return;
+    }
+    if (typeof cb === 'function') cb(err, data);
+  };
+  if (!fresh) inflight = typeof cb === 'function' ? [cb] : [];
   if (typeof wx.request !== 'function') {
-    if (typeof cb === 'function') cb(new Error('request unavailable'));
+    finish(new Error('request unavailable'));
     return;
   }
   wx.request({
@@ -75,14 +94,14 @@ function fetchRemoteHistory(cb, opts) {
     success: (res) => {
       const data = res && res.data;
       if (!data || !Array.isArray(data.events)) {
-        if (typeof cb === 'function') cb(new Error('bad payload'));
+        finish(new Error('bad payload'));
         return;
       }
       writeCache(data);
-      if (typeof cb === 'function') cb(null, data);
+      finish(null, data);
     },
     fail: () => {
-      if (typeof cb === 'function') cb(new Error('request fail'));
+      finish(new Error('request fail'));
     }
   });
 }
