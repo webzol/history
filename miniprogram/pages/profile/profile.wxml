@@ -1,6 +1,6 @@
 <view class="page fs-{{fontClass}}">
   <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
-  <view class="screen">
+  <view class="screen" aria-hidden="{{info.open}}">
     <view class="topbar">
       <text class="brand">我的</text>
     </view>
@@ -48,10 +48,7 @@
           <text>{{item.label}}</text>
         </view>
       </view>
-      <view class="reading-help">
-        <text class="reading-help-title" aria-role="heading">无障碍阅读</text>
-        <text class="reading-help-copy">在手机设置中开启「旁白」（iPhone）或「TalkBack」（安卓），即可用读屏浏览阅史记的主要页面。</text>
-      </view>
+      <text class="pref-preview">一页一页，读千年史事。</text>
     </view>
 
     <view class="list-card hint-card" wx:if="{{!favs.length}}">
@@ -128,6 +125,10 @@
         <text class="menu-label">关于阅史记</text>
         <text class="menu-arrow">›</text>
       </view>
+      <view class="menu-row reading-help-entry" bindtap="onReadingHelp" aria-role="button" aria-label="无障碍阅读">
+        <text class="menu-label">无障碍阅读</text>
+        <text class="menu-arrow" aria-hidden="true">›</text>
+      </view>
       <view class="menu-row" bindtap="onPrivacy">
         <text class="menu-label">隐私保护指引</text>
         <text class="menu-arrow">›</text>
@@ -149,17 +150,17 @@
   </view>
 
   <view class="sheet-layer" wx:if="{{info.open}}">
-    <view class="sheet-mask" bindtap="closeInfo"></view>
-    <view class="info-panel" catchtap="noop">
-      <view class="sheet-grip"></view>
+    <view class="sheet-mask" aria-hidden="true" bindtap="closeInfo"></view>
+    <view class="info-panel" aria-role="dialog" aria-modal="true" aria-label="{{info.title}}" catchtap="noop">
+      <view class="sheet-grip" aria-hidden="true"></view>
       <view class="sheet-head">
-        <text class="sheet-title">{{info.title}}</text>
-        <text class="sheet-close" bindtap="closeInfo">×</text>
+        <text class="sheet-title" aria-role="heading">{{info.title}}</text>
+        <view class="sheet-close" bindtap="closeInfo" aria-role="button" aria-label="关闭说明">×</view>
       </view>
       <view class="info-body">
         <text class="info-para" wx:for="{{info.paragraphs}}" wx:key="*this">{{item}}</text>
       </view>
-      <view class="sheet-cancel" bindtap="closeInfo">知道了</view>
+      <view class="sheet-cancel" bindtap="closeInfo" aria-role="button">知道了</view>
     </view>
   </view>
 

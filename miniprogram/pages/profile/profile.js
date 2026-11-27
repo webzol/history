@@ -152,6 +152,16 @@ Page({
     }, { fresh: true });
   },
 
+  onReadingHelp() {
+    this.setData({
+      info: {
+        open: true,
+        title: '无障碍阅读',
+        paragraphs: ['在手机设置中开启「旁白」（iPhone）或「TalkBack」（安卓），即可用读屏浏览阅史记的主要页面。']
+      }
+    });
+  },
+
   closeInfo() {
     this.setData({ 'info.open': false });
   },
