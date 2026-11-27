@@ -7,8 +7,7 @@
   border-radius: 30rpx;
   background: #FCFBF8;
 }
-.filter-picker { position: relative; flex: 1 1 0; min-width: 0; }
-.filter-picker + .filter-picker::before {
+.filter-trigger + .filter-trigger::before {
   position: absolute;
   top: 22rpx;
   bottom: 22rpx;
@@ -18,6 +17,9 @@
   content: '';
 }
 .filter-trigger {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12rpx;
@@ -71,3 +73,50 @@
 .relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }
 .relic-meta-type { white-space: nowrap; }
 .more-relics { margin-top: 24rpx; }
+
+.filter-layer { position: fixed; inset: 0; z-index: 120; }
+.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }
+.filter-sheet {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));
+  border-radius: 42rpx 42rpx 0 0;
+  background: #FCFBF8;
+  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);
+  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }
+.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }
+.filter-title {
+  color: #1F1D19;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(34rpx * var(--fs, 1));
+  letter-spacing: 0.06em;
+}
+.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }
+.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }
+.filter-list { display: block; max-height: 46vh; }
+.filter-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 20rpx;
+  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);
+  color: #3B3731;
+  font-size: calc(26rpx * var(--fs, 1));
+}
+.filter-option:last-child { border-bottom-color: transparent; }
+.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }
+.filter-check { font-size: 26rpx; }
+.filter-cancel {
+  margin-top: 18rpx;
+  border-radius: 36rpx;
+  background: #EEF0F0;
+  color: #5F5A52;
+  font-size: calc(25rpx * var(--fs, 1));
+}
+
+@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }

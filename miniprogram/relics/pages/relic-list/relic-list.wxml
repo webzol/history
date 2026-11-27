@@ -1,6 +1,6 @@
 <view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
-  <view class="screen">
+  <view class="screen" aria-hidden="{{!!filterSheet}}">
     <view class="topbar">
       <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回上一页">
         <view class="back" aria-hidden="true">
@@ -13,18 +13,14 @@
     </view>
 
     <view class="filter-card">
-      <picker class="filter-picker" mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="onType">
-        <view class="filter-trigger" aria-role="button" aria-label="{{'器类，' + types[typeIndex]}}">
-          <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
-          <view class="filter-chevron" aria-hidden="true"></view>
-        </view>
-      </picker>
-      <picker class="filter-picker" mode="selector" range="{{eras}}" value="{{eraIndex}}" bindchange="onEra">
-        <view class="filter-trigger" aria-role="button" aria-label="{{'时代，' + eras[eraIndex]}}">
-          <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
-          <view class="filter-chevron" aria-hidden="true"></view>
-        </view>
-      </picker>
+      <view class="filter-trigger" data-kind="type" bindtap="openFilter" aria-role="button" aria-label="{{'选择器类，当前' + types[typeIndex]}}">
+        <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
+        <view class="filter-chevron" aria-hidden="true"></view>
+      </view>
+      <view class="filter-trigger" data-kind="era" bindtap="openFilter" aria-role="button" aria-label="{{'选择时代，当前' + eras[eraIndex]}}">
+        <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
+        <view class="filter-chevron" aria-hidden="true"></view>
+      </view>
     </view>
 
     <view class="gallery-head">
@@ -49,6 +45,25 @@
       <view class="relic-action" bindtap="resetFilters" aria-role="button">清除筛选</view>
     </view>
     <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
+  </view>
+
+  <view class="filter-layer" wx:if="{{filterSheet}}">
+    <view class="filter-mask" bindtap="closeFilter" catchtouchmove="noop" aria-hidden="true"></view>
+    <view class="filter-sheet" aria-role="dialog" aria-modal="true" aria-label="{{filterSheet.title}}">
+      <view class="filter-grip" aria-hidden="true"></view>
+      <view class="filter-head">
+        <text class="filter-title" aria-role="heading">{{filterSheet.title}}</text>
+        <view class="filter-close" bindtap="closeFilter" aria-role="button" aria-label="关闭筛选面板">×</view>
+      </view>
+      <scroll-view class="filter-list" scroll-y="{{true}}" style="height: {{filterSheet.options.length * 44}}px;">
+        <view class="filter-option {{filterSheet.selected === index ? 'selected' : ''}}" wx:for="{{filterSheet.options}}" wx:key="*this"
+          data-index="{{index}}" bindtap="onFilterPick" hover-class="filter-pressed" hover-stay-time="80"
+          aria-role="button" aria-label="{{item + (filterSheet.selected === index ? '，已选中' : '')}}">
+          <text>{{item}}</text><text wx:if="{{filterSheet.selected === index}}" class="filter-check" aria-hidden="true">✓</text>
+        </view>
+      </scroll-view>
+      <view class="filter-cancel" bindtap="closeFilter" aria-role="button">取消</view>
+    </view>
   </view>
 </view>
 <feedback-popup></feedback-popup>

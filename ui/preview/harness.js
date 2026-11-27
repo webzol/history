@@ -594,7 +594,7 @@
       } else if (key === 'id') {
         el.setAttribute('id', out);
       } else if (key === 'style') {
-        el.setAttribute('style', rwpx(out));
+        el.style.cssText += ';' + rwpx(out);
       } else if (key === 'aria-role') {
         el.setAttribute('role', out);
       } else if (/^aria-/.test(key)) {
@@ -621,18 +621,6 @@
     });
 
     el.__dataset = snapshot(dataset);
-
-    if (node.tag === 'picker' && attrs.mode === 'selector' && attrs.bindchange) {
-      el.addEventListener('click', function () {
-        var options = evalExpr(pickExpr(attrs.range), scope);
-        drawSheet({
-          itemList: options,
-          success: function (result) {
-            inst.cfg[attrs.bindchange].call(inst, { detail: { value: String(result.tapIndex) } });
-          }
-        });
-      });
-    }
 
     Object.keys(attrs).forEach(function (key) {
       if (!/^bind/.test(key) || typeof attrs[key] !== 'string') return;

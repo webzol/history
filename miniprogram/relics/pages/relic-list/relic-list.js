@@ -14,6 +14,7 @@ Page({
     eras: ERA_OPTIONS,
     typeIndex: 0,
     eraIndex: 0,
+    filterSheet: null,
     rows: [],
     count: 0,
     hasMore: false
@@ -27,16 +28,36 @@ Page({
 
   onShow() { font.apply(this); },
 
-  onType(e) { this.updateFilters(Number(e.detail.value), this.data.eraIndex); },
+  openFilter(e) {
+    const kind = e.currentTarget.dataset.kind;
+    const isType = kind === 'type';
+    this.setData({ filterSheet: {
+      kind,
+      title: isType ? '选择器类' : '选择时代',
+      options: isType ? TYPE_OPTIONS : ERA_OPTIONS,
+      selected: isType ? this.data.typeIndex : this.data.eraIndex
+    } });
+  },
 
-  onEra(e) { this.updateFilters(this.data.typeIndex, Number(e.detail.value)); },
+  closeFilter() { this.setData({ filterSheet: null }); },
+
+  onFilterPick(e) {
+    const sheet = this.data.filterSheet;
+    const index = Number(e.currentTarget.dataset.index);
+    if (!sheet || !Number.isInteger(index) || index < 0 || index >= sheet.options.length) return;
+    if (index === sheet.selected) return this.closeFilter();
+    this.updateFilters(sheet.kind === 'type' ? index : this.data.typeIndex,
+      sheet.kind === 'era' ? index : this.data.eraIndex);
+  },
+
+  noop() {},
 
   resetFilters() { this.updateFilters(0, 0); },
 
   updateFilters(typeIndex, eraIndex) {
     this.matches = RELICS.filter(item => (!typeIndex || item.type === TYPE_OPTIONS[typeIndex])
       && (!eraIndex || item.eras.includes(ERA_OPTIONS[eraIndex])));
-    this.setData({ typeIndex, eraIndex, count: this.matches.length, ...this.nextRows(0) });
+    this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length, ...this.nextRows(0) });
   },
 
   nextRows(offset) {
