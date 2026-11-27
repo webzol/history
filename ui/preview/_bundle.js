@@ -5586,9 +5586,7 @@ const feedback = require('./feedback.js');
 // 低像素比设备上 3 倍拉伸导出发虚，是本次迁移的直接原因。
 // 每次重新查询节点，缓冲尺寸有变化时才重设。真机可复用同一块缓冲，预览可找到新挂载的节点。
 //
-// 卡片不带任何二维码/小程序码（2026-11-15 定稿「只要卡片」，qrcode.js 随之移出主包）；
-// 好友直达分享走「转寄好友」微信原生卡片。扫码进入支持保留在 utils/wxacode.js（mergeScene），
-// 历史流传的太阳码仍可扫入对应详情页。
+// 海报统一使用 TD 提供的固定小程序码。好友直达仍由微信原生分享传入详情路由。
 //
 // 页面接入约定：
 //   1. data 里初始化 share: { open: false }
@@ -5604,6 +5602,7 @@ const FALLBACK_IMG = '/assets/share-fallback.jpg';
 const FALLBACK_COVER = '/assets/palace.jpg';
 // 宣纸纹理：与全站页面同一张图（各页 <image class="paper-bg"> 同源同铺法），海报卷面直接绘入
 const PAPER_BG = '/assets/paper-bg.jpg';
+const SHARE_CODE = '/assets/share-wxacode.jpg';
 
 // 海报逻辑尺寸（px，与 app.wxss .ss-canvas 一致）与高清倍率
 const CANVAS_ID = 'ssQrCanvas';
@@ -5760,7 +5759,8 @@ function preloadPosterImgs(page, share) {
     PAPER_BG,
     share.imgLocal || FALLBACK_COVER,
     share.imgLocal ? FALLBACK_COVER : '', // 题图装载中先备好兜底卷首
-    '/assets/seal.png'
+    '/assets/seal.png',
+    SHARE_CODE
   ];
   srcs.forEach((src) => {
     if (!src || imgCache[src]) return;
@@ -6048,8 +6048,9 @@ function paintPoster(ctx, share, getImage = peekImg) {
 
   ctx.fillStyle = '#E4D5C5';
   ctx.fillRect(27.5, 326, 205, 0.55);
+  const code = getImage(SHARE_CODE);
   ctx.textAlign = 'left';
-  ctx.font = '9.3px ' + SONG;
+  ctx.font = (code ? '9px ' : '9.3px ') + SONG;
   const footer = [
     ['date', share.dateText, 342, INK],
     ['lunar', share.lunarText, 357, MUTED],
@@ -6059,14 +6060,25 @@ function paintPoster(ctx, share, getImage = peekImg) {
     if (!label) return;
     drawFooterIcon(ctx, icon, 34, baseline - 4.5);
     ctx.fillStyle = color;
-    ctx.fillText(label, 50, baseline);
+    ctx.fillText(label, 50, baseline, code ? 106 : 144);
   });
 
   const seal = getImage('/assets/seal.png');
   if (seal && seal.width && seal.height) {
-    const sealH = 40;
+    const sealH = code ? 26 : 40;
     const sealW = sealH * seal.width / seal.height;
-    ctx.drawImage(seal, 229 - sealW, 334, sealW, sealH);
+    ctx.drawImage(seal, (code ? 175 : 229) - sealW, code ? 343 : 334, sealW, sealH);
+  }
+  if (code && code.width && code.height) {
+    // 码图按正方形整幅绘入，保留原有白边、码点和绿色微信标识。
+    ctx.fillStyle = '#FFFFFF';
+    roundRectPath(ctx, 180, 327, 54, 51.5, 3);
+    ctx.fill();
+    ctx.drawImage(code, 182, 328, 50, 50);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = MUTED;
+    ctx.font = '5.5px ' + SONG;
+    ctx.fillText('微信扫一扫', 207, 381);
   }
   ctx.restore();
 }
@@ -6131,7 +6143,7 @@ function saveAlbum(filePath, host) {
 
 // 导出海报 → 保存到相册；导出失败或 canvas 已降级时，改保存预置兜底图。
 // 2d canvas 导出传节点本身，按缓冲原生分辨率出图（1170×1908）。
-// 节点被重建过（缓冲尺寸不符）时先重设缓冲并重画一帧再导出，避免导出空白。
+// 小程序码就绪后再导出，加载失败时保存自带同一码的备用卡。
 function save(page) {
   const share = page.data.share;
   if (!share || !share.open) return;
@@ -6141,22 +6153,26 @@ function save(page) {
     return;
   }
 
-  getCanvasNode(page, (node) => {
-    try {
-      if (node.width !== BW || node.height !== BH) {
-        const ctx = frameCanvas(node);
-        preloadPosterImgs(page, share);
-        paintPoster(ctx, share);
+  const payload = page.__qrPayload;
+  loadCanvasImg(page, SHARE_CODE, (code) => {
+    if (page.__qrPayload !== payload || !page.data.share.open) return;
+    if (!code) return saveFallback(page, host);
+    getCanvasNode(page, (node) => {
+      if (page.__qrPayload !== payload || !page.data.share.open) return;
+      try {
+        paintPoster(frameCanvas(node), page.data.share);
+      } catch (e) {
+        return saveFallback(page, host);
       }
-    } catch (e) { /* 重画失败仍按当前缓冲导出，导出失败有兜底 */ }
-    wx.canvasToTempFilePath({
-      canvas: node,
-      destWidth: BW,
-      destHeight: BH,
-      success: (res) => writeAlbum(res.tempFilePath, host),
-      fail: () => saveFallback(page, host)
-    });
-  }, () => saveFallback(page, host));
+      wx.canvasToTempFilePath({
+        canvas: node,
+        destWidth: BW,
+        destHeight: BH,
+        success: (res) => writeAlbum(res.tempFilePath, host),
+        fail: () => saveFallback(page, host)
+      });
+    }, () => saveFallback(page, host));
+  });
 }
 
 // 兜底保存：把包内静态卡片图（FALLBACK_IMG）经用户目录转存到相册。

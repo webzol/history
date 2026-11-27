@@ -297,7 +297,7 @@ function assertSharePanel(page, cfg, tag) {
   qrshare.drawPoster(page);
   ok(mockPoster.texts >= 8, `${tag}海报含 kicker/标题/摘要/名句/出处/日期/品牌文字层`);
   ok(mockPoster.fills >= 5, `${tag}海报有基础绘制层（宣纸/界格/装裱/分隔细线）`);
-  ok(mockPoster.images >= 2, `${tag}海报含题图与「史载」印`);
+  ok(mockPoster.images >= 4, `${tag}海报含宣纸、题图、「史载」印和小程序码`);
   const msg = page.onShareAppMessage();
   ok(msg.path === page.sharePayload().path, `${tag}转发 path 与 sharePayload 同源`);
   mockQr.saved = 0;
@@ -2311,13 +2311,13 @@ console.log('== 太阳码 wxacode ==');
   p.onLoad({ scene: 'p=su-shi' });
   eq(p.data.person.name, '苏轼', '太阳码扫码进入等价 ?id=');
 
-  // 海报不带任何码（2026-11-15 定稿「只要卡片」）：面板里没有 codeImg/qrText 状态
+  // 固定小程序码直接绘入海报，仍沿用详情页自己的好友分享路径。
   const person = pages.person;
   person.onLoad({ id: 'han-wudi' });
   person.openShare();
   qrshare.attachCanvas(person);
-  ok(person.data.share.codeImg === undefined && person.data.share.qrText === undefined, '海报无码定稿：面板不再有 codeImg/qrText 状态');
-  ok(mockPoster.images >= 2, '海报仍含题图与「史载」印');
+  eq(person.onShareAppMessage().path, '/pages/person/person?id=han-wudi', '添加固定码后好友分享仍直达人物详情');
+  ok(mockPoster.images >= 4, '海报绘入固定小程序码');
   person.closeShare();
 })();
 
@@ -2391,6 +2391,11 @@ console.log('== 朋友圈分享 ==');
   const quote = '料敌合变，出奇无穷，声震天下。';
   qrshare.paintPoster(ctx, { title: '夏', quote }, () => null);
   eq(rows.filter((row) => row.y >= 283 && row.y <= 297).map((row) => row.label), [quote], '参考图题句完整排在一行');
+  const code = { width: 258, height: 258 };
+  const images = [];
+  ctx.drawImage = (...args) => images.push(args);
+  qrshare.paintPoster(ctx, { title: '夏' }, (src) => src === '/assets/share-wxacode.jpg' ? code : null);
+  eq(images, [[code, 182, 328, 50, 50]], '小程序码完整画成正方形，不裁切或拉伸');
 }
 
 // ---------------------------------------------------------------------------

@@ -25,6 +25,7 @@ def main():
         '/assets/palace.jpg': image_data('palace.jpg', 'image/jpeg'),
         '/assets/paper-bg.jpg': image_data('paper-bg.jpg', 'image/jpeg'),
         '/assets/seal.png': image_data('seal.png', 'image/png'),
+        '/assets/share-wxacode.jpg': image_data('share-wxacode.jpg', 'image/jpeg'),
     }
     html = """<!doctype html><meta charset="utf-8">
 <canvas id="card"></canvas>
