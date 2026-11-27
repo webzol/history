@@ -1920,13 +1920,18 @@ console.log('== 文物分包 ==');
   resetWifiStack();
   const catalog = require(path.join(ROOT, 'relics', 'catalog.js'));
 
-  eq(catalog.RELICS.length, 36, '文物目录 36 件');
+  eq(catalog.RELICS.length, 60, '文物目录 60 件');
   eq(catalog.TYPES, ['青铜', '陶瓷', '玉器', '书画'], '器类四类');
   catalog.TYPES.forEach((type) => {
-    eq(catalog.RELICS.filter((r) => r.type === type).length, 9, `${type} 各 9 件`);
+    eq(catalog.RELICS.filter((r) => r.type === type).length, 15, `${type} 各 15 件`);
   });
   const ids = catalog.RELICS.map((r) => r.id);
-  eq(new Set(ids).size, 36, '文物 id 不重复');
+  eq(new Set(ids).size, catalog.RELICS.length, '文物 id 不重复');
+  const sources = JSON.parse(fs.readFileSync(path.join(ROOT, '..', 'docs', 'relic-sources.json'), 'utf8'));
+  eq(sources.map((record) => record.id), ids, '文物来源清单与目录顺序一致');
+  ok(sources.every((source, index) => source.accession === catalog.RELICS[index].accession
+    && source.collectionUrl === catalog.sourceFor(source.id).url
+    && source.rights === (source.id.startsWith('cma-') ? 'CC0' : 'Public Domain')), '馆藏号、来源地址与图片授权一致');
   catalog.RELICS.forEach((relic) => {
     ok(relic.eras.length > 0 && relic.eras.every((era) => catalog.ERAS.indexOf(era) >= 0),
       `${relic.id} 时代取值在筛选项内`);
@@ -1960,7 +1965,7 @@ console.log('== 文物分包 ==');
   const list = pages['relic-list'];
   list.onLoad();
   eq(list.data.rows.length, 8, '列表首屏 8 条');
-  eq(list.data.count, 36, '列表默认 36 件');
+  eq(list.data.count, catalog.RELICS.length, '列表默认显示全部藏品');
   eq(list.data.hasMore, true, '列表有待加载');
   list.loadMore();
   eq(list.data.rows.length, 16, '加载更多追加一屏');
@@ -1973,23 +1978,29 @@ console.log('== 文物分包 ==');
   eq(list.data.filterSheet.options.length, 5, '器类弹层含「全部」');
   tap(list, 'onFilterPick', { index: 1 });
   eq(list.data.filterSheet, null, '选中后关闭弹层');
-  eq(list.data.count, 9, '筛青铜 9 件');
+  eq(list.data.count, 15, '筛青铜 15 件');
   eq(list.data.typeIndex, 1, '器类选择保留');
   tap(list, 'openFilter', { kind: 'era' });
-  tap(list, 'onFilterPick', { index: 5 });
-  eq(list.data.count, 2, '青铜 × 东周的组合筛选');
+  tap(list, 'onFilterPick', { index: catalog.ERAS.indexOf('东周') + 1 });
+  eq(list.data.count, 4, '青铜 × 东周的组合筛选');
   tap(list, 'onFilterPick', { index: 99 });
-  eq(list.data.count, 2, '越界索引不生效');
+  eq(list.data.count, 4, '越界索引不生效');
   tap(list, 'resetFilters', {});
-  eq(list.data.count, 36, '清除筛选恢复全部');
+  eq(list.data.count, catalog.RELICS.length, '清除筛选恢复全部');
   eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个选择');
   // 无结果态（时代与器类无交集时）：青铜 × 清
   tap(list, 'openFilter', { kind: 'type' });
   tap(list, 'onFilterPick', { index: 1 });
   tap(list, 'openFilter', { kind: 'era' });
-  tap(list, 'onFilterPick', { index: 11 });
+  tap(list, 'onFilterPick', { index: catalog.ERAS.indexOf('清') + 1 });
   eq(list.data.count, 0, '组合无交集时归零');
   eq(list.data.rows.length, 0, '无结果不渲染卡片');
+  tap(list, 'resetFilters', {});
+  for (const [era, id] of [['北魏', 'cma-1962.216'], ['隋', '62991']]) {
+    tap(list, 'openFilter', { kind: 'era' });
+    tap(list, 'onFilterPick', { index: catalog.ERAS.indexOf(era) + 1 });
+    eq(list.data.rows.map((row) => row.id), [id], `${era}可单独筛选`);
+  }
   tap(list, 'resetFilters', {});
 
   resetWifiStack();

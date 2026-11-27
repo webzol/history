@@ -1,5 +1,5 @@
 const TYPES = ['青铜', '陶瓷', '玉器', '书画'];
-const ERAS = ['新石器时代', '二里头文化', '商', '西周', '东周', '汉', '唐', '宋', '元', '明', '清'];
+const ERAS = ['新石器时代', '二里头文化', '商', '西周', '东周', '汉', '北魏', '隋', '唐', '宋', '元', '明', '清'];
 
 // 按年代先后排列。以文物本体的形制与用途为主，馆方的断代与出土地随文说明。
 // imageRatio = 详情图 高/宽 × 100，须与 tools/prepare_relic_images.py 的输出一致（改图须同步改这里）。
@@ -65,10 +65,28 @@ const RELICS = [
     description: '尊是盛酒器，用来盛放祭祀用的酒。这件尊的口沿向外展开，器身下承圈足，与同一批入藏的西周礼器同号著录。'
   },
   {
+    id: '53558', title: '西周青铜簋', type: '青铜', eras: ['西周'], period: '西周', date: '公元前10世纪',
+    imageRatio: 75.102,
+    material: '青铜', dimensions: '高15.2厘米，宽30.5厘米，口径20.6厘米', accession: '13.100.155',
+    description: '簋是盛放食物的礼器。这件簋的两侧有宽大的环耳，腹部饰成排凸起的纹样，下承圈足。'
+  },
+  {
+    id: '44734', title: '青铜敦', type: '青铜', eras: ['东周'], period: '东周', date: '公元前6世纪初',
+    imageRatio: 75.102,
+    material: '青铜', dimensions: '高20.3厘米，直径27厘米', accession: '1992.165.24a, b',
+    description: '敦是盛食用器。这件敦的盖和器身相合，形成鼓圆的轮廓，侧面带环耳，下方有短足。'
+  },
+  {
     id: '44784', title: '青铜豆', type: '青铜', eras: ['东周'], period: '东周', date: '公元前6世纪末至前5世纪初',
     imageRatio: 133.515,
     material: '青铜', dimensions: '通高26.7厘米，口径18.4厘米，足径12.4厘米', accession: '25.20.2a, b',
     description: '豆是盛放腌菜、肉酱一类食物的器皿，上为浅盘，下接柄和底座。这件豆带盖，馆方把年代定在春秋晚期至战国早期。'
+  },
+  {
+    id: '39762', title: '青铜钮钟', type: '青铜', eras: ['东周'], period: '东周', date: '公元前5世纪',
+    imageRatio: 133.515,
+    material: '青铜', dimensions: '高29.8厘米，宽17.8厘米，厚11.4厘米', accession: '1997.442.8',
+    description: '钟顶立有供悬挂的钮，钟面分布着成组的突起。礼仪场合可将这一类钟悬挂起来，从外部敲击。'
   },
   {
     id: '61403', title: '交龙纹铜镜', type: '青铜', eras: ['东周'], period: '战国', date: '公元前5至前4世纪',
@@ -89,10 +107,34 @@ const RELICS = [
     description: '环体由一条蟠结的龙绕成，龙首与爪在环上转折相接，龙身各处用阴线刻出细部。'
   },
   {
+    id: 'cma-1952.571.2', title: '兽面纹玉璜', type: '玉器', eras: ['东周', '汉'], period: '战国至西汉', date: '约公元前300至前100年',
+    imageRatio: 64.082,
+    material: '软玉', dimensions: '长12.8厘米', accession: '1952.571.2',
+    description: '这件玉佩呈弧形，两端收窄。馆方依据纹饰将其辨作兽面与交缠兽带纹，细线沿着弧面展开。'
+  },
+  {
     id: '74527', title: '战国至西汉玉璧', type: '玉器', eras: ['东周', '汉'], period: '战国至西汉', date: '公元前3至前2世纪',
     imageRatio: 75.102,
     material: '玉', dimensions: '直径14.6厘米，厚1厘米', accession: '2008.287',
     description: '玉璧作圆板形，中心开圆孔，器面光素。璧在先秦两汉的礼仪中用作礼器，也见于墓葬随葬。'
+  },
+  {
+    id: '61094', title: '青铜奔兽纹壶', type: '青铜', eras: ['汉'], period: '西汉', date: '公元前3至前2世纪',
+    imageRatio: 133.515,
+    material: '青铜', dimensions: '高28.9厘米，直径22.9厘米', accession: '18.56.6',
+    description: '这是一件酒器，壶颈收窄，腹部浑圆。奔兽纹沿器身排列，侧面环耳与宽腹形成鲜明的轮廓。'
+  },
+  {
+    id: '39523', title: '彩绘陶女俑', type: '陶瓷', eras: ['汉'], period: '西汉', date: '公元前2世纪',
+    imageRatio: 109.865,
+    material: '彩绘陶', dimensions: '高68.6厘米', accession: '1997.1.1',
+    description: '陶俑双手在身前相合，长衣下摆外张。衣缘仍能看见彩绘痕迹，和塑出的衣褶一起交代服饰层次。'
+  },
+  {
+    id: '49900', title: '绿釉陶罐', type: '陶瓷', eras: ['汉'], period: '西汉', date: '公元前1世纪',
+    imageRatio: 96.327,
+    material: '绿釉陶', dimensions: '高30.5厘米', accession: '17.154',
+    description: '罐身圆腹，口沿收紧。大都会将胎体记为陶，外施绿釉，肩部的纹带沿罐身环绕。'
   },
   {
     id: '72544', title: '金饰玉梳', type: '玉器', eras: ['汉'], period: '东汉', date: '公元25至220年',
@@ -101,10 +143,40 @@ const RELICS = [
     description: '梳背上嵌着金饰，下方是一排细密的玉梳齿。金与玉在一件小器物上相接，可以从梳背细看两种材料的处理。'
   },
   {
+    id: '44396', title: '玉卧猪', type: '玉器', eras: ['汉'], period: '东汉', date: '公元1至2世纪',
+    imageRatio: 75.102,
+    material: '软玉', dimensions: '高2.9厘米，长11.4厘米', accession: '1994.605.96',
+    description: '玉猪伏卧，背部连成长弧。头部和四肢用简洁的阴刻线概括，几道刻线便能辨出卧姿。'
+  },
+  {
+    id: '44405', title: '神仙异兽纹铜镜', type: '青铜', eras: ['汉'], period: '东汉', date: '公元2世纪晚期',
+    imageRatio: 95.102,
+    material: '青铜', dimensions: '直径10.8厘米', accession: '1994.605.105',
+    description: '镜背中央有圆钮，神仙与异兽纹围绕镜钮布置。环形边纹把中央的图案收拢在圆形镜面内。'
+  },
+  {
     id: 'cma-1986.46.a', title: '青铜博山炉', type: '青铜', eras: ['汉'], period: '西汉', date: '公元前200至前100年',
     imageRatio: 123.737,
     material: '青铜', dimensions: '通高18.4厘米，腹径9.9厘米', accession: '1986.46.a',
     description: '炉盖做成尖耸的山形，山间铸出人物与走兽。汉人焚香时把香料放在炉身中点燃，烟从盖上的镂孔散出，望去像山间的雾气。'
+  },
+  {
+    id: '61050', title: '青铜灯', type: '青铜', eras: ['汉'], period: '汉', date: '约公元前206年至公元220年',
+    imageRatio: 133.515,
+    material: '青铜', dimensions: '高23.2厘米，直径14.6厘米', accession: '13.220.46',
+    description: '灯盘宽而浅，细长的灯柱接在外撇的底座上。盘、柱和座组成简洁的照明器具。'
+  },
+  {
+    id: 'cma-1962.216', title: '北魏官吏陶俑', type: '陶瓷', eras: ['北魏'], period: '北魏', date: '公元6世纪初',
+    imageRatio: 150.307,
+    material: '灰陶，带残存彩绘', dimensions: '高36厘米', accession: '1962.216',
+    description: '俑戴平顶小帽，衣襟交叠，一手抬至胸前。细长的身形和下摆的竖向刻线凸显了站姿。'
+  },
+  {
+    id: '62991', title: '釉陶骆驼俑', type: '陶瓷', eras: ['隋'], period: '隋', date: '公元6世纪晚期至7世纪',
+    imageRatio: 127.273,
+    material: '施釉陶，带残存彩绘', dimensions: '高37.8厘米，宽30.5厘米，厚20.3厘米', accession: '63.175.1',
+    description: '骆驼立在底板上，背部的鞍具和两侧驮囊仍清楚可辨。馆方将它列为随葬陶俑。'
   },
   {
     id: '49368', title: '三彩陶骆驼俑', type: '陶瓷', eras: ['唐'], period: '唐', date: '公元8世纪',
@@ -117,6 +189,12 @@ const RELICS = [
     imageRatio: 144.543,
     material: '三彩釉陶', dimensions: '通高92.3厘米，宽43.8厘米', accession: '2000.118.1',
     description: '镇墓兽作兽面，头顶生角，蹲踞在座上，遍身竖起的尖刺加强威慑。唐三彩以铅釉低温烧成，绿、黄、白三色在窑中自然流动。这类陶塑成对放在墓中，用来镇守。'
+  },
+  {
+    id: '42180', title: '唐代玉带饰', type: '玉器', eras: ['唐'], period: '唐', date: '公元7世纪至8世纪初',
+    imageRatio: 36.327,
+    material: '软玉', dimensions: '方件各5.7 × 5.7厘米，末端配件11.1 × 5.7厘米', accession: '1992.165.22a–j',
+    description: '这组带饰由多块方形玉片和一块较长的端部配件组成。把它们排在一起，可以看出腰带饰件如何组合。'
   },
   {
     id: '39919', title: '米芾《吴江舟中诗》', type: '书画', eras: ['宋'], period: '北宋', date: '约公元1095年',
@@ -161,6 +239,54 @@ const RELICS = [
     description: '盘心凸起一条盘绕的龙，周围衬以云纹和水波，盘沿环绕五瓣花，龙首前方有一颗火珠。青釉覆在凸起的纹饰上，颜色随釉层的厚薄深浅不同。'
   },
   {
+    id: '40512', title: '鲜于枢《石鼓歌》', type: '书画', eras: ['元'], period: '元', date: '公元1301年',
+    imageRatio: 66.531,
+    material: '纸本墨书，手卷', dimensions: '书心44.9 × 459.9厘米', accession: '1989.363.29', imageNote: '手卷局部',
+    description: '鲜于枢以草书抄写韩愈《石鼓歌》。字与字之间疏密有变，转折处提按分明，展开手卷可逐段看笔势。'
+  },
+  {
+    id: 'cma-1978.66', title: '赵孟頫《江村渔乐图》', type: '书画', eras: ['元'], period: '元', date: '约公元1302至1303年',
+    imageRatio: 95.714,
+    material: '绢本设色，扇面装册', dimensions: '28.6 × 30厘米', accession: '1978.66',
+    description: '小幅扇面在水岸之间画出渔人、树木与村居。近处枝干细密，远处坡岸铺开，青绿设色把两层景物连起来。'
+  },
+  {
+    id: 'cma-1962.154', title: '青花双狮头罐', type: '陶瓷', eras: ['元'], period: '元', date: '公元14世纪',
+    imageRatio: 94.286,
+    material: '釉下彩绘瓷', dimensions: '通体39.4 × 37.5厘米，口径15.6厘米', accession: '1962.154',
+    description: '这件景德镇青花罐以双狮头作耳。肩部到腹部划分出多道纹带，较宽的纹带中能看到凤鸟和花卉。'
+  },
+  {
+    id: 'cma-1964.169', title: '青花龙纹高足杯', type: '陶瓷', eras: ['元'], period: '元', date: '公元14世纪',
+    imageRatio: 94.082,
+    material: '釉下青花瓷，带模印装饰', dimensions: '高11.8厘米，口径13.3厘米', accession: '1964.169',
+    description: '杯沿外撇，下接高足，青花龙纹绕杯腹展开。杯身浅而足高，是这类高足杯最显眼的轮廓。'
+  },
+  {
+    id: 'cma-1978.65', title: '倪瓒《筠石乔柯》', type: '书画', eras: ['元'], period: '元', date: '公元14世纪',
+    imageRatio: 164.43,
+    material: '纸本水墨，立轴', dimensions: '画心67.3 × 36.8厘米', accession: '1978.65',
+    description: '画中乔木斜生，竹叶从石旁伸出。上方的题字与下部稀疏的枝叶相对，纸面保留了大片空白。'
+  },
+  {
+    id: 'cma-1915.704', title: '宫殿图册页', type: '书画', eras: ['元'], period: '元', date: '公元1271至1368年',
+    imageRatio: 92.449,
+    material: '绢本设色，册页', dimensions: '画面直径26.2厘米', accession: '1915.704',
+    description: '圆形画面中，楼阁、廊道和院墙沿地势错落展开。屋檐和栏杆用细线勾画，建筑间还能辨出小小的人物。'
+  },
+  {
+    id: 'cma-1997.94', title: '王蒙《松下著书图》', type: '书画', eras: ['元'], period: '元', date: '公元14世纪',
+    imageRatio: 70.408,
+    material: '纸本设色，册页', dimensions: '画心39.8 × 56.9厘米', accession: '1997.94',
+    description: '山石、松林和草屋层层叠起，画中人物坐在屋内。馆方指出，画右有王蒙所题的篆书，左侧另有署款与印。'
+  },
+  {
+    id: '41912', title: '镂雕玉头饰', type: '玉器', eras: ['元', '明'], period: '元至明', date: '公元14至16世纪',
+    imageRatio: 75.102,
+    material: '软玉', dimensions: '高4.2厘米，宽6.4厘米，长3.8厘米', accession: '02.18.391',
+    description: '饰件呈拱形，两侧逐渐收低。纹样间镂空，从正面和侧面都能看到雕刻的层次。'
+  },
+  {
     id: '45685', title: '沈周《四季花卉图》', type: '书画', eras: ['明'], period: '明', date: '公元15世纪至16世纪初',
     imageRatio: 42.449,
     material: '纸本设色，手卷', dimensions: '27.5 × 504.8厘米', accession: '1982.205', imageNote: '手卷局部',
@@ -183,6 +309,12 @@ const RELICS = [
     imageRatio: 211.207,
     material: '纸本设色，立轴', dimensions: '纵156.4厘米，横72.4厘米', accession: '1954.582',
     description: '画中一位文人在月下踱步，身后是梅树和坡石。原题画的是北宋诗人林逋，他在西湖边隐居，以梅为妻、以鹤为子。'
+  },
+  {
+    id: '43778', title: '镂雕玉带牌', type: '玉器', eras: ['明'], period: '明', date: '公元16世纪',
+    imageRatio: 53.265,
+    material: '软玉', dimensions: '高5.4厘米，宽13.2厘米，厚0.7厘米', accession: '02.18.390',
+    description: '长方形玉带牌的外沿保留窄框，内部雕出密集的镂空纹样。从透空处可以看出这件薄玉牌的雕工。'
   },
   {
     id: '42514', title: '龙泉窑青釉刻牡丹纹盘', type: '陶瓷', eras: ['明'], period: '明', date: '公元14世纪晚期至15世纪初',
@@ -219,6 +351,18 @@ const RELICS = [
     imageRatio: 55.714,
     material: '软玉，青白玉', dimensions: '高6.5厘米，连耳宽16厘米', accession: '1952.510',
     description: '杯的两侧各以一位仙人作耳，器身上环绕着仙人、乐人和侍从。这件杯曾被看作元代器物，新的研究将它改定在清代乾隆时期；器上没有乾隆款识，因此可能未曾入宫。'
+  },
+  {
+    id: '43265', title: '玉花插', type: '玉器', eras: ['清'], period: '清', date: '公元18世纪',
+    imageRatio: 133.515,
+    material: '软玉', dimensions: '高18.3厘米，连座高21.6厘米，最大宽11.1厘米', accession: '65.86.189a, b',
+    description: '花插顺着花叶造型向上伸展，枝叶彼此穿插。光线落到薄处时，可以看出玉料色泽与雕刻层次。'
+  },
+  {
+    id: 'cma-2019.167', title: '袁耀《蜀栈行旅图》', type: '书画', eras: ['清'], period: '清·乾隆八年', date: '公元1743年',
+    imageRatio: 73.673,
+    material: '绢本设色，立轴', dimensions: '画心187 × 256.5厘米', accession: '2019.167',
+    description: '岩壁之间的栈道牵出行旅路线。山势占据大部分画面，沿路的楼阁和行人很小，能看出立轴表现的山岭尺度。'
   }
 ];
 
