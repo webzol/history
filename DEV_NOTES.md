@@ -177,3 +177,8 @@
 - 详情大图移出分包 → `data/img/relics/` 经 jsDelivr：testingcf 主域 → gcore 备用域 → 包内缩略图兜底；缩略图留分包（媒体 164KB），分包 602.6 → 222.5KB。列表触底续载；首页 wifi 预下载分包。
 - `tools/discover_relics.js` 候选挖掘入仓（克利夫兰全量 + 大都会分材质，缓存 tmp/）；`fetch_relic_assets.js` 补 403/429 退避。validate 改查「缩略图在包 + 详情图在 data/img/relics + 比例一致」。
 - 验证：selftest PASS 2441/FAIL 0、validate 通过（主包 754.4KB / 分包 222.5KB）、内容审计、隐私自测 14 项、42 张截图全过。真机预下载、弱网降级、新条目史实审校待办。
+
+## 2026-11-27 · 文物栏目三项验证
+
+- 交互自测 PASS 2441/FAIL 0、隐私 14 项、content_audit、validate 全过；catalog/缩略图/详情图/sources 四方 60 条对账一致。
+- 新增 `tools/relic_perf_probe.js`：首屏 setData 0.90KB（8 行）、续载逐项路径追加约 0.9KB/屏（修正 `rows[8]` 整组塞一个下标的写法）、详情 0.53KB、全流程 0 次wx.request；CDN 60/60 在线（4 并发会被 jsDelivr 限流 403，串行全 200，610–1433ms）。

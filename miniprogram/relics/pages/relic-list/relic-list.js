@@ -56,18 +56,27 @@ Page({
   updateFilters(typeIndex, eraIndex) {
     this.matches = RELICS.filter(item => (!typeIndex || item.type === TYPE_OPTIONS[typeIndex])
       && (!eraIndex || item.eras.includes(ERA_OPTIONS[eraIndex])));
-    this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length, ...this.nextRows(0) });
+    const { patch, hasMore } = this.appendRows(0);
+    this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length, hasMore, ...patch });
   },
 
-  nextRows(offset) {
+  // 每屏只映射展示字段；续载按 rows[offset+i] 逐项路径追加（ setData 单键数组
+  // 只会整组塞进一个下标），不发已渲染过的行
+  appendRows(offset) {
     const batch = this.matches.slice(offset, offset + PAGE_SIZE).map(({ id, title, period, shortPeriod, type }) => ({
       id, title, period: shortPeriod || period, type, thumb: imagePath(id, 'thumb')
     }));
-    return { rows: offset ? this.data.rows.concat(batch) : batch, hasMore: offset + batch.length < this.matches.length };
+    const patch = {};
+    if (offset) batch.forEach((row, i) => { patch[`rows[${offset + i}]`] = row; });
+    else patch.rows = batch;
+    return { patch, hasMore: offset + batch.length < this.matches.length };
   },
 
   loadMore() {
-    if (this.data.hasMore) this.setData(this.nextRows(this.data.rows.length));
+    if (this.data.hasMore) {
+      const { patch, hasMore } = this.appendRows(this.data.rows.length);
+      this.setData({ hasMore, ...patch });
+    }
   },
 
   // 触底自动续载一屏，避免一次渲染全部行卡；「加载更多」按钮保留作兜底

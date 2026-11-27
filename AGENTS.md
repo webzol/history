@@ -111,6 +111,7 @@ E:\AI\history\
 │  ├─ validate_miniprogram.py       # JS/JSON/WXML/资源静态校验
 │  ├─ content_audit.py              # 数据完整性审计（全量 100/89/24/2/16 字段 + 引用完整性 + history.js↔history.json 一致性，退出码可挂 CI）
 │  ├─ fetch_relic_assets.js / prepare_relic_images.py   # 文物配图复现链路（馆方 API → tmp/ 复核 → 入分包）
+│  ├─ relic_perf_probe.js           # 文物栏目性能探针（setData 载荷/请求数；--net 全量探测 CDN 详情图）
 │  ├─ compress_assets.py / make_paper_bg.py / crop_seal.py 等   # 素材复现链路
 ├─ .github\workflows\wxacode.yml    # 数据变更 push → 太阳码增量生成并提交（secret: WX_APPSECRET）
 └─ ui\

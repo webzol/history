@@ -2285,3 +2285,14 @@ miniprogram/data/history.js
 - `validate_miniprogram.py` 文物一致性检查改为：缩略图必须在分包、详情图必须在 `data/img/relics` 且 `imageRatio` 与实测一致（退出码不变）。`selftest.js` 文物段更新：目录 60 件 / 四类各 15、双域 URL、详情降级链（主域→备用域→缩略图、降级后不重复步进）、触底续载、海报 `imgFallback`，时代组合索引按新筛选项修正（弹层带「不限」偏移）。
 - 验证：`node tools/selftest.js` PASS 2441 / FAIL 0；`python tools/validate_miniprogram.py` 通过（主包 754.4KB / 媒体 174.3KB；文物分包 222.5KB / 媒体 164.0KB）；`python tools/content_audit.py` 通过；隐私自测 14 项通过；`node tools/preview_shots.js` 42 张全过，人工核对列表（60 件、新条目按年代插入）、杜堇详情（新版原图渲染）与共此卷海报（CDN 题图 + 固定码完整）。
 - 待验证：微信真机分包预下载与首次进入速度、详情图 CDN 弱网降级链、触底续载滚动流畅度；新 24 件简介为按馆方记录改写的通稿文案，尚未逐条史实审校。jsDelivr 对个别冷请求偶发 403/回源失败，详情页已有双域 + 缩略图降级兜底。
+
+## 2026-11-27 · 文物栏目三项收尾验证（交互 / 性能 / 数据完整性）
+
+- **交互自测**：`node tools/selftest.js` PASS 2441 / FAIL 0；隐私自测 14 项通过。
+- **性能实测**（新增 `tools/relic_perf_probe.js`，加载真实页面代码量 setData）：
+  - 分包 222.7KB / 媒体 164KB（改造前 602.6KB / 557.9KB），wifi 预下载已配；
+  - 列表首屏 onLoad 仅 1 次 setData 0.90KB（8 行 × 约 115 字节/行），一次渲染 60 行需 6.27KB，分页省 86%；筛选切换 1 次 874 字节；
+  - **修正续载追加方式**：`setData({'rows[8]': 批数组})` 在微信里是把该下标设成整个数组（自测立即暴露 9===16），改为 `rows[8+i]` 逐项路径键，每屏只传新 8 行（约 0.9KB）；整组重发的旧写法滚到 60 行累计约 30KB，新写法全程约 6KB；
+  - 详情 onLoad 1 次 setData 0.53KB；列表与详情全流程 `wx.request` 均为 0（缩略图包内、详情图走 `<image>` 按需）。
+- **CDN 可用性**：60 张详情图 testingcf 主域全量探测，4 并发下 47/60 返回 403（jsDelivr 对单 IP 突发限流），**改串行复测 13 张全部 200**（610–1433ms，单图 6–30KB），即 60/60 在线；gcore 备用域抽样同样受突发限流影响但可用。真实用户单次详情只取 1 张，远低于限流阈值；应用内另有双域步进 + 包内缩略图兜底。
+- **数据完整性**：`content_audit.py` 全量通过（主库 100/89/24/2/16 + 资料库 22 栏 39,067 条 363 分卷 + 种子与热更 JSON 一致）；`validate_miniprogram.py` 通过（含文物一致性：60 缩略图在分包、60 详情图在 data/img/relics、imageRatio 与实测一致）；catalog ↔ 分包缩略图 ↔ CDN 详情图 ↔ relic-sources.json 四方对账：数量、id 集合、排列顺序完全一致（60/60/60/60）。
