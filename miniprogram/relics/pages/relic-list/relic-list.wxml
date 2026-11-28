@@ -21,7 +21,13 @@
           <text class="catalog-title" aria-role="heading">博物馆藏品</text>
           <view class="catalog-rule" aria-hidden="true"></view>
           <text class="catalog-subtitle">数字博物馆</text>
-          <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : totalText + ' 件')}}</text>
+          <view wx:if="{{!indexLoading && !indexFailed}}" class="result-count" aria-live="polite">
+            <view wx:if="{{partial && !stalled}}" class="relic-loading-inline">
+              <view class="relic-spinner" aria-hidden="true"></view>
+              <text>已载入 {{loadedText}} / {{totalText}} 件</text>
+            </view>
+            <text wx:else>{{totalText}} 件</text>
+          </view>
         </view>
       </view>
       <view class="cate-heading">
@@ -32,8 +38,9 @@
           <text>{{cateTab === 'type' ? '按时代' : '按器类'}}</text>
         </view>
       </view>
-      <view wx:if="{{indexLoading}}" class="relic-empty">
-        <text>馆藏目录加载中，请稍候。</text>
+      <view wx:if="{{indexLoading}}" class="relic-empty relic-loading" aria-live="polite">
+        <view class="relic-spinner" aria-hidden="true"></view>
+        <text>正在加载馆藏目录</text>
       </view>
       <view wx:elif="{{indexFailed}}" class="relic-empty">
         <text>目录加载失败，请检查网络后重试。</text>
@@ -53,6 +60,7 @@
           </view>
         </view>
       </view>
+      <view wx:if="{{!indexLoading && !indexFailed && stalled}}" class="relic-action more-relics" bindtap="retryIndex" aria-role="button">分块补齐受阻 · 点按重试</view>
     </block>
 
     <!-- 分类内文物网格 -->
@@ -60,7 +68,7 @@
       <view class="gallery-head">
         <view class="gallery-copy">
           <text class="gallery-title" aria-role="heading">{{gridLabel}}</text>
-          <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : count + ' 件')}}</text>
+          <text wx:if="{{!indexLoading && !indexFailed}}" class="result-count" aria-live="polite">{{count}} 件</text>
         </view>
         <view class="filter-trigger" bindtap="openFilter" hover-class="filter-pressed" hover-stay-time="80" aria-role="button"
           aria-label="{{'寻物，器类 ' + types[typeIndex] + '，时代 ' + eras[eraIndex]}}">
@@ -68,8 +76,9 @@
           <text>寻物</text>
         </view>
       </view>
-      <view wx:if="{{indexLoading}}" class="relic-empty">
-        <text>馆藏目录加载中，请稍候。</text>
+      <view wx:if="{{indexLoading}}" class="relic-empty relic-loading" aria-live="polite">
+        <view class="relic-spinner" aria-hidden="true"></view>
+        <text>正在加载馆藏目录</text>
       </view>
       <view wx:elif="{{indexFailed}}" class="relic-empty">
         <text>目录加载失败，请检查网络后重试。</text>
@@ -92,15 +101,21 @@
           </view>
         </view>
       </view>
-      <view wx:elif="{{partial}}" class="relic-empty">
-        <text>该分类的藏品正在补齐，请稍候…</text>
+      <view wx:elif="{{partial}}" class="relic-empty relic-loading" aria-live="polite">
+        <view wx:if="{{!stalled}}" class="relic-spinner" aria-hidden="true"></view>
+        <text>{{stalled ? '该分类的藏品暂未加载完成。' : '正在加载该分类的藏品'}}</text>
       </view>
       <view wx:else class="relic-empty">
         <text>这个时代与器类下暂无藏品。</text>
         <view class="relic-action" bindtap="resetFilters" aria-role="button">返回分类</view>
       </view>
       <view wx:if="{{stalled}}" class="relic-action more-relics" bindtap="retryIndex" aria-role="button">分块补齐受阻 · 点按重试</view>
-      <view wx:elif="{{partial}}" class="relic-note" aria-live="polite">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>
+      <view wx:elif="{{!indexLoading && !indexFailed && partial && rows.length}}" class="relic-note" aria-live="polite">
+        <view class="relic-loading-inline">
+          <view class="relic-spinner" aria-hidden="true"></view>
+          <text>已载入 {{loadedText}} / {{totalText}} 件</text>
+        </view>
+      </view>
       <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
     </block>
   </view>

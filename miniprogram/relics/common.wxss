@@ -39,6 +39,39 @@
   line-height: 1.6;
   text-align: center;
 }
+.relic-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.relic-loading-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.relic-spinner {
+  flex: none;
+  width: 34rpx;
+  height: 34rpx;
+  box-sizing: border-box;
+  border: 3rpx solid #E8E1D7;
+  border-top-color: #A34A3E;
+  border-radius: 50%;
+  animation: relic-spin 0.85s linear infinite;
+}
+
+.relic-loading-inline .relic-spinner {
+  width: 22rpx;
+  height: 22rpx;
+  border-width: 2rpx;
+}
+
+@keyframes relic-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .relic-spinner { animation: none; } }
+
 .relic-action {
   display: flex;
   align-items: center;

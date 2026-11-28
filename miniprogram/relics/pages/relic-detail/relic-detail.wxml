@@ -12,8 +12,9 @@
       <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
     </view>
 
-    <view wx:if="{{loading}}" class="relic-empty">
-      <text>目录加载中，请稍候。</text>
+    <view wx:if="{{loading}}" class="relic-empty relic-loading" aria-live="polite">
+      <view class="relic-spinner" aria-hidden="true"></view>
+      <text>正在加载文物详情</text>
     </view>
     <view wx:elif="{{failed}}" class="relic-empty">
       <text>网络暂不可用，目录分块补齐受阻。</text>
