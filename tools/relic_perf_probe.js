@@ -113,19 +113,21 @@ function main() {
 
   const t0 = Date.now();
   list.onLoad();
-  const firstCalls = ledger.calls;
-  const firstBytes = ledger.bytes;
-  const firstRows = list.data.rows.length;
-  const rowBytes = ledger.entries.slice(0, firstCalls)
-    .filter((e) => e.keys.indexOf('rows') >= 0)
-    .reduce((s, e) => s + e.bytes, 0);
-  const chromeBytes = firstBytes - rowBytes;
-  const perRow = Math.round(rowBytes / firstRows);
+  const cateCalls = ledger.calls;
+  const cateBytes = ledger.bytes;
+  const cateCards = list.data.cateCards.length;
+  const headKB = Math.round(fs.statSync(path.join(ROOT, 'data', 'relics', 'index-head.json')).size / 1024);
+
+  // 点分类进网格（青铜）
+  const beforeGrid = ledger.calls;
+  list.enterGrid(1, 0);
+  const gridCall = ledger.entries[beforeGrid];
+  const gridRows = list.data.rows.length;
 
   list.loadMore();
   list.onReachBottom();
-  const tailCalls = ledger.calls - firstCalls;
-  const tailBytes = ledger.entries.slice(firstCalls).reduce((s, e) => s + e.bytes, 0);
+  const tailCalls = ledger.calls - cateCalls - 1;
+  const tailBytes = ledger.entries.slice(beforeGrid + 1).reduce((s, e) => s + e.bytes, 0);
 
   // 反事实：一次渲染全部行（同一映射规则）
   const fullBytes = JSON.stringify(index.rows).length;
@@ -135,12 +137,12 @@ function main() {
   const filterRows = list.data.rows.length;
 
   const partRequests = requests.filter((u) => u.indexOf('index-part-') >= 0).length;
-  console.log(`== 文物列表（索引 ${index.total} 行，onLoad 全流程 ${Date.now() - t0}ms） ==`);
-  console.log(`首屏渲染 ${firstRows} 行（全量 ${index.total} 行）；head ${Math.round(fs.statSync(path.join(ROOT, 'data', 'relics', 'index-head.json')).size / 1024)}KB，分块补齐 ${partRequests} 次后台请求`);
-  console.log(`onLoad setData ${firstCalls} 次 / ${kb(firstBytes)}（rows ${kb(rowBytes)} + 补齐进度/框架状态 ${kb(chromeBytes)}）`);
-  console.log(`行卡载荷 ≈ ${perRow} 字节/行；一次渲染 ${index.total} 行需 ${kb(fullBytes)}，分页后首屏只传 ${kb(rowBytes)}（省 ${(100 * (1 - rowBytes / fullBytes)).toFixed(1)}%）`);
+  console.log(`== 文物列表（索引 ${index.total} 行，分类首屏 ${Date.now() - t0}ms） ==`);
+  console.log(`首屏为分类视图：${cateCards} 张器类卡（计数/封面来自 head ${headKB}KB 单请求），onLoad setData ${cateCalls} 次 / ${kb(cateBytes)}`);
+  console.log(`点「青铜」进网格：1 次 setData / ${gridCall.bytes} 字节（rows ${gridRows} 行）`);
+  console.log(`行卡载荷 ≈ ${Math.round(gridCall.bytes / gridRows)} 字节/行；一次渲染 ${index.total} 行需 ${kb(fullBytes)}，分页后首屏只传 ${kb(gridCall.bytes)}（省 ${(100 * (1 - gridCall.bytes / fullBytes)).toFixed(1)}%）`);
   console.log(`续载 2 屏：${tailCalls} 次 setData / 合计 ${kb(tailBytes)}（rows[offset+i] 逐项追加）`);
-  console.log(`切筛选青铜：1 次 setData / ${filterCall.bytes} 字节（rows 重置 ${filterRows} 行 + 计数）`);
+  console.log(`网格内切筛选：1 次 setData / ${filterCall.bytes} 字节（rows 重置 ${filterRows} 行 + 计数）`);
   console.log(`wx.request 次数（列表冷启动）：首屏 1 次 head + 后台补齐 ${partRequests} 次 part = ${requests.length}（缩略图走 <image> 不计）`);
 
   requests.length = 0;

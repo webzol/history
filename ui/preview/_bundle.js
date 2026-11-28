@@ -3630,6 +3630,25 @@ __register('/relics/catalog.js', function (require, module, exports) {
 const TYPES = ['青铜', '陶瓷', '玉器', '书画', '雕塑', '漆器', '玻璃珐琅', '其他'];
 const ERAS = ['新石器时代', '二里头文化', '商', '西周', '东周', '汉', '魏晋南北朝', '唐', '五代', '宋', '元', '明', '清'];
 
+// 筛选时代 → 索引行显示期名归组（北宋/金/南朝…并入所属时代）。
+// 单一来源：relicData.js 的分类计数与 relic-list.js 的行筛选共用；
+// 构建端 tools/build_relics_full.py 的 ERA_ALIAS 为其 Python 镜像，改动须三处同步。
+const ERA_MATCH = {
+  '新石器时代': ['新石器时代'],
+  '二里头文化': ['二里头文化'],
+  '商': ['商'],
+  '西周': ['西周'],
+  '东周': ['东周', '春秋', '战国'],
+  '汉': ['汉', '秦'],
+  '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
+  '唐': ['唐'],
+  '五代': ['五代'],
+  '宋': ['宋', '辽', '金', '西夏'],
+  '元': ['元'],
+  '明': ['明'],
+  '清': ['清']
+};
+
 // 按年代先后排列。以文物本体的形制与用途为主，馆方的断代与出土地随文说明。
 // imageRatio = 详情图 高/宽 × 100，须与 tools/prepare_relic_images.py 的输出一致（改图须同步改这里）。
 const RELICS = [
@@ -4039,7 +4058,7 @@ function shareMessage(relic) {
   };
 }
 
-module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, DETAIL_HOSTS, imagePath, detailUrls, sourceFor, shareMessage };
+module.exports = { TYPES, ERAS, ERA_MATCH, RELICS, LIST_PATH, DETAIL_PATH, DETAIL_HOSTS, imagePath, detailUrls, sourceFor, shareMessage };
 
 });
 __register('/relics/relicData.js', function (require, module, exports) {
@@ -4051,7 +4070,7 @@ __register('/relics/relicData.js', function (require, module, exports) {
 // 分块交付同 utils/apkData.js「不断层」：head 首屏先回调，后台 4 并发补齐 part，
 // 只合并「head + 连续成功前缀」，失败退避重试，每接上一块再回调一次；残缺绝不写全量缓存。
 // 精修 60 件（catalog.js）始终走包内快路径，批量条目走远端。
-const { RELICS, sourceFor, detailUrls, imagePath } = require('./catalog.js');
+const { RELICS, TYPES, ERAS, ERA_MATCH, sourceFor, detailUrls, imagePath } = require('./catalog.js');
 
 const HEAD_URLS = [
   'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-head.json',
@@ -4177,6 +4196,50 @@ function validateDetail(data) {
   return data;
 }
 
+// 索引行显示期名 → 筛选时代（与构建端 ERA_ALIAS 同规则）
+function eraOfPeriod(periodText) {
+  const aliases = ERA_MATCH;
+  for (let i = 0; i < ERAS.length; i += 1) {
+    const list = aliases[ERAS[i]] || [];
+    for (let j = 0; j < list.length; j += 1) {
+      if (periodText.indexOf(list[j]) >= 0) return ERAS[i];
+    }
+  }
+  return '其他';
+}
+
+// 从行集计算分类元数据（计数 + 封面）。完整行集（全量缓存命中）时替代 head 元数据：
+// 封面取该类第一件精修件（包内缩略图秒开），否则该类第一件 —— 与构建端 typeCovers/eraCovers 同规则。
+function cateMetaFromRows(rows) {
+  const typeCounts = {};
+  const eraCounts = {};
+  const joint = {};
+  const firstType = {};
+  const firstEra = {};
+  const curType = {};
+  const curEra = {};
+  rows.forEach((row) => {
+    const era = eraOfPeriod(row.period);
+    typeCounts[row.type] = (typeCounts[row.type] || 0) + 1;
+    if (era !== '其他') eraCounts[era] = (eraCounts[era] || 0) + 1;
+    if (row.type && era !== '其他') {
+      joint[row.type] = joint[row.type] || {};
+      joint[row.type][era] = (joint[row.type][era] || 0) + 1;
+    }
+    if (!firstType[row.type]) firstType[row.type] = row.id;
+    if (!firstEra[era]) firstEra[era] = row.id;
+    if (curatedThumb[row.id]) {
+      if (!curType[row.type]) curType[row.type] = row.id;
+      if (!curEra[era]) curEra[era] = row.id;
+    }
+  });
+  const typeCovers = {};
+  const eraCovers = {};
+  TYPES.forEach((t) => { typeCovers[t] = curType[t] || firstType[t] || ''; });
+  ERAS.forEach((e) => { eraCovers[e] = curEra[e] || firstEra[e] || ''; });
+  return { types: TYPES, eras: ERAS, typeCounts, eraCounts, typeCovers, eraCovers, joint };
+}
+
 // head 首屏回调后，后台补齐剩余分块并按序合并（不断层，同 apkData.fetchParts）。
 const PART_CONCURRENCY = 4;
 const PART_RETRY_DELAYS = [1500, 4000]; // 首轮之后再补两轮，避开 jsDelivr 限流窗口
@@ -4204,7 +4267,7 @@ function assemble(head, cb) {
       memory.full = list;
       writeCache(FULL_KEY, list); // 全部到齐才写全量缓存（残缺绝不落盘）
     }
-    const info = { partial: !complete, total, loaded: list.length, stalled: !!stalled };
+    const info = { partial: !complete, total, loaded: list.length, stalled: !!stalled, head };
     const subs = assembling || [];
     if (complete || stalled) assembling = null;
     subs.forEach((fn) => {
@@ -4274,9 +4337,9 @@ function loadIndex(cb) {
     if (head.parts <= 1) {
       memory.full = head.rows;
       writeCache(FULL_KEY, head.rows);
-      return cb(head.rows, { partial: false, total: head.total, loaded: head.rows.length });
+      return cb(head.rows, { partial: false, total: head.total, loaded: head.rows.length, head });
     }
-    cb(head.rows, { partial: true, total: head.total, loaded: head.rows.length });
+    cb(head.rows, { partial: true, total: head.total, loaded: head.rows.length, head });
     assemble(head, cb);
   });
 }
@@ -4351,7 +4414,7 @@ function thumbAlt(src) {
   return '';
 }
 
-module.exports = { loadIndex, loadDetail, thumbFor, thumbAlt, isCurated };
+module.exports = { loadIndex, loadDetail, thumbFor, thumbAlt, isCurated, cateMetaFromRows };
 
 // 自测专用：清空模块内存态（本地缓存由自测自行清理）
 module.exports._reset = () => {
@@ -9610,7 +9673,7 @@ __register('/relics/pages/relic-list/relic-list.js', function (require, module, 
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
 const relicData = require('../../relicData.js');
-const { ERAS, TYPES, DETAIL_PATH, shareMessage } = require('../../catalog.js');
+const { ERAS, TYPES, ERA_MATCH, DETAIL_PATH, shareMessage } = require('../../catalog.js');
 
 const PAGE_SIZE = 8;
 const TYPE_OPTIONS = ['全部', ...TYPES];
@@ -9619,6 +9682,11 @@ const ERA_OPTIONS = ['不限', ...ERAS];
 Page('project://relics/pages/relic-list/relic-list.js', {
   data: {
     fontClass: 'm',
+    // cate 分类首屏（器类/时代卡片，计数来自 head 预计算，秒开）| grid 分类内文物网格
+    mode: 'cate',
+    cateTab: 'type',
+    cateCards: [],
+    gridLabel: '',
     types: TYPE_OPTIONS,
     eras: ERA_OPTIONS,
     typeIndex: 0,
@@ -9641,6 +9709,7 @@ Page('project://relics/pages/relic-list/relic-list.js', {
     font.apply(this);
     this.all = [];
     this.matches = [];
+    this.cateMeta = null;
     this.rendered = false;
     this.loadCatalog();
   },
@@ -9665,6 +9734,7 @@ Page('project://relics/pages/relic-list/relic-list.js', {
           if (matchesFilter(rows[i], this.data.typeIndex, this.data.eraIndex)) this.matches.push(rows[i]);
         }
       }
+      if (!this.cateMeta) this.readMeta(info);
       const total = (info && info.total) || rows.length;
       const patch = {
         indexLoading: false,
@@ -9672,20 +9742,111 @@ Page('project://relics/pages/relic-list/relic-list.js', {
         partial: !!(info && info.partial),
         stalled: !!(info && info.stalled),
         total,
-        count: this.matches.length,
         loadedText: String(rows.length),
-        totalText: String(total),
-        hasMore: this.data.rows.length < this.matches.length
+        totalText: String(total)
       };
-      if (!this.rendered) {
-        this.rendered = true;
-        const { patch: rowPatch, hasMore } = this.appendRows(0);
-        this.setData(Object.assign(patch, rowPatch, { hasMore }));
+      if (this.data.mode === 'cate') {
+        // 分类首屏：head 元数据到位即出卡片（计数/封面精确，不等补齐）；补齐回调不重复建卡
+        if (!this.cateBuilt) this.buildCateCards();
+        this.setData(patch);
         return;
       }
-      // 分块补齐：只刷新计数/进度，不动已渲染行（滚动位置不跳，下滑续载取自 matches）
+      patch.count = this.displayCount(this.data.typeIndex, this.data.eraIndex);
+      patch.hasMore = this.data.rows.length < this.matches.length;
+      if (!this.rendered) {
+        this.rendered = true;
+        const { patch: rowPatch } = this.appendRows(0);
+        this.setData(Object.assign(patch, rowPatch));
+        return;
+      }
+      // 分块补齐：首屏未满先补（如晚出分类先于所在分块到达），否则只刷新计数/进度，
+      // 不动已渲染行（滚动位置不跳，下滑续载取自 matches）
+      if (this.data.rows.length < PAGE_SIZE && this.matches.length > this.data.rows.length) {
+        const { patch: rowPatch, hasMore } = this.appendRows(this.data.rows.length);
+        patch.hasMore = hasMore;
+        this.setData(Object.assign(patch, rowPatch));
+        return;
+      }
       this.setData(patch);
     });
+  },
+
+  // 分类元数据：head 带（精确，部分索引可用）或完整行集计算（全量缓存命中路径）
+  readMeta(info) {
+    const h = info && info.head;
+    if (h && h.typeCounts && h.typeCovers) {
+      this.cateMeta = {
+        types: h.types, eras: h.eras,
+        typeCounts: h.typeCounts, eraCounts: h.eraCounts,
+        typeCovers: h.typeCovers, eraCovers: h.eraCovers, joint: h.joint
+      };
+    } else if (this.all.length && (!info || !info.partial)) {
+      this.cateMeta = relicData.cateMetaFromRows(this.all);
+    }
+  },
+
+  buildCateCards() {
+    const meta = this.cateMeta;
+    if (!meta) return;
+    this.cateBuilt = true;
+    const byType = this.data.cateTab === 'type';
+    const names = byType ? meta.types : meta.eras;
+    const counts = byType ? meta.typeCounts : meta.eraCounts;
+    const covers = byType ? meta.typeCovers : meta.eraCovers;
+    this.setData({
+      cateCards: (names || []).map((name) => ({
+        key: (byType ? 't-' : 'e-') + name,
+        name,
+        count: counts[name] || 0,
+        thumb: covers[name] ? relicData.thumbFor(covers[name]) : ''
+      }))
+    });
+  },
+
+  switchCateTab(e) {
+    const tab = e.currentTarget.dataset.tab;
+    if (!tab || tab === this.data.cateTab) return;
+    this.setData({ cateTab: tab });
+    this.buildCateCards();
+  },
+
+  // 分类封面 CDN 失败换备用域一次
+  onCateThumbError(e) {
+    const i = e.currentTarget.dataset.index;
+    const card = this.data.cateCards[i];
+    const alt = relicData.thumbAlt(card && card.thumb);
+    if (alt) this.setData({ [`cateCards[${i}].thumb`]: alt });
+  },
+
+  // 分类卡进入网格：设置对应维度，另一维清零
+  openCategory(e) {
+    const kind = e.currentTarget.dataset.kind;
+    const index = Number(e.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    this.enterGrid(kind === 'type' ? index + 1 : 0, kind === 'era' ? index + 1 : 0);
+  },
+
+  enterGrid(typeIndex, eraIndex) {
+    this.matches = this.all.filter(item => matchesFilter(item, typeIndex, eraIndex));
+    const { patch, hasMore } = this.appendRows(0);
+    this.rendered = true;
+    this.setData({
+      mode: 'grid',
+      typeIndex,
+      eraIndex,
+      gridLabel: gridLabel(typeIndex, eraIndex),
+      filterSheet: null,
+      count: this.displayCount(typeIndex, eraIndex),
+      hasMore,
+      indexLoading: false,
+      indexFailed: false,
+      ...patch
+    });
+  },
+
+  backToCate() {
+    this.setData({ mode: 'cate', typeIndex: 0, eraIndex: 0, gridLabel: '', filterSheet: null });
+    this.buildCateCards(); // 元数据晚到时补建
   },
 
   retryIndex() {
@@ -9712,19 +9873,38 @@ Page('project://relics/pages/relic-list/relic-list.js', {
     const index = Number(e.currentTarget.dataset.index);
     if (!sheet || !Number.isInteger(index) || index < 0 || index >= sheet.options.length) return;
     if (index === sheet.selected) return this.closeFilter();
-    this.updateFilters(sheet.kind === 'type' ? index : this.data.typeIndex,
-      sheet.kind === 'era' ? index : this.data.eraIndex);
+    const typeIndex = sheet.kind === 'type' ? index : this.data.typeIndex;
+    const eraIndex = sheet.kind === 'era' ? index : this.data.eraIndex;
+    if (!typeIndex && !eraIndex) return this.backToCate(); // 两维都清空 → 回分类首屏
+    this.updateFilters(typeIndex, eraIndex);
   },
 
   noop() {},
 
-  resetFilters() { this.updateFilters(0, 0); },
+  // 空态「返回分类」：两维清空回首屏
+  resetFilters() { this.backToCate(); },
 
   updateFilters(typeIndex, eraIndex) {
     this.matches = this.all.filter(item => matchesFilter(item, typeIndex, eraIndex));
     const { patch, hasMore } = this.appendRows(0);
-    this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length,
-      hasMore, indexLoading: false, indexFailed: false, ...patch });
+    this.setData({ typeIndex, eraIndex, filterSheet: null, gridLabel: gridLabel(typeIndex, eraIndex),
+      count: this.displayCount(typeIndex, eraIndex), hasMore,
+      indexLoading: false, indexFailed: false, ...patch });
+  },
+
+  // 网格计数：部分索引时用 head 预计数的精确值（该类条目可能还没载入，实际匹配数会虚小），
+  // 补齐后 matches 即精确值
+  displayCount(typeIndex, eraIndex) {
+    if (!this.data.partial) return this.matches.length;
+    const meta = this.cateMeta;
+    if (!meta) return this.matches.length;
+    if (typeIndex && eraIndex) {
+      const row = meta.joint && meta.joint[TYPES[typeIndex - 1]];
+      return (row && row[ERAS[eraIndex - 1]]) || 0;
+    }
+    if (typeIndex) return (meta.typeCounts && meta.typeCounts[TYPES[typeIndex - 1]]) || 0;
+    if (eraIndex) return (meta.eraCounts && meta.eraCounts[ERAS[eraIndex - 1]]) || 0;
+    return this.matches.length;
   },
 
   // 每屏只映射展示字段；续载按 rows[offset+i] 逐项路径追加（ setData 单键数组
@@ -9774,32 +9954,24 @@ Page('project://relics/pages/relic-list/relic-list.js', {
   }
 });
 
-// 时代筛选：索引行存显示期名（北宋/金/南朝…），按别名归组到 13 个筛选时代
+// 时代筛选：索引行存显示期名（北宋/金/南朝…），按别名归组到 13 个筛选时代（共用 catalog.ERA_MATCH）
 function matchesFilter(item, typeIndex, eraIndex) {
   if (typeIndex && item.type !== TYPE_OPTIONS[typeIndex]) return false;
   if (!eraIndex) return true;
   const aliases = ERA_MATCH[ERA_OPTIONS[eraIndex]];
   return !!aliases && aliases.some((alias) => item.period.indexOf(alias) >= 0);
 }
-const ERA_MATCH = {
-  '新石器时代': ['新石器时代'],
-  '二里头文化': ['二里头文化'],
-  '商': ['商'],
-  '西周': ['西周'],
-  '东周': ['东周', '春秋', '战国'],
-  '汉': ['汉', '秦'],
-  '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
-  '唐': ['唐'],
-  '五代': ['五代'],
-  '宋': ['宋', '辽', '金', '西夏'],
-  '元': ['元'],
-  '明': ['明'],
-  '清': ['清']
-};
+
+function gridLabel(typeIndex, eraIndex) {
+  const parts = [];
+  if (typeIndex) parts.push(TYPE_OPTIONS[typeIndex]);
+  if (eraIndex) parts.push(ERA_OPTIONS[eraIndex]);
+  return parts.join(' · ');
+}
 
 });
-__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <view class=\"filter-card\">\r\n      <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\r\n        <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n      <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\r\n        <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"gallery-head\">\r\n      <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\r\n      <text class=\"result-count\" aria-live=\"polite\">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>\r\n    </view>\r\n    <view wx:if=\"{{indexLoading}}\" class=\"relic-empty\">\r\n      <text>馆藏目录加载中，请稍候。</text>\r\n    </view>\r\n    <view wx:elif=\"{{indexFailed}}\" class=\"relic-empty\">\r\n      <text>目录加载失败，请检查网络后重试。</text>\r\n      <view class=\"relic-action\" bindtap=\"retryIndex\" aria-role=\"button\">重新加载</view>\r\n    </view>\r\n    <view wx:elif=\"{{count}}\" class=\"relic-grid\">\r\n      <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\r\n        hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\r\n        <view class=\"relic-cover\">\r\n          <image class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load binderror=\"onThumbError\" data-index=\"{{index}}\" aria-hidden=\"true\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view class=\"relic-card-copy\">\r\n          <text class=\"relic-name\">{{item.title}}</text>\r\n          <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>这个时代与器类下暂无藏品。</text>\r\n      <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">清除筛选</view>\r\n    </view>\r\n    <view wx:if=\"{{stalled}}\" class=\"relic-action more-relics\" bindtap=\"retryIndex\" aria-role=\"button\">分块补齐受阻 · 点按重试</view>\r\n    <view wx:elif=\"{{partial}}\" class=\"relic-note\" aria-live=\"polite\">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>\r\n    <view wx:if=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\r\n  </view>\r\n\r\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\r\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\r\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"filter-head\">\r\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\r\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\r\n      </view>\r\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\r\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\r\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\r\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\r\n        </view>\r\n      </scroll-view>\r\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
-__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.filter-card {\r\n  display: flex;\r\n  margin-top: 20rpx;\r\n  padding: 6rpx 10rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n}\r\n.filter-trigger + .filter-trigger::before {\r\n  position: absolute;\r\n  top: 22rpx;\r\n  bottom: 22rpx;\r\n  left: 0;\r\n  width: 1rpx;\r\n  background: rgba(70, 58, 45, 0.09);\r\n  content: '';\r\n}\r\n.filter-trigger {\r\n  position: relative;\r\n  flex: 1 1 0;\r\n  min-width: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  min-height: 44px;\r\n  padding: 6rpx 18rpx 6rpx 24rpx;\r\n  color: #5F5A52;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.filter-label { flex: 0 0 auto; }\r\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\r\n.filter-chevron {\r\n  flex: 0 0 26rpx;\r\n  height: 26rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n.filter-chevron::before {\r\n  width: 11rpx;\r\n  height: 11rpx;\r\n  border-right: 1px solid #8A6A3E;\r\n  border-bottom: 1px solid #8A6A3E;\r\n  transform: translateY(-2rpx) rotate(45deg);\r\n  content: '';\r\n}\r\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\r\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\r\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\r\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\r\n.relic-card {\r\n  width: calc((100% - 18rpx) / 2);\r\n  min-width: 0;\r\n  overflow: hidden;\r\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\r\n}\r\n.relic-card-pressed { opacity: 0.84; }\r\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\r\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\r\n.relic-name {\r\n  display: block;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  overflow-wrap: anywhere;\r\n}\r\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\r\n.relic-meta-type { white-space: nowrap; }\r\n.more-relics { margin-top: 24rpx; }\r\n.relic-note { margin-top: 24rpx; color: #8C857A; font-size: calc(22rpx * var(--fs, 1)); text-align: center; line-height: 1.5; }\r\n\r\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\r\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\r\n.filter-sheet {\r\n  position: absolute;\r\n  inset: auto 0 0;\r\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\r\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\r\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\r\n.filter-title {\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(34rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n}\r\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\r\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\r\n.filter-list { display: block; max-height: 46vh; }\r\n.filter-option {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  padding: 0 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  color: #3B3731;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n}\r\n.filter-option:last-child { border-bottom-color: transparent; }\r\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\r\n.filter-check { font-size: 26rpx; }\r\n.filter-cancel {\r\n  margin-top: 18rpx;\r\n  border-radius: 36rpx;\r\n  background: #EEF0F0;\r\n  color: #5F5A52;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n}\r\n\r\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\r\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\r\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\r\n"; });
+__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <!-- 分类首屏：器类 / 时代 -->\r\n    <block wx:if=\"{{mode === 'cate'}}\">\r\n      <view class=\"cate-tabs\" aria-role=\"tablist\">\r\n        <view class=\"cate-tab {{cateTab === 'type' ? 'active' : ''}}\" data-tab=\"type\" bindtap=\"switchCateTab\"\r\n          hover-class=\"cate-tab-pressed\" hover-stay-time=\"80\" aria-role=\"tab\" aria-selected=\"{{cateTab === 'type'}}\" aria-label=\"按器类浏览\">器类</view>\r\n        <view class=\"cate-tab {{cateTab === 'era' ? 'active' : ''}}\" data-tab=\"era\" bindtap=\"switchCateTab\"\r\n          hover-class=\"cate-tab-pressed\" hover-stay-time=\"80\" aria-role=\"tab\" aria-selected=\"{{cateTab === 'era'}}\" aria-label=\"按时代浏览\">时代</view>\r\n      </view>\r\n      <view class=\"gallery-head\">\r\n        <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\r\n        <text class=\"result-count\" aria-live=\"polite\">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : total + ' 件')}}</text>\r\n      </view>\r\n      <view wx:if=\"{{indexLoading}}\" class=\"relic-empty\">\r\n        <text>馆藏目录加载中，请稍候。</text>\r\n      </view>\r\n      <view wx:elif=\"{{indexFailed}}\" class=\"relic-empty\">\r\n        <text>目录加载失败，请检查网络后重试。</text>\r\n        <view class=\"relic-action\" bindtap=\"retryIndex\" aria-role=\"button\">重新加载</view>\r\n      </view>\r\n      <view wx:else class=\"cate-grid\">\r\n        <view wx:for=\"{{cateCards}}\" wx:key=\"key\" class=\"cate-card\" data-kind=\"{{cateTab}}\" data-index=\"{{index}}\"\r\n          bindtap=\"openCategory\" hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\"\r\n          aria-label=\"{{item.name}}，{{item.count}} 件\">\r\n          <view class=\"cate-cover\">\r\n            <image wx:if=\"{{item.thumb}}\" class=\"cate-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFill\" lazy-load\r\n              binderror=\"onCateThumbError\" data-index=\"{{index}}\" aria-hidden=\"true\"></image>\r\n            <view wx:else class=\"cate-thumb cate-thumb-none\" aria-hidden=\"true\"></view>\r\n            <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n            <view class=\"cate-count\" aria-hidden=\"true\">{{item.count}} 件</view>\r\n          </view>\r\n          <view class=\"cate-copy\">\r\n            <text class=\"cate-name\">{{item.name}}</text>\r\n            <text class=\"cate-meta\">{{item.count}} 件</text>\r\n          </view>\r\n        </view>\r\n      </view>\r\n    </block>\r\n\r\n    <!-- 分类内文物网格 -->\r\n    <block wx:else>\r\n      <view class=\"cate-crumb\" bindtap=\"backToCate\" hover-class=\"cate-tab-pressed\" hover-stay-time=\"80\"\r\n        aria-role=\"button\" aria-label=\"返回分类首屏\">\r\n        <text class=\"cate-crumb-arrow\" aria-hidden=\"true\">‹</text>\r\n        <text>全部分类</text>\r\n      </view>\r\n      <view class=\"filter-card\">\r\n        <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\r\n          <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\r\n          <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\r\n          <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\r\n          <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n        </view>\r\n      </view>\r\n\r\n      <view class=\"gallery-head\">\r\n        <text class=\"gallery-title\" aria-role=\"heading\">{{gridLabel}}</text>\r\n        <text class=\"result-count\" aria-live=\"polite\">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>\r\n      </view>\r\n      <view wx:if=\"{{indexLoading}}\" class=\"relic-empty\">\r\n        <text>馆藏目录加载中，请稍候。</text>\r\n      </view>\r\n      <view wx:elif=\"{{indexFailed}}\" class=\"relic-empty\">\r\n        <text>目录加载失败，请检查网络后重试。</text>\r\n        <view class=\"relic-action\" bindtap=\"retryIndex\" aria-role=\"button\">重新加载</view>\r\n      </view>\r\n      <view wx:elif=\"{{!count}}\" class=\"relic-empty\">\r\n        <text>这个时代与器类下暂无藏品。</text>\r\n        <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">返回分类</view>\r\n      </view>\r\n      <view wx:elif=\"{{rows.length}}\" class=\"relic-grid\">\r\n        <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\r\n          hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\r\n          <view class=\"relic-cover\">\r\n            <image class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load binderror=\"onThumbError\" data-index=\"{{index}}\" aria-hidden=\"true\"></image>\r\n            <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n          </view>\r\n          <view class=\"relic-card-copy\">\r\n            <text class=\"relic-name\">{{item.title}}</text>\r\n            <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\r\n          </view>\r\n        </view>\r\n      </view>\r\n      <view wx:elif=\"{{partial}}\" class=\"relic-empty\">\r\n        <text>该分类的藏品正在补齐，请稍候…</text>\r\n      </view>\r\n      <view wx:else class=\"relic-empty\">\r\n        <text>这个时代与器类下暂无藏品。</text>\r\n        <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">返回分类</view>\r\n      </view>\r\n      <view wx:if=\"{{stalled}}\" class=\"relic-action more-relics\" bindtap=\"retryIndex\" aria-role=\"button\">分块补齐受阻 · 点按重试</view>\r\n      <view wx:elif=\"{{partial}}\" class=\"relic-note\" aria-live=\"polite\">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>\r\n      <view wx:if=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\r\n    </block>\r\n  </view>\r\n\r\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\r\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\r\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"filter-head\">\r\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\r\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\r\n      </view>\r\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\r\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\r\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\r\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\r\n        </view>\r\n      </scroll-view>\r\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
+__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n/* 分类首屏：器类 / 时代分段 + 分类卡 */\r\n.cate-tabs {\r\n  display: flex;\r\n  margin-top: 20rpx;\r\n  padding: 6rpx;\r\n  border-radius: 36rpx;\r\n  background: #EEF0F0;\r\n}\r\n.cate-tab {\r\n  flex: 1 1 0;\r\n  min-height: 44px;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  border-radius: 32rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(28rpx * var(--fs, 1));\r\n  letter-spacing: 0.10em;\r\n  color: #5F5A52;\r\n}\r\n.cate-tab.active {\r\n  background: #FCFBF8;\r\n  color: #A34A3E;\r\n  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10), inset 0 0 0 1rpx rgba(163, 74, 62, 0.16);\r\n}\r\n.cate-tab-pressed { opacity: 0.84; }\r\n.cate-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\r\n.cate-card {\r\n  width: calc((100% - 18rpx) / 2);\r\n  min-width: 0;\r\n  overflow: hidden;\r\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\r\n}\r\n.cate-cover { position: relative; padding-top: 72%; background: #F3EFE6; }\r\n.cate-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.cate-thumb-none { background: linear-gradient(160deg, #F3EFE6, #EAE3D5); }\r\n.cate-cover .cover-fade { position: absolute; inset: auto 0 0; height: 46%; background: linear-gradient(180deg, rgba(31, 29, 25, 0), rgba(31, 29, 25, 0.34)); }\r\n.cate-count {\r\n  position: absolute;\r\n  right: 14rpx;\r\n  bottom: 12rpx;\r\n  padding: 4rpx 14rpx;\r\n  border-radius: 24rpx;\r\n  background: rgba(252, 251, 248, 0.92);\r\n  color: #6B5036;\r\n  font-size: calc(20rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.cate-copy { padding: 16rpx 20rpx 20rpx; }\r\n.cate-name {\r\n  display: block;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(29rpx * var(--fs, 1));\r\n  letter-spacing: 0.04em;\r\n  line-height: 1.4;\r\n}\r\n.cate-meta { display: block; margin-top: 4rpx; color: #8C857A; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\r\n.cate-crumb {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6rpx;\r\n  margin-top: 20rpx;\r\n  padding: 8rpx 22rpx 8rpx 16rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n  color: #6B5036;\r\n  font-size: calc(23rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  box-shadow: inset 0 0 0 1rpx rgba(70, 58, 45, 0.06);\r\n}\r\n.cate-crumb-arrow { font-size: 26rpx; line-height: 1; }\r\n\r\n.filter-card {\r\n  display: flex;\r\n  margin-top: 20rpx;\r\n  padding: 6rpx 10rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n}\r\n.filter-trigger + .filter-trigger::before {\r\n  position: absolute;\r\n  top: 22rpx;\r\n  bottom: 22rpx;\r\n  left: 0;\r\n  width: 1rpx;\r\n  background: rgba(70, 58, 45, 0.09);\r\n  content: '';\r\n}\r\n.filter-trigger {\r\n  position: relative;\r\n  flex: 1 1 0;\r\n  min-width: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  min-height: 44px;\r\n  padding: 6rpx 18rpx 6rpx 24rpx;\r\n  color: #5F5A52;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.filter-label { flex: 0 0 auto; }\r\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\r\n.filter-chevron {\r\n  flex: 0 0 26rpx;\r\n  height: 26rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n.filter-chevron::before {\r\n  width: 11rpx;\r\n  height: 11rpx;\r\n  border-right: 1px solid #8A6A3E;\r\n  border-bottom: 1px solid #8A6A3E;\r\n  transform: translateY(-2rpx) rotate(45deg);\r\n  content: '';\r\n}\r\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\r\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\r\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\r\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\r\n.relic-card {\r\n  width: calc((100% - 18rpx) / 2);\r\n  min-width: 0;\r\n  overflow: hidden;\r\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\r\n}\r\n.relic-card-pressed { opacity: 0.84; }\r\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\r\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\r\n.relic-name {\r\n  display: block;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  overflow-wrap: anywhere;\r\n}\r\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\r\n.relic-meta-type { white-space: nowrap; }\r\n.more-relics { margin-top: 24rpx; }\r\n.relic-note { margin-top: 24rpx; color: #8C857A; font-size: calc(22rpx * var(--fs, 1)); text-align: center; line-height: 1.5; }\r\n\r\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\r\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\r\n.filter-sheet {\r\n  position: absolute;\r\n  inset: auto 0 0;\r\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\r\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\r\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\r\n.filter-title {\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(34rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n}\r\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\r\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\r\n.filter-list { display: block; max-height: 46vh; }\r\n.filter-option {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  padding: 0 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  color: #3B3731;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n}\r\n.filter-option:last-child { border-bottom-color: transparent; }\r\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\r\n.filter-check { font-size: 26rpx; }\r\n.filter-cancel {\r\n  margin-top: 18rpx;\r\n  border-radius: 36rpx;\r\n  background: #EEF0F0;\r\n  color: #5F5A52;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n}\r\n\r\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\r\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\r\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\r\n"; });
 __register('/relics/pages/relic-detail/relic-detail.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');

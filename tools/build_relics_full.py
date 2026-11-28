@@ -527,6 +527,9 @@ def main():
     type_counts = {t: 0 for t in TYPES}
     era_counts = {e: 0 for e in ERAS}
     joint = {t: {e: 0 for e in ERAS} for t in TYPES}
+    # 分类封面：该类第一件精修件优先（包内缩略图秒开），否则该类第一件；
+    # 与 relics/relicData.js 的 cateMetaFromRows 保持同一规则。
+    first_type, first_era, cur_type, cur_era = {}, {}, {}, {}
     for row in rows:
         era = era_of_period(row["period"])
         if row["type"] in type_counts:
@@ -535,6 +538,13 @@ def main():
             era_counts[era] += 1
         if row["type"] in joint and era in joint[row["type"]]:
             joint[row["type"]][era] += 1
+        first_type.setdefault(row["type"], row["id"])
+        first_era.setdefault(era, row["id"])
+        if row["id"] in curated_ids:
+            cur_type.setdefault(row["type"], row["id"])
+            cur_era.setdefault(era, row["id"])
+    type_covers = {t: cur_type.get(t) or first_type.get(t) for t in TYPES}
+    era_covers = {e: cur_era.get(e) or first_era.get(e) for e in ERAS}
 
     head_rows = rows[:STEP]
     head = {
@@ -546,6 +556,8 @@ def main():
         "eras": ERAS,
         "typeCounts": type_counts,
         "eraCounts": era_counts,
+        "typeCovers": type_covers,
+        "eraCovers": era_covers,
         "joint": joint,
         "rows": head_rows,
     }

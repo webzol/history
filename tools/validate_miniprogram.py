@@ -227,8 +227,8 @@ def check_relic_shards(curated_ratio):
         errors.append(f"relics 分片：parts {parts} 与 total/step 不一致")
     if len(head_rows) != min(total, step):
         errors.append(f"relics 分片：head 行数 {len(head_rows)} 应为 {min(total, step)}")
-    for field in ("types", "eras", "typeCounts", "eraCounts", "joint"):
-        if not isinstance(head.get(field), dict if field in ("typeCounts", "eraCounts", "joint") else list):
+    for field in ("types", "eras", "typeCounts", "eraCounts", "typeCovers", "eraCovers", "joint"):
+        if not isinstance(head.get(field), dict if field in ("typeCounts", "eraCounts", "typeCovers", "eraCovers", "joint") else list):
             errors.append(f"relics 分片：head 缺少 {field}")
     if errors:
         return errors  # 结构不完整时不再往下对账
@@ -292,6 +292,35 @@ def check_relic_shards(curated_ratio):
         errors.append("relics 分片：head.eraCounts 与全量行重算不一致")
     if head.get("joint") != joint:
         errors.append("relics 分片：head.joint 与全量行重算不一致")
+
+    # 分类封面契约：该类第一件精修件优先，否则该类第一件；封面 id 必须在目录内且归属该类
+    row_by_id = {row.get("id"): row for row in rows}
+    first_type, first_era, cur_type, cur_era = {}, {}, {}, {}
+    for row in rows:
+        era = era_of(row.get("period") or "")
+        first_type.setdefault(row.get("type"), row.get("id"))
+        first_era.setdefault(era, row.get("id"))
+        if row.get("id") in curated_ratio:
+            cur_type.setdefault(row.get("type"), row.get("id"))
+            cur_era.setdefault(era, row.get("id"))
+    expect_type_covers = {t: cur_type.get(t) or first_type.get(t) or "" for t in head["types"]}
+    expect_era_covers = {e: cur_era.get(e) or first_era.get(e) or "" for e in head["eras"]}
+    if head.get("typeCovers") != expect_type_covers:
+        errors.append("relics 分片：head.typeCovers 与「精修优先、否则首件」规则重算不一致")
+    if head.get("eraCovers") != expect_era_covers:
+        errors.append("relics 分片：head.eraCovers 与「精修优先、否则首件」规则重算不一致")
+    for cat, cover_id in (head.get("typeCovers") or {}).items():
+        row = row_by_id.get(cover_id)
+        if cat not in type_counts:
+            errors.append(f"relics 分片：typeCovers 含未知器类 {cat}")
+        elif not row or row.get("type") != cat:
+            errors.append(f"relics 分片：器类封面 {cat} → {cover_id} 不属于该类")
+    for cat, cover_id in (head.get("eraCovers") or {}).items():
+        row = row_by_id.get(cover_id)
+        if cat not in era_counts:
+            errors.append(f"relics 分片：eraCovers 含未知时代 {cat}")
+        elif not row or era_of(row.get("period") or "") != cat:
+            errors.append(f"relics 分片：时代封面 {cat} → {cover_id} 不属于该时代")
 
     detail_entries = {}
     for n in range(parts):

@@ -12,48 +12,101 @@
       <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
     </view>
 
-    <view class="filter-card">
-      <view class="filter-trigger" data-kind="type" bindtap="openFilter" aria-role="button" aria-label="{{'选择器类，当前' + types[typeIndex]}}">
-        <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
-        <view class="filter-chevron" aria-hidden="true"></view>
+    <!-- 分类首屏：器类 / 时代 -->
+    <block wx:if="{{mode === 'cate'}}">
+      <view class="cate-tabs" aria-role="tablist">
+        <view class="cate-tab {{cateTab === 'type' ? 'active' : ''}}" data-tab="type" bindtap="switchCateTab"
+          hover-class="cate-tab-pressed" hover-stay-time="80" aria-role="tab" aria-selected="{{cateTab === 'type'}}" aria-label="按器类浏览">器类</view>
+        <view class="cate-tab {{cateTab === 'era' ? 'active' : ''}}" data-tab="era" bindtap="switchCateTab"
+          hover-class="cate-tab-pressed" hover-stay-time="80" aria-role="tab" aria-selected="{{cateTab === 'era'}}" aria-label="按时代浏览">时代</view>
       </view>
-      <view class="filter-trigger" data-kind="era" bindtap="openFilter" aria-role="button" aria-label="{{'选择时代，当前' + eras[eraIndex]}}">
-        <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
-        <view class="filter-chevron" aria-hidden="true"></view>
+      <view class="gallery-head">
+        <text class="gallery-title" aria-role="heading">馆藏</text>
+        <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : total + ' 件')}}</text>
       </view>
-    </view>
+      <view wx:if="{{indexLoading}}" class="relic-empty">
+        <text>馆藏目录加载中，请稍候。</text>
+      </view>
+      <view wx:elif="{{indexFailed}}" class="relic-empty">
+        <text>目录加载失败，请检查网络后重试。</text>
+        <view class="relic-action" bindtap="retryIndex" aria-role="button">重新加载</view>
+      </view>
+      <view wx:else class="cate-grid">
+        <view wx:for="{{cateCards}}" wx:key="key" class="cate-card" data-kind="{{cateTab}}" data-index="{{index}}"
+          bindtap="openCategory" hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button"
+          aria-label="{{item.name}}，{{item.count}} 件">
+          <view class="cate-cover">
+            <image wx:if="{{item.thumb}}" class="cate-thumb" src="{{item.thumb}}" mode="aspectFill" lazy-load
+              binderror="onCateThumbError" data-index="{{index}}" aria-hidden="true"></image>
+            <view wx:else class="cate-thumb cate-thumb-none" aria-hidden="true"></view>
+            <view class="cover-fade" aria-hidden="true"></view>
+            <view class="cate-count" aria-hidden="true">{{item.count}} 件</view>
+          </view>
+          <view class="cate-copy">
+            <text class="cate-name">{{item.name}}</text>
+            <text class="cate-meta">{{item.count}} 件</text>
+          </view>
+        </view>
+      </view>
+    </block>
 
-    <view class="gallery-head">
-      <text class="gallery-title" aria-role="heading">馆藏</text>
-      <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>
-    </view>
-    <view wx:if="{{indexLoading}}" class="relic-empty">
-      <text>馆藏目录加载中，请稍候。</text>
-    </view>
-    <view wx:elif="{{indexFailed}}" class="relic-empty">
-      <text>目录加载失败，请检查网络后重试。</text>
-      <view class="relic-action" bindtap="retryIndex" aria-role="button">重新加载</view>
-    </view>
-    <view wx:elif="{{count}}" class="relic-grid">
-      <view wx:for="{{rows}}" wx:key="id" class="relic-card" data-id="{{item.id}}" bindtap="openRelic"
-        hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button" aria-label="{{item.title + '，' + item.period + '，' + item.type}}">
-        <view class="relic-cover">
-          <image class="relic-thumb" src="{{item.thumb}}" mode="aspectFit" lazy-load binderror="onThumbError" data-index="{{index}}" aria-hidden="true"></image>
-          <view class="cover-fade" aria-hidden="true"></view>
+    <!-- 分类内文物网格 -->
+    <block wx:else>
+      <view class="cate-crumb" bindtap="backToCate" hover-class="cate-tab-pressed" hover-stay-time="80"
+        aria-role="button" aria-label="返回分类首屏">
+        <text class="cate-crumb-arrow" aria-hidden="true">‹</text>
+        <text>全部分类</text>
+      </view>
+      <view class="filter-card">
+        <view class="filter-trigger" data-kind="type" bindtap="openFilter" aria-role="button" aria-label="{{'选择器类，当前' + types[typeIndex]}}">
+          <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
+          <view class="filter-chevron" aria-hidden="true"></view>
         </view>
-        <view class="relic-card-copy">
-          <text class="relic-name">{{item.title}}</text>
-          <view class="relic-meta"><text>{{item.period}}</text><text class="relic-meta-type"> · {{item.type}}</text></view>
+        <view class="filter-trigger" data-kind="era" bindtap="openFilter" aria-role="button" aria-label="{{'选择时代，当前' + eras[eraIndex]}}">
+          <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
+          <view class="filter-chevron" aria-hidden="true"></view>
         </view>
       </view>
-    </view>
-    <view wx:else class="relic-empty">
-      <text>这个时代与器类下暂无藏品。</text>
-      <view class="relic-action" bindtap="resetFilters" aria-role="button">清除筛选</view>
-    </view>
-    <view wx:if="{{stalled}}" class="relic-action more-relics" bindtap="retryIndex" aria-role="button">分块补齐受阻 · 点按重试</view>
-    <view wx:elif="{{partial}}" class="relic-note" aria-live="polite">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>
-    <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
+
+      <view class="gallery-head">
+        <text class="gallery-title" aria-role="heading">{{gridLabel}}</text>
+        <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>
+      </view>
+      <view wx:if="{{indexLoading}}" class="relic-empty">
+        <text>馆藏目录加载中，请稍候。</text>
+      </view>
+      <view wx:elif="{{indexFailed}}" class="relic-empty">
+        <text>目录加载失败，请检查网络后重试。</text>
+        <view class="relic-action" bindtap="retryIndex" aria-role="button">重新加载</view>
+      </view>
+      <view wx:elif="{{!count}}" class="relic-empty">
+        <text>这个时代与器类下暂无藏品。</text>
+        <view class="relic-action" bindtap="resetFilters" aria-role="button">返回分类</view>
+      </view>
+      <view wx:elif="{{rows.length}}" class="relic-grid">
+        <view wx:for="{{rows}}" wx:key="id" class="relic-card" data-id="{{item.id}}" bindtap="openRelic"
+          hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button" aria-label="{{item.title + '，' + item.period + '，' + item.type}}">
+          <view class="relic-cover">
+            <image class="relic-thumb" src="{{item.thumb}}" mode="aspectFit" lazy-load binderror="onThumbError" data-index="{{index}}" aria-hidden="true"></image>
+            <view class="cover-fade" aria-hidden="true"></view>
+          </view>
+          <view class="relic-card-copy">
+            <text class="relic-name">{{item.title}}</text>
+            <view class="relic-meta"><text>{{item.period}}</text><text class="relic-meta-type"> · {{item.type}}</text></view>
+          </view>
+        </view>
+      </view>
+      <view wx:elif="{{partial}}" class="relic-empty">
+        <text>该分类的藏品正在补齐，请稍候…</text>
+      </view>
+      <view wx:else class="relic-empty">
+        <text>这个时代与器类下暂无藏品。</text>
+        <view class="relic-action" bindtap="resetFilters" aria-role="button">返回分类</view>
+      </view>
+      <view wx:if="{{stalled}}" class="relic-action more-relics" bindtap="retryIndex" aria-role="button">分块补齐受阻 · 点按重试</view>
+      <view wx:elif="{{partial}}" class="relic-note" aria-live="polite">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>
+      <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
+    </block>
   </view>
 
   <view class="filter-layer" wx:if="{{filterSheet}}">

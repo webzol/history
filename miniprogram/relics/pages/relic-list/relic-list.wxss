@@ -1,5 +1,80 @@
 @import "../../common.wxss";
 
+/* 分类首屏：器类 / 时代分段 + 分类卡 */
+.cate-tabs {
+  display: flex;
+  margin-top: 20rpx;
+  padding: 6rpx;
+  border-radius: 36rpx;
+  background: #EEF0F0;
+}
+.cate-tab {
+  flex: 1 1 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 32rpx;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(28rpx * var(--fs, 1));
+  letter-spacing: 0.10em;
+  color: #5F5A52;
+}
+.cate-tab.active {
+  background: #FCFBF8;
+  color: #A34A3E;
+  box-shadow: 0 10rpx 24rpx rgba(90, 70, 50, 0.10), inset 0 0 0 1rpx rgba(163, 74, 62, 0.16);
+}
+.cate-tab-pressed { opacity: 0.84; }
+.cate-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }
+.cate-card {
+  width: calc((100% - 18rpx) / 2);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 22rpx 22rpx 28rpx 28rpx;
+  background: #FCFBF8;
+  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);
+}
+.cate-cover { position: relative; padding-top: 72%; background: #F3EFE6; }
+.cate-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cate-thumb-none { background: linear-gradient(160deg, #F3EFE6, #EAE3D5); }
+.cate-cover .cover-fade { position: absolute; inset: auto 0 0; height: 46%; background: linear-gradient(180deg, rgba(31, 29, 25, 0), rgba(31, 29, 25, 0.34)); }
+.cate-count {
+  position: absolute;
+  right: 14rpx;
+  bottom: 12rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 24rpx;
+  background: rgba(252, 251, 248, 0.92);
+  color: #6B5036;
+  font-size: calc(20rpx * var(--fs, 1));
+  line-height: 1.4;
+}
+.cate-copy { padding: 16rpx 20rpx 20rpx; }
+.cate-name {
+  display: block;
+  color: #1F1D19;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(29rpx * var(--fs, 1));
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.cate-meta { display: block; margin-top: 4rpx; color: #8C857A; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }
+.cate-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-top: 20rpx;
+  padding: 8rpx 22rpx 8rpx 16rpx;
+  border-radius: 30rpx;
+  background: #FCFBF8;
+  color: #6B5036;
+  font-size: calc(23rpx * var(--fs, 1));
+  line-height: 1.4;
+  box-shadow: inset 0 0 0 1rpx rgba(70, 58, 45, 0.06);
+}
+.cate-crumb-arrow { font-size: 26rpx; line-height: 1; }
+
 .filter-card {
   display: flex;
   margin-top: 20rpx;

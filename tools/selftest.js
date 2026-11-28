@@ -2094,15 +2094,34 @@ console.log('== 文物分包 ==');
   ok(relicData.thumbAlt('https://testingcf.jsdelivr.net/x.jpg').indexOf('gcore') >= 0
     && relicData.thumbAlt('/relics/assets/thumb-44757.jpg') === '', '备用域换算规则');
 
-  // 列表页：全量索引加载 + 8 条分页 + 器类/时代筛选
+  // 列表页：分类首屏（head 计数/封面秒出）→ 分类内网格 → 筛选/分页
   const list = pages['relic-list'];
   list.onLoad();
+  eq(list.data.mode, 'cate', '文物页首屏为分类视图');
   eq(list.data.indexLoading, false, '同步索引桩下加载完成');
-  eq(list.data.count, index.total, '列表默认全量件数');
-  eq(list.data.rows.length, 8, '列表首屏 8 条');
-  eq(list.data.hasMore, true, '列表有待加载');
-  eq(list.data.rows[0].id, index.rows[0].id, '首行与索引排序一致');
-  eq(list.data.rows[0].thumb, relicData.thumbFor(index.rows[0].id), '行卡缩略图按精修/批量取源');
+  eq(list.data.total, index.total, '分类视图显示全量件数');
+  eq(list.data.cateCards.length, 8, '器类卡 8 张');
+  eq(list.data.cateCards[0].name, '青铜', '首卡青铜');
+  eq(list.data.cateCards[0].count, head.typeCounts['青铜'], '器类计数来自 head 预计算');
+  eq(list.data.cateCards[0].thumb, relicData.thumbFor(head.typeCovers['青铜']),
+    '器类封面与构建端 typeCovers 一致（全量缓存路径行集重算）');
+  tap(list, 'switchCateTab', { tab: 'era' });
+  eq(list.data.cateCards.length, 13, '时代卡 13 张');
+  eq(list.data.cateCards[12].name, '清', '末卡清');
+  eq(list.data.cateCards[12].count, head.eraCounts['清'], '时代计数来自 head');
+  eq(list.data.cateCards[12].thumb, relicData.thumbFor(head.eraCovers['清']), '时代封面取图');
+  tap(list, 'switchCateTab', { tab: 'type' });
+
+  // 进入分类网格：青铜
+  tap(list, 'openCategory', { kind: 'type', index: 0 });
+  eq(list.data.mode, 'grid', '点分类进网格');
+  eq([list.data.typeIndex, list.data.eraIndex], [1, 0], '网格维度对应所点分类');
+  eq(list.data.gridLabel, '青铜', '网格标题为分类名');
+  eq(list.data.count, head.typeCounts['青铜'], '网格计数为该类件数');
+  eq(list.data.rows.length, 8, '网格首屏 8 条');
+  eq(list.data.hasMore, true, '网格有待加载');
+  eq(list.data.rows[0].id, index.rows.find((row) => row.type === '青铜').id, '首行是该类第一件');
+  eq(list.data.rows[0].thumb, relicData.thumbFor(list.data.rows[0].id), '行卡缩略图按精修/批量取源');
   eq(Object.keys(list.data.rows[0]).sort(),
     ['id', 'period', 'thumb', 'title', 'type'], '行卡只传展示字段');
   list.loadMore();
@@ -2112,22 +2131,19 @@ console.log('== 文物分包 ==');
 
   const matchesEra = (item, era) => eraAlias[era].some((alias) => item.period.indexOf(alias) >= 0);
 
-  tap(list, 'openFilter', { kind: 'type' });
-  eq(list.data.filterSheet.options.length, 9, '器类弹层含「全部」共九项');
-  tap(list, 'onFilterPick', { index: 1 });
-  const expectBronze = index.rows.filter((row) => row.type === '青铜');
-  eq(list.data.count, expectBronze.length, '筛青铜 ' + expectBronze.length + ' 件');
-  eq(list.data.rows.length, Math.min(8, expectBronze.length), '筛青铜首屏 8 条');
+  // 分类内叠加时代筛选（青铜 × 东周）
   tap(list, 'openFilter', { kind: 'era' });
+  eq(list.data.filterSheet.options.length, 14, '时代弹层含「不限」共十四项');
   tap(list, 'onFilterPick', { index: 5 });
   const expectCombo = index.rows.filter((row) => row.type === '青铜' && matchesEra(row, '东周'));
   eq(list.data.count, expectCombo.length, '青铜 × 东周组合 ' + expectCombo.length + ' 件');
+  eq(list.data.gridLabel, '青铜 · 东周', '组合标题带两个维度');
   tap(list, 'onFilterPick', { index: 99 });
   eq(list.data.count, expectCombo.length, '越界索引不生效');
   tap(list, 'resetFilters', {});
-  eq(list.data.count, index.total, '清除筛选恢复全量');
-  eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个选择');
-  // 无结果态：动态找一个零交集组合
+  eq(list.data.mode, 'cate', '清除筛选回分类首屏');
+  eq([list.data.typeIndex, list.data.eraIndex], [0, 0], '清除筛选同时复位两个维度');
+  // 无结果态：动态找一个零交集组合（进网格后再筛）
   let zeroType = null;
   let zeroEraIndex = null;
   for (let typeIndex = 1; typeIndex < 9 && zeroType === null; typeIndex++) {
@@ -2139,15 +2155,15 @@ console.log('== 文物分包 ==');
     }
   }
   ok(zeroType !== null, '存在零交集组合');
-  tap(list, 'openFilter', { kind: 'type' });
-  tap(list, 'onFilterPick', { index: zeroType });
+  tap(list, 'openCategory', { kind: 'type', index: zeroType - 1 });
   tap(list, 'openFilter', { kind: 'era' });
   tap(list, 'onFilterPick', { index: zeroEraIndex });
   eq(list.data.count, 0, '组合无交集时归零');
   eq(list.data.rows.length, 0, '无结果不渲染卡片');
   tap(list, 'resetFilters', {});
 
-  // 页面级受阻：head 出首屏，part 全部失败 → 「分块补齐受阻」提示；重试补齐后恢复全量
+  // 页面级受阻：head 出分类首屏（计数精确不受影响），尾部时代分类先于分块到达时
+  // 显示精确计数 + 补齐等待；重试补齐后首屏自动补行
   resetWifiStack();
   relicData._reset();
   Object.keys(storage).forEach((k) => {
@@ -2159,14 +2175,23 @@ console.log('== 文物分包 ==');
   list.onLoad();
   mockRequest.relicFail = null;
   global.setTimeout = pageStalledTimeout;
-  eq(list.data.count, Math.min(index.total, index.step), '受阻时只交付 head 首屏行');
-  eq(list.data.rows.length, 8, '受阻时列表仍渲染首屏 8 条');
-  eq(list.data.partial, true, '受阻标记部分交付');
-  eq(list.data.stalled, true, '受阻提示 stalled 置位');
+  eq(list.data.mode, 'cate', '受阻时仍在分类首屏');
+  eq(list.data.cateCards.length, 8, '受阻时分类卡仍完整（计数来自 head）');
+  eq(list.data.cateCards[6].count, head.typeCounts[catalog.TYPES[6]], '受阻时器类计数仍精确');
+  eq(list.data.stalled, true, '受阻标记置位');
   eq(list.data.indexFailed, false, '受阻不是目录加载失败');
+  tap(list, 'switchCateTab', { tab: 'era' });
+  tap(list, 'openCategory', { kind: 'era', index: 12 });
+  eq(list.data.mode, 'grid', '受阻时也能进入分类网格');
+  eq(list.data.count, head.eraCounts['清'], '部分索引下计数仍为精确值');
+  eq(list.data.rows.length, 0, '该类条目未载入，首屏暂空');
+  eq(list.data.partial, true, '部分索引标记置位');
+  global.setTimeout = (fn) => { fn(); return 0; };
   tap(list, 'retryIndex', {});
+  global.setTimeout = pageStalledTimeout;
   eq(list.data.stalled, false, '重试补齐后受阻清除');
-  eq(list.data.count, index.total, '重试补齐后恢复全量件数');
+  eq(list.data.rows.length, 8, '补齐后首屏自动补足 8 条');
+  eq(list.data.count, head.eraCounts['清'], '补齐后计数保持精确值');
   eq(list.data.partial, false, '补齐后退出部分交付态');
 
   resetWifiStack();

@@ -1,6 +1,25 @@
 const TYPES = ['青铜', '陶瓷', '玉器', '书画', '雕塑', '漆器', '玻璃珐琅', '其他'];
 const ERAS = ['新石器时代', '二里头文化', '商', '西周', '东周', '汉', '魏晋南北朝', '唐', '五代', '宋', '元', '明', '清'];
 
+// 筛选时代 → 索引行显示期名归组（北宋/金/南朝…并入所属时代）。
+// 单一来源：relicData.js 的分类计数与 relic-list.js 的行筛选共用；
+// 构建端 tools/build_relics_full.py 的 ERA_ALIAS 为其 Python 镜像，改动须三处同步。
+const ERA_MATCH = {
+  '新石器时代': ['新石器时代'],
+  '二里头文化': ['二里头文化'],
+  '商': ['商'],
+  '西周': ['西周'],
+  '东周': ['东周', '春秋', '战国'],
+  '汉': ['汉', '秦'],
+  '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
+  '唐': ['唐'],
+  '五代': ['五代'],
+  '宋': ['宋', '辽', '金', '西夏'],
+  '元': ['元'],
+  '明': ['明'],
+  '清': ['清']
+};
+
 // 按年代先后排列。以文物本体的形制与用途为主，馆方的断代与出土地随文说明。
 // imageRatio = 详情图 高/宽 × 100，须与 tools/prepare_relic_images.py 的输出一致（改图须同步改这里）。
 const RELICS = [
@@ -410,4 +429,4 @@ function shareMessage(relic) {
   };
 }
 
-module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, DETAIL_HOSTS, imagePath, detailUrls, sourceFor, shareMessage };
+module.exports = { TYPES, ERAS, ERA_MATCH, RELICS, LIST_PATH, DETAIL_PATH, DETAIL_HOSTS, imagePath, detailUrls, sourceFor, shareMessage };

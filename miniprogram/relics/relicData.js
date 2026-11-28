@@ -6,7 +6,7 @@
 // 分块交付同 utils/apkData.js「不断层」：head 首屏先回调，后台 4 并发补齐 part，
 // 只合并「head + 连续成功前缀」，失败退避重试，每接上一块再回调一次；残缺绝不写全量缓存。
 // 精修 60 件（catalog.js）始终走包内快路径，批量条目走远端。
-const { RELICS, sourceFor, detailUrls, imagePath } = require('./catalog.js');
+const { RELICS, TYPES, ERAS, ERA_MATCH, sourceFor, detailUrls, imagePath } = require('./catalog.js');
 
 const HEAD_URLS = [
   'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-head.json',
@@ -132,6 +132,50 @@ function validateDetail(data) {
   return data;
 }
 
+// 索引行显示期名 → 筛选时代（与构建端 ERA_ALIAS 同规则）
+function eraOfPeriod(periodText) {
+  const aliases = ERA_MATCH;
+  for (let i = 0; i < ERAS.length; i += 1) {
+    const list = aliases[ERAS[i]] || [];
+    for (let j = 0; j < list.length; j += 1) {
+      if (periodText.indexOf(list[j]) >= 0) return ERAS[i];
+    }
+  }
+  return '其他';
+}
+
+// 从行集计算分类元数据（计数 + 封面）。完整行集（全量缓存命中）时替代 head 元数据：
+// 封面取该类第一件精修件（包内缩略图秒开），否则该类第一件 —— 与构建端 typeCovers/eraCovers 同规则。
+function cateMetaFromRows(rows) {
+  const typeCounts = {};
+  const eraCounts = {};
+  const joint = {};
+  const firstType = {};
+  const firstEra = {};
+  const curType = {};
+  const curEra = {};
+  rows.forEach((row) => {
+    const era = eraOfPeriod(row.period);
+    typeCounts[row.type] = (typeCounts[row.type] || 0) + 1;
+    if (era !== '其他') eraCounts[era] = (eraCounts[era] || 0) + 1;
+    if (row.type && era !== '其他') {
+      joint[row.type] = joint[row.type] || {};
+      joint[row.type][era] = (joint[row.type][era] || 0) + 1;
+    }
+    if (!firstType[row.type]) firstType[row.type] = row.id;
+    if (!firstEra[era]) firstEra[era] = row.id;
+    if (curatedThumb[row.id]) {
+      if (!curType[row.type]) curType[row.type] = row.id;
+      if (!curEra[era]) curEra[era] = row.id;
+    }
+  });
+  const typeCovers = {};
+  const eraCovers = {};
+  TYPES.forEach((t) => { typeCovers[t] = curType[t] || firstType[t] || ''; });
+  ERAS.forEach((e) => { eraCovers[e] = curEra[e] || firstEra[e] || ''; });
+  return { types: TYPES, eras: ERAS, typeCounts, eraCounts, typeCovers, eraCovers, joint };
+}
+
 // head 首屏回调后，后台补齐剩余分块并按序合并（不断层，同 apkData.fetchParts）。
 const PART_CONCURRENCY = 4;
 const PART_RETRY_DELAYS = [1500, 4000]; // 首轮之后再补两轮，避开 jsDelivr 限流窗口
@@ -159,7 +203,7 @@ function assemble(head, cb) {
       memory.full = list;
       writeCache(FULL_KEY, list); // 全部到齐才写全量缓存（残缺绝不落盘）
     }
-    const info = { partial: !complete, total, loaded: list.length, stalled: !!stalled };
+    const info = { partial: !complete, total, loaded: list.length, stalled: !!stalled, head };
     const subs = assembling || [];
     if (complete || stalled) assembling = null;
     subs.forEach((fn) => {
@@ -229,9 +273,9 @@ function loadIndex(cb) {
     if (head.parts <= 1) {
       memory.full = head.rows;
       writeCache(FULL_KEY, head.rows);
-      return cb(head.rows, { partial: false, total: head.total, loaded: head.rows.length });
+      return cb(head.rows, { partial: false, total: head.total, loaded: head.rows.length, head });
     }
-    cb(head.rows, { partial: true, total: head.total, loaded: head.rows.length });
+    cb(head.rows, { partial: true, total: head.total, loaded: head.rows.length, head });
     assemble(head, cb);
   });
 }
@@ -306,7 +350,7 @@ function thumbAlt(src) {
   return '';
 }
 
-module.exports = { loadIndex, loadDetail, thumbFor, thumbAlt, isCurated };
+module.exports = { loadIndex, loadDetail, thumbFor, thumbAlt, isCurated, cateMetaFromRows };
 
 // 自测专用：清空模块内存态（本地缓存由自测自行清理）
 module.exports._reset = () => {

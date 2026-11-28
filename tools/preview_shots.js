@@ -58,9 +58,9 @@ const targets = [
   ['36-privacy-home', 'home?shot=1&privacy=1'],
   ['37-privacy-detail-xl', 'person?shot=1&id=su-shi&privacy=1&font=xl', VIEWPORT_SE],
   ['38-privacy-declined', `home?shot=1&privacy=1&s=${esc('click:.privacy-decline')}`],
-  // 文物分包（relics）：列表 / 筛选 / 详情 / 共此卷弹层
+  // 文物分包（relics）：分类首屏 / 分类内网格与筛选 / 详情 / 共此卷弹层
   ['39-relic-list', 'relic-list?shot=1'],
-  ['40-relic-filter', `relic-list?shot=1&s=${esc('click:.filter-trigger')}`],
+  ['40-relic-filter', `relic-list?shot=1&s=${esc('click:.cate-card|click:.filter-trigger')}`],
   ['41-relic-detail', 'relic-detail?shot=1&id=cma-1954.582'],
   ['42-relic-share', `relic-detail?shot=1&id=39919&s=${esc('click:.relic-action.object-share')}`]
 ];
