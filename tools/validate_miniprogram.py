@@ -204,30 +204,97 @@ def check_relic_catalog():
 
 
 def check_relic_shards(curated_ratio):
-    """全量目录分片一致性：index 行 ↔ 详情分卷 ↔ CDN 配图三方对账。"""
+    """全量目录分片一致性（2026-11-28 索引 v2）：
+    index-head.json（前 200 行 + 计数元数据）+ index-part-NN.json ↔ 详情分卷 ↔ CDN 配图对账。"""
     relics_dir = ROOT / "data" / "relics"
-    index_path = relics_dir / "index.json"
-    if not index_path.exists():
-        return ["relics 分片：缺少 data/relics/index.json"]
+    head_path = relics_dir / "index-head.json"
+    if not head_path.exists():
+        return ["relics 分片：缺少 data/relics/index-head.json"]
     try:
-        index = json.loads(index_path.read_text(encoding="utf-8"))
+        head = json.loads(head_path.read_text(encoding="utf-8"))
     except Exception as exc:
-        return [f"relics 分片 index.json 解析失败：{exc}"]
+        return [f"relics 分片 index-head.json 解析失败：{exc}"]
     errors = []
-    rows = index.get("rows") or []
-    total = index.get("total")
-    step = index.get("step") or 200
-    parts = index.get("parts")
-    if total != len(rows):
-        errors.append(f"relics 分片：total {total} 与 rows {len(rows)} 不一致")
-    if parts != (len(rows) + step - 1) // step:
-        errors.append(f"relics 分片：parts {parts} 与 rows/step 不一致")
+    if head.get("v") != 2:
+        errors.append(f"relics 分片：head v 应为 2，实际 {head.get('v')}")
+    total = head.get("total")
+    step = head.get("step") or 200
+    parts = head.get("parts")
+    head_rows = head.get("rows") or []
+    if not isinstance(total, int) or total < 1:
+        return errors + [f"relics 分片：head total 非法 {total}"]
+    if parts != (total + step - 1) // step:
+        errors.append(f"relics 分片：parts {parts} 与 total/step 不一致")
+    if len(head_rows) != min(total, step):
+        errors.append(f"relics 分片：head 行数 {len(head_rows)} 应为 {min(total, step)}")
+    for field in ("types", "eras", "typeCounts", "eraCounts", "joint"):
+        if not isinstance(head.get(field), dict if field in ("typeCounts", "eraCounts", "joint") else list):
+            errors.append(f"relics 分片：head 缺少 {field}")
+    if errors:
+        return errors  # 结构不完整时不再往下对账
+
+    # part-NN 与详情分卷号对齐（part NN 的行 = detail NN 的条目），按序合并成全量行
+    idx_parts = parts - 1 if total > step else 0
+    rows = list(head_rows)
+    for n in range(1, idx_parts + 1):
+        part_path = relics_dir / f"index-part-{n:02d}.json"
+        if not part_path.exists():
+            errors.append(f"relics 分片：缺少 index-part-{n:02d}.json")
+            continue
+        try:
+            part = json.loads(part_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            errors.append(f"relics 分片 index-part-{n:02d}.json 解析失败：{exc}")
+            continue
+        expect = min(step, total - n * step)
+        if part.get("v") != 2:
+            errors.append(f"relics index-part-{n:02d}：v 应为 2，实际 {part.get('v')}")
+        part_rows = part.get("rows") or []
+        if len(part_rows) != expect:
+            errors.append(f"relics index-part-{n:02d}：行数 {len(part_rows)} 应为 {expect}")
+        rows.extend(part_rows)
+
     ids = [row.get("id") for row in rows]
     if len(set(ids)) != len(ids):
         errors.append("relics 分片：索引 id 重复")
+    if total != len(rows):
+        errors.append(f"relics 分片：total {total} 与合并行数 {len(rows)} 不一致")
+
+    # head 筛选计数与全量行重算一致（ERA_ALIAS 与 build_relics_full.py 一致）
+    era_alias = {
+        "新石器时代": ["新石器时代"], "二里头文化": ["二里头文化"], "商": ["商"], "西周": ["西周"],
+        "东周": ["东周", "春秋", "战国"], "汉": ["汉", "秦"],
+        "魏晋南北朝": ["魏晋南北朝", "三国", "晋", "南朝", "北朝", "六朝", "隋"],
+        "唐": ["唐"], "五代": ["五代"], "宋": ["宋", "辽", "金", "西夏"],
+        "元": ["元"], "明": ["明"], "清": ["清"],
+    }
+
+    def era_of(period_text):
+        for era, aliases in era_alias.items():
+            if any(alias in period_text for alias in aliases):
+                return era
+        return "其他"
+
+    type_counts = {t: 0 for t in head["types"]}
+    era_counts = {e: 0 for e in head["eras"]}
+    joint = {t: {e: 0 for e in head["eras"]} for t in head["types"]}
+    for row in rows:
+        era = era_of(row.get("period") or "")
+        if row.get("type") in type_counts:
+            type_counts[row["type"]] += 1
+        if era in era_counts:
+            era_counts[era] += 1
+        if row.get("type") in joint and era in joint[row["type"]]:
+            joint[row["type"]][era] += 1
+    if head.get("typeCounts") != type_counts:
+        errors.append("relics 分片：head.typeCounts 与全量行重算不一致")
+    if head.get("eraCounts") != era_counts:
+        errors.append("relics 分片：head.eraCounts 与全量行重算不一致")
+    if head.get("joint") != joint:
+        errors.append("relics 分片：head.joint 与全量行重算不一致")
 
     detail_entries = {}
-    for n in range(parts or 0):
+    for n in range(parts):
         shard_path = relics_dir / f"detail-{n:02d}.json"
         if not shard_path.exists():
             errors.append(f"relics 分片：缺少 detail-{n:02d}.json")
@@ -237,7 +304,7 @@ def check_relic_shards(curated_ratio):
         except Exception as exc:
             errors.append(f"relics 分片 detail-{n:02d}.json 解析失败：{exc}")
             continue
-        expect = min(step, len(rows) - n * step)
+        expect = min(step, total - n * step)
         if len(shard.get("items") or {}) != expect:
             errors.append(f"relics 分卷 {n}：条数 {len(shard.get('items') or {})} 应为 {expect}")
         detail_entries.update(shard.get("items") or {})

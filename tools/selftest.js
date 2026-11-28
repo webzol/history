@@ -129,7 +129,7 @@ const wxLog = [];
 let pendingModal = null;    // 最近一次 showModal(opts)
 let pendingSheet = null;    // 最近一次 showActionSheet(opts)
 const storage = {};
-const mockRequest = { payload: null, today: null, apkFail: null, wxacodeIdx: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）；apkFail(rel) 返回 true 则该资料库请求失败；wxacodeIdx 为太阳码 idx 清单桩
+const mockRequest = { payload: null, today: null, apkFail: null, relicFail: null, wxacodeIdx: null }; // wx.request 白名单桩载荷（jsDelivr / 60s 分流）；apkFail(rel)/relicFail(rel) 返回 true 则该资料库/文物请求失败；wxacodeIdx 为太阳码 idx 清单桩
 let storageCleared = 0;
 
 function route(kind, url, rest) {
@@ -229,6 +229,10 @@ const wx = {
     }
     if (opts.url.indexOf('/data/relics/') >= 0) {
       const rel = opts.url.split('/data/relics/')[1];
+      if (mockRequest.relicFail && mockRequest.relicFail(rel)) {
+        if (opts.fail) opts.fail(new Error('mock relic fail'));
+        return;
+      }
       try {
         const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', rel), 'utf8'));
         if (opts.success) opts.success({ data, statusCode: 200 });
@@ -1930,7 +1934,14 @@ console.log('== 文物分包 ==');
   resetWifiStack();
   const catalog = require(path.join(ROOT, 'relics', 'catalog.js'));
   const relicData = require(path.join(ROOT, 'relics', 'relicData.js'));
-  const index = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', 'index.json'), 'utf8'));
+  const relicDataPath = path.join(ROOT, 'relics', 'relicData.js');
+  const head = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', 'index-head.json'), 'utf8'));
+  // part NN 与详情分卷 NN 对齐（part NN 的行 = detail NN 的条目），按序合并为全量索引
+  const index = { total: head.total, step: head.step, parts: head.parts, rows: head.rows.slice() };
+  for (let n = 1; n < head.parts; n++) {
+    index.rows.push(...JSON.parse(fs.readFileSync(
+      path.join(ROOT, 'data', 'relics', 'index-part-' + String(n).padStart(2, '0') + '.json'), 'utf8')).rows);
+  }
   const detailMemo = {};
   for (let n = 0; n < index.parts; n++) {
     const shard = JSON.parse(fs.readFileSync(
@@ -1988,6 +1999,78 @@ console.log('== 文物分包 ==');
     const expect = Math.min(index.step, index.total - n * index.step);
     eq(count, expect, '分卷 ' + n + ' 条数');
   }
+
+  // 索引 v2（head + part 分块）：head 只装前 200 行 + 筛选计数；旧整份 index.json 不复存在
+  eq(head.v, 2, 'head v=2');
+  eq(head.rows.length, Math.min(head.total, head.step), 'head 行数 = min(total, step)');
+  eq(fs.existsSync(path.join(ROOT, 'data', 'relics', 'index.json')), false, '旧整份 index.json 已移除');
+  ok(fs.statSync(path.join(ROOT, 'data', 'relics', 'index-head.json')).size < 30 * 1024,
+    'head 首屏轻量（< 30KB，实际 ' + Math.round(fs.statSync(path.join(ROOT, 'data', 'relics', 'index-head.json')).size / 1024) + 'KB）');
+  const partFiles = fs.readdirSync(path.join(ROOT, 'data', 'relics')).filter((f) => /^index-part-\d+\.json$/.test(f));
+  eq(partFiles.length, head.parts - 1, 'index part 文件数 = parts - 1');
+  const eraAlias = {
+    '新石器时代': ['新石器时代'], '二里头文化': ['二里头文化'], '商': ['商'], '西周': ['西周'],
+    '东周': ['东周', '春秋', '战国'], '汉': ['汉', '秦'],
+    '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
+    '唐': ['唐'], '五代': ['五代'], '宋': ['宋', '辽', '金', '西夏'],
+    '元': ['元'], '明': ['明'], '清': ['清']
+  };
+  const eraOf = (periodText) => {
+    for (const era of Object.keys(eraAlias)) {
+      if (eraAlias[era].some((alias) => periodText.indexOf(alias) >= 0)) return era;
+    }
+    return '其他';
+  };
+  // 与构建端同序初始化（含零值），保证 JSON.stringify 与 head 逐键一致
+  const recTypeCounts = {};
+  const recEraCounts = {};
+  const recJoint = {};
+  catalog.TYPES.forEach((t) => { recTypeCounts[t] = 0; recJoint[t] = {}; });
+  catalog.ERAS.forEach((e) => { recEraCounts[e] = 0; catalog.TYPES.forEach((t) => { recJoint[t][e] = 0; }); });
+  index.rows.forEach((row) => {
+    recTypeCounts[row.type] += 1;
+    const era = eraOf(row.period);
+    recEraCounts[era] += 1;
+    recJoint[row.type][era] += 1;
+  });
+  eq(JSON.stringify(head.typeCounts), JSON.stringify(recTypeCounts), 'head.typeCounts 与全量行重算一致');
+  eq(JSON.stringify(head.eraCounts), JSON.stringify(recEraCounts), 'head.eraCounts 与全量行重算一致');
+  eq(JSON.stringify(head.joint), JSON.stringify(recJoint), 'head.joint 与全量行重算一致');
+
+  // 不断层分块交付（同 utils/apkData.js）：head 首屏 → 连续前缀合并 → 失败退避补齐；
+  // 残缺绝不写全量缓存，分块各自缓存可复用；v1 旧缓存整体失效。
+  const realSetTimeout = global.setTimeout;
+  global.setTimeout = (fn) => { fn(); return 0; }; // 退避等待压缩为同步，重试轮在测试内跑完
+  let relicFailLeft = 4; // part-03 首轮失败到底：两轮尝试 × 双域名各计一次（第 4 次后放行）
+  mockRequest.relicFail = (rel) => /index-part-03\.json$/.test(rel) && relicFailLeft-- > 0;
+  Object.keys(storage).forEach((k) => {
+    if (k.indexOf('shige_relic_index') === 0) delete storage[k];
+  });
+  storage.shige_relic_index_v1 = { t: Date.now(), data: 'legacy' }; // 旧整份索引缓存待清理
+  delete require.cache[require.resolve(relicDataPath)]; // 全新模块实例，避免既有内存/缓存干扰
+  const relicFresh = require(relicDataPath);
+  eq(storage.shige_relic_index_v1, undefined, 'v1 旧索引缓存加载时整体清理');
+  const relicSeen = [];
+  relicFresh.loadIndex((rows, info) => {
+    if (rows.length === 600) relicSeen.cacheAt600 = !!storage.shige_relic_index_v2_full;
+    relicSeen.push({ len: rows.length, info });
+  });
+  mockRequest.relicFail = null;
+  global.setTimeout = realSetTimeout;
+
+  eq(relicSeen[0].len, 200, '首屏先出 head 200 行');
+  ok(relicSeen[0].info.partial && relicSeen[0].info.total === index.total, '首屏 partial 且 total 为全量件数');
+  const relicPartial600 = relicSeen.find((s) => s.len === 600);
+  ok(relicPartial600 && relicPartial600.info.partial, 'part-03 失败：交付 head+part-01/02 连续前缀');
+  ok(relicPartial600 && relicPartial600.info.loaded === 600, '进度回调带已载入件数');
+  ok(!relicSeen.some((s) => s.len === 800), '绝不交付「part-04 顶上」的开洞数据（800）');
+  eq(relicSeen.cacheAt600, false, '残缺目录绝不写全量缓存（partial 交付时点快照）');
+  ok(!!storage.shige_relic_index_v2_index_part_01_json, '已到分块各自缓存（补齐可复用）');
+  const relicFinal = relicSeen[relicSeen.length - 1];
+  eq(relicFinal.len, index.total, '重试补齐 part-03 后交付完整目录（无断层）');
+  ok(!relicFinal.info.partial && relicFinal.info.loaded === index.total, '完整交付 partial=false 且 loaded=全量');
+  ok(storage.shige_relic_index_v2_full && storage.shige_relic_index_v2_full.data.length === index.total,
+    '完整目录才写全量缓存');
   let templateCount = 0;
   index.rows.forEach((row) => {
     const entry = detailMemo[row.id];
@@ -2027,13 +2110,6 @@ console.log('== 文物分包 ==');
   list.onReachBottom();
   eq(list.data.rows.length, 24, '触底自动续载一屏');
 
-  const eraAlias = {
-    '新石器时代': ['新石器时代'], '二里头文化': ['二里头文化'], '商': ['商'], '西周': ['西周'],
-    '东周': ['东周', '春秋', '战国'], '汉': ['汉', '秦'],
-    '魏晋南北朝': ['魏晋南北朝', '三国', '晋', '南朝', '北朝', '六朝', '隋'],
-    '唐': ['唐'], '五代': ['五代'], '宋': ['宋', '辽', '金', '西夏'],
-    '元': ['元'], '明': ['明'], '清': ['清']
-  };
   const matchesEra = (item, era) => eraAlias[era].some((alias) => item.period.indexOf(alias) >= 0);
 
   tap(list, 'openFilter', { kind: 'type' });
@@ -2070,6 +2146,28 @@ console.log('== 文物分包 ==');
   eq(list.data.count, 0, '组合无交集时归零');
   eq(list.data.rows.length, 0, '无结果不渲染卡片');
   tap(list, 'resetFilters', {});
+
+  // 页面级受阻：head 出首屏，part 全部失败 → 「分块补齐受阻」提示；重试补齐后恢复全量
+  resetWifiStack();
+  relicData._reset();
+  Object.keys(storage).forEach((k) => {
+    if (k.indexOf('shige_relic_index') === 0) delete storage[k];
+  });
+  const pageStalledTimeout = global.setTimeout;
+  global.setTimeout = (fn) => { fn(); return 0; };
+  mockRequest.relicFail = (rel) => rel.indexOf('index-part-') === 0;
+  list.onLoad();
+  mockRequest.relicFail = null;
+  global.setTimeout = pageStalledTimeout;
+  eq(list.data.count, Math.min(index.total, index.step), '受阻时只交付 head 首屏行');
+  eq(list.data.rows.length, 8, '受阻时列表仍渲染首屏 8 条');
+  eq(list.data.partial, true, '受阻标记部分交付');
+  eq(list.data.stalled, true, '受阻提示 stalled 置位');
+  eq(list.data.indexFailed, false, '受阻不是目录加载失败');
+  tap(list, 'retryIndex', {});
+  eq(list.data.stalled, false, '重试补齐后受阻清除');
+  eq(list.data.count, index.total, '重试补齐后恢复全量件数');
+  eq(list.data.partial, false, '补齐后退出部分交付态');
 
   resetWifiStack();
   tap(list, 'openRelic', { id: 'cma-1952.510' });
@@ -2120,6 +2218,27 @@ console.log('== 文物分包 ==');
     kicker: '文物 · ' + detail.data.relic.period,
     pathTail: 'relic-detail?id=' + templateId
   }, '批量文物详情');
+
+  // 详情分块受阻：head 之外的深部条目（pos ≥ 200）在索引 part 全部失败时进 failed 态
+  //（区别于未知条目）；重试补齐后渲染
+  resetWifiStack();
+  relicData._reset();
+  Object.keys(storage).forEach((k) => {
+    if (k.indexOf('shige_relic_index') === 0) delete storage[k];
+  });
+  const deepBulkId = index.rows[index.rows.length - 2].id;
+  const detailStalledTimeout = global.setTimeout;
+  global.setTimeout = (fn) => { fn(); return 0; };
+  mockRequest.relicFail = (rel) => rel.indexOf('index-part-') === 0;
+  detail.onLoad({ id: deepBulkId });
+  mockRequest.relicFail = null;
+  global.setTimeout = detailStalledTimeout;
+  eq(detail.data.failed, true, '详情分块受阻进失败态');
+  eq(detail.data.loading, false, '受阻后停止加载态');
+  eq(detail.data.notFound, false, '受阻不等同未知条目');
+  detail.retryLoad();
+  eq(detail.data.failed, false, '重试清除失败态');
+  eq(detail.data.relic.id, deepBulkId, '重试补齐后渲染批量件详情');
 
   // 未知 id 兜底
   ok(!indexIds.includes('not-exist'), '未知 id 不在目录内');

@@ -4043,22 +4043,48 @@ module.exports = { TYPES, ERAS, RELICS, LIST_PATH, DETAIL_PATH, DETAIL_HOSTS, im
 
 });
 __register('/relics/relicData.js', function (require, module, exports) {
-// 文物目录分片加载器：index.json 全量索引 + detail-NN.json 详情分卷，
+// 文物目录分片加载器（2026-11-28 索引 v2）：
+//   index-head.json —— 前 200 行 + total/step/parts + 筛选计数（typeCounts/eraCounts/joint）
+//   index-part-NN.json —— 其余行每 200 行一块（NN 与详情分卷号对齐：part NN 的行 = detail NN 的条目）
+//   detail-NN.json —— 详情分卷（布局未变）
 // 经 jsDelivr 分发（testingcf 主域 → gcore 备用域），内存 + 7 天本地缓存。
+// 分块交付同 utils/apkData.js「不断层」：head 首屏先回调，后台 4 并发补齐 part，
+// 只合并「head + 连续成功前缀」，失败退避重试，每接上一块再回调一次；残缺绝不写全量缓存。
 // 精修 60 件（catalog.js）始终走包内快路径，批量条目走远端。
 const { RELICS, sourceFor, detailUrls, imagePath } = require('./catalog.js');
 
-const INDEX_URLS = [
-  'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index.json',
-  'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index.json'
+const HEAD_URLS = [
+  'https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-head.json',
+  'https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-head.json'
+];
+const PART_URLS = (n) => [
+  `https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-part-${pad(n)}.json`,
+  `https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/index-part-${pad(n)}.json`
 ];
 const DETAIL_URLS = (n) => [
-  `https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/detail-${String(n).padStart(2, '0')}.json`,
-  `https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/detail-${String(n).padStart(2, '0')}.json`
+  `https://testingcf.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/detail-${pad(n)}.json`,
+  `https://gcore.jsdelivr.net/gh/webzol/history@main/miniprogram/data/relics/detail-${pad(n)}.json`
 ];
-const INDEX_KEY = 'shige_relic_index_v1';
-const DETAIL_KEY_PREFIX = 'shige_relic_det_v1_';
+// v2：索引拆 head + part（2026-11-28），布局与 v1 整份索引缓存不兼容，整体失效。
+const CACHE_PREFIX = 'shige_relic_index_v2_';
+const HEAD_FILE = 'index-head.json';
+const FULL_KEY = CACHE_PREFIX + 'full';
+const DETAIL_KEY_PREFIX = 'shige_relic_det_v1_'; // 详情分卷布局未变，沿用 v1 缓存
+const LEGACY_INDEX_KEY = 'shige_relic_index_v1';
 const TTL = 7 * 24 * 60 * 60 * 1000;
+const STEP_DEFAULT = 200;
+
+let legacyCleaned = false;
+function cleanupLegacyCache() {
+  if (legacyCleaned) return;
+  legacyCleaned = true;
+  try {
+    wx.removeStorageSync(LEGACY_INDEX_KEY);
+  } catch (e) { /* 无旧缓存时静默 */ }
+}
+cleanupLegacyCache();
+
+function pad(n) { return String(n).padStart(2, '0'); }
 
 // 精修条目快路径：id → 详情对象（与列表行一起构建）
 const curatedById = {};
@@ -4068,7 +4094,9 @@ RELICS.forEach((item) => {
   curatedThumb[item.id] = true;
 });
 
-const memory = { index: null, indexPending: null, shards: {} };
+const memory = { files: {}, full: null };
+const inflight = {};
+let assembling = null;
 
 function fetchJson(urls, cb) {
   const tryHost = (i) => {
@@ -4098,31 +4126,164 @@ function writeCache(key, data) {
   try { wx.setStorageSync(key, { t: Date.now(), data }); } catch (e) { /* 超限静默 */ }
 }
 
-// 全量索引（rows: [{id,title,period,type}]）。cb(rows|null)，失败 cb(null) 由页面兜底。
-function loadIndex(cb) {
-  if (memory.index) return cb(memory.index);
-  if (memory.indexPending) return memory.indexPending.push(cb);
-  memory.indexPending = [cb];
-  const done = (rows) => {
-    if (rows) memory.index = rows;
-    const pending = memory.indexPending;
-    memory.indexPending = null;
-    pending.forEach((fn) => fn(rows));
-  };
-  const cached = readCache(INDEX_KEY);
-  if (cached && Array.isArray(cached.rows) && cached.rows.length) return done(cached.rows);
-  fetchJson(INDEX_URLS, (data) => {
-    if (data && Array.isArray(data.rows) && data.rows.length) {
-      writeCache(INDEX_KEY, data);
-      done(data.rows);
-    } else {
-      done(null);
+// 单文件加载：内存 → 7 天缓存 → jsDelivr 双域（各文件请求内部快速重试一次，避开限流窗口）
+function loadJson(file, urls, validate, cb) {
+  if (memory.files[file]) return cb(memory.files[file]);
+  if (inflight[file]) return inflight[file].push(cb);
+  const cached = readCache(CACHE_PREFIX + file.replace(/[^\w]/g, '_'));
+  if (cached) {
+    memory.files[file] = cached;
+    return cb(cached);
+  }
+  inflight[file] = [cb];
+  const done = (data) => {
+    const subs = inflight[file] || [];
+    delete inflight[file];
+    if (data) {
+      memory.files[file] = data;
+      writeCache(CACHE_PREFIX + file.replace(/[^\w]/g, '_'), data);
     }
+    subs.forEach((fn) => fn(data));
+  };
+  const attempt = (left) => {
+    fetchJson(urls, (raw) => {
+      const data = raw && validate(raw);
+      if (data) return done(data);
+      if (left > 0) return setTimeout(() => attempt(left - 1), 600);
+      done(null);
+    });
+  };
+  attempt(1);
+}
+
+function validateHead(data) {
+  if (!data || data.v !== 2 || !Array.isArray(data.rows)) return null;
+  const { total, step, parts } = data;
+  if (!Number.isInteger(total) || total < 1 || !Number.isInteger(step) || step < 1) return null;
+  if (data.rows.length !== Math.min(total, step) || parts !== Math.ceil(total / step)) return null;
+  if (!Array.isArray(data.types) || !Array.isArray(data.eras)) return null;
+  return data;
+}
+
+function validatePart(size) {
+  return (data) => {
+    if (!data || data.v !== 2 || !Array.isArray(data.rows) || data.rows.length !== size) return null;
+    return data;
+  };
+}
+
+function validateDetail(data) {
+  if (!data || !data.items || typeof data.items !== 'object') return null;
+  return data;
+}
+
+// head 首屏回调后，后台补齐剩余分块并按序合并（不断层，同 apkData.fetchParts）。
+const PART_CONCURRENCY = 4;
+const PART_RETRY_DELAYS = [1500, 4000]; // 首轮之后再补两轮，避开 jsDelivr 限流窗口
+
+function assemble(head, cb) {
+  if (assembling) {
+    assembling.push(cb);
+    return;
+  }
+  assembling = [cb];
+
+  const { total, step } = head;
+  const idxParts = head.parts - 1; // head 已含前 step 行，part NN 覆盖 [NN*step, (NN+1)*step)
+  const rowsByN = new Array(idxParts);
+  let list = head.rows;
+  let prefix = 0;
+  let remaining = []; // 本轮待拉分块序号（最小序号优先，尽快推进连续前缀）
+  let failed = [];
+  let active = 0;
+  let round = 0;
+  for (let n = 1; n <= idxParts; n += 1) remaining.push(n);
+
+  const emit = (complete, stalled) => {
+    if (complete) {
+      memory.full = list;
+      writeCache(FULL_KEY, list); // 全部到齐才写全量缓存（残缺绝不落盘）
+    }
+    const info = { partial: !complete, total, loaded: list.length, stalled: !!stalled };
+    const subs = assembling || [];
+    if (complete || stalled) assembling = null;
+    subs.forEach((fn) => {
+      if (typeof fn === 'function') fn(list, info);
+    });
+  };
+
+  const settle = () => {
+    if (!failed.length) return emit(true);
+    if (round >= PART_RETRY_DELAYS.length) return emit(false, true);
+    const delay = PART_RETRY_DELAYS[round];
+    round += 1;
+    remaining = failed;
+    failed = [];
+    setTimeout(() => start(Math.min(PART_CONCURRENCY, remaining.length)), delay);
+  };
+
+  const worker = () => {
+    if (!remaining.length) return;
+    const n = remaining.shift();
+    const size = Math.min(step, total - n * step);
+    active += 1;
+    loadJson(`index-part-${pad(n)}.json`, PART_URLS(n), validatePart(size), (data) => {
+      active -= 1;
+      if (!data) {
+        failed.push(n);
+      } else {
+        rowsByN[n - 1] = data.rows;
+        const start = prefix;
+        while (rowsByN[prefix]) prefix += 1;
+        if (prefix > start) {
+          list = list.concat(...rowsByN.slice(start, prefix));
+          if (prefix < idxParts) emit(false);
+        }
+      }
+      if (!remaining.length && !active) settle();
+      else worker();
+    });
+  };
+
+  const start = (count) => {
+    for (let i = 0; i < count; i += 1) worker();
+  };
+
+  start(Math.min(PART_CONCURRENCY, idxParts));
+}
+
+// 目录加载：内存/缓存里有完整索引 → 一次回调全量；否则先回调 head 首屏
+// （info.partial=true, info.total=全量件数），后台补齐 part：每接上一块连续前缀
+// 就再回调一次（info.loaded=已载入件数），全部到齐回调完整目录（partial=false）；
+// 失败分块退避重试，绝不合并出带洞数据，耗尽后回调 info.stalled=true 由页面提示重试。
+function loadIndex(cb) {
+  if (typeof cb !== 'function') return;
+  if (!memory.full) {
+    const cachedFull = readCache(FULL_KEY);
+    if (Array.isArray(cachedFull) && cachedFull.length) memory.full = cachedFull;
+  }
+  if (memory.full) {
+    return cb(memory.full, { partial: false, total: memory.full.length, loaded: memory.full.length });
+  }
+  if (assembling) {
+    assembling.push(cb);
+    return;
+  }
+  loadJson(HEAD_FILE, HEAD_URLS, validateHead, (head) => {
+    if (!head) return cb(null);
+    if (head.parts <= 1) {
+      memory.full = head.rows;
+      writeCache(FULL_KEY, head.rows);
+      return cb(head.rows, { partial: false, total: head.total, loaded: head.rows.length });
+    }
+    cb(head.rows, { partial: true, total: head.total, loaded: head.rows.length });
+    assemble(head, cb);
   });
 }
 
-// 单件详情：精修走包内；批量按 index 定位分卷加载。
-// cb({ relic, source } | null)，source: 'curated' | 'remote'
+// 单件详情：精修走包内；批量按索引定位分卷加载。
+// cb({ relic, source } | null, err)，source: 'curated' | 'remote'；err.stalled=true 表示
+// 分块补齐受阻（网络不可用），与「未知条目」区分，页面据此显示重试。
 function loadDetail(id, cb) {
   const curated = curatedById[id];
   if (curated) {
@@ -4137,37 +4298,40 @@ function loadDetail(id, cb) {
       }
     });
   }
-  loadIndex((rows) => {
-    if (!rows) return cb(null);
-    const pos = rows.findIndex((row) => row.id === id);
-    if (pos < 0) return cb(null);
-    const shard = Math.floor(pos / 200);
-    const give = (entry) => {
-      if (!entry) return cb(null);
-      const { museum, url, rights } = sourceFor(id);
-      cb({
-        source: 'remote',
-        relic: {
-          id, title: entry.title, type: rows[pos].type, period: entry.period, date: entry.date,
-          material: entry.material, dimensions: entry.dimensions, accession: entry.accession,
-          description: entry.description, imageNote: entry.imageNote || '',
-          imageRatio: entry.imageRatio, museum, url, rights,
-          image: detailUrls(id)[0], imageThumb: '', template: !!entry.t
-        }
-      });
-    };
-    const key = DETAIL_KEY_PREFIX + shard;
-    const cached = readCache(key);
-    if (cached && cached.items && cached.items[id]) return give(cached.items[id]);
-    if (memory.shards[shard]) return give(memory.shards[shard][id] || null);
-    fetchJson(DETAIL_URLS(shard), (data) => {
-      if (data && data.items) {
-        memory.shards[shard] = data.items;
-        writeCache(key, data);
-        give(data.items[id] || null);
-      } else {
-        give(null);
+  let settled = false;
+  const finish = (entry, err) => {
+    if (settled) return;
+    settled = true;
+    if (!entry) return cb(null, err);
+    const { museum, url, rights } = sourceFor(id);
+    cb({
+      source: 'remote',
+      relic: {
+        id, title: entry.title, type: entry.type, period: entry.period, date: entry.date,
+        material: entry.material, dimensions: entry.dimensions, accession: entry.accession,
+        description: entry.description, imageNote: entry.imageNote || '',
+        imageRatio: entry.imageRatio, museum, url, rights,
+        image: detailUrls(id)[0], imageThumb: '', template: !!entry.t
       }
+    });
+  };
+  loadIndex((rows, info) => {
+    if (!rows) return finish(null);
+    const pos = rows.findIndex((row) => row.id === id);
+    if (pos < 0) {
+      if (info.stalled) return finish(null, { stalled: true });
+      if (!info.partial) return finish(null); // 完整索引仍无此 id → 未知条目
+      return; // 部分索引未命中：等后续分块合并回调再找
+    }
+    // 详情分卷条目不含 type（列表索引行才有），命中行随路携带
+    const row = rows[pos];
+    const head = memory.files[HEAD_FILE];
+    const step = head && head.step ? head.step : STEP_DEFAULT;
+    const shard = Math.floor(pos / step);
+    loadJson(`detail-${pad(shard)}.json`, DETAIL_URLS(shard), validateDetail, (data) => {
+      const entry = data && data.items[id];
+      if (!entry) return finish(null);
+      finish(Object.assign({ type: row.type }, entry));
     });
   });
 }
@@ -4188,6 +4352,15 @@ function thumbAlt(src) {
 }
 
 module.exports = { loadIndex, loadDetail, thumbFor, thumbAlt, isCurated };
+
+// 自测专用：清空模块内存态（本地缓存由自测自行清理）
+module.exports._reset = () => {
+  memory.files = {};
+  memory.full = null;
+  Object.keys(inflight).forEach((k) => delete inflight[k]);
+  assembling = null;
+  legacyCleaned = false;
+};
 
 });
 __register('/utils/store.js', function (require, module, exports) {
@@ -9453,6 +9626,11 @@ Page('project://relics/pages/relic-list/relic-list.js', {
     filterSheet: null,
     rows: [],
     count: 0,
+    total: 0,
+    loadedText: '0',
+    totalText: '0',
+    partial: false,
+    stalled: false,
     hasMore: false,
     indexLoading: true,
     indexFailed: false
@@ -9462,26 +9640,57 @@ Page('project://relics/pages/relic-list/relic-list.js', {
     share.enableMenu();
     font.apply(this);
     this.all = [];
+    this.matches = [];
+    this.rendered = false;
     this.loadCatalog();
   },
 
   onShow() { font.apply(this); },
 
-  // 全量索引（约 2,300 行，gzip 后约数十 KB）：内存/7 天缓存 → jsDelivr 双域
+  // 目录分块加载：head 首屏先出（~19KB），后台补齐 part；每次接上连续前缀都回调。
   loadCatalog() {
-    relicData.loadIndex((rows) => {
+    const requestId = (this.requestId || 0) + 1;
+    this.requestId = requestId;
+    relicData.loadIndex((rows, info) => {
+      if (requestId !== this.requestId) return; // 重试后丢弃旧装配的回调
       if (!rows) {
         this.setData({ indexLoading: false, indexFailed: true, filterSheet: null });
         return;
       }
-      this.all = rows;
-      this.updateFilters(this.data.typeIndex, this.data.eraIndex);
+      const start = this.all.length;
+      if (rows.length > start) {
+        this.all = rows;
+        // 分块按序追加，matches 只增不减；筛选变更时 updateFilters 全量重建
+        for (let i = start; i < rows.length; i += 1) {
+          if (matchesFilter(rows[i], this.data.typeIndex, this.data.eraIndex)) this.matches.push(rows[i]);
+        }
+      }
+      const total = (info && info.total) || rows.length;
+      const patch = {
+        indexLoading: false,
+        indexFailed: false,
+        partial: !!(info && info.partial),
+        stalled: !!(info && info.stalled),
+        total,
+        count: this.matches.length,
+        loadedText: String(rows.length),
+        totalText: String(total),
+        hasMore: this.data.rows.length < this.matches.length
+      };
+      if (!this.rendered) {
+        this.rendered = true;
+        const { patch: rowPatch, hasMore } = this.appendRows(0);
+        this.setData(Object.assign(patch, rowPatch, { hasMore }));
+        return;
+      }
+      // 分块补齐：只刷新计数/进度，不动已渲染行（滚动位置不跳，下滑续载取自 matches）
+      this.setData(patch);
     });
   },
 
   retryIndex() {
     if (this.data.indexLoading) return;
-    this.setData({ indexLoading: true, indexFailed: false });
+    this.setData({ indexLoading: true, indexFailed: false, stalled: false });
     this.loadCatalog();
   },
 
@@ -9512,8 +9721,7 @@ Page('project://relics/pages/relic-list/relic-list.js', {
   resetFilters() { this.updateFilters(0, 0); },
 
   updateFilters(typeIndex, eraIndex) {
-    this.matches = this.all.filter(item => (!typeIndex || item.type === TYPE_OPTIONS[typeIndex])
-      && (!eraIndex || matchesEra(item, ERA_OPTIONS[eraIndex])));
+    this.matches = this.all.filter(item => matchesFilter(item, typeIndex, eraIndex));
     const { patch, hasMore } = this.appendRows(0);
     this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length,
       hasMore, indexLoading: false, indexFailed: false, ...patch });
@@ -9567,8 +9775,10 @@ Page('project://relics/pages/relic-list/relic-list.js', {
 });
 
 // 时代筛选：索引行存显示期名（北宋/金/南朝…），按别名归组到 13 个筛选时代
-function matchesEra(item, era) {
-  const aliases = ERA_MATCH[era];
+function matchesFilter(item, typeIndex, eraIndex) {
+  if (typeIndex && item.type !== TYPE_OPTIONS[typeIndex]) return false;
+  if (!eraIndex) return true;
+  const aliases = ERA_MATCH[ERA_OPTIONS[eraIndex]];
   return !!aliases && aliases.some((alias) => item.period.indexOf(alias) >= 0);
 }
 const ERA_MATCH = {
@@ -9588,8 +9798,8 @@ const ERA_MATCH = {
 };
 
 });
-__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <view class=\"filter-card\">\r\n      <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\r\n        <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n      <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\r\n        <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"gallery-head\">\r\n      <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\r\n      <text class=\"result-count\" aria-live=\"polite\">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : count + ' 件')}}</text>\r\n    </view>\r\n    <view wx:if=\"{{indexLoading}}\" class=\"relic-empty\">\r\n      <text>馆藏目录加载中，请稍候。</text>\r\n    </view>\r\n    <view wx:elif=\"{{indexFailed}}\" class=\"relic-empty\">\r\n      <text>目录加载失败，请检查网络后重试。</text>\r\n      <view class=\"relic-action\" bindtap=\"retryIndex\" aria-role=\"button\">重新加载</view>\r\n    </view>\r\n    <view wx:elif=\"{{count}}\" class=\"relic-grid\">\r\n      <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\r\n        hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\r\n        <view class=\"relic-cover\">\r\n          <image class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load binderror=\"onThumbError\" data-index=\"{{index}}\" aria-hidden=\"true\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view class=\"relic-card-copy\">\r\n          <text class=\"relic-name\">{{item.title}}</text>\r\n          <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>这个时代与器类下暂无藏品。</text>\r\n      <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">清除筛选</view>\r\n    </view>\r\n    <view wx:if=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\r\n  </view>\r\n\r\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\r\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\r\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"filter-head\">\r\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\r\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\r\n      </view>\r\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\r\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\r\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\r\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\r\n        </view>\r\n      </scroll-view>\r\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
-__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.filter-card {\r\n  display: flex;\r\n  margin-top: 20rpx;\r\n  padding: 6rpx 10rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n}\r\n.filter-trigger + .filter-trigger::before {\r\n  position: absolute;\r\n  top: 22rpx;\r\n  bottom: 22rpx;\r\n  left: 0;\r\n  width: 1rpx;\r\n  background: rgba(70, 58, 45, 0.09);\r\n  content: '';\r\n}\r\n.filter-trigger {\r\n  position: relative;\r\n  flex: 1 1 0;\r\n  min-width: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  min-height: 44px;\r\n  padding: 6rpx 18rpx 6rpx 24rpx;\r\n  color: #5F5A52;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.filter-label { flex: 0 0 auto; }\r\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\r\n.filter-chevron {\r\n  flex: 0 0 26rpx;\r\n  height: 26rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n.filter-chevron::before {\r\n  width: 11rpx;\r\n  height: 11rpx;\r\n  border-right: 1px solid #8A6A3E;\r\n  border-bottom: 1px solid #8A6A3E;\r\n  transform: translateY(-2rpx) rotate(45deg);\r\n  content: '';\r\n}\r\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\r\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\r\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\r\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\r\n.relic-card {\r\n  width: calc((100% - 18rpx) / 2);\r\n  min-width: 0;\r\n  overflow: hidden;\r\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\r\n}\r\n.relic-card-pressed { opacity: 0.84; }\r\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\r\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\r\n.relic-name {\r\n  display: block;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  overflow-wrap: anywhere;\r\n}\r\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\r\n.relic-meta-type { white-space: nowrap; }\r\n.more-relics { margin-top: 24rpx; }\r\n\r\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\r\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\r\n.filter-sheet {\r\n  position: absolute;\r\n  inset: auto 0 0;\r\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\r\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\r\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\r\n.filter-title {\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(34rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n}\r\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\r\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\r\n.filter-list { display: block; max-height: 46vh; }\r\n.filter-option {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  padding: 0 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  color: #3B3731;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n}\r\n.filter-option:last-child { border-bottom-color: transparent; }\r\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\r\n.filter-check { font-size: 26rpx; }\r\n.filter-cancel {\r\n  margin-top: 18rpx;\r\n  border-radius: 36rpx;\r\n  background: #EEF0F0;\r\n  color: #5F5A52;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n}\r\n\r\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\r\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\r\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\r\n"; });
+__register('/relics/pages/relic-list/relic-list.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{!!filterSheet}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回上一页\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\" aria-role=\"heading\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <view class=\"filter-card\">\r\n      <view class=\"filter-trigger\" data-kind=\"type\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择器类，当前' + types[typeIndex]}}\">\r\n        <text class=\"filter-label\">器类</text><text class=\"filter-value\">{{types[typeIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n      <view class=\"filter-trigger\" data-kind=\"era\" bindtap=\"openFilter\" aria-role=\"button\" aria-label=\"{{'选择时代，当前' + eras[eraIndex]}}\">\r\n        <text class=\"filter-label\">时代</text><text class=\"filter-value\">{{eras[eraIndex]}}</text>\r\n        <view class=\"filter-chevron\" aria-hidden=\"true\"></view>\r\n      </view>\r\n    </view>\r\n\r\n    <view class=\"gallery-head\">\r\n      <text class=\"gallery-title\" aria-role=\"heading\">馆藏</text>\r\n      <text class=\"result-count\" aria-live=\"polite\">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>\r\n    </view>\r\n    <view wx:if=\"{{indexLoading}}\" class=\"relic-empty\">\r\n      <text>馆藏目录加载中，请稍候。</text>\r\n    </view>\r\n    <view wx:elif=\"{{indexFailed}}\" class=\"relic-empty\">\r\n      <text>目录加载失败，请检查网络后重试。</text>\r\n      <view class=\"relic-action\" bindtap=\"retryIndex\" aria-role=\"button\">重新加载</view>\r\n    </view>\r\n    <view wx:elif=\"{{count}}\" class=\"relic-grid\">\r\n      <view wx:for=\"{{rows}}\" wx:key=\"id\" class=\"relic-card\" data-id=\"{{item.id}}\" bindtap=\"openRelic\"\r\n        hover-class=\"relic-card-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"{{item.title + '，' + item.period + '，' + item.type}}\">\r\n        <view class=\"relic-cover\">\r\n          <image class=\"relic-thumb\" src=\"{{item.thumb}}\" mode=\"aspectFit\" lazy-load binderror=\"onThumbError\" data-index=\"{{index}}\" aria-hidden=\"true\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view class=\"relic-card-copy\">\r\n          <text class=\"relic-name\">{{item.title}}</text>\r\n          <view class=\"relic-meta\"><text>{{item.period}}</text><text class=\"relic-meta-type\"> · {{item.type}}</text></view>\r\n        </view>\r\n      </view>\r\n    </view>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>这个时代与器类下暂无藏品。</text>\r\n      <view class=\"relic-action\" bindtap=\"resetFilters\" aria-role=\"button\">清除筛选</view>\r\n    </view>\r\n    <view wx:if=\"{{stalled}}\" class=\"relic-action more-relics\" bindtap=\"retryIndex\" aria-role=\"button\">分块补齐受阻 · 点按重试</view>\r\n    <view wx:elif=\"{{partial}}\" class=\"relic-note\" aria-live=\"polite\">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>\r\n    <view wx:if=\"{{hasMore}}\" class=\"relic-action more-relics\" bindtap=\"loadMore\" aria-role=\"button\">加载更多</view>\r\n  </view>\r\n\r\n  <view class=\"filter-layer\" wx:if=\"{{filterSheet}}\">\r\n    <view class=\"filter-mask\" bindtap=\"closeFilter\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"filter-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"{{filterSheet.title}}\">\r\n      <view class=\"filter-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"filter-head\">\r\n        <text class=\"filter-title\" aria-role=\"heading\">{{filterSheet.title}}</text>\r\n        <view class=\"filter-close\" bindtap=\"closeFilter\" aria-role=\"button\" aria-label=\"关闭筛选面板\">×</view>\r\n      </view>\r\n      <scroll-view class=\"filter-list\" scroll-y=\"{{true}}\" style=\"height: {{filterSheet.options.length * 44}}px;\">\r\n        <view class=\"filter-option {{filterSheet.selected === index ? 'selected' : ''}}\" wx:for=\"{{filterSheet.options}}\" wx:key=\"*this\"\r\n          data-index=\"{{index}}\" bindtap=\"onFilterPick\" hover-class=\"filter-pressed\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-label=\"{{item + (filterSheet.selected === index ? '，已选中' : '')}}\">\r\n          <text>{{item}}</text><text wx:if=\"{{filterSheet.selected === index}}\" class=\"filter-check\" aria-hidden=\"true\">✓</text>\r\n        </view>\r\n      </scroll-view>\r\n      <view class=\"filter-cancel\" bindtap=\"closeFilter\" aria-role=\"button\">取消</view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
+__register('/relics/pages/relic-list/relic-list.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.filter-card {\r\n  display: flex;\r\n  margin-top: 20rpx;\r\n  padding: 6rpx 10rpx;\r\n  border-radius: 30rpx;\r\n  background: #FCFBF8;\r\n}\r\n.filter-trigger + .filter-trigger::before {\r\n  position: absolute;\r\n  top: 22rpx;\r\n  bottom: 22rpx;\r\n  left: 0;\r\n  width: 1rpx;\r\n  background: rgba(70, 58, 45, 0.09);\r\n  content: '';\r\n}\r\n.filter-trigger {\r\n  position: relative;\r\n  flex: 1 1 0;\r\n  min-width: 0;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12rpx;\r\n  min-height: 44px;\r\n  padding: 6rpx 18rpx 6rpx 24rpx;\r\n  color: #5F5A52;\r\n  font-size: calc(21rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.filter-label { flex: 0 0 auto; }\r\n.filter-value { flex: 1; min-width: 0; color: #6B5036; font-size: calc(23rpx * var(--fs, 1)); }\r\n.filter-chevron {\r\n  flex: 0 0 26rpx;\r\n  height: 26rpx;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n}\r\n.filter-chevron::before {\r\n  width: 11rpx;\r\n  height: 11rpx;\r\n  border-right: 1px solid #8A6A3E;\r\n  border-bottom: 1px solid #8A6A3E;\r\n  transform: translateY(-2rpx) rotate(45deg);\r\n  content: '';\r\n}\r\n.gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 16rpx; }\r\n.gallery-title { font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif; font-size: calc(34rpx * var(--fs, 1)); letter-spacing: 0.06em; }\r\n.result-count { color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); }\r\n.relic-grid { display: flex; flex-wrap: wrap; gap: 18rpx; }\r\n.relic-card {\r\n  width: calc((100% - 18rpx) / 2);\r\n  min-width: 0;\r\n  overflow: hidden;\r\n  border-radius: 22rpx 22rpx 28rpx 28rpx;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 8rpx 24rpx rgba(90, 70, 50, 0.045);\r\n}\r\n.relic-card-pressed { opacity: 0.84; }\r\n.relic-card .relic-cover { padding-top: 72%; background: #F3EFE6; }\r\n.relic-thumb { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.relic-card-copy { padding: 18rpx 20rpx 20rpx; }\r\n.relic-name {\r\n  display: block;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  overflow-wrap: anywhere;\r\n}\r\n.relic-meta { display: block; margin-top: 6rpx; color: #5F5A52; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.5; }\r\n.relic-meta-type { white-space: nowrap; }\r\n.more-relics { margin-top: 24rpx; }\r\n.relic-note { margin-top: 24rpx; color: #8C857A; font-size: calc(22rpx * var(--fs, 1)); text-align: center; line-height: 1.5; }\r\n\r\n.filter-layer { position: fixed; inset: 0; z-index: 120; }\r\n.filter-mask { position: absolute; inset: 0; background: rgba(31, 29, 25, 0.30); animation: filter-fade 0.18s ease both; }\r\n.filter-sheet {\r\n  position: absolute;\r\n  inset: auto 0 0;\r\n  padding: 16rpx 34rpx calc(26rpx + env(safe-area-inset-bottom));\r\n  border-radius: 42rpx 42rpx 0 0;\r\n  background: #FCFBF8;\r\n  box-shadow: 0 -20rpx 46rpx rgba(90, 70, 50, 0.10);\r\n  animation: filter-rise 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;\r\n}\r\n.filter-grip { width: 66rpx; height: 6rpx; margin: 4rpx auto 8rpx; border-radius: 3rpx; background: #E6E0D4; }\r\n.filter-head { display: flex; align-items: center; justify-content: space-between; padding-left: 10rpx; }\r\n.filter-title {\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(34rpx * var(--fs, 1));\r\n  letter-spacing: 0.06em;\r\n}\r\n.filter-close, .filter-cancel { display: flex; align-items: center; justify-content: center; min-height: 44px; }\r\n.filter-close { min-width: 44px; color: #6D645A; font-size: 40rpx; }\r\n.filter-list { display: block; max-height: 46vh; }\r\n.filter-option {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  padding: 0 20rpx;\r\n  border-bottom: 1rpx solid rgba(70, 58, 45, 0.08);\r\n  color: #3B3731;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n}\r\n.filter-option:last-child { border-bottom-color: transparent; }\r\n.filter-option.selected, .filter-pressed { border-radius: 22rpx; border-bottom-color: transparent; background: #F1E8DD; color: #684A30; }\r\n.filter-check { font-size: 26rpx; }\r\n.filter-cancel {\r\n  margin-top: 18rpx;\r\n  border-radius: 36rpx;\r\n  background: #EEF0F0;\r\n  color: #5F5A52;\r\n  font-size: calc(25rpx * var(--fs, 1));\r\n}\r\n\r\n@keyframes filter-fade { from { opacity: 0; } to { opacity: 1; } }\r\n@keyframes filter-rise { from { transform: translateY(25%); opacity: 0.45; } to { transform: translateY(0); opacity: 1; } }\r\n@media (prefers-reduced-motion: reduce) { .filter-mask, .filter-sheet { animation: none; } }\r\n"; });
 __register('/relics/pages/relic-detail/relic-detail.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
 const share = require('../../../utils/share.js');
@@ -9598,15 +9808,20 @@ const relicData = require('../../relicData.js');
 const { RELICS, LIST_PATH, imagePath, detailUrls, shareMessage } = require('../../catalog.js');
 
 Page('project://relics/pages/relic-detail/relic-detail.js', {
-  data: { fontClass: 'm', relic: null, loading: true, notFound: false, degraded: false, sourceOpen: false, share: { open: false } },
+  data: { fontClass: 'm', relic: null, loading: true, notFound: false, failed: false, degraded: false, sourceOpen: false, share: { open: false } },
 
   onLoad(options = {}) {
     share.enableMenu();
     font.apply(this);
-    this.setData({ loading: true, notFound: false, degraded: false, relic: null });
+    this.relicId = options.id;
+    this.setData({ loading: true, notFound: false, failed: false, degraded: false, relic: null });
     // 精修 60 件包内即时出；批量条目按索引分卷异步解析
-    relicData.loadDetail(options.id, (payload) => {
+    relicData.loadDetail(options.id, (payload, err) => {
       if (!payload) {
+        if (err && err.stalled) {
+          this.setData({ loading: false, failed: true });
+          return;
+        }
         this.setData({ loading: false, notFound: true });
         return;
       }
@@ -9617,6 +9832,12 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
         if (options.share === '1') this.openShare();
       });
     });
+  },
+
+  // 分块补齐受阻后的重试入口：重新解析当前 id（已到分块直接命中缓存）
+  retryLoad() {
+    if (this.data.loading) return;
+    this.onLoad({ id: this.relicId, share: this.data.share.open ? '1' : undefined });
   },
 
   onShow() { font.apply(this); },
@@ -9678,7 +9899,7 @@ Page('project://relics/pages/relic-detail/relic-detail.js', {
 });
 
 });
-__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"relic-empty\">\r\n      <text>目录加载中，请稍候。</text>\r\n    </view>\r\n    <block wx:elif=\"{{relic}}\">\r\n      <view class=\"object-card\">\r\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\r\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\r\n        <text class=\"object-date\">{{relic.date}}</text>\r\n        <view wx:if=\"{{!degraded}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\r\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\r\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view wx:elif=\"{{relic.imageThumb}}\" class=\"relic-cover object-cover\" style=\"padding-top: 72%;\">\r\n          <image class=\"object-image\" src=\"{{relic.imageThumb}}\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\r\n        <text class=\"object-image-note\">{{degraded && relic.imageThumb ? '详情大图离线暂不可用，显示缩略图 · ' : ''}}{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>\r\n      </view>\r\n\r\n      <view class=\"details-card\">\r\n        <view class=\"details-heading\">\r\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\r\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <text class=\"object-description\">{{relic.description}}</text>\r\n        <view class=\"facts\">\r\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\r\n        </view>\r\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\r\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\r\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\r\n        </view>\r\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\r\n      </view>\r\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\r\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\r\n    </block>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>未找到这件文物。</text>\r\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\r\n    </view>\r\n  </view>\r\n\r\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\r\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\r\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"ss-head\">\r\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\r\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\r\n      </view>\r\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\r\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\r\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n      </view>\r\n      <view class=\"relic-share-actions\">\r\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\r\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\r\n          <text>转寄好友</text>\r\n        </button>\r\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\r\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\r\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\r\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
+__register('/relics/pages/relic-detail/relic-detail.wxml', function (require, module, exports) { module.exports = "<view class=\"page fs-{{fontClass}}\">\r\n  <image class=\"paper-bg\" src=\"/assets/paper-bg.jpg\" mode=\"aspectFill\" aria-hidden=\"true\"></image>\r\n  <view class=\"screen\" aria-hidden=\"{{share.open}}\">\r\n    <view class=\"topbar\">\r\n      <view class=\"back-hit\" bindtap=\"goBack\" hover-class=\"back-hit-pressed\" hover-stay-time=\"80\" aria-role=\"button\" aria-label=\"返回文物列表\">\r\n        <view class=\"back\" aria-hidden=\"true\">\r\n          <view class=\"back-icon\"><view class=\"back-chevron\"></view><view class=\"back-shaft\"></view></view>\r\n          <view class=\"back-divider\"></view><text class=\"back-label\">返回</text>\r\n        </view>\r\n      </view>\r\n      <text class=\"top-title\">文物</text>\r\n      <image class=\"top-seal\" src=\"/assets/seal.png\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n    </view>\r\n\r\n    <view wx:if=\"{{loading}}\" class=\"relic-empty\">\r\n      <text>目录加载中，请稍候。</text>\r\n    </view>\r\n    <view wx:elif=\"{{failed}}\" class=\"relic-empty\">\r\n      <text>网络暂不可用，目录分块补齐受阻。</text>\r\n      <view class=\"relic-action\" bindtap=\"retryLoad\" aria-role=\"button\">重新加载</view>\r\n    </view>\r\n    <block wx:elif=\"{{relic}}\">\r\n      <view class=\"object-card\">\r\n        <text class=\"object-type\">{{relic.period}} · {{relic.type}}</text>\r\n        <text class=\"object-name\" aria-role=\"heading\">{{relic.title}}</text>\r\n        <text class=\"object-date\">{{relic.date}}</text>\r\n        <view wx:if=\"{{!degraded}}\" class=\"relic-cover object-cover\" style=\"padding-top: {{relic.imageRatio}}%;\">\r\n          <image class=\"object-image\" src=\"{{relic.image}}\" mode=\"aspectFit\" binderror=\"onImageError\"\r\n            aria-label=\"{{relic.title + (relic.imageNote ? '，' + relic.imageNote : '，馆藏图像')}}\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view wx:elif=\"{{relic.imageThumb}}\" class=\"relic-cover object-cover\" style=\"padding-top: 72%;\">\r\n          <image class=\"object-image\" src=\"{{relic.imageThumb}}\" mode=\"aspectFit\" aria-hidden=\"true\"></image>\r\n          <view class=\"cover-fade\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <view wx:else class=\"object-image-empty\">图像暂不可用</view>\r\n        <text class=\"object-image-note\">{{degraded && relic.imageThumb ? '详情大图离线暂不可用，显示缩略图 · ' : ''}}{{relic.imageNote ? relic.imageNote + ' · ' : ''}}{{relic.museum}} · {{relic.rights}}</text>\r\n      </view>\r\n\r\n      <view class=\"details-card\">\r\n        <view class=\"details-heading\">\r\n          <text class=\"details-title\" aria-role=\"heading\">文物简介</text>\r\n          <view class=\"details-rule\" aria-hidden=\"true\"></view>\r\n        </view>\r\n        <text class=\"object-description\">{{relic.description}}</text>\r\n        <view class=\"facts\">\r\n          <view class=\"fact\"><text class=\"fact-label\">材质</text><text>{{relic.material}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">尺寸</text><text>{{relic.dimensions}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">馆藏</text><text>{{relic.museum}}</text></view>\r\n          <view class=\"fact\"><text class=\"fact-label\">藏品编号</text><text>{{relic.accession}}</text></view>\r\n        </view>\r\n        <view class=\"source-toggle\" bindtap=\"toggleSource\" aria-role=\"button\"\r\n          aria-label=\"{{sourceOpen ? '收起馆方藏品页地址' : '展开馆方藏品页地址'}}\">\r\n          <text>馆方藏品页</text><text aria-hidden=\"true\">{{sourceOpen ? '⌃' : '›'}}</text>\r\n        </view>\r\n        <text wx:if=\"{{sourceOpen}}\" class=\"source-url\" user-select=\"{{true}}\">{{relic.url}}</text>\r\n      </view>\r\n      <view class=\"relic-action object-share\" bindtap=\"openShare\" hover-class=\"object-share-pressed\" hover-stay-time=\"80\"\r\n        aria-role=\"button\" aria-label=\"打开文物分享卡片\">共此卷</view>\r\n    </block>\r\n    <view wx:else class=\"relic-empty\">\r\n      <text>未找到这件文物。</text>\r\n      <view class=\"relic-action\" bindtap=\"goBack\" aria-role=\"button\">返回文物列表</view>\r\n    </view>\r\n  </view>\r\n\r\n  <view wx:if=\"{{share.open}}\" class=\"ss-layer relic-share-layer\">\r\n    <view class=\"ss-mask\" bindtap=\"closeShare\" catchtouchmove=\"noop\" aria-hidden=\"true\"></view>\r\n    <view class=\"ss-panel relic-share-sheet\" aria-role=\"dialog\" aria-modal=\"true\" aria-label=\"共此卷，文物分享卡片\">\r\n      <view class=\"ss-grip\" aria-hidden=\"true\"></view>\r\n      <view class=\"ss-head\">\r\n        <text class=\"ss-title\" aria-role=\"heading\">共此卷</text>\r\n        <view class=\"ss-close ss-close-touch\" bindtap=\"closeShare\" aria-role=\"button\" aria-label=\"关闭分享卡片\">×</view>\r\n      </view>\r\n      <view class=\"ss-qr-wrap\" aria-role=\"img\" aria-label=\"{{share.title + (share.fallback ? '，备用分享卡片' : '，文物分享卡片预览')}}\">\r\n        <image wx:if=\"{{share.fallback}}\" aria-hidden=\"true\" class=\"ss-canvas\" src=\"/assets/share-fallback.jpg\" mode=\"aspectFit\"></image>\r\n        <canvas wx:else aria-hidden=\"true\" type=\"2d\" id=\"ssQrCanvas\" class=\"ss-canvas\" disable-scroll=\"true\"></canvas>\r\n      </view>\r\n      <view class=\"relic-share-actions\">\r\n        <button class=\"share-action send-action\" open-type=\"share\" hover-class=\"share-action-pressed\" hover-stay-time=\"80\">\r\n          <view class=\"share-action-icon send-icon\" aria-hidden=\"true\"></view>\r\n          <text>转寄好友</text>\r\n        </button>\r\n        <view class=\"share-action save-action {{share.coverPending && !share.fallback ? 'share-pending' : ''}}\" bindtap=\"saveQr\"\r\n          hover-class=\"{{share.coverPending && !share.fallback ? 'none' : 'share-action-pressed'}}\" hover-stay-time=\"80\"\r\n          aria-role=\"button\" aria-disabled=\"{{share.coverPending && !share.fallback}}\">\r\n          <view class=\"share-action-icon save-icon\" aria-hidden=\"true\"></view>\r\n          <text>{{share.coverPending && !share.fallback ? '生成中' : '保存卡片'}}</text>\r\n        </view>\r\n      </view>\r\n    </view>\r\n  </view>\r\n</view>\r\n<feedback-popup></feedback-popup>\r\n<privacy-popup></privacy-popup>\r\n"; });
 __register('/relics/pages/relic-detail/relic-detail.wxss', function (require, module, exports) { module.exports = ".page {\r\n  position: relative;\r\n  min-height: 100vh;\r\n  overflow: hidden;\r\n  background: #F6F1EA;\r\n}\r\n\r\n.paper-bg { position: fixed; inset: 0; width: 100%; height: 100%; }\r\n.screen { position: relative; padding: 0 46rpx calc(56rpx + env(safe-area-inset-bottom)); }\r\n.topbar { position: relative; display: flex; align-items: center; height: 88rpx; margin-top: 82rpx; }\r\n.top-title {\r\n  position: absolute;\r\n  left: 54%;\r\n  transform: translateX(-50%);\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(36rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n  color: #1F1D19;\r\n}\r\n.top-seal { position: absolute; right: 200rpx; width: 30rpx; height: 36rpx; }\r\n\r\n.back {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 156rpx;\r\n  height: 56rpx;\r\n  border: 1rpx solid rgba(166, 128, 76, 0.38);\r\n  border-radius: 28rpx;\r\n  background: linear-gradient(180deg, #FFFDF9, #F9F4EB);\r\n  box-shadow: 0 4rpx 14rpx rgba(90, 70, 50, 0.06);\r\n}\r\n.back-hit-pressed .back { background: #F1E8DD; }\r\n.back-icon { position: relative; width: 32rpx; height: 20rpx; }\r\n.back-chevron {\r\n  position: absolute;\r\n  left: 1rpx;\r\n  top: 3rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-left: 2rpx solid #8A6A3E;\r\n  border-bottom: 2rpx solid #8A6A3E;\r\n  transform: rotate(45deg);\r\n}\r\n.back-shaft { position: absolute; left: 7rpx; top: 9rpx; width: 22rpx; height: 2rpx; background: #8A6A3E; }\r\n.back-divider { width: 1rpx; height: 18rpx; margin: 0 10rpx 0 5rpx; background: rgba(138, 106, 62, 0.20); }\r\n.back-label { color: #6B5A33; font-family: \"KaiTi\", \"STKaiti\", serif; font-size: calc(24rpx * var(--fs, 1)); }\r\n\r\n.relic-cover { position: relative; overflow: hidden; }\r\n.cover-fade {\r\n  position: absolute;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  height: 29rpx;\r\n  pointer-events: none;\r\n  background: linear-gradient(180deg, rgba(252, 251, 248, 0), rgba(252, 251, 248, 0.3) 58%, #FCFBF8);\r\n}\r\n\r\n.relic-empty {\r\n  padding: 34rpx;\r\n  border-radius: 38rpx;\r\n  background: #FCFBF8;\r\n  color: #5F5A52;\r\n  font-size: calc(26rpx * var(--fs, 1));\r\n  line-height: 1.6;\r\n  text-align: center;\r\n}\r\n.relic-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 44px;\r\n  margin-top: 20rpx;\r\n  padding: 10rpx 20rpx;\r\n  border-radius: 30rpx;\r\n  background: #F1E8DD;\r\n  color: #6B5036;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.45;\r\n}\r\n\r\n\r\n.object-card, .details-card { padding: 28rpx; border-radius: 38rpx; background: #FCFBF8; }\r\n.object-card { margin-top: 20rpx; }\r\n.object-type { display: block; color: #865C3B; font-size: calc(22rpx * var(--fs, 1)); line-height: 1.5; }\r\n.object-name {\r\n  display: block;\r\n  margin-top: 5rpx;\r\n  color: #1F1D19;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(43rpx * var(--fs, 1));\r\n  line-height: 1.35;\r\n}\r\n.object-date { display: block; margin-top: 9rpx; color: #5F5A52; font-size: calc(24rpx * var(--fs, 1)); line-height: 1.55; }\r\n.object-cover { margin-top: 24rpx; border-radius: 16rpx 16rpx 0 0; background: #F3EFE6; }\r\n.object-cover .cover-fade { height: 35rpx; }\r\n.object-image { position: absolute; inset: 0; width: 100%; height: 100%; }\r\n.object-image-empty {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  min-height: 130rpx;\r\n  margin-top: 24rpx;\r\n  border-radius: 16rpx;\r\n  background: #F3EFE6;\r\n  color: #5F5A52;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n}\r\n.object-image-note { display: block; margin-top: 10rpx; color: #5F5A52; text-align: right; font-size: calc(19rpx * var(--fs, 1)); }\r\n.details-card { margin-top: 22rpx; }\r\n.details-heading { display: flex; align-items: center; gap: 16rpx; }\r\n.details-title {\r\n  color: #864B40;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(30rpx * var(--fs, 1));\r\n  line-height: 1.4;\r\n}\r\n.details-rule { flex: 1; height: 1rpx; background: linear-gradient(90deg, #D9BDB0, transparent); }\r\n.object-description {\r\n  display: block;\r\n  margin: 12rpx 0 22rpx;\r\n  color: #3B3731;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  line-height: 1.8;\r\n}\r\n.facts {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  gap: 14rpx;\r\n}\r\n.fact {\r\n  width: calc((100% - 14rpx) / 2);\r\n  padding: 12rpx 16rpx;\r\n  border-radius: 20rpx;\r\n  background: #F7F3ED;\r\n  color: #3B3731;\r\n  font-size: calc(24rpx * var(--fs, 1));\r\n  line-height: 1.55;\r\n}\r\n.fact-label { display: block; color: #5F5A52; font-size: calc(20rpx * var(--fs, 1)); }\r\n.source-toggle {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  min-height: 44px;\r\n  margin-top: 8rpx;\r\n  color: #7D5A3B;\r\n  font-size: calc(22rpx * var(--fs, 1));\r\n}\r\n.source-url { display: block; margin-top: 10rpx; color: #865C3B; font-size: calc(21rpx * var(--fs, 1)); line-height: 1.55; word-break: break-all; }\r\n.object-share { margin-top: 22rpx; }\r\n.object-share-pressed { background: #EBDFD1; }\r\n\r\n.relic-share-sheet .ss-qr-wrap { margin: 12rpx 0 26rpx; }\r\n.relic-share-sheet .ss-canvas { box-shadow: 0 14rpx 34rpx rgba(90, 70, 50, 0.09); }\r\n.relic-share-actions { display: flex; gap: 16rpx; max-width: 306px; margin: 0 auto; }\r\n.share-action {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  flex: 1 1 0;\r\n  gap: 12rpx;\r\n  min-width: 0;\r\n  min-height: 46px;\r\n  margin: 0;\r\n  padding: 10rpx 12rpx;\r\n  border: 0;\r\n  border-radius: 26rpx;\r\n  font-family: \"Songti SC\", \"STSong\", \"SimSun\", serif;\r\n  font-size: calc(27rpx * var(--fs, 1));\r\n  font-weight: 400;\r\n  line-height: 1.4;\r\n}\r\n.share-action::after { border: 0; }\r\n.send-action { background: #F1E8DD; color: #63472F; }\r\n.save-action { background: #EEF0F0; color: #454C4A; }\r\n.send-action.share-action-pressed { background: #EBDFD1; }\r\n.save-action.share-action-pressed { background: #E3E8E7; }\r\n.save-action.share-pending { color: #706C63; }\r\n\r\n.share-action-icon { position: relative; flex: 0 0 32rpx; width: 32rpx; height: 32rpx; }\r\n.send-icon::before, .save-icon::before, .save-icon::after { position: absolute; content: ''; }\r\n.send-icon::before {\r\n  left: 4rpx;\r\n  bottom: 4rpx;\r\n  width: 18rpx;\r\n  height: 18rpx;\r\n  border: 1px solid currentColor;\r\n  border-radius: 4rpx;\r\n}\r\n.send-icon::after {\r\n  position: absolute;\r\n  top: 4rpx;\r\n  right: 4rpx;\r\n  width: 12rpx;\r\n  height: 12rpx;\r\n  border-top: 1px solid currentColor;\r\n  border-right: 1px solid currentColor;\r\n  background: linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), #F1E8DD;\r\n  content: '';\r\n}\r\n.share-action-pressed .send-icon::after { background-color: #EBDFD1; }\r\n.save-icon::before {\r\n  left: 5rpx;\r\n  bottom: 4rpx;\r\n  right: 5rpx;\r\n  height: 7rpx;\r\n  border: 1px solid currentColor;\r\n  border-top: 0;\r\n  border-radius: 0 0 3rpx 3rpx;\r\n}\r\n.save-icon::after {\r\n  top: 11rpx;\r\n  left: 11rpx;\r\n  width: 10rpx;\r\n  height: 10rpx;\r\n  border-right: 1px solid currentColor;\r\n  border-bottom: 1px solid currentColor;\r\n  transform: rotate(45deg);\r\n}\r\n.save-icon { background: linear-gradient(currentColor, currentColor) center 4rpx / 1px 14rpx no-repeat; }\r\n\r\n@media (max-height: 660px) {\r\n  .relic-share-sheet .ss-canvas { width: 196px; height: 319.63px; }\r\n}\r\n@media (max-height: 530px) {\r\n  .relic-share-sheet .ss-canvas { width: 172px; height: 280.49px; }\r\n}\r\n\r\n@media (max-height: 460px) {\r\n  .relic-share-sheet .ss-canvas { width: 148px; height: 241.35px; }\r\n}\r\n@media (prefers-reduced-motion: reduce) {\r\n  .relic-share-layer .ss-panel, .relic-share-layer .ss-mask { animation: none; }\r\n}\r\n"; });
 __register('/relics/pages/relic-share/relic-share.js', function (require, module, exports) {
 const font = require('../../../utils/font.js');
@@ -9697,11 +9918,14 @@ Page('project://relics/pages/relic-share/relic-share.js', {
       this.nextUrl = `${shareMessage(curated).path}&share=1`;
       return;
     }
-    relicData.loadIndex((rows) => {
-      const exists = !!rows && rows.some(row => row.id === id);
-      this.nextUrl = exists
-        ? `${DETAIL_PATH}?id=${encodeURIComponent(id)}&share=1`
-        : LIST_PATH;
+    relicData.loadIndex((rows, info) => {
+      if (!rows) { this.nextUrl = LIST_PATH; return; }
+      if (rows.some(row => row.id === id)) {
+        this.nextUrl = `${DETAIL_PATH}?id=${encodeURIComponent(id)}&share=1`;
+        return;
+      }
+      // 部分索引未命中：等后续分块合并回调再判；完整索引仍未见才是未知条目
+      if (info && !info.partial) this.nextUrl = LIST_PATH;
     });
   },
 

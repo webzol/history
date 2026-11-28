@@ -93,11 +93,23 @@ function load(name, file) {
 
 function kb(n) { return (n / 1024).toFixed(n < 10240 ? 2 : 1) + ' KB'; }
 
+function loadIndexRows() {
+  const relicsDir = path.join(ROOT, 'data', 'relics');
+  const head = JSON.parse(fs.readFileSync(path.join(relicsDir, 'index-head.json'), 'utf8'));
+  const rows = head.rows.slice();
+  for (let n = 1; n < head.parts; n++) {
+    rows.push(...JSON.parse(fs.readFileSync(
+      path.join(relicsDir, 'index-part-' + String(n).padStart(2, '0') + '.json'), 'utf8')).rows);
+  }
+  return { head, rows };
+}
+
 function main() {
   load('relic-list', path.join(ROOT, 'relics', 'pages', 'relic-list', 'relic-list.js'));
   const list = pages['relic-list'];
   const ledger = stats['relic-list'];
-  const index = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'relics', 'index.json'), 'utf8'));
+  const { head, rows: indexRows } = loadIndexRows();
+  const index = { total: head.total, step: head.step, parts: head.parts, rows: indexRows };
 
   const t0 = Date.now();
   list.onLoad();
@@ -122,13 +134,14 @@ function main() {
   const filterCall = ledger.entries[before];
   const filterRows = list.data.rows.length;
 
+  const partRequests = requests.filter((u) => u.indexOf('index-part-') >= 0).length;
   console.log(`== 文物列表（索引 ${index.total} 行，onLoad 全流程 ${Date.now() - t0}ms） ==`);
-  console.log(`首屏渲染 ${firstRows} 行（全量 ${index.total} 行）`);
-  console.log(`onLoad setData ${firstCalls} 次 / ${kb(firstBytes)}（rows ${kb(rowBytes)} + 框架状态 ${kb(chromeBytes)}）`);
+  console.log(`首屏渲染 ${firstRows} 行（全量 ${index.total} 行）；head ${Math.round(fs.statSync(path.join(ROOT, 'data', 'relics', 'index-head.json')).size / 1024)}KB，分块补齐 ${partRequests} 次后台请求`);
+  console.log(`onLoad setData ${firstCalls} 次 / ${kb(firstBytes)}（rows ${kb(rowBytes)} + 补齐进度/框架状态 ${kb(chromeBytes)}）`);
   console.log(`行卡载荷 ≈ ${perRow} 字节/行；一次渲染 ${index.total} 行需 ${kb(fullBytes)}，分页后首屏只传 ${kb(rowBytes)}（省 ${(100 * (1 - rowBytes / fullBytes)).toFixed(1)}%）`);
   console.log(`续载 2 屏：${tailCalls} 次 setData / 合计 ${kb(tailBytes)}（rows[offset+i] 逐项追加）`);
   console.log(`切筛选青铜：1 次 setData / ${filterCall.bytes} 字节（rows 重置 ${filterRows} 行 + 计数）`);
-  console.log(`wx.request 次数（列表冷启动）：${requests.length}（index.json 1 次；缩略图走 <image> 不计）`);
+  console.log(`wx.request 次数（列表冷启动）：首屏 1 次 head + 后台补齐 ${partRequests} 次 part = ${requests.length}（缩略图走 <image> 不计）`);
 
   requests.length = 0;
   load('relic-detail', path.join(ROOT, 'relics', 'pages', 'relic-detail', 'relic-detail.js'));
@@ -140,10 +153,6 @@ function main() {
   console.log(`onLoad setData ${d1.calls} 次 / ${kb(d1.bytes)}；wx.request ${requests.length} 次`);
 
   // 批量件（索引定位 + 详情分卷）
-  const templateRow = index.rows.find((row) => {
-    const shard = Math.floor(index.rows.indexOf(row) / index.step);
-    return true;
-  });
   const bulkRow = index.rows[index.rows.length - 2];
   const before2 = requests.length;
   const callsBefore = stats['relic-detail'].calls;
@@ -161,10 +170,11 @@ main();
 // ---------------------------------------------------------------------------
 
 async function probeNet() {
-  const index = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'img', '..', 'relics', 'index.json'), 'utf8'));
+  const { rows: indexRows } = loadIndexRows();
+  const total = indexRows.length;
   const sample = [];
-  for (let i = 0; i < index.rows.length; i += Math.ceil(index.total / 12)) {
-    sample.push(index.rows[i].id);
+  for (let i = 0; i < total; i += Math.ceil(total / 12)) {
+    sample.push(indexRows[i].id);
   }
   const rows = [];
   for (const id of sample) {

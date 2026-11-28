@@ -25,7 +25,7 @@
 
     <view class="gallery-head">
       <text class="gallery-title" aria-role="heading">馆藏</text>
-      <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : count + ' 件')}}</text>
+      <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>
     </view>
     <view wx:if="{{indexLoading}}" class="relic-empty">
       <text>馆藏目录加载中，请稍候。</text>
@@ -51,6 +51,8 @@
       <text>这个时代与器类下暂无藏品。</text>
       <view class="relic-action" bindtap="resetFilters" aria-role="button">清除筛选</view>
     </view>
+    <view wx:if="{{stalled}}" class="relic-action more-relics" bindtap="retryIndex" aria-role="button">分块补齐受阻 · 点按重试</view>
+    <view wx:elif="{{partial}}" class="relic-note" aria-live="polite">已载入 {{loadedText}} / {{totalText}} 件 · 正在补齐…</view>
     <view wx:if="{{hasMore}}" class="relic-action more-relics" bindtap="loadMore" aria-role="button">加载更多</view>
   </view>
 

@@ -14,11 +14,14 @@ Page({
       this.nextUrl = `${shareMessage(curated).path}&share=1`;
       return;
     }
-    relicData.loadIndex((rows) => {
-      const exists = !!rows && rows.some(row => row.id === id);
-      this.nextUrl = exists
-        ? `${DETAIL_PATH}?id=${encodeURIComponent(id)}&share=1`
-        : LIST_PATH;
+    relicData.loadIndex((rows, info) => {
+      if (!rows) { this.nextUrl = LIST_PATH; return; }
+      if (rows.some(row => row.id === id)) {
+        this.nextUrl = `${DETAIL_PATH}?id=${encodeURIComponent(id)}&share=1`;
+        return;
+      }
+      // 部分索引未命中：等后续分块合并回调再判；完整索引仍未见才是未知条目
+      if (info && !info.partial) this.nextUrl = LIST_PATH;
     });
   },
 

@@ -2305,3 +2305,14 @@ miniprogram/data/history.js
 - **性能实测**（`node tools/relic_perf_probe.js`）：列表首屏 onLoad 1 次 setData 1.40KB（8 行，约 179 字节/行），一次渲染 2,003 行需 145KB、分页省 99%；续载约 1.3KB/屏；筛选切换 1 次 1.5KB；列表冷启动 wx.request 仅 1 次（index.json，7 天缓存后 0 次）；详情精修 0 请求 / 批量 1 次分卷。分包 230.9KB（媒体 164KB 不变，批量图全在包外）。
 - 验证：`node tools/selftest.js` PASS **10326** / FAIL 0（断言数因批量件逐件校验从 2,441 涨到 10,326）；`python tools/validate_miniprogram.py` 通过（含分片对账 2,003 件）；content_audit、隐私自测 14 项通过；42 张截图全过，人工核对列表（2,003 件计数、新石器起步、CDN 缩略图）、精修详情与共此卷海报。
 - 待验证/待办：微信真机 index.json 首次加载（175KB gzip 后传输量）与批量详情分卷弱网表现；批量条目为模板生成**未经史实审校**，按批次精修替换（含约四成英文题名的中文化）；大都会开放数据候选（接口有 WAF 限流，本轮未批量拉取）留作下一批扩充。
+
+## 2026-11-28 · 文物索引 v2：head + part 分块（首屏 18KB，不断层交付）
+
+- **动机**：上一轮整份 `index.json` 175KB，列表冷启动要等完整索引到达才能出首屏，且 jsDelivr 单文件大请求弱网下失败即整页失败。照搬资料库 2026-10-24「head 首屏 + 分块补齐」的成熟架构（同源：`utils/apkData.js` 的不断层交付）。
+- **数据布局（`tools/build_relics_full.py`）**：`data/relics/index-head.json`（v2，前 200 行 + total/step/parts + **预计算筛选计数 typeCounts/eraCounts/joint**，18.7KB）+ `index-part-NN.json`（其余行每 200 行一块，10 块 ~17KB/块）；**part NN 与详情分卷 NN 对齐**（part NN 的行 = detail NN 的条目，按行位置 floor(pos/step) 互推）。旧整份 `index.json` 删除——已确认 60 件版本（d4d9344）尚无 relicData.js、不会请求它，发布序列安全。ERA_ALIAS 挪到使用点前并与列表页 ERA_MATCH 注释互指。
+- **运行时（`relics/relicData.js` 重写）**：`loadIndex(cb)` 改为 `(rows, info)` 多次回调——head 首屏先回调（partial=true, total/loaded），后台 4 并发拉 part，**只合并「head + 连续成功前缀」**，每接上一块再回调一次，全部到齐 partial=false；失败分块按 1.5s/4s 退避重试两轮，耗尽后回调 stalled=true。缓存分两层：head/part 各自落盘（key `shige_relic_index_v2_*`，分块可复用续传），**全量合并结果只有到齐才写** `shige_relic_index_v2_full`（残缺绝不落盘）；v1 整份索引缓存在模块加载时清理。`loadDetail` 语义增强：`cb(payload, err)`，**err.stalled=true 区分「网络受阻」与「未知条目」**；详情分卷条目不含 type，从命中索引行随路携带。
+- **页面**：列表页增量消费——首屏回调渲染 8 行，补齐回调只刷新计数/进度/hasMore（不动已渲染行，滚动不跳），底部新增「已载入 X / Y 件 · 正在补齐…」与「分块补齐受阻 · 点按重试」（同资料库文案）；计数行 partial 时显示 `count / total 件`；requestId 防旧装配串页。详情页新增 failed 态 + 「重新加载」重试（`retryLoad` 重放当前 id，已到分块直接命中缓存）；旧分享页仅在完整索引仍未见时才判「未知条目回列表」，部分索引先等补齐。
+- **工具链**：`validate_miniprogram.py` 分片对账改为 head+parts（head 结构/计数与全量行重算比对、part 行数、id 去重、三方配图对账保留）；`selftest.js` 文物段重写装载逻辑（head+parts 合并）并新增断言：head 轻量（<30KB）/计数重算一致/不断层交付（part-03 首轮全败只交付连续前缀 600、绝不出现 800 开洞、残缺不写全量缓存、分块各自缓存可复用）/v1 旧缓存清理/列表页受阻→重试恢复全量/详情页受阻 failed→重试渲染/旧分享页部分索引等待语义；`relic_perf_probe.js` 适配 head+parts 输出。自测请求桩新增 `relicFail(rel)`——注意 fetchJson 是双域名轮替，失败注入计数要按「尝试 × 2 域名」给（首轮全败需 4）。
+- **性能实测**（`node tools/relic_perf_probe.js`）：首屏只拉 head **18KB**（原 175KB，-90%）即可渲染 8 行；后台补齐 10 次分块请求（4 并发限流，jsDelivr 突发 403 面更小）；onLoad 11 次 setData = 1 次渲染 1.43KB + 10 次补齐进度（每次 ~150B）；行卡 183 字节/行不变；7 天缓存全量命中后冷启动 0 请求。整体字节不变（head+parts ≈ 原整份索引），拆的是首屏等待与失败半径。
+- 验证：`node tools/selftest.js` PASS **10358** / FAIL 0；privacy_selftest 14 项；content_audit 通过；validate 通过（含新分片对账 2,003 件、分包 240.1KB / 预算 1536KB）；`build_preview.js` + 42 张截图全过，人工核对文物列表（2003 件计数、新石器起步、CDN 缩略图）无回归。
+- 遗留/待验证：真机弱网下的补齐节奏与受阻重试体验；批量条目仍为模板生成**未经史实审校**（约四成英文题名待中文化）；后续若发布序列出现「读过 index.json 的历史版本」，需保留过渡 index.json（当前无需）。

@@ -17,6 +17,11 @@ Page({
     filterSheet: null,
     rows: [],
     count: 0,
+    total: 0,
+    loadedText: '0',
+    totalText: '0',
+    partial: false,
+    stalled: false,
     hasMore: false,
     indexLoading: true,
     indexFailed: false
@@ -26,26 +31,57 @@ Page({
     share.enableMenu();
     font.apply(this);
     this.all = [];
+    this.matches = [];
+    this.rendered = false;
     this.loadCatalog();
   },
 
   onShow() { font.apply(this); },
 
-  // 全量索引（约 2,300 行，gzip 后约数十 KB）：内存/7 天缓存 → jsDelivr 双域
+  // 目录分块加载：head 首屏先出（~19KB），后台补齐 part；每次接上连续前缀都回调。
   loadCatalog() {
-    relicData.loadIndex((rows) => {
+    const requestId = (this.requestId || 0) + 1;
+    this.requestId = requestId;
+    relicData.loadIndex((rows, info) => {
+      if (requestId !== this.requestId) return; // 重试后丢弃旧装配的回调
       if (!rows) {
         this.setData({ indexLoading: false, indexFailed: true, filterSheet: null });
         return;
       }
-      this.all = rows;
-      this.updateFilters(this.data.typeIndex, this.data.eraIndex);
+      const start = this.all.length;
+      if (rows.length > start) {
+        this.all = rows;
+        // 分块按序追加，matches 只增不减；筛选变更时 updateFilters 全量重建
+        for (let i = start; i < rows.length; i += 1) {
+          if (matchesFilter(rows[i], this.data.typeIndex, this.data.eraIndex)) this.matches.push(rows[i]);
+        }
+      }
+      const total = (info && info.total) || rows.length;
+      const patch = {
+        indexLoading: false,
+        indexFailed: false,
+        partial: !!(info && info.partial),
+        stalled: !!(info && info.stalled),
+        total,
+        count: this.matches.length,
+        loadedText: String(rows.length),
+        totalText: String(total),
+        hasMore: this.data.rows.length < this.matches.length
+      };
+      if (!this.rendered) {
+        this.rendered = true;
+        const { patch: rowPatch, hasMore } = this.appendRows(0);
+        this.setData(Object.assign(patch, rowPatch, { hasMore }));
+        return;
+      }
+      // 分块补齐：只刷新计数/进度，不动已渲染行（滚动位置不跳，下滑续载取自 matches）
+      this.setData(patch);
     });
   },
 
   retryIndex() {
     if (this.data.indexLoading) return;
-    this.setData({ indexLoading: true, indexFailed: false });
+    this.setData({ indexLoading: true, indexFailed: false, stalled: false });
     this.loadCatalog();
   },
 
@@ -76,8 +112,7 @@ Page({
   resetFilters() { this.updateFilters(0, 0); },
 
   updateFilters(typeIndex, eraIndex) {
-    this.matches = this.all.filter(item => (!typeIndex || item.type === TYPE_OPTIONS[typeIndex])
-      && (!eraIndex || matchesEra(item, ERA_OPTIONS[eraIndex])));
+    this.matches = this.all.filter(item => matchesFilter(item, typeIndex, eraIndex));
     const { patch, hasMore } = this.appendRows(0);
     this.setData({ typeIndex, eraIndex, filterSheet: null, count: this.matches.length,
       hasMore, indexLoading: false, indexFailed: false, ...patch });
@@ -131,8 +166,10 @@ Page({
 });
 
 // 时代筛选：索引行存显示期名（北宋/金/南朝…），按别名归组到 13 个筛选时代
-function matchesEra(item, era) {
-  const aliases = ERA_MATCH[era];
+function matchesFilter(item, typeIndex, eraIndex) {
+  if (typeIndex && item.type !== TYPE_OPTIONS[typeIndex]) return false;
+  if (!eraIndex) return true;
+  const aliases = ERA_MATCH[ERA_OPTIONS[eraIndex]];
   return !!aliases && aliases.some((alias) => item.period.indexOf(alias) >= 0);
 }
 const ERA_MATCH = {

@@ -508,15 +508,48 @@ def main():
         chunk = rows[i:i + STEP]
         shards.append({"v": 1, "items": {row["id"]: details[row["id"]] for row in chunk}})
 
-    index = {
-        "v": 1,
+    # 首屏只拉 index-head（前 200 行 + 精确计数元数据），其余行进 index-part-NN 后台/按需补。
+    # ERA_ALIAS 与 relics/pages/relic-list/relic-list.js 的 ERA_MATCH 保持一致（显示期名 → 筛选时代）。
+    ERA_ALIAS = {
+        "新石器时代": ["新石器时代"], "二里头文化": ["二里头文化"], "商": ["商"], "西周": ["西周"],
+        "东周": ["东周", "春秋", "战国"], "汉": ["汉", "秦"],
+        "魏晋南北朝": ["魏晋南北朝", "三国", "晋", "南朝", "北朝", "六朝", "隋"],
+        "唐": ["唐"], "五代": ["五代"], "宋": ["宋", "辽", "金", "西夏"],
+        "元": ["元"], "明": ["明"], "清": ["清"],
+    }
+
+    def era_of_period(period_head):
+        for era, aliases in ERA_ALIAS.items():
+            if any(alias in period_head for alias in aliases):
+                return era
+        return "其他"
+
+    type_counts = {t: 0 for t in TYPES}
+    era_counts = {e: 0 for e in ERAS}
+    joint = {t: {e: 0 for e in ERAS} for t in TYPES}
+    for row in rows:
+        era = era_of_period(row["period"])
+        if row["type"] in type_counts:
+            type_counts[row["type"]] += 1
+        if era in era_counts:
+            era_counts[era] += 1
+        if row["type"] in joint and era in joint[row["type"]]:
+            joint[row["type"]][era] += 1
+
+    head_rows = rows[:STEP]
+    head = {
+        "v": 2,
         "total": len(rows),
         "step": STEP,
         "parts": len(shards),
         "types": TYPES,
         "eras": ERAS,
-        "rows": rows,
+        "typeCounts": type_counts,
+        "eraCounts": era_counts,
+        "joint": joint,
+        "rows": head_rows,
     }
+    parts_rows = [rows[i:i + STEP] for i in range(STEP, len(rows), STEP)]
     print("类别分布:", type_stats)
     print("中文题名（原题名+词表）:", zh_title_count, "/", len(bulk))
 
@@ -524,8 +557,15 @@ def main():
         return
 
     out_root.mkdir(parents=True, exist_ok=True)
-    (out_root / "index.json").write_text(
-        json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    old_index = out_root / "index.json"
+    if old_index.exists():
+        old_index.unlink()
+    (out_root / "index-head.json").write_text(
+        json.dumps(head, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    for n, part_rows in enumerate(parts_rows, start=1):
+        (out_root / f"index-part-{n:02d}.json").write_text(
+            json.dumps({"v": 2, "rows": part_rows}, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
     for n, shard in enumerate(shards):
         (out_root / f"detail-{n:02d}.json").write_text(
             json.dumps(shard, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

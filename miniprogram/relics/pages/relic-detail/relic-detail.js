@@ -5,15 +5,20 @@ const relicData = require('../../relicData.js');
 const { RELICS, LIST_PATH, imagePath, detailUrls, shareMessage } = require('../../catalog.js');
 
 Page({
-  data: { fontClass: 'm', relic: null, loading: true, notFound: false, degraded: false, sourceOpen: false, share: { open: false } },
+  data: { fontClass: 'm', relic: null, loading: true, notFound: false, failed: false, degraded: false, sourceOpen: false, share: { open: false } },
 
   onLoad(options = {}) {
     share.enableMenu();
     font.apply(this);
-    this.setData({ loading: true, notFound: false, degraded: false, relic: null });
+    this.relicId = options.id;
+    this.setData({ loading: true, notFound: false, failed: false, degraded: false, relic: null });
     // 精修 60 件包内即时出；批量条目按索引分卷异步解析
-    relicData.loadDetail(options.id, (payload) => {
+    relicData.loadDetail(options.id, (payload, err) => {
       if (!payload) {
+        if (err && err.stalled) {
+          this.setData({ loading: false, failed: true });
+          return;
+        }
         this.setData({ loading: false, notFound: true });
         return;
       }
@@ -24,6 +29,12 @@ Page({
         if (options.share === '1') this.openShare();
       });
     });
+  },
+
+  // 分块补齐受阻后的重试入口：重新解析当前 id（已到分块直接命中缓存）
+  retryLoad() {
+    if (this.data.loading) return;
+    this.onLoad({ id: this.relicId, share: this.data.share.open ? '1' : undefined });
   },
 
   onShow() { font.apply(this); },

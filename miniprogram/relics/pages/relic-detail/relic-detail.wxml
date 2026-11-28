@@ -15,6 +15,10 @@
     <view wx:if="{{loading}}" class="relic-empty">
       <text>目录加载中，请稍候。</text>
     </view>
+    <view wx:elif="{{failed}}" class="relic-empty">
+      <text>网络暂不可用，目录分块补齐受阻。</text>
+      <view class="relic-action" bindtap="retryLoad" aria-role="button">重新加载</view>
+    </view>
     <block wx:elif="{{relic}}">
       <view class="object-card">
         <text class="object-type">{{relic.period}} · {{relic.type}}</text>
