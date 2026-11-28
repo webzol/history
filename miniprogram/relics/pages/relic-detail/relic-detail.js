@@ -4,6 +4,8 @@ const qrshare = require('../../../utils/qrshare.js');
 const relicData = require('../../relicData.js');
 const { RELICS, LIST_PATH, imagePath, detailUrls, shareMessage } = require('../../catalog.js');
 
+const TEMPLATE_DATA_NOTE = '条目按馆方开放数据生成，未经史实审校。';
+
 Page({
   data: { fontClass: 'm', relic: null, loading: true, notFound: false, failed: false, degraded: false, sourceOpen: false, share: { open: false } },
 
@@ -23,6 +25,11 @@ Page({
         return;
       }
       const relic = payload.relic;
+      const description = (relic.description || '').trim();
+      relic.dataNote = relic.template ? TEMPLATE_DATA_NOTE : '';
+      relic.descriptionBody = relic.dataNote && description.endsWith(relic.dataNote)
+        ? description.slice(0, -relic.dataNote.length).trim()
+        : description;
       this.detailSources = detailUrls(relic.id);
       relic.image = this.detailSources[0];
       this.setData({ relic, loading: false }, () => {

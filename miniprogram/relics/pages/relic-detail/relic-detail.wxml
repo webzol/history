@@ -43,7 +43,7 @@
           <text class="details-title" aria-role="heading">文物简介</text>
           <view class="details-rule" aria-hidden="true"></view>
         </view>
-        <text class="object-description">{{relic.description}}</text>
+        <text class="object-description">{{relic.descriptionBody}}</text>
         <view class="facts">
           <view class="fact"><text class="fact-label">材质</text><text>{{relic.material}}</text></view>
           <view class="fact"><text class="fact-label">尺寸</text><text>{{relic.dimensions}}</text></view>
@@ -56,8 +56,15 @@
         </view>
         <text wx:if="{{sourceOpen}}" class="source-url" user-select="{{true}}">{{relic.url}}</text>
       </view>
+      <view wx:if="{{relic.dataNote}}" class="object-data-note">
+        <text>{{relic.dataNote}}</text>
+      </view>
       <view class="relic-action object-share" bindtap="openShare" hover-class="object-share-pressed" hover-stay-time="80"
-        aria-role="button" aria-label="打开文物分享卡片">共此卷</view>
+        aria-role="button" aria-label="打开文物分享卡片">
+        <view class="object-share-ornament" aria-hidden="true"><view class="object-share-fret"></view></view>
+        <text>共此卷</text>
+        <view class="object-share-ornament object-share-ornament-end" aria-hidden="true"><view class="object-share-fret"></view></view>
+      </view>
     </block>
     <view wx:else class="relic-empty">
       <text>未找到这件文物。</text>

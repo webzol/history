@@ -2225,6 +2225,8 @@ console.log('== 文物分包 ==');
   eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '详情馆方');
   eq(detail.data.relic.rights, 'CC0', '详情授权文案');
   eq(detail.data.relic.template, false, '精修件非模板');
+  eq(detail.data.relic.dataNote, '', '精修件隐藏数据说明');
+  eq(detail.data.relic.descriptionBody, detail.data.relic.description, '精修简介照原文展示');
   eq(detail.data.relic.image, catalog.detailUrls('cma-1952.510')[0], '详情主图走 CDN 主域');
   eq(detail.data.relic.imageThumb, '/relics/assets/thumb-cma-1952.510.jpg', '包内缩略图备好降级');
   eq(detail.data.relic.imageRatio, 55.714, '详情图框比例');
@@ -2250,6 +2252,9 @@ console.log('== 文物分包 ==');
   eq(detail.data.loading, false, '批量件经索引分卷出详情');
   eq(detail.data.relic.id, templateId, '批量件 id');
   eq(detail.data.relic.template, true, '批量件带模板标记');
+  eq(detail.data.relic.dataNote, '条目按馆方开放数据生成，未经史实审校。', '批量件独立显示数据说明');
+  eq(detail.data.relic.descriptionBody + detail.data.relic.dataNote, detail.data.relic.description,
+    '旧分卷的末尾说明从简介拆出，正文保留');
   eq(detail.data.relic.title, index.rows.find((row) => row.id === templateId).title, '批量件标题与索引一致');
   eq(detail.data.relic.museum, '克利夫兰艺术博物馆', '批量件馆方');
   eq(detail.data.relic.imageThumb, '', '批量件无包内缩略图');
