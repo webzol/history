@@ -1,28 +1,36 @@
 <view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
   <view class="screen" aria-hidden="{{!!filterSheet}}">
-    <view class="topbar">
-      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回上一页">
+    <view class="topbar nav-with-back">
+      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80"
+        aria-role="button" aria-label="{{mode === 'cate' ? '返回上一页' : '返回全部分类'}}">
         <view class="back" aria-hidden="true">
           <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
-          <view class="back-divider"></view><text class="back-label">返回</text>
+          <view class="back-divider"></view><text class="back-label">{{mode === 'cate' ? '返回' : '全部分类'}}</text>
         </view>
       </view>
-      <text class="top-title" aria-role="heading">文物</text>
-      <image class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
+      <text wx:if="{{mode !== 'cate'}}" class="top-title" aria-role="heading">文物</text>
+      <image wx:if="{{mode !== 'cate'}}" class="top-seal" src="/assets/seal.png" mode="aspectFit" aria-hidden="true"></image>
     </view>
 
     <!-- 分类首屏：器类 / 时代 -->
     <block wx:if="{{mode === 'cate'}}">
-      <view class="cate-tabs" aria-role="tablist">
-        <view class="cate-tab {{cateTab === 'type' ? 'active' : ''}}" data-tab="type" bindtap="switchCateTab"
-          hover-class="cate-tab-pressed" hover-stay-time="80" aria-role="tab" aria-selected="{{cateTab === 'type'}}" aria-label="按器类浏览">器类</view>
-        <view class="cate-tab {{cateTab === 'era' ? 'active' : ''}}" data-tab="era" bindtap="switchCateTab"
-          hover-class="cate-tab-pressed" hover-stay-time="80" aria-role="tab" aria-selected="{{cateTab === 'era'}}" aria-label="按时代浏览">时代</view>
+      <view class="catalog-head">
+        <image class="catalog-landscape" src="/relics/assets/catalog-landscape.jpg" mode="aspectFill" aria-hidden="true"></image>
+        <view class="catalog-copy">
+          <text class="catalog-title" aria-role="heading">博物馆藏品</text>
+          <view class="catalog-rule" aria-hidden="true"></view>
+          <text class="catalog-subtitle">数字博物馆</text>
+          <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : totalText + ' 件')}}</text>
+        </view>
       </view>
-      <view class="gallery-head">
-        <text class="gallery-title" aria-role="heading">馆藏</text>
-        <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : total + ' 件')}}</text>
+      <view class="cate-heading">
+        <text class="cate-heading-title" aria-role="heading">{{cateTab === 'type' ? '器类' : '时代'}}</text>
+        <view class="cate-switch" data-tab="{{cateTab === 'type' ? 'era' : 'type'}}" bindtap="switchCateTab"
+          hover-class="cate-tab-pressed" hover-stay-time="80" aria-role="button">
+          <view class="cate-switch-icon" aria-hidden="true"><view></view><view></view></view>
+          <text>{{cateTab === 'type' ? '按时代' : '按器类'}}</text>
+        </view>
       </view>
       <view wx:if="{{indexLoading}}" class="relic-empty">
         <text>馆藏目录加载中，请稍候。</text>
@@ -32,19 +40,16 @@
         <view class="relic-action" bindtap="retryIndex" aria-role="button">重新加载</view>
       </view>
       <view wx:else class="cate-grid">
-        <view wx:for="{{cateCards}}" wx:key="key" class="cate-card" data-kind="{{cateTab}}" data-index="{{index}}"
+        <view wx:for="{{cateCards}}" wx:key="key" class="cate-card {{cateTab === 'type' && index < 2 ? 'cate-card-feature' : ''}} {{cateTab === 'era' && index === 0 ? 'cate-era-feature' : ''}}"
+          data-kind="{{cateTab}}" data-index="{{index}}"
           bindtap="openCategory" hover-class="relic-card-pressed" hover-stay-time="80" aria-role="button"
-          aria-label="{{item.name}}，{{item.count}} 件">
-          <view class="cate-cover">
-            <image wx:if="{{item.thumb}}" class="cate-thumb" src="{{item.thumb}}" mode="aspectFill" lazy-load
-              binderror="onCateThumbError" data-index="{{index}}" aria-hidden="true"></image>
-            <view wx:else class="cate-thumb cate-thumb-none" aria-hidden="true"></view>
-            <view class="cover-fade" aria-hidden="true"></view>
-            <view class="cate-count" aria-hidden="true">{{item.count}} 件</view>
+          aria-label="{{item.name}}">
+          <view class="cate-cover {{item.art ? 'cate-cover-art' : ''}}">
+            <image wx:if="{{item.art || item.thumb}}" class="cate-thumb" src="{{item.art || item.thumb}}" mode="aspectFit" lazy-load
+              binderror="onCateThumbError" data-index="{{index}}" data-key="{{item.key}}" data-src="{{item.art || item.thumb}}" aria-hidden="true"></image>
           </view>
           <view class="cate-copy">
             <text class="cate-name">{{item.name}}</text>
-            <text class="cate-meta">{{item.count}} 件</text>
           </view>
         </view>
       </view>
@@ -52,25 +57,16 @@
 
     <!-- 分类内文物网格 -->
     <block wx:else>
-      <view class="cate-crumb" bindtap="backToCate" hover-class="cate-tab-pressed" hover-stay-time="80"
-        aria-role="button" aria-label="返回分类首屏">
-        <text class="cate-crumb-arrow" aria-hidden="true">‹</text>
-        <text>全部分类</text>
-      </view>
-      <view class="filter-card">
-        <view class="filter-trigger" data-kind="type" bindtap="openFilter" aria-role="button" aria-label="{{'选择器类，当前' + types[typeIndex]}}">
-          <text class="filter-label">器类</text><text class="filter-value">{{types[typeIndex]}}</text>
-          <view class="filter-chevron" aria-hidden="true"></view>
-        </view>
-        <view class="filter-trigger" data-kind="era" bindtap="openFilter" aria-role="button" aria-label="{{'选择时代，当前' + eras[eraIndex]}}">
-          <text class="filter-label">时代</text><text class="filter-value">{{eras[eraIndex]}}</text>
-          <view class="filter-chevron" aria-hidden="true"></view>
-        </view>
-      </view>
-
       <view class="gallery-head">
-        <text class="gallery-title" aria-role="heading">{{gridLabel}}</text>
-        <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : (partial ? count + ' / ' + total + ' 件' : count + ' 件'))}}</text>
+        <view class="gallery-copy">
+          <text class="gallery-title" aria-role="heading">{{gridLabel}}</text>
+          <text class="result-count" aria-live="polite">{{indexLoading ? '目录加载中' : (indexFailed ? '目录加载失败' : count + ' 件')}}</text>
+        </view>
+        <view class="filter-trigger" bindtap="openFilter" hover-class="filter-pressed" hover-stay-time="80" aria-role="button"
+          aria-label="{{'寻物，器类 ' + types[typeIndex] + '，时代 ' + eras[eraIndex]}}">
+          <view class="filter-icon" aria-hidden="true"><view></view><view></view></view>
+          <text>寻物</text>
+        </view>
       </view>
       <view wx:if="{{indexLoading}}" class="relic-empty">
         <text>馆藏目录加载中，请稍候。</text>
@@ -91,7 +87,7 @@
             <view class="cover-fade" aria-hidden="true"></view>
           </view>
           <view class="relic-card-copy">
-            <text class="relic-name">{{item.title}}</text>
+            <view class="relic-name">{{item.title}}</view>
             <view class="relic-meta"><text>{{item.period}}</text><text class="relic-meta-type"> · {{item.type}}</text></view>
           </view>
         </view>
@@ -111,20 +107,34 @@
 
   <view class="filter-layer" wx:if="{{filterSheet}}">
     <view class="filter-mask" bindtap="closeFilter" catchtouchmove="noop" aria-hidden="true"></view>
-    <view class="filter-sheet" aria-role="dialog" aria-modal="true" aria-label="{{filterSheet.title}}">
+    <view class="filter-sheet" aria-role="dialog" aria-modal="true" aria-label="寻物">
       <view class="filter-grip" aria-hidden="true"></view>
       <view class="filter-head">
-        <text class="filter-title" aria-role="heading">{{filterSheet.title}}</text>
-        <view class="filter-close" bindtap="closeFilter" aria-role="button" aria-label="关闭筛选面板">×</view>
+        <text class="filter-title" aria-role="heading">寻物</text>
+        <view class="filter-close" bindtap="closeFilter" aria-role="button" aria-label="关闭寻物面板">×</view>
       </view>
-      <scroll-view class="filter-list" scroll-y="{{true}}" style="height: {{filterSheet.options.length * 44}}px;">
-        <view class="filter-option {{filterSheet.selected === index ? 'selected' : ''}}" wx:for="{{filterSheet.options}}" wx:key="*this"
-          data-index="{{index}}" bindtap="onFilterPick" hover-class="filter-pressed" hover-stay-time="80"
-          aria-role="button" aria-label="{{item + (filterSheet.selected === index ? '，已选中' : '')}}">
-          <text>{{item}}</text><text wx:if="{{filterSheet.selected === index}}" class="filter-check" aria-hidden="true">✓</text>
+      <scroll-view class="filter-list" scroll-y="{{true}}">
+        <view class="filter-group">
+          <text class="filter-group-title" aria-role="heading">器类</text>
+          <view class="filter-options">
+            <view class="filter-option {{filterSheet.typeIndex === index ? 'selected' : ''}}" wx:for="{{types}}" wx:key="*this"
+              data-kind="type" data-index="{{index}}" bindtap="onFilterPick" hover-class="filter-pressed" hover-stay-time="80"
+              aria-role="button" aria-label="{{item + (filterSheet.typeIndex === index ? '，已选中' : '')}}">{{item}}</view>
+          </view>
+        </view>
+        <view class="filter-group">
+          <text class="filter-group-title" aria-role="heading">时代</text>
+          <view class="filter-options">
+            <view class="filter-option {{filterSheet.eraIndex === index ? 'selected' : ''}}" wx:for="{{eras}}" wx:key="*this"
+              data-kind="era" data-index="{{index}}" bindtap="onFilterPick" hover-class="filter-pressed" hover-stay-time="80"
+              aria-role="button" aria-label="{{item + (filterSheet.eraIndex === index ? '，已选中' : '')}}">{{item}}</view>
+          </view>
         </view>
       </scroll-view>
-      <view class="filter-cancel" bindtap="closeFilter" aria-role="button">取消</view>
+      <view class="filter-actions">
+        <view class="filter-reset" bindtap="resetFilterDraft" hover-class="filter-pressed" hover-stay-time="80" aria-role="button">重置</view>
+        <view class="filter-apply" bindtap="applyFilter" hover-class="filter-apply-pressed" hover-stay-time="80" aria-role="button">查看结果</view>
+      </view>
     </view>
   </view>
 </view>

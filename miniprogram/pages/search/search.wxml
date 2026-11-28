@@ -2,7 +2,7 @@
   <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
 
-    <view class="topbar">
+    <view class="topbar nav-with-back">
       <view class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"
         hover-class="back-hit-pressed" hover-stay-time="80">
         <view class="back" aria-hidden="true">

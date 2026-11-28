@@ -1,7 +1,7 @@
 <view class="page fs-{{fontClass}}">
   <image aria-hidden="true" class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen" wx:if="{{person}}" aria-hidden="{{share.open}}">
-    <view class="topbar">
+    <view class="topbar nav-with-back">
       <view class="back-hit" bindtap="goBack" aria-role="button" aria-label="返回上一页"
         hover-class="back-hit-pressed" hover-stay-time="80">
         <view class="back" aria-hidden="true">
@@ -93,8 +93,16 @@
           <canvas wx:else type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
         </view>
         <view class="ss-actions">
-          <button class="ss-btn ss-btn-primary" open-type="share" aria-label="发送给好友">转 寄 好 友</button>
-          <view class="ss-btn ss-btn-ghost" bindtap="saveQr" aria-role="button" aria-label="保存分享卡片">保 存 卡 片</view>
+          <button class="share-action send-action" open-type="share" hover-class="share-action-pressed" hover-stay-time="80"
+            aria-label="发送给好友">
+            <view class="share-action-icon send-icon" aria-hidden="true"></view>
+            <text>转寄好友</text>
+          </button>
+          <view class="share-action save-action" bindtap="saveQr" hover-class="share-action-pressed" hover-stay-time="80"
+            aria-role="button" aria-label="保存分享卡片">
+            <view class="share-action-icon save-icon" aria-hidden="true"></view>
+            <text>保存卡片</text>
+          </view>
         </view>
       </view>
     </view>

@@ -1,14 +1,17 @@
 <view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill"></image>
   <view class="screen">
-    <view class="topbar">
-      <view class="back" bindtap="goBack" hover-class="back-pressed" hover-stay-time="80">
-        <view class="back-icon">
-          <view class="back-chevron"></view>
-          <view class="back-shaft"></view>
+    <view class="topbar nav-with-back">
+      <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80"
+        aria-role="button" aria-label="返回上一页">
+        <view class="back" aria-hidden="true">
+          <view class="back-icon">
+            <view class="back-chevron"></view>
+            <view class="back-shaft"></view>
+          </view>
+          <view class="back-divider"></view>
+          <text class="back-label">返回</text>
         </view>
-        <view class="back-divider"></view>
-        <text class="back-label">返回</text>
       </view>
       <text class="top-title">资料库</text>
       <image class="top-seal" src="/assets/seal.png" mode="aspectFit"></image>

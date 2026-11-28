@@ -6,6 +6,16 @@ const { ERAS, TYPES, ERA_MATCH, DETAIL_PATH, shareMessage } = require('../../cat
 const PAGE_SIZE = 8;
 const TYPE_OPTIONS = ['全部', ...TYPES];
 const ERA_OPTIONS = ['不限', ...ERAS];
+const TYPE_ART = {
+  青铜: 'bronze', 陶瓷: 'ceramics', 玉器: 'jade', 书画: 'painting',
+  雕塑: 'sculpture', 漆器: 'lacquer', 玻璃珐琅: 'enamel', 其他: 'other'
+};
+const ERA_ART = {
+  新石器时代: 'era-neolithic', 二里头文化: 'era-erlitou', 商: 'era-shang',
+  西周: 'era-western-zhou', 东周: 'era-eastern-zhou', 汉: 'era-han',
+  魏晋南北朝: 'era-six-dynasties', 唐: 'era-tang', 五代: 'era-five-dynasties',
+  宋: 'era-song', 元: 'era-yuan', 明: 'era-ming', 清: 'era-qing'
+};
 
 Page({
   data: {
@@ -71,10 +81,10 @@ Page({
         stalled: !!(info && info.stalled),
         total,
         loadedText: String(rows.length),
-        totalText: String(total)
+        totalText: total.toLocaleString('en-US')
       };
       if (this.data.mode === 'cate') {
-        // 分类首屏：head 元数据到位即出卡片（计数/封面精确，不等补齐）；补齐回调不重复建卡
+        // 分类首屏：head 元数据到位即出卡片；补齐回调不重复建卡
         if (!this.cateBuilt) this.buildCateCards();
         this.setData(patch);
         return;
@@ -119,13 +129,13 @@ Page({
     this.cateBuilt = true;
     const byType = this.data.cateTab === 'type';
     const names = byType ? meta.types : meta.eras;
-    const counts = byType ? meta.typeCounts : meta.eraCounts;
     const covers = byType ? meta.typeCovers : meta.eraCovers;
+    const art = byType ? TYPE_ART : ERA_ART;
     this.setData({
       cateCards: (names || []).map((name) => ({
         key: (byType ? 't-' : 'e-') + name,
         name,
-        count: counts[name] || 0,
+        art: art[name] ? `/relics/assets/catalog-${art[name]}.jpg` : '',
         thumb: covers[name] ? relicData.thumbFor(covers[name]) : ''
       }))
     });
@@ -140,9 +150,14 @@ Page({
 
   // 分类封面 CDN 失败换备用域一次
   onCateThumbError(e) {
-    const i = e.currentTarget.dataset.index;
+    const { index: i, key, src } = e.currentTarget.dataset;
     const card = this.data.cateCards[i];
-    const alt = relicData.thumbAlt(card && card.thumb);
+    if (!card || card.key !== key || (card.art || card.thumb) !== src) return;
+    if (card.art) {
+      this.setData({ [`cateCards[${i}].art`]: '' });
+      return;
+    }
+    const alt = relicData.thumbAlt(card.thumb);
     if (alt) this.setData({ [`cateCards[${i}].thumb`]: alt });
   },
 
@@ -183,26 +198,32 @@ Page({
     this.loadCatalog();
   },
 
-  openFilter(e) {
-    const kind = e.currentTarget.dataset.kind;
-    const isType = kind === 'type';
+  openFilter() {
     this.setData({ filterSheet: {
-      kind,
-      title: isType ? '选择器类' : '选择时代',
-      options: isType ? TYPE_OPTIONS : ERA_OPTIONS,
-      selected: isType ? this.data.typeIndex : this.data.eraIndex
+      typeIndex: this.data.typeIndex,
+      eraIndex: this.data.eraIndex
     } });
   },
 
   closeFilter() { this.setData({ filterSheet: null }); },
 
   onFilterPick(e) {
-    const sheet = this.data.filterSheet;
-    const index = Number(e.currentTarget.dataset.index);
-    if (!sheet || !Number.isInteger(index) || index < 0 || index >= sheet.options.length) return;
-    if (index === sheet.selected) return this.closeFilter();
-    const typeIndex = sheet.kind === 'type' ? index : this.data.typeIndex;
-    const eraIndex = sheet.kind === 'era' ? index : this.data.eraIndex;
+    const { kind, index: rawIndex } = e.currentTarget.dataset;
+    const index = Number(rawIndex);
+    const options = kind === 'type' ? TYPE_OPTIONS : ERA_OPTIONS;
+    if (!this.data.filterSheet || (kind !== 'type' && kind !== 'era') ||
+        !Number.isInteger(index) || index < 0 || index >= options.length) return;
+    this.setData({ [`filterSheet.${kind}Index`]: index });
+  },
+
+  resetFilterDraft() {
+    this.setData({ filterSheet: { typeIndex: 0, eraIndex: 0 } });
+  },
+
+  applyFilter() {
+    if (!this.data.filterSheet) return;
+    const { typeIndex, eraIndex } = this.data.filterSheet;
+    if (typeIndex === this.data.typeIndex && eraIndex === this.data.eraIndex) return this.closeFilter();
     if (!typeIndex && !eraIndex) return this.backToCate(); // 两维都清空 → 回分类首屏
     this.updateFilters(typeIndex, eraIndex);
   },
@@ -271,6 +292,7 @@ Page({
   },
 
   goBack() {
+    if (this.data.mode === 'grid') return this.backToCate();
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/home' }) });
   },
 

@@ -138,7 +138,7 @@ function main() {
 
   const partRequests = requests.filter((u) => u.indexOf('index-part-') >= 0).length;
   console.log(`== 文物列表（索引 ${index.total} 行，分类首屏 ${Date.now() - t0}ms） ==`);
-  console.log(`首屏为分类视图：${cateCards} 张器类卡（计数/封面来自 head ${headKB}KB 单请求），onLoad setData ${cateCalls} 次 / ${kb(cateBytes)}`);
+  console.log(`首屏为分类视图：${cateCards} 张器类卡（目录来自 head ${headKB}KB 单请求），onLoad setData ${cateCalls} 次 / ${kb(cateBytes)}`);
   console.log(`点「青铜」进网格：1 次 setData / ${gridCall.bytes} 字节（rows ${gridRows} 行）`);
   console.log(`行卡载荷 ≈ ${Math.round(gridCall.bytes / gridRows)} 字节/行；一次渲染 ${index.total} 行需 ${kb(fullBytes)}，分页后首屏只传 ${kb(gridCall.bytes)}（省 ${(100 * (1 - gridCall.bytes / fullBytes)).toFixed(1)}%）`);
   console.log(`续载 2 屏：${tailCalls} 次 setData / 合计 ${kb(tailBytes)}（rows[offset+i] 逐项追加）`);

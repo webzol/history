@@ -1,7 +1,7 @@
 <view class="page fs-{{fontClass}}">
   <image class="paper-bg" src="/assets/paper-bg.jpg" mode="aspectFill" aria-hidden="true"></image>
   <view class="screen" aria-hidden="{{share.open}}">
-    <view class="topbar">
+    <view class="topbar nav-with-back">
       <view class="back-hit" bindtap="goBack" hover-class="back-hit-pressed" hover-stay-time="80" aria-role="button" aria-label="返回文物列表">
         <view class="back" aria-hidden="true">
           <view class="back-icon"><view class="back-chevron"></view><view class="back-shaft"></view></view>
@@ -76,7 +76,7 @@
         <image wx:if="{{share.fallback}}" aria-hidden="true" class="ss-canvas" src="/assets/share-fallback.jpg" mode="aspectFit"></image>
         <canvas wx:else aria-hidden="true" type="2d" id="ssQrCanvas" class="ss-canvas" disable-scroll="true"></canvas>
       </view>
-      <view class="relic-share-actions">
+      <view class="ss-actions">
         <button class="share-action send-action" open-type="share" hover-class="share-action-pressed" hover-stay-time="80">
           <view class="share-action-icon send-icon" aria-hidden="true"></view>
           <text>转寄好友</text>
